@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ログイン - 材料管理システム</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="max-w-md w-full space-y-8 p-8">
+        <!-- ロゴとタイトル -->
+        <div class="text-center">
+            <div class="mx-auto h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center">
+                <i class="fas fa-industry text-white text-xl"></i>
+            </div>
+            <h2 class="mt-6 text-3xl font-bold text-gray-900">材料管理システム</h2>
+            <p class="mt-2 text-sm text-gray-600">アカウントにログインしてください</p>
+        </div>
+
+        <!-- ログインフォーム -->
+        <form class="mt-8 space-y-6" onsubmit="handleLogin(event)">
+            <div class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700">ユーザー名</label>
+                    <input
+                        id="username"
+                        name="username"
+                        type="text"
+                        required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="ユーザー名を入力"
+                    >
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700">パスワード</label>
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="パスワードを入力"
+                    >
+                </div>
+            </div>
+
+            <!-- エラーメッセージ -->
+            <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                <span id="error-text"></span>
+            </div>
+
+            <!-- ログインボタン -->
+            <div>
+                <button
+                    type="submit"
+                    id="login-button"
+                    class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                        <i class="fas fa-sign-in-alt text-blue-500 group-hover:text-blue-400"></i>
+                    </span>
+                    <span id="login-text">ログイン</span>
+                    <i id="login-spinner" class="fas fa-spinner fa-spin ml-2 hidden"></i>
+                </button>
+            </div>
+        </form>
+
+        <!-- フッター -->
+        <div class="text-center text-xs text-gray-500">
+            <p>© 2024 材料管理システム (matemane)</p>
+        </div>
+    </div>
+
+    <script>
+        // ログイン処理
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const button = document.getElementById('login-button');
+            const buttonText = document.getElementById('login-text');
+            const spinner = document.getElementById('login-spinner');
+            const errorDiv = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+
+            // ボタン状態を変更
+            button.disabled = true;
+            buttonText.textContent = 'ログイン中...';
+            spinner.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+
+            try {
+                // フォームデータを準備
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('password', password);
+
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // ログイン成功
+                    localStorage.setItem('access_token', data.access_token);
+                    localStorage.setItem('user_info', JSON.stringify(data.user_info));
+
+                    // ダッシュボードにリダイレクト
+                    window.location.href = '/';
+                } else {
+                    // ログイン失敗
+                    throw new Error(data.detail || 'ログインに失敗しました');
+                }
+
+            } catch (error) {
+                // エラー表示
+                errorText.textContent = error.message;
+                errorDiv.classList.remove('hidden');
+
+            } finally {
+                // ボタン状態を戻す
+                button.disabled = false;
+                buttonText.textContent = 'ログイン';
+                spinner.classList.add('hidden');
+            }
+        }
+
+        // ページ読み込み時の処理
+        document.addEventListener('DOMContentLoaded', function() {
+            // 既にログイン済みの場合はダッシュボードにリダイレクト
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                window.location.href = '/';
+            }
+
+            // Enterキーでログイン
+            document.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const form = document.querySelector('form');
+                    form.dispatchEvent(new Event('submit'));
+                }
+            });
+        });
+    </script>
+</body>
+</html>
