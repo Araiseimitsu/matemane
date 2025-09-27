@@ -4,16 +4,891 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <!-- ページヘッダー -->
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">入出庫管理</h1>
-        <p class="mt-2 text-gray-600">材料の入庫・出庫を管理します</p>
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">入出庫管理</h1>
+                <p class="mt-2 text-gray-600">材料の入庫・出庫を管理します</p>
+            </div>
+            <div class="flex space-x-3">
+                <button id="newLotBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1">
+                    <i class="fas fa-plus mr-2"></i>新規ロット作成
+                </button>
+                <button id="newItemBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
+                    <i class="fas fa-box mr-2"></i>新規アイテム作成
+                </button>
+            </div>
+        </div>
     </div>
 
-    <div class="card p-6">
-        <p class="text-center text-gray-500 py-8">
-            <i class="fas fa-exchange-alt text-4xl mb-4"></i><br>
-            入出庫管理機能は後ほど実装予定です
-        </p>
+    <!-- クイックアクション -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- 入庫操作 -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center mb-4">
+                <div class="p-2 bg-green-50 rounded-lg mr-3">
+                    <i class="fas fa-arrow-down text-green-600 text-lg"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">入庫処理</h3>
+            </div>
+
+            <form id="inForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">管理コード</label>
+                    <input type="text" name="management_code" required
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="UUIDを入力またはスキャン">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">入庫数量</label>
+                    <input type="number" name="quantity" required min="1" step="1"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="本数">
+                </div>
+
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
+                    <textarea name="notes" rows="2"
+                              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="入庫に関する備考"></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1">
+                    <i class="fas fa-arrow-down mr-2"></i>入庫実行
+                </button>
+            </form>
+        </div>
+
+        <!-- 出庫操作 -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center mb-4">
+                <div class="p-2 bg-red-50 rounded-lg mr-3">
+                    <i class="fas fa-arrow-up text-red-600 text-lg"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900">出庫処理</h3>
+            </div>
+
+            <form id="outForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">管理コード</label>
+                    <input type="text" name="management_code" required
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="UUIDを入力またはスキャン">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">出庫数量</label>
+                    <input type="number" name="quantity" required min="1" step="1"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="本数">
+                </div>
+
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
+                    <textarea name="notes" rows="2"
+                              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="出庫に関する備考"></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1">
+                    <i class="fas fa-arrow-up mr-2"></i>出庫実行
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ロット管理セクション -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">ロット管理</h3>
+                <div class="flex space-x-3">
+                    <select id="materialFilter" class="w-40 px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+                        <option value="">すべての材料</option>
+                        <!-- 動的に材料を読み込み -->
+                    </select>
+                    <input type="text" id="lotSearchInput" placeholder="ロット番号・仕入先で検索"
+                           class="w-56 px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            ロット番号
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            材料・寸法
+                        </th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            長さ
+                        </th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            初期本数
+                        </th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            現在庫
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            仕入先
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            入荷日
+                        </th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            操作
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="lotsTableBody" class="bg-white divide-y divide-gray-200">
+                    <!-- データはJavaScriptで動的に生成 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ローディング表示 -->
+        <div id="lotsLoadingIndicator" class="text-center py-12">
+            <div class="inline-flex items-center">
+                <div class="spinner mr-3"></div>
+                <span class="text-gray-600">ロットデータを読み込んでいます...</span>
+            </div>
+        </div>
+
+        <!-- データなし表示 -->
+        <div id="lotsNoDataIndicator" class="hidden text-center py-12">
+            <div class="text-gray-400 mb-4">
+                <i class="fas fa-box text-4xl"></i>
+            </div>
+            <p class="text-gray-600 font-medium">ロットがありません</p>
+            <p class="text-sm text-gray-500 mt-1">上記の「新規ロット作成」ボタンからロットを作成してください</p>
+        </div>
+    </div>
+
+    <!-- 入出庫履歴 -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">入出庫履歴</h3>
+                <div class="flex space-x-3">
+                    <select id="typeFilter" class="w-32 px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+                        <option value="">すべて</option>
+                        <option value="in">入庫のみ</option>
+                        <option value="out">出庫のみ</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            処理日時
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            種別
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            管理コード
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            材料・ロット
+                        </th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            数量
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            備考
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="movementsTableBody" class="bg-white divide-y divide-gray-200">
+                    <!-- データはJavaScriptで動的に生成 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ローディング表示 -->
+        <div id="loadingIndicator" class="text-center py-12">
+            <div class="inline-flex items-center">
+                <div class="spinner mr-3"></div>
+                <span class="text-gray-600">履歴データを読み込んでいます...</span>
+            </div>
+        </div>
+
+        <!-- データなし表示 -->
+        <div id="noDataIndicator" class="hidden text-center py-12">
+            <div class="text-gray-400 mb-4">
+                <i class="fas fa-history text-4xl"></i>
+            </div>
+            <p class="text-gray-600 font-medium">入出庫履歴がありません</p>
+            <p class="text-sm text-gray-500 mt-1">上記のフォームから入出庫処理を行ってください</p>
+        </div>
     </div>
 </div>
+
+<!-- ロット作成モーダル -->
+<div id="lotModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">新規ロット作成</h3>
+            </div>
+
+            <form id="lotForm" class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">材料 *</label>
+                        <select name="material_id" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+                            <option value="">選択してください</option>
+                            <!-- 動的に材料を読み込み -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ロット番号 *</label>
+                        <input type="text" name="lot_number" required
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="LOT-2024-0001">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">長さ(mm) *</label>
+                        <input type="number" name="length_mm" required min="1" step="1"
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="2500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">初期本数 *</label>
+                        <input type="number" name="initial_quantity" required min="1" step="1"
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="50">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">仕入先</label>
+                        <input type="text" name="supplier"
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="供給業者名">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">入荷日</label>
+                        <input type="date" name="received_date"
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
+                        <textarea name="notes"
+                                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="ロットに関する備考"></textarea>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" id="cancelLotBtn" class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
+                        キャンセル
+                    </button>
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1">
+                        作成
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- アイテム作成モーダル -->
+<div id="itemModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">新規アイテム作成</h3>
+            </div>
+
+            <form id="itemForm" class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ロット *</label>
+                        <select name="lot_id" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+                            <option value="">選択してください</option>
+                            <!-- 動的にロットを読み込み -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">置き場</label>
+                        <select name="location_id" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+                            <option value="">未配置</option>
+                            <!-- 動的に置き場を読み込み -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">初期本数 *</label>
+                        <input type="number" name="initial_quantity" required min="1" step="1"
+                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="10">
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" id="cancelItemBtn" class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
+                        キャンセル
+                    </button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
+                        作成
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// グローバル変数
+let movements = [];
+let materials = [];
+let lots = [];
+let locations = [];
+let allLots = [];
+
+// ページ読み込み時の初期化
+document.addEventListener('DOMContentLoaded', function() {
+    initializePage();
+    setupEventListeners();
+});
+
+// ページ初期化
+async function initializePage() {
+    try {
+        await loadInitialData();
+        await loadLots();
+        await loadMovements();
+    } catch (error) {
+        console.error('初期化エラー:', error);
+        Utils.showToast('ページの初期化に失敗しました', 'error');
+    }
+}
+
+// 初期データの読み込み
+async function loadInitialData() {
+    try {
+        materials = await APIClient.getMaterials();
+        populateMaterialSelects();
+        populateMaterialFilter();
+    } catch (error) {
+        console.error('初期データ読み込みエラー:', error);
+    }
+}
+
+// 材料選択肢の設定
+function populateMaterialSelects() {
+    const selects = document.querySelectorAll('select[name="material_id"]');
+    selects.forEach(select => {
+        select.innerHTML = '<option value="">選択してください</option>';
+        materials.forEach(material => {
+            if (material.is_active) {
+                const option = document.createElement('option');
+                option.value = material.id;
+                option.textContent = `${material.name} (${material.shape} φ${material.diameter_mm}mm)`;
+                select.appendChild(option);
+            }
+        });
+    });
+}
+
+// 材料フィルタの設定
+function populateMaterialFilter() {
+    const select = document.getElementById('materialFilter');
+    select.innerHTML = '<option value="">すべての材料</option>';
+    materials.forEach(material => {
+        if (material.is_active) {
+            const option = document.createElement('option');
+            option.value = material.id;
+            option.textContent = `${material.name} (${material.shape} φ${material.diameter_mm}mm)`;
+            select.appendChild(option);
+        }
+    });
+}
+
+// ロット一覧の読み込み
+async function loadLots() {
+    try {
+        const lotsLoadingIndicator = document.getElementById('lotsLoadingIndicator');
+        const lotsNoDataIndicator = document.getElementById('lotsNoDataIndicator');
+
+        lotsLoadingIndicator.classList.remove('hidden');
+        lotsNoDataIndicator.classList.add('hidden');
+
+        const materialId = document.getElementById('materialFilter').value || undefined;
+        const search = document.getElementById('lotSearchInput').value.trim() || undefined;
+
+        const params = new URLSearchParams();
+        if (materialId) params.append('material_id', materialId);
+        if (search) params.append('search', search);
+
+        const url = `/api/movements/lots${params.toString() ? '?' + params.toString() : ''}`;
+        const response = await fetch(url);
+        allLots = await response.json();
+
+        if (allLots.length === 0) {
+            lotsNoDataIndicator.classList.remove('hidden');
+        } else {
+            renderLotsTable();
+        }
+    } catch (error) {
+        console.error('ロット読み込みエラー:', error);
+        Utils.showToast('ロットの読み込みに失敗しました', 'error');
+    } finally {
+        document.getElementById('lotsLoadingIndicator').classList.add('hidden');
+    }
+}
+
+// ロットテーブルの描画
+function renderLotsTable() {
+    const tbody = document.getElementById('lotsTableBody');
+
+    tbody.innerHTML = allLots.map(lot => {
+        const receivedDate = lot.received_date ? new Date(lot.received_date).toLocaleDateString('ja-JP') : '未登録';
+        const remainingRateColor = lot.items_summary.remaining_rate > 50 ? 'text-green-600' :
+                                   lot.items_summary.remaining_rate > 20 ? 'text-yellow-600' : 'text-red-600';
+
+        return `
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4">
+                    <div class="font-medium text-gray-900">${lot.lot_number}</div>
+                    <div class="text-sm text-gray-500">作成: ${new Date(lot.created_at).toLocaleDateString('ja-JP')}</div>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="font-medium text-gray-900">${lot.material.name}</div>
+                    <div class="text-sm text-gray-500">${lot.material.shape_name} φ${lot.material.diameter_mm}mm</div>
+                </td>
+                <td class="px-6 py-4 text-right text-sm text-gray-900">
+                    ${Utils.formatNumber(lot.length_mm)}mm
+                </td>
+                <td class="px-6 py-4 text-right text-sm text-gray-900">
+                    ${Utils.formatNumber(lot.initial_quantity)}本
+                </td>
+                <td class="px-6 py-4 text-right">
+                    <div class="text-sm font-medium text-gray-900">${Utils.formatNumber(lot.items_summary.total_quantity)}本</div>
+                    <div class="text-xs ${remainingRateColor}">${lot.items_summary.remaining_rate}%</div>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900">
+                    ${lot.supplier || '未登録'}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900">
+                    ${receivedDate}
+                </td>
+                <td class="px-6 py-4 text-center">
+                    <div class="flex justify-center space-x-2">
+                        <button onclick="printLotTag(${lot.id}, 'standard', 1)"
+                                class="bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-1 rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                                title="現品票印刷">
+                            <i class="fas fa-print mr-1"></i>印刷
+                        </button>
+                        <button onclick="previewLotTag(${lot.id})"
+                                class="bg-gray-500 hover:bg-gray-600 text-white text-xs px-3 py-1 rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
+                                title="プレビュー">
+                            <i class="fas fa-eye mr-1"></i>詳細
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// イベントリスナーの設定
+function setupEventListeners() {
+    // ボタンイベント
+    document.getElementById('newLotBtn').addEventListener('click', openLotModal);
+    document.getElementById('newItemBtn').addEventListener('click', openItemModal);
+    document.getElementById('cancelLotBtn').addEventListener('click', closeLotModal);
+    document.getElementById('cancelItemBtn').addEventListener('click', closeItemModal);
+
+    // フォーム送信
+    document.getElementById('inForm').addEventListener('submit', handleInMovement);
+    document.getElementById('outForm').addEventListener('submit', handleOutMovement);
+    document.getElementById('lotForm').addEventListener('submit', handleLotCreate);
+    document.getElementById('itemForm').addEventListener('submit', handleItemCreate);
+
+    // フィルタ
+    document.getElementById('typeFilter').addEventListener('change', filterMovements);
+
+    // ロットフィルタ
+    document.getElementById('materialFilter').addEventListener('change', loadLots);
+    document.getElementById('lotSearchInput').addEventListener('input', Utils.debounce(loadLots, 500));
+
+
+    // モーダル共通処理設定
+    Utils.modal.setupEventListeners(['lotModal', 'itemModal']);
+}
+
+
+// 入出庫履歴の読み込み
+async function loadMovements() {
+    try {
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const noDataIndicator = document.getElementById('noDataIndicator');
+
+        loadingIndicator.classList.remove('hidden');
+        noDataIndicator.classList.add('hidden');
+
+        const response = await fetch('/api/movements/');
+        movements = await response.json();
+
+        if (movements.length === 0) {
+            noDataIndicator.classList.remove('hidden');
+        } else {
+            renderMovementsTable();
+        }
+    } catch (error) {
+        console.error('履歴読み込みエラー:', error);
+        Utils.showToast('履歴の読み込みに失敗しました', 'error');
+    } finally {
+        document.getElementById('loadingIndicator').classList.add('hidden');
+    }
+}
+
+// 履歴テーブルの描画
+function renderMovementsTable() {
+    const tbody = document.getElementById('movementsTableBody');
+
+    tbody.innerHTML = movements.map(movement => {
+        const typeClass = movement.movement_type === 'in' ? 'text-green-600' : 'text-red-600';
+        const typeIcon = movement.movement_type === 'in' ? 'fa-arrow-down' : 'fa-arrow-up';
+        const typeText = movement.movement_type === 'in' ? '入庫' : '出庫';
+
+        return `
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 text-sm text-gray-900">
+                    ${new Date(movement.processed_at).toLocaleString('ja-JP')}
+                </td>
+                <td class="px-6 py-4">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${typeClass} bg-${movement.movement_type === 'in' ? 'green' : 'red'}-50">
+                        <i class="fas ${typeIcon} mr-1"></i>
+                        ${typeText}
+                    </span>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="font-mono text-sm text-gray-900">
+                        ${movement.item_management_code?.substring(0, 8)}...
+                    </div>
+                </td>
+                <td class="px-6 py-4 text-sm">
+                    <div class="font-medium text-gray-900">${movement.material_name || '-'}</div>
+                    <div class="text-gray-500">${movement.lot_number || '-'}</div>
+                </td>
+                <td class="px-6 py-4 text-right text-sm font-medium ${typeClass}">
+                    ${movement.movement_type === 'in' ? '+' : '-'}${movement.quantity}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500">
+                    ${movement.notes || '-'}
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// フィルタ機能
+function filterMovements() {
+    // 実装：APIにフィルタパラメータを送信して再読み込み
+    loadMovements();
+}
+
+// 入庫処理
+async function handleInMovement(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        Utils.setLoading(submitBtn, true);
+
+        // 管理コードからアイテムIDを取得
+        const item = await APIClient.searchByManagementCode(data.management_code);
+        const itemId = item.item.id;
+
+        // 入庫処理実行
+        const result = await fetch(`/api/movements/in/${itemId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                quantity: parseInt(data.quantity),
+                instruction_number: data.instruction_number || null,
+                notes: data.notes || null
+            })
+        });
+
+        if (!result.ok) {
+            const error = await result.json();
+            throw new Error(error.detail || '入庫処理に失敗しました');
+        }
+
+        const response = await result.json();
+        Utils.showToast(`入庫処理が完了しました (${response.old_quantity}本 → ${response.new_quantity}本)`, 'success');
+
+        // フォームリセットと履歴更新
+        e.target.reset();
+        loadMovements();
+
+    } catch (error) {
+        console.error('入庫処理エラー:', error);
+        Utils.showToast(error.message || '入庫処理に失敗しました', 'error');
+    } finally {
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        Utils.setLoading(submitBtn, false);
+    }
+}
+
+// 出庫処理
+async function handleOutMovement(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+
+    try {
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        Utils.setLoading(submitBtn, true);
+
+        // 管理コードからアイテムIDを取得
+        const item = await APIClient.searchByManagementCode(data.management_code);
+        const itemId = item.item.id;
+
+        // 出庫処理実行
+        const result = await fetch(`/api/movements/out/${itemId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                quantity: parseInt(data.quantity),
+                instruction_number: data.instruction_number || null,
+                notes: data.notes || null
+            })
+        });
+
+        if (!result.ok) {
+            const error = await result.json();
+            throw new Error(error.detail || '出庫処理に失敗しました');
+        }
+
+        const response = await result.json();
+        Utils.showToast(`出庫処理が完了しました (${response.old_quantity}本 → ${response.new_quantity}本)`, 'success');
+
+        // フォームリセットと履歴更新
+        e.target.reset();
+        loadMovements();
+
+    } catch (error) {
+        console.error('出庫処理エラー:', error);
+        Utils.showToast(error.message || '出庫処理に失敗しました', 'error');
+    } finally {
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        Utils.setLoading(submitBtn, false);
+    }
+}
+
+// ロット作成モーダルを開く
+function openLotModal() {
+    Utils.modal.open('lotModal');
+    // 今日の日付を設定
+    const today = new Date().toISOString().split('T')[0];
+    document.querySelector('input[name="received_date"]').value = today;
+}
+
+// ロット作成モーダルを閉じる
+function closeLotModal() {
+    Utils.modal.close('lotModal');
+}
+
+// アイテム作成モーダルを開く
+async function openItemModal() {
+    Utils.modal.open('itemModal');
+
+    // ロット選択肢を更新
+    try {
+        const response = await fetch('/api/movements/');
+        // 実際にはロット一覧APIを作成する必要がある
+
+        // 仮実装：既存の材料から推測
+        const lotSelect = document.querySelector('select[name="lot_id"]');
+        lotSelect.innerHTML = '<option value="">選択してください</option>';
+
+    } catch (error) {
+        console.error('ロット読み込みエラー:', error);
+    }
+}
+
+// アイテム作成モーダルを閉じる
+function closeItemModal() {
+    Utils.modal.close('itemModal');
+}
+
+// ロット作成処理
+async function handleLotCreate(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    // 数値型に変換
+    data.material_id = parseInt(data.material_id);
+    data.length_mm = parseInt(data.length_mm);
+    data.initial_quantity = parseInt(data.initial_quantity);
+
+    try {
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        Utils.setLoading(submitBtn, true);
+
+        const result = await fetch('/api/movements/lots', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (!result.ok) {
+            const error = await result.json();
+            throw new Error(error.detail || 'ロット作成に失敗しました');
+        }
+
+        const response = await result.json();
+        Utils.showToast(`ロット「${response.lot_number}」を作成しました`, 'success');
+
+        // 現品票印刷確認
+        const printTag = await Utils.confirm(
+            `ロット「${response.lot_number}」の現品票を印刷しますか？`,
+            '現品票印刷'
+        );
+
+        if (printTag) {
+            await printLotTag(response.id, 'standard', 1);
+        }
+
+        closeLotModal();
+
+    } catch (error) {
+        console.error('ロット作成エラー:', error);
+        Utils.showToast(error.message || 'ロット作成に失敗しました', 'error');
+    } finally {
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        Utils.setLoading(submitBtn, false);
+    }
+}
+
+// アイテム作成処理
+async function handleItemCreate(e) {
+    e.preventDefault();
+
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+
+    // 数値型に変換
+    data.lot_id = parseInt(data.lot_id);
+    data.location_id = data.location_id ? parseInt(data.location_id) : null;
+    data.initial_quantity = parseInt(data.initial_quantity);
+
+    try {
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        Utils.setLoading(submitBtn, true);
+
+        const result = await fetch('/api/movements/items', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (!result.ok) {
+            const error = await result.json();
+            throw new Error(error.detail || 'アイテム作成に失敗しました');
+        }
+
+        const response = await result.json();
+        Utils.showToast(`アイテム「${response.management_code}」を作成しました`, 'success');
+
+        closeItemModal();
+
+    } catch (error) {
+        console.error('アイテム作成エラー:', error);
+        Utils.showToast(error.message || 'アイテム作成に失敗しました', 'error');
+    } finally {
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        Utils.setLoading(submitBtn, false);
+    }
+}
+
+// 現品票印刷
+async function printLotTag(lotId, labelType = 'standard', copies = 1) {
+    try {
+        const response = await fetch('/api/labels/lot-tag', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                lot_id: lotId,
+                label_type: labelType,
+                copies: copies
+            })
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || '現品票印刷に失敗しました');
+        }
+
+        // PDFダウンロード
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `lot_tag_${lotId}_${new Date().getTime()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        Utils.showToast('現品票PDFをダウンロードしました', 'success');
+
+    } catch (error) {
+        console.error('現品票印刷エラー:', error);
+        Utils.showToast(error.message || '現品票印刷に失敗しました', 'error');
+    }
+}
+
+// 現品票プレビュー
+async function previewLotTag(lotId) {
+    try {
+        const response = await fetch(`/api/labels/lot-preview/${lotId}`);
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.detail || 'プレビュー取得に失敗しました');
+        }
+
+        const data = await response.json();
+
+        // プレビュー情報を表示（簡易実装）
+        const previewText = `
+現品票プレビュー
+----------------
+ロット番号: ${data.lot.lot_number}
+材質: ${data.material.name}
+形状: ${data.material.shape_name}
+寸法: φ${data.material.diameter_mm}mm
+長さ: ${data.lot.length_mm}mm
+単重: ${data.calculated.weight_per_piece_kg}kg/本
+仕入先: ${data.lot.supplier || '未登録'}
+入荷日: ${data.lot.received_date || '未登録'}
+        `;
+
+        alert(previewText);
+
+    } catch (error) {
+        console.error('プレビューエラー:', error);
+        Utils.showToast(error.message || 'プレビュー取得に失敗しました', 'error');
+    }
+}
+</script>
 {% endblock %}

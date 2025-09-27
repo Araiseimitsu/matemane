@@ -4,16 +4,644 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <!-- ページヘッダー -->
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">在庫管理</h1>
-        <p class="mt-2 text-gray-600">現在の在庫状況を確認できます</p>
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">在庫管理</h1>
+                <p class="mt-2 text-gray-600">現在の在庫状況を確認できます</p>
+            </div>
+            <div class="flex space-x-3">
+                <button id="lowStockBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-1">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>在庫不足アラート
+                </button>
+                <button id="summaryBtn" class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
+                    <i class="fas fa-chart-bar mr-2"></i>サマリー表示
+                </button>
+            </div>
+        </div>
     </div>
 
-    <div class="card p-6">
-        <p class="text-center text-gray-500 py-8">
-            <i class="fas fa-boxes text-4xl mb-4"></i><br>
-            在庫管理機能は後ほど実装予定です
-        </p>
+    <!-- 検索・フィルタバー -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">管理コード検索</label>
+                <input type="text" id="codeSearch" placeholder="UUIDで検索..."
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">材料</label>
+                <select id="materialFilter" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+                    <option value="">すべて</option>
+                    <!-- 動的に材料を読み込み -->
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">置き場</label>
+                <select id="locationFilter" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+                    <option value="">すべて</option>
+                    <!-- 動的に置き場を読み込み -->
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">在庫状況</label>
+                <select id="stockFilter" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+                    <option value="">すべて</option>
+                    <option value="true">在庫あり</option>
+                    <option value="false">在庫なし</option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button id="resetFilters" class="w-full bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
+                    <i class="fas fa-undo mr-2"></i>リセット
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 在庫一覧 -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">在庫一覧</h3>
+                <span id="itemCount" class="text-sm text-gray-500">-</span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200" id="inventoryTable">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            管理コード
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            材料
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            ロット
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            寸法・長さ
+                        </th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            現在庫(本)
+                        </th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            重量(kg)
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            置き場
+                        </th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            操作
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTableBody" class="bg-white divide-y divide-gray-200">
+                    <!-- データはJavaScriptで動的に生成 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ローディング表示 -->
+        <div id="loadingIndicator" class="text-center py-12">
+            <div class="inline-flex items-center">
+                <div class="spinner mr-3"></div>
+                <span class="text-gray-600">在庫データを読み込んでいます...</span>
+            </div>
+        </div>
+
+        <!-- データなし表示 -->
+        <div id="noDataIndicator" class="hidden text-center py-12">
+            <div class="text-gray-400 mb-4">
+                <i class="fas fa-boxes text-4xl"></i>
+            </div>
+            <p class="text-gray-600 font-medium">在庫データがありません</p>
+            <p class="text-sm text-gray-500 mt-1">入出庫管理から在庫を追加してください</p>
+        </div>
     </div>
 </div>
+
+<!-- 詳細表示モーダル -->
+<div id="detailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">在庫詳細</h3>
+            </div>
+
+            <div id="detailContent" class="p-6">
+                <!-- 詳細内容をJavaScriptで動的に生成 -->
+            </div>
+
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+                <button id="closeDetailModal" class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
+                    閉じる
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 在庫不足アラートモーダル -->
+<div id="alertModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center">
+                    <i class="fas fa-exclamation-triangle text-yellow-500 text-xl mr-3"></i>
+                    <h3 class="text-lg font-semibold text-gray-900">在庫不足アラート</h3>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">下限値(本)</label>
+                    <input type="number" id="thresholdInput" value="5" min="0" step="1"
+                           class="input-field w-32">
+                </div>
+
+                <div id="alertContent">
+                    <!-- アラート内容をJavaScriptで動的に生成 -->
+                </div>
+            </div>
+
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                <button id="closeAlertModal" class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
+                    閉じる
+                </button>
+                <button id="checkAlerts" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-1">
+                    <i class="fas fa-search mr-2"></i>チェック
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- サマリー表示モーダル -->
+<div id="summaryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">在庫サマリー</h3>
+            </div>
+
+            <div id="summaryContent" class="p-6">
+                <!-- サマリー内容をJavaScriptで動的に生成 -->
+            </div>
+
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+                <button id="closeSummaryModal" class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
+                    閉じる
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// グローバル変数
+let inventory = [];
+let materials = [];
+let locations = [];
+let currentItem = null;
+
+// ページ読み込み時の初期化
+document.addEventListener('DOMContentLoaded', function() {
+    initializePage();
+    setupEventListeners();
+});
+
+// ページ初期化
+async function initializePage() {
+    try {
+        await loadInitialData();
+        await loadInventory();
+    } catch (error) {
+        console.error('初期化エラー:', error);
+        Utils.showToast('ページの初期化に失敗しました', 'error');
+    }
+}
+
+// 初期データの読み込み
+async function loadInitialData() {
+    try {
+        const [materialsData] = await Promise.all([
+            APIClient.getMaterials()
+        ]);
+
+        materials = materialsData;
+        populateMaterialFilter();
+    } catch (error) {
+        console.error('初期データ読み込みエラー:', error);
+    }
+}
+
+// 材料フィルタの設定
+function populateMaterialFilter() {
+    const select = document.getElementById('materialFilter');
+    select.innerHTML = '<option value="">すべて</option>';
+
+    materials.forEach(material => {
+        if (material.is_active) {
+            const option = document.createElement('option');
+            option.value = material.id;
+            option.textContent = `${material.name} (${material.shape} φ${material.diameter_mm})`;
+            select.appendChild(option);
+        }
+    });
+}
+
+// イベントリスナーの設定
+function setupEventListeners() {
+    // ボタンイベント
+    document.getElementById('lowStockBtn').addEventListener('click', openAlertModal);
+    document.getElementById('summaryBtn').addEventListener('click', openSummaryModal);
+    document.getElementById('resetFilters').addEventListener('click', resetFilters);
+
+    // フィルタイベント
+    document.getElementById('codeSearch').addEventListener('input', filterInventory);
+    document.getElementById('materialFilter').addEventListener('change', filterInventory);
+    document.getElementById('locationFilter').addEventListener('change', filterInventory);
+    document.getElementById('stockFilter').addEventListener('change', filterInventory);
+
+    // モーダルイベント
+    document.getElementById('closeDetailModal').addEventListener('click', closeDetailModal);
+    document.getElementById('closeAlertModal').addEventListener('click', closeAlertModal);
+    document.getElementById('closeSummaryModal').addEventListener('click', closeSummaryModal);
+    document.getElementById('checkAlerts').addEventListener('click', checkLowStock);
+
+    // 管理コード検索（Enter）
+    document.getElementById('codeSearch').addEventListener('keypress', async (e) => {
+        if (e.key === 'Enter') {
+            const code = e.target.value.trim();
+            if (code) {
+                await searchByManagementCode(code);
+            }
+        }
+    });
+
+    // モーダル共通処理設定
+    Utils.modal.setupEventListeners(['detailModal', 'alertModal', 'summaryModal']);
+}
+
+// 在庫データの読み込み
+async function loadInventory() {
+    try {
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const noDataIndicator = document.getElementById('noDataIndicator');
+        const tableBody = document.getElementById('inventoryTableBody');
+
+        loadingIndicator.classList.remove('hidden');
+        noDataIndicator.classList.add('hidden');
+
+        inventory = await APIClient.getInventory();
+
+        if (inventory.length === 0) {
+            noDataIndicator.classList.remove('hidden');
+            tableBody.innerHTML = '';
+        } else {
+            renderInventoryTable();
+        }
+
+        updateItemCount();
+    } catch (error) {
+        console.error('在庫データの読み込みエラー:', error);
+        Utils.showToast('在庫データの読み込みに失敗しました', 'error');
+    } finally {
+        document.getElementById('loadingIndicator').classList.add('hidden');
+    }
+}
+
+// テーブルの描画
+function renderInventoryTable() {
+    const tbody = document.getElementById('inventoryTableBody');
+    const shapeNames = {
+        'round': '丸棒',
+        'hexagon': '六角棒',
+        'square': '角棒'
+    };
+
+    tbody.innerHTML = inventory.map(item => {
+        const alertClass = item.current_quantity === 0 ? 'text-red-600' :
+                          item.current_quantity <= 5 ? 'text-yellow-600' : 'text-gray-900';
+
+        return `
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4">
+                    <div class="font-mono text-sm text-gray-900">
+                        ${item.management_code.substring(0, 8)}...
+                    </div>
+                    <button onclick="copyToClipboard('${item.management_code}')"
+                            class="text-xs text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-copy mr-1"></i>コピー
+                    </button>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="font-medium text-gray-900">${item.material.name}</div>
+                    <div class="text-sm text-gray-500">
+                        ${shapeNames[item.material.shape]} φ${item.material.diameter_mm}mm
+                    </div>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="text-sm text-gray-900">${item.lot.lot_number}</div>
+                    ${item.lot.supplier ? `<div class="text-xs text-gray-500">${item.lot.supplier}</div>` : ''}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900">
+                    ${item.material.diameter_mm}mm × ${item.lot.length_mm}mm
+                </td>
+                <td class="px-6 py-4 text-right ${alertClass} font-medium">
+                    ${item.current_quantity}
+                </td>
+                <td class="px-6 py-4 text-right text-sm text-gray-900">
+                    ${item.total_weight_kg}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900">
+                    ${item.location?.name || '未配置'}
+                </td>
+                <td class="px-6 py-4 text-center">
+                    <div class="flex justify-center space-x-2">
+                        <button onclick="showDetail(${item.id})"
+                                class="text-blue-600 hover:text-blue-800" title="詳細">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                        <button onclick="openQRCode('${item.management_code}')"
+                                class="text-green-600 hover:text-green-800" title="QRコード">
+                            <i class="fas fa-qrcode"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// アイテム数の更新
+function updateItemCount() {
+    const count = inventory.length;
+    const stockCount = inventory.filter(item => item.current_quantity > 0).length;
+    document.getElementById('itemCount').textContent =
+        `全${count}件（在庫あり: ${stockCount}件）`;
+}
+
+// フィルタ機能
+function filterInventory() {
+    // 実際の実装では、APIにフィルタパラメータを送信
+    loadInventory();
+}
+
+// フィルタリセット
+function resetFilters() {
+    document.getElementById('codeSearch').value = '';
+    document.getElementById('materialFilter').value = '';
+    document.getElementById('locationFilter').value = '';
+    document.getElementById('stockFilter').value = '';
+    loadInventory();
+}
+
+// 管理コード検索
+async function searchByManagementCode(code) {
+    try {
+        const item = await APIClient.searchByManagementCode(code);
+        inventory = [item];
+        renderInventoryTable();
+        updateItemCount();
+        Utils.showToast('検索が完了しました', 'success');
+    } catch (error) {
+        console.error('検索エラー:', error);
+        Utils.showToast('アイテムが見つかりませんでした', 'error');
+    }
+}
+
+// 詳細表示
+function showDetail(itemId) {
+    const item = inventory.find(i => i.id === itemId);
+    if (!item) return;
+
+    const shapeNames = {
+        'round': '丸棒',
+        'hexagon': '六角棒',
+        'square': '角棒'
+    };
+
+    const content = `
+        <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-sm font-medium text-gray-500">管理コード</label>
+                    <div class="font-mono text-sm break-all">${item.management_code}</div>
+                </div>
+                <div>
+                    <label class="text-sm font-medium text-gray-500">現在庫</label>
+                    <div class="text-lg font-bold ${item.current_quantity === 0 ? 'text-red-600' : 'text-gray-900'}">${item.current_quantity}本</div>
+                </div>
+            </div>
+
+            <div class="border-t pt-4">
+                <h4 class="font-medium text-gray-900 mb-2">材料情報</h4>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-500">材質:</span> ${item.material.name}
+                    </div>
+                    <div>
+                        <span class="text-gray-500">形状:</span> ${shapeNames[item.material.shape]}
+                    </div>
+                    <div>
+                        <span class="text-gray-500">直径:</span> ${item.material.diameter_mm}mm
+                    </div>
+                    <div>
+                        <span class="text-gray-500">比重:</span> ${item.material.current_density}g/cm³
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t pt-4">
+                <h4 class="font-medium text-gray-900 mb-2">ロット情報</h4>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-500">ロット番号:</span> ${item.lot.lot_number}
+                    </div>
+                    <div>
+                        <span class="text-gray-500">長さ:</span> ${item.lot.length_mm}mm
+                    </div>
+                    ${item.lot.supplier ? `
+                    <div>
+                        <span class="text-gray-500">仕入先:</span> ${item.lot.supplier}
+                    </div>
+                    ` : ''}
+                    ${item.lot.received_date ? `
+                    <div>
+                        <span class="text-gray-500">入荷日:</span> ${new Date(item.lot.received_date).toLocaleDateString('ja-JP')}
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+
+            <div class="border-t pt-4">
+                <h4 class="font-medium text-gray-900 mb-2">重量情報</h4>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-gray-500">1本あたり:</span> ${item.weight_per_piece_kg}kg
+                    </div>
+                    <div>
+                        <span class="text-gray-500">総重量:</span> ${item.total_weight_kg}kg
+                    </div>
+                </div>
+            </div>
+
+            ${item.location ? `
+            <div class="border-t pt-4">
+                <h4 class="font-medium text-gray-900 mb-2">置き場情報</h4>
+                <div class="text-sm">
+                    <span class="text-gray-500">置き場:</span> ${item.location.name}
+                    ${item.location.description ? `<br><span class="text-gray-500">説明:</span> ${item.location.description}` : ''}
+                </div>
+            </div>
+            ` : ''}
+        </div>
+    `;
+
+    document.getElementById('detailContent').innerHTML = content;
+    Utils.modal.open('detailModal');
+}
+
+// 詳細モーダルを閉じる
+function closeDetailModal() {
+    Utils.modal.close('detailModal');
+}
+
+// アラートモーダルを開く
+function openAlertModal() {
+    Utils.modal.open('alertModal');
+    checkLowStock();
+}
+
+// アラートモーダルを閉じる
+function closeAlertModal() {
+    Utils.modal.close('alertModal');
+}
+
+// 在庫不足チェック
+async function checkLowStock() {
+    try {
+        const threshold = parseInt(document.getElementById('thresholdInput').value) || 5;
+        const alerts = await APIClient.getLowStockItems(threshold);
+
+        const content = document.getElementById('alertContent');
+
+        if (alerts.items.length === 0) {
+            content.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="text-green-500 mb-4">
+                        <i class="fas fa-check-circle text-4xl"></i>
+                    </div>
+                    <p class="text-gray-600 font-medium">在庫不足のアイテムはありません</p>
+                    <p class="text-sm text-gray-500 mt-1">下限値: ${threshold}本</p>
+                </div>
+            `;
+        } else {
+            content.innerHTML = `
+                <div class="mb-4 text-sm text-gray-600">
+                    在庫が${threshold}本以下のアイテム: ${alerts.items.length}件
+                </div>
+                <div class="space-y-3 max-h-64 overflow-y-auto">
+                    ${alerts.items.map(item => `
+                        <div class="p-3 border rounded-lg ${item.current_quantity === 0 ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'}">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <div class="font-medium ${item.current_quantity === 0 ? 'text-red-900' : 'text-yellow-900'}">${item.material_name}</div>
+                                    <div class="text-sm ${item.current_quantity === 0 ? 'text-red-700' : 'text-yellow-700'}">
+                                        ロット: ${item.lot_number} | 置き場: ${item.location_name}
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="font-bold ${item.current_quantity === 0 ? 'text-red-600' : 'text-yellow-600'}">${item.current_quantity}本</div>
+                                    <div class="text-xs ${item.current_quantity === 0 ? 'text-red-500' : 'text-yellow-500'}">${item.alert_level}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('在庫不足チェックエラー:', error);
+        Utils.showToast('在庫不足チェックに失敗しました', 'error');
+    }
+}
+
+// サマリーモーダルを開く
+async function openSummaryModal() {
+    Utils.modal.open('summaryModal');
+
+    try {
+        const summary = await fetch('/api/inventory/summary').then(r => r.json());
+
+        const content = `
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                ${summary.map(item => `
+                    <div class="border rounded-lg p-4">
+                        <div class="font-medium text-gray-900 mb-2">${item.material_name}</div>
+                        <div class="text-sm text-gray-600 mb-3">
+                            ${item.material_shape === 'round' ? '丸棒' :
+                              item.material_shape === 'hexagon' ? '六角棒' : '角棒'}
+                            φ${item.diameter_mm}mm × ${item.length_mm}mm
+                        </div>
+                        <div class="space-y-1 text-sm">
+                            <div class="flex justify-between">
+                                <span>総在庫:</span>
+                                <span class="font-medium">${item.total_quantity}本</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>総重量:</span>
+                                <span class="font-medium">${item.total_weight_kg}kg</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>ロット数:</span>
+                                <span class="font-medium">${item.lot_count}件</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>置き場数:</span>
+                                <span class="font-medium">${item.location_count}箇所</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        document.getElementById('summaryContent').innerHTML = content;
+    } catch (error) {
+        console.error('サマリー取得エラー:', error);
+        document.getElementById('summaryContent').innerHTML = `
+            <div class="text-center py-8">
+                <p class="text-red-600">サマリーデータの取得に失敗しました</p>
+            </div>
+        `;
+    }
+}
+
+// サマリーモーダルを閉じる
+function closeSummaryModal() {
+    Utils.modal.close('summaryModal');
+}
+
+// クリップボードにコピー
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        Utils.showToast('クリップボードにコピーしました', 'success');
+    }).catch(() => {
+        Utils.showToast('コピーに失敗しました', 'error');
+    });
+}
+
+// QRコード表示（仮実装）
+function openQRCode(managementCode) {
+    Utils.showToast('QRコード機能は実装予定です', 'info');
+}
+</script>
 {% endblock %}

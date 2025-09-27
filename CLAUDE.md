@@ -52,10 +52,33 @@ pytest --cov=src
 # 新しいAPIエンドポイント作成時は、既存のスタブファイルを上書き
 # 例: src/api/materials.py は現在スタブのみ
 
-# 静的ファイル（CSS/JS/画像）用のディレクトリ作成が必要
-mkdir -p src/static/{css,js,images}
+# 【重要】APIエンドポイントURLには必ず末尾にスラッシュを付ける
+# 例: '/api/inventory/' (正) vs '/api/inventory' (307リダイレクトエラー)
+# api-client.js の全てのエンドポイントは末尾スラッシュ必須
+
+# 静的ファイル（CSS/JS/画像）用のディレクトリは作成済み
+# src/static/js/ - 実装済み (api-client.js, utils.js, qr-scanner.js)
+# src/static/css/ - CSS追加時に使用
+# src/static/images/ - 画像追加時に使用
 
 # フロントエンド機能実装時は base.html と dashboard.html の JavaScript部分を拡張
+```
+
+### よくある開発エラーと解決法
+```bash
+# 1. API 307リダイレクトエラー
+# エラー: "SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON"
+# 原因: APIエンドポイントURL末尾にスラッシュがない
+# 解決: 全てのAPI URLに末尾スラッシュを追加
+
+# 2. データベースリセット時の材料クエリエラー
+# エラー: "AttributeError: 'NoneType' object has no attribute 'id'"
+# 原因: コミット後のセッション状態が不正
+# 解決: 材料データをコミット後に再度クエリで取得
+
+# 3. 在庫一覧が空表示
+# 原因: サンプルデータ（Lot, Item）が未投入
+# 解決: python reset_db.py --force でサンプルデータ投入
 ```
 
 ### 開発環境
@@ -98,7 +121,8 @@ mkdir -p src/static/{css,js,images}
   - create_tables() 起動時テーブル作成関数
 - `reset_db.py`: 開発環境用のDB完全リセットスクリプト
   - 安全確認付きDB削除・再作成
-  - 初期データ投入（ユーザー4名、置き場250箇所、サンプル材料4種）
+  - 初期データ投入（ユーザー4名、置き場250箇所、サンプル材料4種、ロット12件、在庫アイテム25件）
+  - UUID管理コード自動生成によるサンプル在庫データ
 
 ### API層
 - `src/api/`: FastAPI ルーター
@@ -107,9 +131,9 @@ mkdir -p src/static/{css,js,images}
 
 ### テンプレート層
 - `src/templates/`: Jinja2テンプレート
-  - `base.html`: 共通レイアウト（ナビゲーション、スタイル）
-  - `dashboard.html`: ダッシュボード画面
-  - 各機能画面のテンプレート
+  - `base.html`: 共通レイアウト（ナビゲーション、スタイル、トースト通知、認証チェック）
+  - `dashboard.html`: ダッシュボード画面（在庫一覧表示、UUID検索、管理コードコピー機能）
+  - 各機能画面のテンプレート（materials, inventory, movements, scan, login）
 
 ### ユーティリティ
 - `src/utils/auth.py`: 認証関連ユーティリティ（実装済みだが現在はスキップ可能）
@@ -123,13 +147,16 @@ mkdir -p src/static/{css,js,images}
 - **環境設定**: 設定管理、環境変数
 - **データベース初期化**: 起動時自動テーブル作成、リセットスクリプト
 
+### 実装済み（新規追加）
+- **在庫管理API**: `src/api/inventory.py` - 完全実装済み（一覧取得、検索、サマリー、低在庫検知）
+- **静的ファイル**: `src/static/js/` - JavaScript API クライアント、ユーティリティ実装済み
+- **ダッシュボード在庫表示**: 在庫一覧、UUID検索、管理コードコピー機能
+
 ### 実装待ち（スタブのみ）
 - **材料管理API**: `src/api/materials.py`
-- **在庫管理API**: `src/api/inventory.py`
 - **入出庫管理API**: `src/api/movements.py`
 - **ラベル印刷API**: `src/api/labels.py`
-- **フロントエンド機能**: JavaScript実装
-- **静的ファイル**: `src/static/` ディレクトリ未作成
+- **その他のフロントエンド機能**: 材料管理、入出庫管理のJavaScript実装
 - **テスト**: `tests/` ディレクトリ未作成
 
 ## 主要機能要件
@@ -179,10 +206,10 @@ mkdir -p src/static/{css,js,images}
 
 ### API設計（FastAPI）
 - 認証: `POST /api/auth/login`（実装済みだが現在は不要）
-- 材料: `GET/POST /api/materials`
-- 在庫: `GET /api/inventory`
-- 入出庫: `POST /api/movements/{type}`
-- ラベル: `POST /api/labels/print`
+- 材料: `GET/POST /api/materials/`（実装待ち）
+- 在庫: `GET /api/inventory/`、`GET /api/inventory/summary/`、`GET /api/inventory/search/{code}`、`GET /api/inventory/low-stock/`（実装済み）
+- 入出庫: `POST /api/movements/{type}`（実装待ち）
+- ラベル: `POST /api/labels/print`（実装待ち）
 
 ### ページルート
 - `/`: ダッシュボード画面
@@ -197,6 +224,8 @@ mkdir -p src/static/{css,js,images}
 - **Tailwind CSS（CDN経由）**: 統一感のある美しいUIを作成
 - モバイル最適化（大型タッチターゲット）
 - QRスキャン: getUserMedia API
+- **JavaScript API クライアント**: `src/static/js/api-client.js` - 完全実装済み
+- **ユーティリティライブラリ**: `src/static/js/utils.js` - トースト通知、フォーム処理、データ変換等
 
 ## 開発方針
 
@@ -225,10 +254,10 @@ mkdir -p src/static/{css,js,images}
 
 ## 開発優先順位
 新機能実装時の推奨順序:
-1. **材料管理機能** (`src/api/materials.py` を実装)
-2. **在庫管理機能** (`src/api/inventory.py` を実装)
+1. **材料管理機能** (`src/api/materials.py` を実装) ← 次の実装対象
+2. ✅ **在庫管理機能** (`src/api/inventory.py` を実装) ← 完了済み
 3. **入出庫管理機能** (`src/api/movements.py` を実装)
-4. **静的ファイル管理** (`src/static/` ディレクトリ作成)
+4. ✅ **静的ファイル管理** (`src/static/` ディレクトリ作成) ← 完了済み
 5. **QRスキャン機能** (フロントエンド JavaScript)
 6. **ラベル印刷機能** (`src/api/labels.py` を実装)
 7. **テスト実装** (`tests/` ディレクトリ作成)

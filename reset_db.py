@@ -15,7 +15,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 from src.config import settings
-from src.db.models import Base, User, Material, Location, MaterialShape, UserRole
+from src.db.models import Base, User, Material, Location, Lot, Item, MaterialShape, UserRole
 from src.utils.auth import get_password_hash
 from src.db import SessionLocal
 
@@ -170,9 +170,167 @@ def insert_initial_data():
         ]
 
         db.add_all(sample_materials)
+        db.commit()  # 材料IDを取得するために一度コミット
+
+        # ロットサンプルデータ
+        print("ロットサンプルデータを作成中...")
+        from datetime import datetime, timedelta
+        import random
+
+        # 材料IDを取得（データベースから再度読み込み）
+        s45c = db.query(Material).filter(Material.name == "S45C").first()
+        sus304 = db.query(Material).filter(Material.name == "SUS304").first()
+        a5056 = db.query(Material).filter(Material.name == "A5056").first()
+        c1020 = db.query(Material).filter(Material.name == "C1020").first()
+
+        print(f"材料データ確認: S45C={s45c.id if s45c else None}, SUS304={sus304.id if sus304 else None}, A5056={a5056.id if a5056 else None}, C1020={c1020.id if c1020 else None}")
+
+        if not s45c or not sus304 or not a5056 or not c1020:
+            print("エラー: 材料データが見つかりません")
+            return False
+
+        sample_lots = [
+            # S45C用ロット（SS400をS45Cに変更）
+            Lot(
+                lot_number="S45C-240901-001",
+                material_id=s45c.id,
+                length_mm=3000,
+                initial_quantity=50,
+                supplier="東京鋼材",
+                received_date=datetime.now() - timedelta(days=15),
+                notes="定期入荷分"
+            ),
+            Lot(
+                lot_number="S45C-240915-002",
+                material_id=s45c.id,
+                length_mm=4000,
+                initial_quantity=30,
+                supplier="関西スチール",
+                received_date=datetime.now() - timedelta(days=8),
+                notes="特注長さ"
+            ),
+            # S45C用ロット
+            Lot(
+                lot_number="S45C-240905-001",
+                material_id=s45c.id,
+                length_mm=2500,
+                initial_quantity=40,
+                supplier="大阪金属",
+                received_date=datetime.now() - timedelta(days=12),
+                notes="機械加工用"
+            ),
+            Lot(
+                lot_number="S45C-240920-002",
+                material_id=s45c.id,
+                length_mm=3500,
+                initial_quantity=25,
+                supplier="東京鋼材",
+                received_date=datetime.now() - timedelta(days=5),
+                notes="高精度品"
+            ),
+            # SUS304用ロット
+            Lot(
+                lot_number="SUS304-240910-001",
+                material_id=sus304.id,
+                length_mm=3000,
+                initial_quantity=20,
+                supplier="ステンレス工業",
+                received_date=datetime.now() - timedelta(days=10),
+                notes="耐食性重視"
+            ),
+            Lot(
+                lot_number="SUS304-240922-002",
+                material_id=sus304.id,
+                length_mm=2000,
+                initial_quantity=35,
+                supplier="関西ステンレス",
+                received_date=datetime.now() - timedelta(days=3),
+                notes="短尺品"
+            ),
+            # A5056用ロット
+            Lot(
+                lot_number="A5056-240912-001",
+                material_id=a5056.id,
+                length_mm=4000,
+                initial_quantity=15,
+                supplier="アルミ工業",
+                received_date=datetime.now() - timedelta(days=8),
+                notes="軽量化用途"
+            ),
+            Lot(
+                lot_number="A5056-240925-002",
+                material_id=a5056.id,
+                length_mm=3000,
+                initial_quantity=28,
+                supplier="東京アルミ",
+                received_date=datetime.now() - timedelta(days=1),
+                notes="新規入荷"
+            ),
+            # C1020用ロット
+            Lot(
+                lot_number="C1020-240918-001",
+                material_id=c1020.id,
+                length_mm=2000,
+                initial_quantity=20,
+                supplier="銅材商事",
+                received_date=datetime.now() - timedelta(days=6),
+                notes="電気用途"
+            ),
+            Lot(
+                lot_number="C1020-240923-002",
+                material_id=c1020.id,
+                length_mm=2500,
+                initial_quantity=18,
+                supplier="関東銅業",
+                received_date=datetime.now() - timedelta(days=2),
+                notes="高純度品"
+            )
+        ]
+
+        db.add_all(sample_lots)
+        db.commit()  # ロットIDを取得するために一度コミット
+
+        # 在庫アイテムサンプルデータ
+        print("在庫アイテムサンプルデータを作成中...")
+
+        # 作成したロットを取得
+        lots = db.query(Lot).all()
+
+        sample_items = []
+        for lot in lots:
+            # 各ロットに対して1-3個のアイテムを作成
+            item_count = random.randint(1, 3)
+            remaining_quantity = lot.initial_quantity
+
+            for i in range(item_count):
+                if remaining_quantity <= 0:
+                    break
+
+                # 在庫数をランダムに分配（最後のアイテムは残り全部）
+                if i == item_count - 1:
+                    current_quantity = remaining_quantity
+                else:
+                    max_quantity = min(remaining_quantity, remaining_quantity // (item_count - i) + 10)
+                    current_quantity = random.randint(0, max_quantity)
+
+                remaining_quantity -= current_quantity
+
+                # ランダムな置き場を選択（1-20）
+                location_id = random.randint(1, 20)
+
+                item = Item(
+                    lot_id=lot.id,
+                    location_id=location_id,
+                    current_quantity=current_quantity,
+                    # management_codeは自動生成される（UUID）
+                    is_active=True
+                )
+                sample_items.append(item)
+
+        db.add_all(sample_items)
+        db.commit()
 
         # データをコミット
-        db.commit()
         print("初期データの投入が完了しました")
 
         # 作成されたデータの確認
@@ -180,6 +338,8 @@ def insert_initial_data():
         print(f"- ユーザー: {db.query(User).count()}件")
         print(f"- 置き場: {db.query(Location).count()}件")
         print(f"- 材料: {db.query(Material).count()}件")
+        print(f"- ロット: {db.query(Lot).count()}件")
+        print(f"- 在庫アイテム: {db.query(Item).count()}件")
 
         print(f"\nデフォルトユーザー:")
         print(f"- admin / admin123 (管理者)")
@@ -198,6 +358,8 @@ def insert_initial_data():
 
 def main():
     """メイン処理"""
+    import sys
+
     print("=" * 50)
     print("材料管理システム データベースリセット")
     print("=" * 50)
@@ -206,10 +368,15 @@ def main():
     print(f"ユーザー: {settings.db_user}")
     print("=" * 50)
 
-    # 確認
-    if input("データベースを完全にリセットしますか？ (y/N): ").lower() != 'y':
-        print("処理を中止しました")
-        return
+    # 確認（--forceオプションで省略可能）
+    if "--force" not in sys.argv:
+        try:
+            if input("データベースを完全にリセットしますか？ (y/N): ").lower() != 'y':
+                print("処理を中止しました")
+                return
+        except EOFError:
+            print("処理を中止しました")
+            return
 
     start_time = datetime.now()
 

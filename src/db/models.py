@@ -56,7 +56,7 @@ class Density(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     material_id = Column(Integer, ForeignKey("materials.id"), nullable=False)
-    density_value = Column(Float, nullable=False, comment="比重（g/cm³）")
+    density = Column(Float, nullable=False, comment="比重（g/cm³）")
     effective_from = Column(DateTime(timezone=True), nullable=False, comment="適用開始日")
     notes = Column(Text, comment="変更理由など")
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)

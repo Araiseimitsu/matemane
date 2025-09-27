@@ -12,30 +12,45 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/mobile.css') }}">
+
+    <!-- 必要最小限のカスタムCSS -->
     <style>
-        /* カスタムスタイル */
-        .btn-primary {
-            @apply bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
-        }
-        .btn-secondary {
-            @apply bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-200;
-        }
-        .btn-success {
-            @apply bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
-        }
-        .btn-warning {
-            @apply bg-yellow-600 hover:bg-yellow-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
-        }
-        .btn-danger {
-            @apply bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
-        }
-        .card {
-            @apply bg-white rounded-lg shadow-md border border-gray-200;
-        }
-        .input-field {
-            @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+        /* アニメーション */
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out both;
         }
 
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* スクロールバー */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 9999px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #9ca3af;
+            border-radius: 9999px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280;
+        }
     </style>
 
     {% block extra_head %}{% endblock %}
@@ -132,7 +147,13 @@
     <!-- トースト通知 -->
     <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
+    <!-- QRスキャナーライブラリ -->
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
     <!-- 共通JavaScript -->
+    <script src="{{ url_for('static', path='/js/utils.js') }}"></script>
+    <script src="{{ url_for('static', path='/js/api-client.js') }}"></script>
+    <script src="{{ url_for('static', path='/js/qr-scanner.js') }}"></script>
     <script>
         // ユーザーメニュートグル
         document.getElementById('user-menu-button').addEventListener('click', function() {
