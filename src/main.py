@@ -9,7 +9,7 @@ import logging
 
 from src.config import settings
 from src.db import create_tables
-from src.api import auth, materials, inventory, movements, labels
+from src.api import auth, materials, inventory, movements, labels, density_presets
 
 # ログ設定
 logging.basicConfig(
@@ -53,6 +53,7 @@ app.include_router(materials.router, prefix="/api/materials", tags=["材料管�
 app.include_router(inventory.router, prefix="/api/inventory", tags=["在庫管理"])
 app.include_router(movements.router, prefix="/api/movements", tags=["入出庫管理"])
 app.include_router(labels.router, prefix="/api/labels", tags=["ラベル印刷"])
+app.include_router(density_presets.router, prefix="/api/density-presets", tags=["比重プリセット管理"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -101,8 +102,14 @@ async def movements_page(request: Request):
 
 @app.get("/scan")
 async def scan_page(request: Request):
-    """QRスキャン画面"""
+    """QRコードスキャンページ"""
     return templates.TemplateResponse("scan.html", {"request": request})
+
+
+@app.get("/settings")
+async def settings_page(request: Request):
+    """設定ページ"""
+    return templates.TemplateResponse("settings.html", {"request": request})
 
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):

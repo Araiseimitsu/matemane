@@ -15,7 +15,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 from src.config import settings
-from src.db.models import Base, User, Material, Location, Lot, Item, MaterialShape, UserRole
+from src.db.models import Base, User, Material, Location, Lot, Item, MaterialShape, UserRole, DensityPreset
 from src.utils.auth import get_password_hash
 from src.db import SessionLocal
 
@@ -132,6 +132,72 @@ def insert_initial_data():
             locations.append(location)
 
         db.add_all(locations)
+
+        # 比重プリセットを作成
+        density_presets = [
+            DensityPreset(
+                name="S45C",
+                density=7.85,
+                description="機械構造用炭素鋼",
+                is_active=True
+            ),
+            DensityPreset(
+                name="SUS304",
+                density=7.93,
+                description="ステンレス鋼",
+                is_active=True
+            ),
+            DensityPreset(
+                name="SUS316",
+                density=8.00,
+                description="ステンレス鋼（耐食性向上）",
+                is_active=True
+            ),
+            DensityPreset(
+                name="A5056",
+                density=2.64,
+                description="アルミニウム合金",
+                is_active=True
+            ),
+            DensityPreset(
+                name="A6061",
+                density=2.70,
+                description="アルミニウム合金（構造用）",
+                is_active=True
+            ),
+            DensityPreset(
+                name="C1020",
+                density=8.96,
+                description="銅",
+                is_active=True
+            ),
+            DensityPreset(
+                name="C3604",
+                density=8.50,
+                description="快削黄銅",
+                is_active=True
+            ),
+            DensityPreset(
+                name="SCM440",
+                density=7.85,
+                description="クロムモリブデン鋼",
+                is_active=True
+            ),
+            DensityPreset(
+                name="SK3",
+                density=7.84,
+                description="炭素工具鋼",
+                is_active=True
+            ),
+            DensityPreset(
+                name="FC200",
+                density=7.20,
+                description="ねずみ鋳鉄",
+                is_active=True
+            )
+        ]
+
+        db.add_all(density_presets)
 
         # サンプル材料を作成
         sample_materials = [

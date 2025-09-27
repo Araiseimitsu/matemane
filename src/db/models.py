@@ -130,6 +130,17 @@ class Movement(Base):
     item = relationship("Item", back_populates="movements")
     processor = relationship("User")
 
+class DensityPreset(Base):
+    __tablename__ = "density_presets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False, comment="材質名（例：S45C、SUS304）")
+    density = Column(Float, nullable=False, comment="比重（g/cm³）")
+    description = Column(Text, comment="説明")
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 

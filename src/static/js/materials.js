@@ -9,6 +9,7 @@ class MaterialManager {
 
     init() {
         this.loadMaterials();
+        this.loadDensityPresets();
         this.bindEvents();
         this.initForms();
         this.setupModals();
@@ -63,6 +64,12 @@ class MaterialManager {
         closeButtons.forEach(btn => {
             btn.addEventListener('click', () => this.closeModal());
         });
+
+        // 比重プリセット選択時の処理
+        const densityPresetSelect = document.getElementById('density_preset_select');
+        if (densityPresetSelect) {
+            densityPresetSelect.addEventListener('change', (e) => this.onDensityPresetChange(e));
+        }
     }
 
     // モーダル共通処理設定
@@ -473,6 +480,54 @@ class MaterialManager {
                 }
             }, 300);
         }, 3000);
+    }
+
+    // 比重プリセット読み込み
+    async loadDensityPresets() {
+        try {
+            const response = await fetch('/api/density-presets/');
+            if (!response.ok) {
+                throw new Error('比重プリセットの取得に失敗しました');
+            }
+
+            const presets = await response.json();
+            this.renderDensityPresets(presets);
+        } catch (error) {
+            console.error('Error loading density presets:', error);
+            // エラーが発生してもアプリケーションの動作は継続
+        }
+    }
+
+    // 比重プリセットをドロップダウンに表示
+    renderDensityPresets(presets) {
+        const select = document.getElementById('density_preset_select');
+        if (!select) return;
+
+        // 既存のオプションをクリア（最初のオプションは残す）
+        while (select.children.length > 1) {
+            select.removeChild(select.lastChild);
+        }
+
+        // プリセットオプションを追加
+        presets.forEach(preset => {
+            const option = document.createElement('option');
+            option.value = preset.density;
+            option.textContent = `${preset.name} (${preset.density})`;
+            if (preset.description) {
+                option.title = preset.description;
+            }
+            select.appendChild(option);
+        });
+    }
+
+    // 比重プリセット選択時の処理
+    onDensityPresetChange(event) {
+        const selectedDensity = event.target.value;
+        const densityInput = document.getElementById('current_density');
+        
+        if (selectedDensity && densityInput) {
+            densityInput.value = selectedDensity;
+        }
     }
 }
 
