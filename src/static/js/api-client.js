@@ -198,6 +198,13 @@ class APIClient {
         return this.post('/movements/move', data);
     }
 
+    /**
+     * アイテム検索（材料名や径などで絞り込み）
+     */
+    static async searchMovementItems(params = {}) {
+        return this.get('/movements/search-items', params);
+    }
+
     // ===== ラベル印刷 =====
 
     /**

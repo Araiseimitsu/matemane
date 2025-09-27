@@ -443,9 +443,22 @@ async def get_lots(
         weight_per_piece_kg = (volume_cm3 * material.current_density) / 1000
 
         # このロットに属するアイテム数と総在庫数を計算
-        items = db.query(Item).filter(Item.lot_id == lot.id, Item.is_active == True).all()
+        items = db.query(Item).options(
+            joinedload(Item.location)
+        ).filter(Item.lot_id == lot.id, Item.is_active == True).all()
         total_items = len(items)
         total_quantity = sum(item.current_quantity for item in items)
+
+        # アイテム詳細情報（管理コード含む）
+        items_detail = []
+        for item in items:
+            items_detail.append({
+                "id": item.id,
+                "management_code": item.management_code,
+                "current_quantity": item.current_quantity,
+                "location_id": item.location_id,
+                "location_name": item.location.name if item.location else None
+            })
 
         result.append({
             "id": lot.id,
@@ -472,6 +485,107 @@ async def get_lots(
                 "total_items": total_items,
                 "total_quantity": total_quantity,
                 "remaining_rate": round((total_quantity / lot.initial_quantity) * 100, 1) if lot.initial_quantity > 0 else 0
+            },
+            "items": items_detail
+        })
+
+    return result
+
+@router.get("/search-items", response_model=List[dict])
+async def search_items(
+    material_name: Optional[str] = None,
+    diameter_mm: Optional[int] = None,
+    lot_number: Optional[str] = None,
+    location_id: Optional[int] = None,
+    min_quantity: Optional[int] = None,
+    max_quantity: Optional[int] = None,
+    db: Session = Depends(get_db)
+):
+    """アイテム検索（材料名、径、ロット番号など複数条件）"""
+    query = db.query(Item).options(
+        joinedload(Item.lot).joinedload(Lot.material),
+        joinedload(Item.location)
+    ).filter(Item.is_active == True)
+
+    # フィルタ条件に応じたJOINを追加
+    if any([material_name, diameter_mm, lot_number]):
+        query = query.join(Lot, Item.lot)
+
+    if material_name or diameter_mm:
+        query = query.join(Material, Lot.material)
+
+    # 各種フィルタ適用
+    if material_name:
+        query = query.filter(Material.name.ilike(f"%{material_name}%"))
+
+    if diameter_mm:
+        query = query.filter(Material.diameter_mm == diameter_mm)
+
+    if lot_number:
+        query = query.filter(Lot.lot_number.ilike(f"%{lot_number}%"))
+
+    if location_id:
+        query = query.filter(Item.location_id == location_id)
+
+    if min_quantity is not None:
+        query = query.filter(Item.current_quantity >= min_quantity)
+    if max_quantity is not None:
+        query = query.filter(Item.current_quantity <= max_quantity)
+    items = query.order_by(desc(Item.updated_at)).limit(50).all()
+
+    result = []
+    for item in items:
+        material = item.lot.material
+
+        # 重量計算
+        if material.shape.value == "round":
+            radius_cm = (material.diameter_mm / 2) / 10
+            length_cm = item.lot.length_mm / 10
+            volume_cm3 = 3.14159 * (radius_cm ** 2) * length_cm
+        elif material.shape.value == "hexagon":
+            side_cm = (material.diameter_mm / 2) / 10
+            length_cm = item.lot.length_mm / 10
+            volume_cm3 = (3 * (3 ** 0.5) / 2) * (side_cm ** 2) * length_cm
+        elif material.shape.value == "square":
+            side_cm = material.diameter_mm / 10
+            length_cm = item.lot.length_mm / 10
+            volume_cm3 = (side_cm ** 2) * length_cm
+        else:
+            volume_cm3 = 0
+
+        weight_per_piece_kg = (volume_cm3 * material.current_density) / 1000
+        total_weight_kg = weight_per_piece_kg * item.current_quantity
+
+        result.append({
+            "id": item.id,
+            "management_code": item.management_code,
+            "current_quantity": item.current_quantity,
+            "is_active": item.is_active,
+            "created_at": item.created_at,
+            "updated_at": item.updated_at,
+            "material": {
+                "id": material.id,
+                "name": material.name,
+                "shape": material.shape.value,
+                "shape_name": get_shape_name(material.shape.value),
+                "diameter_mm": material.diameter_mm,
+                "density": material.current_density
+            },
+            "lot": {
+                "id": item.lot.id,
+                "lot_number": item.lot.lot_number,
+                "length_mm": item.lot.length_mm,
+                "supplier": item.lot.supplier,
+                "received_date": item.lot.received_date
+            },
+            "location": {
+                "id": item.location.id if item.location else None,
+                "name": item.location.name if item.location else None
+            },
+            "calculated": {
+                "weight_per_piece_kg": round(weight_per_piece_kg, 3),
+                "total_weight_kg": round(total_weight_kg, 3),
+                "volume_per_piece_cm3": round(volume_cm3, 3)
             }
         })
 
