@@ -51,13 +51,17 @@
                         </div>
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">入庫数量</label>
-                    <input type="number" name="quantity" required min="1" step="1"
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="本数">
+                    <input type="number" name="quantity" min="1" step="1"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="本数を入力 (任意)">
                 </div>
-
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">入庫重量 (kg)</label>
+                    <input type="number" name="weight_kg" min="0.001" step="0.001"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="重量を入力 (任意)">
+                    <p class="mt-1 text-xs text-gray-500">数量または重量のいずれかを入力してください。</p>
+                </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
@@ -98,13 +102,17 @@
                         </div>
                     </div>
                 </div>
-
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">出庫数量</label>
-                    <input type="number" name="quantity" required min="1" step="1"
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="本数">
+                    <input type="number" name="quantity" min="1" step="1"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="本数を入力 (任意)">
                 </div>
-
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">出庫重量 (kg)</label>
+                    <input type="number" name="weight_kg" min="0.001" step="0.001"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="重量を入力 (任意)">
+                    <p class="mt-1 text-xs text-gray-500">数量または重量のいずれかを入力してください。</p>
+                </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
@@ -653,6 +661,24 @@ function setupEventListeners() {
     document.getElementById('itemForm').addEventListener('submit', handleItemCreate);
     document.getElementById('itemSearchForm').addEventListener('submit', handleItemSearchSubmit);
 
+    ['in', 'out'].forEach(target => {
+        const form = document.getElementById(`${target}Form`);
+        if (!form) {
+            return;
+        }
+
+        const quantityInput = form.querySelector('input[name="quantity"]');
+        const weightInput = form.querySelector('input[name="weight_kg"]');
+
+        if (quantityInput) {
+            quantityInput.addEventListener('input', () => syncQuantityToWeight(target));
+        }
+
+        if (weightInput) {
+            weightInput.addEventListener('input', () => syncWeightToQuantity(target));
+        }
+    });
+
     // モーダル操作
     document.getElementById('itemSearchCloseBtn').addEventListener('click', closeItemSearchModal);
     document.getElementById('itemSearchResetBtn').addEventListener('click', resetItemSearchForm);
@@ -834,7 +860,71 @@ function selectItemFromSearch(itemId) {
 
 function clearSelectedItem(target) {
     selectedItems[target] = null;
+    const form = document.getElementById(`${target}Form`);
+    if (form) {
+        const quantityInput = form.querySelector('input[name="quantity"]');
+        const weightInput = form.querySelector('input[name="weight_kg"]');
+        if (quantityInput) {
+            quantityInput.value = '';
+        }
+        if (weightInput) {
+            weightInput.value = '';
+        }
+    }
     updateSelectedItemDisplay(target);
+}
+
+function getSelectedItemWeightPerPiece(target) {
+    const item = selectedItems[target];
+    if (!item || !item.calculated) {
+        return null;
+    }
+    return item.calculated.weight_per_piece_kg;
+}
+
+function syncQuantityToWeight(target) {
+    const form = document.getElementById(`${target}Form`);
+    if (!form) {
+        return;
+    }
+
+    const quantityInput = form.querySelector('input[name="quantity"]');
+    const weightInput = form.querySelector('input[name="weight_kg"]');
+    const weightPerPiece = getSelectedItemWeightPerPiece(target);
+
+    if (!quantityInput || !weightInput) {
+        return;
+    }
+
+    const quantity = parseInt(quantityInput.value, 10);
+    if (weightPerPiece && !Number.isNaN(quantity) && quantity > 0) {
+        weightInput.value = (quantity * weightPerPiece).toFixed(3);
+    } else if (!quantityInput.value) {
+        weightInput.value = '';
+    }
+}
+
+function syncWeightToQuantity(target) {
+    const form = document.getElementById(`${target}Form`);
+    if (!form) {
+        return;
+    }
+
+    const quantityInput = form.querySelector('input[name="quantity"]');
+    const weightInput = form.querySelector('input[name="weight_kg"]');
+    const weightPerPiece = getSelectedItemWeightPerPiece(target);
+
+    if (!quantityInput || !weightInput) {
+        return;
+    }
+
+    const weight = parseFloat(weightInput.value);
+    if (weightPerPiece && !Number.isNaN(weight) && weight > 0) {
+        const quantity = Math.max(1, Math.round(weight / weightPerPiece));
+        quantityInput.value = quantity;
+    } else if (!weightInput.value) {
+        quantityInput.value = '';
+    }
 }
 
 function updateSelectedItemDisplay(target) {
@@ -877,6 +967,17 @@ function updateSelectedItemDisplay(target) {
         <div class="mt-1 text-xs text-gray-600">ロット: ${lot.lot_number || '---'} / 残量: ${quantity}本 (${totalWeight}kg)</div>
         <div class="mt-1 text-xs text-gray-600">1本あたり: ${perWeight}kg / ロケーション: ${location.name || '未登録'}</div>
     `;
+
+    const quantityInput = form.querySelector('input[name="quantity"]');
+    const weightInput = form.querySelector('input[name="weight_kg"]');
+
+    if (item) {
+        if (quantityInput && quantityInput.value) {
+            syncQuantityToWeight(target);
+        } else if (weightInput && weightInput.value) {
+            syncWeightToQuantity(target);
+        }
+    }
 }
 
 
@@ -937,7 +1038,8 @@ function renderMovementsTable() {
                     <div class="text-gray-500">${movement.lot_number || '-'}</div>
                 </td>
                 <td class="px-6 py-4 text-right text-sm font-medium ${typeClass}">
-                    ${movement.movement_type === 'in' ? '+' : '-'}${movement.quantity}
+                    <div>${movement.movement_type === 'in' ? '+' : '-'}${movement.quantity}本</div>
+                    <div class="text-xs text-gray-500">${movement.weight_kg !== null && movement.weight_kg !== undefined ? `${Number(movement.weight_kg).toFixed(3)}kg` : '-'}</div>
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-500">
                     ${movement.notes || '-'}
@@ -966,9 +1068,14 @@ async function handleInMovement(e) {
         return;
     }
 
-    const quantity = parseInt(data.quantity, 10);
-    if (!quantity || Number.isNaN(quantity) || quantity <= 0) {
-        Utils.showToast('数量を正しく入力してください', 'error');
+    const quantityRaw = typeof data.quantity === 'string' ? data.quantity.trim() : '';
+    const weightRaw = typeof data.weight_kg === 'string' ? data.weight_kg.trim() : '';
+
+    const quantity = quantityRaw ? parseInt(quantityRaw, 10) : null;
+    const weight = weightRaw ? parseFloat(weightRaw) : null;
+
+    if ((!quantity || Number.isNaN(quantity) || quantity <= 0) && (!weight || Number.isNaN(weight) || weight <= 0)) {
+        Utils.showToast('数量または重量を入力してください', 'error');
         return;
     }
 
@@ -976,14 +1083,23 @@ async function handleInMovement(e) {
         const submitBtn = e.target.querySelector('button[type="submit"]');
         Utils.setLoading(submitBtn, true);
 
+        const payload = {
+            instruction_number: data.instruction_number || null,
+            notes: data.notes || null
+        };
+
+        if (quantity && !Number.isNaN(quantity) && quantity > 0) {
+            payload.quantity = quantity;
+        }
+
+        if (weight && !Number.isNaN(weight) && weight > 0) {
+            payload.weight_kg = weight;
+        }
+
         const result = await fetch(`/api/movements/in/${itemId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                quantity: quantity,
-                instruction_number: data.instruction_number || null,
-                notes: data.notes || null
-            })
+            body: JSON.stringify(payload)
         });
 
         if (!result.ok) {
@@ -992,7 +1108,8 @@ async function handleInMovement(e) {
         }
 
         const response = await result.json();
-        Utils.showToast(`入庫が完了しました (${response.old_quantity}本 → ${response.new_quantity}本)`, 'success');
+        const weightInfo = response.calculated_weight_kg ? ` / ${response.calculated_weight_kg}kg` : '';
+        Utils.showToast(`入庫が完了しました (${response.old_quantity}本 → ${response.new_quantity}本${weightInfo})`, 'success');
 
         if (selectedItems.in && Number(selectedItems.in.id) === itemId) {
             selectedItems.in.current_quantity = response.new_quantity;
@@ -1037,9 +1154,32 @@ async function handleOutMovement(e) {
         return;
     }
 
-    const quantity = parseInt(data.quantity, 10);
-    if (!quantity || Number.isNaN(quantity) || quantity <= 0) {
-        Utils.showToast('数量を正しく入力してください', 'error');
+    const quantityRaw = typeof data.quantity === 'string' ? data.quantity.trim() : '';
+    const weightRaw = typeof data.weight_kg === 'string' ? data.weight_kg.trim() : '';
+
+    const quantityInputValue = quantityRaw ? parseInt(quantityRaw, 10) : null;
+    const weightInputValue = weightRaw ? parseFloat(weightRaw) : null;
+
+    if ((!quantityInputValue || Number.isNaN(quantityInputValue) || quantityInputValue <= 0) && (!weightInputValue || Number.isNaN(weightInputValue) || weightInputValue <= 0)) {
+        Utils.showToast('数量または重量を入力してください', 'error');
+        return;
+    }
+
+    let resolvedQuantity = quantityInputValue;
+    const selectedItem = selectedItems.out;
+    const weightPerPiece = selectedItem && selectedItem.calculated ? selectedItem.calculated.weight_per_piece_kg : null;
+
+    if ((!resolvedQuantity || Number.isNaN(resolvedQuantity) || resolvedQuantity <= 0) && weightInputValue && !Number.isNaN(weightInputValue) && weightInputValue > 0 && weightPerPiece) {
+        resolvedQuantity = Math.max(1, Math.round(weightInputValue / weightPerPiece));
+    }
+
+    if (!resolvedQuantity || Number.isNaN(resolvedQuantity) || resolvedQuantity <= 0) {
+        Utils.showToast('数量換算に失敗しました。入力内容を確認してください', 'error');
+        return;
+    }
+
+    if (selectedItem && resolvedQuantity > selectedItem.current_quantity) {
+        Utils.showToast(`在庫が不足しています。現在庫: ${selectedItem.current_quantity}本`, 'error');
         return;
     }
 
@@ -1047,14 +1187,25 @@ async function handleOutMovement(e) {
         const submitBtn = e.target.querySelector('button[type="submit"]');
         Utils.setLoading(submitBtn, true);
 
+        const payload = {
+            instruction_number: data.instruction_number || null,
+            notes: data.notes || null
+        };
+
+        if (quantityInputValue && !Number.isNaN(quantityInputValue) && quantityInputValue > 0) {
+            payload.quantity = quantityInputValue;
+        } else if (resolvedQuantity && !Number.isNaN(resolvedQuantity) && resolvedQuantity > 0) {
+            payload.quantity = resolvedQuantity;
+        }
+
+        if (weightInputValue && !Number.isNaN(weightInputValue) && weightInputValue > 0) {
+            payload.weight_kg = weightInputValue;
+        }
+
         const result = await fetch(`/api/movements/out/${itemId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                quantity: quantity,
-                instruction_number: data.instruction_number || null,
-                notes: data.notes || null
-            })
+            body: JSON.stringify(payload)
         });
 
         if (!result.ok) {
@@ -1063,7 +1214,8 @@ async function handleOutMovement(e) {
         }
 
         const response = await result.json();
-        Utils.showToast(`出庫が完了しました (${response.old_quantity}本 → ${response.new_quantity}本)`, 'success');
+        const weightInfo = response.calculated_weight_kg ? ` / ${response.calculated_weight_kg}kg` : '';
+        Utils.showToast(`出庫が完了しました (${response.old_quantity}本 → ${response.new_quantity}本${weightInfo})`, 'success');
 
         if (selectedItems.out && Number(selectedItems.out.id) === itemId) {
             selectedItems.out.current_quantity = response.new_quantity;

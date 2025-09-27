@@ -2,28 +2,81 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc
 from typing import List, Optional
-from pydantic import BaseModel, Field, ConfigDict, validator
+from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 from datetime import datetime
 import re
+import math
+from decimal import Decimal, ROUND_HALF_UP
 
 from src.db import get_db
-from src.db.models import Movement, Item, Lot, Material, Location, MovementType, AuditLog
+from src.db.models import (
+    Movement,
+    Item,
+    Lot,
+    Material,
+    Location,
+    MovementType,
+    AuditLog,
+    MaterialShape,
+)
 
 router = APIRouter()
 
+# 共通ユーティリティ
+def _calculate_weight_per_piece_kg(item: Item) -> float:
+    """指定アイテムの1本あたり重量(kg)を算出"""
+    material = item.lot.material
+    length_cm = item.lot.length_mm / 10
+
+    if material.shape == MaterialShape.ROUND:
+        radius_cm = (material.diameter_mm / 2) / 10
+        volume_cm3 = math.pi * (radius_cm ** 2) * length_cm
+    elif material.shape == MaterialShape.HEXAGON:
+        side_cm = (material.diameter_mm / 2) / 10
+        volume_cm3 = (3 * math.sqrt(3) / 2) * (side_cm ** 2) * length_cm
+    elif material.shape == MaterialShape.SQUARE:
+        side_cm = material.diameter_mm / 10
+        volume_cm3 = (side_cm ** 2) * length_cm
+    else:
+        volume_cm3 = 0.0
+
+    return (volume_cm3 * material.current_density) / 1000
+
+
+def _resolve_quantity_from_weight(weight_kg: float, weight_per_piece_kg: float) -> int:
+    """重量から本数を四捨五入で算出"""
+    if weight_per_piece_kg <= 0:
+        raise ValueError("単重情報が不足しているため重量換算ができません")
+
+    quantity_decimal = (Decimal(str(weight_kg)) / Decimal(str(weight_per_piece_kg)))
+    quantity = int(quantity_decimal.quantize(Decimal('1'), rounding=ROUND_HALF_UP))
+
+    if quantity <= 0:
+        raise ValueError("重量が小さすぎるため本数を算出できません")
+
+    return quantity
+
 # Pydantic スキーマ
 class MovementBase(BaseModel):
-    quantity: int = Field(..., gt=0, description="移動本数")
+    quantity: Optional[int] = Field(None, gt=0, description="移動本数")
+    weight_kg: Optional[float] = Field(None, gt=0, description="移動重量(kg)")
     instruction_number: Optional[str] = Field(None, description="指示書番号（IS-YYYY-NNNN）")
     notes: Optional[str] = Field(None, description="備考")
 
-    @validator('instruction_number')
-    def validate_instruction_number(cls, v):
-        if v is not None:
+    @field_validator('instruction_number')
+    @classmethod
+    def validate_instruction_number(cls, value: Optional[str]) -> Optional[str]:
+        if value is not None:
             # IS-YYYY-NNNN形式をチェック
-            if not re.match(r'^IS-\d{4}-\d{4}$', v):
+            if not re.match(r'^IS-\d{4}-\d{4}$', value):
                 raise ValueError('指示書番号はIS-YYYY-NNNN形式で入力してください')
-        return v
+        return value
+
+    @model_validator(mode="after")
+    def validate_quantity_or_weight(self):
+        if self.quantity is None and self.weight_kg is None:
+            raise ValueError('数量または重量のいずれかを入力してください')
+        return self
 
 class MovementIn(MovementBase):
     """入庫用（指示書番号は任意）"""
@@ -40,6 +93,7 @@ class MovementResponse(BaseModel):
     item_id: int
     movement_type: MovementType
     quantity: int
+    weight_kg: Optional[float] = None
     instruction_number: Optional[str]
     notes: Optional[str]
     processed_by: int
@@ -94,11 +148,15 @@ async def get_movements(
     # レスポンス用に関連情報を追加
     result = []
     for movement in movements:
+        weight_per_piece = _calculate_weight_per_piece_kg(movement.item)
+        weight_kg = round(weight_per_piece * movement.quantity, 3)
+
         movement_dict = {
             "id": movement.id,
             "item_id": movement.item_id,
             "movement_type": movement.movement_type,
             "quantity": movement.quantity,
+            "weight_kg": weight_kg,
             "instruction_number": movement.instruction_number,
             "notes": movement.notes,
             "processed_by": movement.processed_by,
@@ -133,17 +191,46 @@ async def create_in_movement(
             detail="無効なアイテムには入庫できません"
         )
 
+    weight_per_piece = _calculate_weight_per_piece_kg(item)
+    resolved_quantity = movement_data.quantity
+    input_weight = movement_data.weight_kg
+
+    if resolved_quantity is None:
+        if input_weight is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="数量または重量を指定してください"
+            )
+        try:
+            resolved_quantity = _resolve_quantity_from_weight(input_weight, weight_per_piece)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(exc)
+            )
+
+    if resolved_quantity <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="数量は1以上で入力してください"
+        )
+
+    calculated_weight = round(resolved_quantity * weight_per_piece, 3)
+    raw_input_weight = input_weight if input_weight is not None else calculated_weight
+    weight_difference = round(calculated_weight - raw_input_weight, 3)
+    normalized_input_weight = round(raw_input_weight, 3)
+
     # 入庫前の数量を記録
     old_quantity = item.current_quantity
 
     # アイテムの数量を増加
-    item.current_quantity += movement_data.quantity
+    item.current_quantity += resolved_quantity
 
     # 入庫履歴を作成
     movement = Movement(
         item_id=item_id,
         movement_type=MovementType.IN,
-        quantity=movement_data.quantity,
+        quantity=resolved_quantity,
         instruction_number=movement_data.instruction_number,
         notes=movement_data.notes,
         processed_by=1  # TODO: 認証実装後にユーザーIDを設定
@@ -158,7 +245,7 @@ async def create_in_movement(
         target_table="items",
         target_id=item_id,
         old_values=f"数量: {old_quantity}",
-        new_values=f"数量: {item.current_quantity}, 入庫数: {movement_data.quantity}",
+        new_values=f"数量: {item.current_quantity}, 入庫本数: {resolved_quantity}, 入庫重量: {calculated_weight}kg",
         created_at=datetime.now()
     )
 
@@ -172,7 +259,10 @@ async def create_in_movement(
         "item_id": item_id,
         "old_quantity": old_quantity,
         "new_quantity": item.current_quantity,
-        "in_quantity": movement_data.quantity
+        "in_quantity": resolved_quantity,
+        "calculated_weight_kg": calculated_weight,
+        "input_weight_kg": normalized_input_weight,
+        "weight_difference_kg": weight_difference
     }
 
 @router.post("/out/{item_id}")
@@ -196,24 +286,52 @@ async def create_out_movement(
             detail="無効なアイテムからは出庫できません"
         )
 
-    # 在庫不足チェック
-    if item.current_quantity < movement_data.quantity:
+    weight_per_piece = _calculate_weight_per_piece_kg(item)
+    resolved_quantity = movement_data.quantity
+    input_weight = movement_data.weight_kg
+
+    if resolved_quantity is None:
+        if input_weight is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="数量または重量を指定してください"
+            )
+        try:
+            resolved_quantity = _resolve_quantity_from_weight(input_weight, weight_per_piece)
+        except ValueError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(exc)
+            )
+
+    if resolved_quantity <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"在庫が不足しています。現在庫: {item.current_quantity}本, 出庫要求: {movement_data.quantity}本"
+            detail="数量は1以上で入力してください"
         )
+
+    if item.current_quantity < resolved_quantity:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"在庫が不足しています。現在庫: {item.current_quantity}本, 出庫要求: {resolved_quantity}本"
+        )
+
+    calculated_weight = round(resolved_quantity * weight_per_piece, 3)
+    raw_input_weight = input_weight if input_weight is not None else calculated_weight
+    weight_difference = round(calculated_weight - raw_input_weight, 3)
+    normalized_input_weight = round(raw_input_weight, 3)
 
     # 出庫前の数量を記録
     old_quantity = item.current_quantity
 
     # アイテムの数量を減少
-    item.current_quantity -= movement_data.quantity
+    item.current_quantity -= resolved_quantity
 
     # 出庫履歴を作成
     movement = Movement(
         item_id=item_id,
         movement_type=MovementType.OUT,
-        quantity=movement_data.quantity,
+        quantity=resolved_quantity,
         instruction_number=movement_data.instruction_number,
         notes=movement_data.notes,
         processed_by=1  # TODO: 認証実装後にユーザーIDを設定
@@ -228,7 +346,7 @@ async def create_out_movement(
         target_table="items",
         target_id=item_id,
         old_values=f"数量: {old_quantity}",
-        new_values=f"数量: {item.current_quantity}, 出庫数: {movement_data.quantity}, 指示書: {movement_data.instruction_number}",
+        new_values=f"数量: {item.current_quantity}, 出庫本数: {resolved_quantity}, 出庫重量: {calculated_weight}kg, 指示書: {movement_data.instruction_number}",
         created_at=datetime.now()
     )
 
@@ -242,8 +360,11 @@ async def create_out_movement(
         "item_id": item_id,
         "old_quantity": old_quantity,
         "new_quantity": item.current_quantity,
-        "out_quantity": movement_data.quantity,
-        "instruction_number": movement_data.instruction_number
+        "out_quantity": resolved_quantity,
+        "instruction_number": movement_data.instruction_number,
+        "calculated_weight_kg": calculated_weight,
+        "input_weight_kg": normalized_input_weight,
+        "weight_difference_kg": weight_difference
     }
 
 @router.get("/by-instruction/{instruction_number}")
@@ -267,31 +388,14 @@ async def get_movements_by_instruction(
     result = []
     for movement in movements:
         material = movement.item.lot.material
-
-        # 重量計算
-        if material.shape.value == "round":
-            radius_cm = (material.diameter_mm / 2) / 10
-            length_cm = movement.item.lot.length_mm / 10
-            volume_cm3 = 3.14159 * (radius_cm ** 2) * length_cm
-        elif material.shape.value == "hexagon":
-            side_cm = (material.diameter_mm / 2) / 10
-            length_cm = movement.item.lot.length_mm / 10
-            volume_cm3 = (3 * (3 ** 0.5) / 2) * (side_cm ** 2) * length_cm
-        elif material.shape.value == "square":
-            side_cm = material.diameter_mm / 10
-            length_cm = movement.item.lot.length_mm / 10
-            volume_cm3 = (side_cm ** 2) * length_cm
-        else:
-            volume_cm3 = 0
-
-        weight_per_piece_kg = (volume_cm3 * material.current_density) / 1000
-        total_weight_kg = weight_per_piece_kg * movement.quantity
+        weight_per_piece_kg = _calculate_weight_per_piece_kg(movement.item)
+        total_weight_kg = round(weight_per_piece_kg * movement.quantity, 3)
 
         result.append({
             "movement_id": movement.id,
             "movement_type": movement.movement_type.value,
             "quantity": movement.quantity,
-            "weight_kg": round(total_weight_kg, 3),
+            "weight_kg": total_weight_kg,
             "processed_at": movement.processed_at,
             "item": {
                 "management_code": movement.item.management_code,

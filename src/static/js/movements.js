@@ -167,6 +167,7 @@ class MovementManager {
                                 ${movementTypeText}
                             </span>
                             <span class="ml-3 text-lg font-bold">${movement.quantity}本</span>
+                            ${movement.weight_kg !== undefined && movement.weight_kg !== null ? `<span class="ml-3 text-sm text-gray-600">${Number(movement.weight_kg).toFixed(3)}kg</span>` : ''}
                         </div>
                         <h3 class="text-lg font-semibold text-gray-800">${movement.material_name}</h3>
                         <p class="text-sm text-gray-600">ロット: ${movement.lot_number}</p>
@@ -372,17 +373,31 @@ class MovementManager {
         const formData = new FormData(document.getElementById('movementForm'));
         const data = Object.fromEntries(formData.entries());
 
-        // 数値変換
-        data.quantity = parseInt(data.quantity);
+        const quantityRaw = typeof data.quantity === 'string' ? data.quantity.trim() : '';
+        const weightRaw = typeof data.weight_kg === 'string' ? data.weight_kg.trim() : (typeof data.weight === 'string' ? data.weight.trim() : '');
 
-        // バリデーション
-        if (!data.quantity || data.quantity <= 0) {
-            this.showToast('有効な本数を入力してください', 'error');
+        const quantity = quantityRaw ? parseInt(quantityRaw, 10) : null;
+        const weight = weightRaw ? parseFloat(weightRaw) : null;
+
+        if ((!quantity || Number.isNaN(quantity) || quantity <= 0) && (!weight || Number.isNaN(weight) || weight <= 0)) {
+            this.showToast('数量または重量を入力してください', 'error');
+            return;
+        }
+
+        let resolvedQuantity = quantity;
+        const weightPerPiece = this.selectedItem.weight_per_piece_kg;
+
+        if ((!resolvedQuantity || Number.isNaN(resolvedQuantity) || resolvedQuantity <= 0) && weight && !Number.isNaN(weight) && weight > 0 && weightPerPiece) {
+            resolvedQuantity = Math.max(1, Math.round(weight / weightPerPiece));
+        }
+
+        if (!resolvedQuantity || Number.isNaN(resolvedQuantity) || resolvedQuantity <= 0) {
+            this.showToast('数量換算に失敗しました。入力内容を確認してください', 'error');
             return;
         }
 
         // 出庫時の在庫チェック
-        if (this.currentMovementType === 'out' && data.quantity > this.selectedItem.item.current_quantity) {
+        if (this.currentMovementType === 'out' && resolvedQuantity > this.selectedItem.item.current_quantity) {
             this.showToast(`在庫が不足しています。現在庫: ${this.selectedItem.item.current_quantity}本`, 'error');
             return;
         }
@@ -403,7 +418,12 @@ class MovementManager {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify({
+                    quantity: quantity && quantity > 0 ? quantity : resolvedQuantity,
+                    weight_kg: weight && weight > 0 ? weight : undefined,
+                    instruction_number: data.instruction_number || null,
+                    notes: data.notes || null
+                })
             });
 
             if (!response.ok) {
@@ -414,7 +434,8 @@ class MovementManager {
             const result = await response.json();
             const typeText = this.currentMovementType === 'in' ? '入庫' : '出庫';
 
-            this.showToast(`${typeText}処理が完了しました`, 'success');
+            const weightInfo = result.calculated_weight_kg ? ` / ${result.calculated_weight_kg}kg` : '';
+            this.showToast(`${typeText}処理が完了しました (${result.old_quantity}本 → ${result.new_quantity}本${weightInfo})`, 'success');
             this.closeModal();
             this.loadMovements();
 
