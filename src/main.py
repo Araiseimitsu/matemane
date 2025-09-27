@@ -9,7 +9,7 @@ import logging
 
 from src.config import settings
 from src.db import create_tables
-from src.api import auth, materials, inventory, movements, labels, density_presets
+from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders
 
 # ログ設定
 logging.basicConfig(
@@ -54,6 +54,7 @@ app.include_router(inventory.router, prefix="/api/inventory", tags=["在庫管�
 app.include_router(movements.router, prefix="/api/movements", tags=["入出庫管理"])
 app.include_router(labels.router, prefix="/api/labels", tags=["ラベル印刷"])
 app.include_router(density_presets.router, prefix="/api/density-presets", tags=["比重プリセット管理"])
+app.include_router(purchase_orders.router, prefix="/api/purchase-orders", tags=["発注管理"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -105,6 +106,16 @@ async def scan_page(request: Request):
     """QRコードスキャンページ"""
     return templates.TemplateResponse("scan.html", {"request": request})
 
+
+@app.get("/purchase-orders")
+async def purchase_orders_page(request: Request):
+    """発注管理画面"""
+    return templates.TemplateResponse("purchase_orders.html", {"request": request})
+
+@app.get("/receiving")
+async def receiving_page(request: Request):
+    """入庫確認画面"""
+    return templates.TemplateResponse("receiving.html", {"request": request})
 
 @app.get("/settings")
 async def settings_page(request: Request):

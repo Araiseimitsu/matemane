@@ -1,0 +1,533 @@
+{% extends "base.html" %}
+
+{% block title %}入庫確認 - 材料管理システム{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+    <!-- ヘッダー -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="px-4 py-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">入庫確認</h1>
+                    <p class="text-gray-600 mt-1">発注済み材料の入庫処理を行います</p>
+                </div>
+                <div class="flex space-x-4">
+                    <button id="refreshBtn" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        更新
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- コンテンツエリア -->
+    <div class="px-4 py-6">
+        <!-- フィルター -->
+        <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">仕入先</label>
+                    <input type="text" id="supplierFilter" placeholder="仕入先名で絞り込み"
+                           class="w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">材料名</label>
+                    <input type="text" id="materialFilter" placeholder="材料名で絞り込み"
+                           class="w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <div class="flex items-end">
+                    <button id="searchBtn" class="w-full bg-gray-600 text-white p-2 rounded-md hover:bg-gray-700 transition-colors">
+                        検索
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 入庫待ちアイテム一覧 -->
+        <div class="bg-white rounded-lg shadow-sm">
+            <div class="p-4 border-b">
+                <h2 class="text-lg font-semibold text-gray-900">入庫待ちアイテム</h2>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">発注番号</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">仕入先</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">材料名</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">形状・寸法</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">長さ</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">発注数量</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">管理コード</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsTableBody" class="divide-y divide-gray-200">
+                        <!-- 動的に生成 -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="itemsLoading" class="text-center py-8 hidden">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p class="mt-2 text-gray-600">読み込み中...</p>
+            </div>
+            <div id="itemsEmpty" class="text-center py-8 hidden">
+                <p class="text-gray-500">入庫待ちのアイテムがありません</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 入庫確認モーダル -->
+<div id="receiveModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-gray-900">入庫確認</h2>
+                    <button id="closeReceiveModal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <form id="receiveForm" class="p-6">
+                <input type="hidden" id="receiveItemId" name="item_id">
+
+                <!-- 発注アイテム情報表示 -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">発注アイテム情報</h3>
+                    <div id="itemInfo" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <!-- 動的に生成 -->
+                    </div>
+                </div>
+
+                <!-- 入庫情報入力 -->
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ロット番号 *</label>
+                        <input type="text" name="lot_number" required
+                               class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="例: L202501001">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">入庫数量 *</label>
+                        <input type="number" name="received_quantity" required min="1"
+                               class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <p class="text-sm text-gray-500 mt-1">発注数量と異なる場合は、実際の入庫数量を入力してください</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">置き場</label>
+                        <select name="location_id"
+                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">置き場を選択（後で設定可能）</option>
+                            <!-- 動的に生成 -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
+                        <textarea name="notes" rows="3"
+                                  class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="入庫時の特記事項があれば記入してください"></textarea>
+                    </div>
+                </div>
+
+                <!-- 送信ボタン -->
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancelReceive" class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors">
+                        キャンセル
+                    </button>
+                    <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                        入庫確定
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 入庫完了モーダル -->
+<div id="receiveCompleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg max-w-md w-full">
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                        <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">入庫完了</h3>
+                    <p class="text-sm text-gray-600 mb-4">入庫処理が正常に完了しました</p>
+
+                    <div id="completeInfo" class="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+                        <!-- 動的に生成 -->
+                    </div>
+
+                    <div class="flex space-x-3">
+                        <button id="printLabelBtn" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
+                            現品票印刷
+                        </button>
+                        <button id="closeCompleteModal" class="flex-1 bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">
+                            閉じる
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 入庫確認の主要機能
+document.addEventListener('DOMContentLoaded', function() {
+    // 初期化
+    loadPendingItems();
+    loadLocations();
+    setupEventListeners();
+});
+
+// 入庫待ちアイテム読み込み
+async function loadPendingItems() {
+    const tableBody = document.getElementById('itemsTableBody');
+    const loading = document.getElementById('itemsLoading');
+    const empty = document.getElementById('itemsEmpty');
+
+    loading.classList.remove('hidden');
+    tableBody.innerHTML = '';
+    empty.classList.add('hidden');
+
+    try {
+        const response = await fetch('/api/purchase-orders/pending/items/');
+        const items = await response.json();
+
+        loading.classList.add('hidden');
+
+        if (items.length === 0) {
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        // 発注情報も取得するために、各アイテムに対して詳細を取得
+        const itemsWithOrders = await Promise.all(
+            items.map(async (item) => {
+                try {
+                    const orderResponse = await fetch(`/api/purchase-orders/${item.purchase_order_id}`);
+                    const order = await orderResponse.json();
+                    return { ...item, purchase_order: order };
+                } catch (error) {
+                    console.error('発注情報取得エラー:', error);
+                    return item;
+                }
+            })
+        );
+
+        itemsWithOrders.forEach(item => {
+            const row = createItemRow(item);
+            tableBody.appendChild(row);
+        });
+    } catch (error) {
+        loading.classList.add('hidden');
+        console.error('入庫待ちアイテム読み込みエラー:', error);
+        showToast('入庫待ちアイテムの読み込みに失敗しました', 'error');
+    }
+}
+
+// 置き場一覧読み込み
+async function loadLocations() {
+    try {
+        const response = await fetch('/api/inventory/locations/');
+        const locations = await response.json();
+
+        const select = document.querySelector('select[name="location_id"]');
+        const defaultOption = select.querySelector('option[value=""]');
+
+        // 既存のオプションをクリア（デフォルトオプション以外）
+        select.innerHTML = '';
+        select.appendChild(defaultOption);
+
+        locations.forEach(location => {
+            const option = document.createElement('option');
+            option.value = location.id;
+            option.textContent = location.name;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('置き場読み込みエラー:', error);
+    }
+}
+
+// アイテム行作成
+function createItemRow(item) {
+    const row = document.createElement('tr');
+    row.className = 'hover:bg-gray-50';
+
+    const orderNumber = item.purchase_order ? item.purchase_order.order_number : '-';
+    const supplier = item.purchase_order ? item.purchase_order.supplier : '-';
+    const shapeText = getShapeText(item.shape);
+    const dimensions = `${shapeText} ${item.diameter_mm}mm`;
+
+    row.innerHTML = `
+        <td class="px-4 py-3 text-sm font-medium text-gray-900">${orderNumber}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${supplier}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${item.material_name}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${dimensions}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${item.length_mm}mm</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${item.ordered_quantity}</td>
+        <td class="px-4 py-3 text-sm font-mono text-xs">${item.management_code}</td>
+        <td class="px-4 py-3">
+            <button onclick="showReceiveModal(${item.id})"
+                    class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors">
+                入庫確認
+            </button>
+        </td>
+    `;
+
+    return row;
+}
+
+// 形状テキスト取得
+function getShapeText(shape) {
+    const shapeMap = {
+        'round': '丸棒',
+        'hexagon': '六角棒',
+        'square': '角棒'
+    };
+    return shapeMap[shape] || shape;
+}
+
+// イベントリスナー設定
+function setupEventListeners() {
+    // 更新ボタン
+    document.getElementById('refreshBtn').addEventListener('click', loadPendingItems);
+
+    // モーダル閉じる
+    document.getElementById('closeReceiveModal').addEventListener('click', hideReceiveModal);
+    document.getElementById('cancelReceive').addEventListener('click', hideReceiveModal);
+    document.getElementById('closeCompleteModal').addEventListener('click', hideCompleteModal);
+
+    // フォーム送信
+    document.getElementById('receiveForm').addEventListener('submit', handleReceive);
+
+    // 検索
+    document.getElementById('searchBtn').addEventListener('click', searchItems);
+
+    // 現品票印刷
+    document.getElementById('printLabelBtn').addEventListener('click', printLabel);
+}
+
+// 入庫確認モーダル表示
+async function showReceiveModal(itemId) {
+    try {
+        // アイテム詳細取得
+        const response = await fetch(`/api/purchase-orders/pending/items/`);
+        const items = await response.json();
+        const item = items.find(i => i.id === itemId);
+
+        if (!item) {
+            showToast('アイテムが見つかりません', 'error');
+            return;
+        }
+
+        // 発注情報取得
+        const orderResponse = await fetch(`/api/purchase-orders/${item.purchase_order_id}`);
+        const order = await orderResponse.json();
+
+        // モーダル内容設定
+        document.getElementById('receiveItemId').value = itemId;
+
+        const itemInfo = document.getElementById('itemInfo');
+        itemInfo.innerHTML = `
+            <div>
+                <dt class="font-medium text-gray-500">発注番号</dt>
+                <dd class="text-gray-900">${order.order_number}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">仕入先</dt>
+                <dd class="text-gray-900">${order.supplier}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">材料名</dt>
+                <dd class="text-gray-900">${item.material_name}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">形状・寸法</dt>
+                <dd class="text-gray-900">${getShapeText(item.shape)} ${item.diameter_mm}mm</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">長さ</dt>
+                <dd class="text-gray-900">${item.length_mm}mm</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">発注数量</dt>
+                <dd class="text-gray-900">${item.ordered_quantity}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">管理コード</dt>
+                <dd class="text-gray-900 font-mono text-xs">${item.management_code}</dd>
+            </div>
+        `;
+
+        // 発注数量をデフォルト値に設定
+        document.querySelector('input[name="received_quantity"]').value = item.ordered_quantity;
+
+        document.getElementById('receiveModal').classList.remove('hidden');
+    } catch (error) {
+        console.error('入庫確認モーダル表示エラー:', error);
+        showToast('入庫確認画面の表示に失敗しました', 'error');
+    }
+}
+
+// 入庫確認モーダル非表示
+function hideReceiveModal() {
+    document.getElementById('receiveModal').classList.add('hidden');
+    document.getElementById('receiveForm').reset();
+}
+
+// 入庫完了モーダル非表示
+function hideCompleteModal() {
+    document.getElementById('receiveCompleteModal').classList.add('hidden');
+}
+
+// 入庫処理
+async function handleReceive(event) {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    const itemId = formData.get('item_id');
+    const receiveData = {
+        lot_number: formData.get('lot_number'),
+        received_quantity: parseInt(formData.get('received_quantity')),
+        location_id: formData.get('location_id') || null,
+        notes: formData.get('notes') || null
+    };
+
+    try {
+        const response = await fetch(`/api/purchase-orders/items/${itemId}/receive/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(receiveData)
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+
+            // 完了モーダル表示
+            showCompleteModal(result);
+
+            // アイテム一覧更新
+            hideReceiveModal();
+            loadPendingItems();
+
+        } else {
+            const error = await response.json();
+            showToast(error.detail || '入庫確認に失敗しました', 'error');
+        }
+    } catch (error) {
+        console.error('入庫確認エラー:', error);
+        showToast('入庫確認に失敗しました', 'error');
+    }
+}
+
+// 入庫完了モーダル表示
+function showCompleteModal(result) {
+    const completeInfo = document.getElementById('completeInfo');
+    completeInfo.innerHTML = `
+        <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+                <span class="font-medium text-gray-500">ロットID:</span>
+                <span class="text-gray-900">${result.lot_id}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="font-medium text-gray-500">アイテムID:</span>
+                <span class="text-gray-900">${result.item_id}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="font-medium text-gray-500">管理コード:</span>
+                <span class="text-gray-900 font-mono text-xs">${result.management_code}</span>
+            </div>
+        </div>
+    `;
+
+    // 現品票印刷用にデータを保存
+    window.currentReceiveResult = result;
+
+    document.getElementById('receiveCompleteModal').classList.remove('hidden');
+}
+
+// 現品票印刷
+async function printLabel() {
+    if (!window.currentReceiveResult) {
+        showToast('印刷データが見つかりません', 'error');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/labels/print/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                item_id: window.currentReceiveResult.item_id,
+                format: 'label' // または 'a4'
+            })
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `label_${window.currentReceiveResult.management_code}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            showToast('現品票を印刷しました', 'success');
+        } else {
+            showToast('現品票の印刷に失敗しました', 'error');
+        }
+    } catch (error) {
+        console.error('現品票印刷エラー:', error);
+        showToast('現品票の印刷に失敗しました', 'error');
+    }
+}
+
+// 検索機能
+function searchItems() {
+    const supplierFilter = document.getElementById('supplierFilter').value.toLowerCase();
+    const materialFilter = document.getElementById('materialFilter').value.toLowerCase();
+
+    const rows = document.querySelectorAll('#itemsTableBody tr');
+
+    rows.forEach(row => {
+        const supplier = row.cells[1].textContent.toLowerCase();
+        const material = row.cells[2].textContent.toLowerCase();
+
+        const matchSupplier = !supplierFilter || supplier.includes(supplierFilter);
+        const matchMaterial = !materialFilter || material.includes(materialFilter);
+
+        if (matchSupplier && matchMaterial) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

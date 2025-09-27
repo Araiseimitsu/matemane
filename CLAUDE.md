@@ -112,8 +112,8 @@ pytest --cov=src
 
 ### データベース層
 - `src/db/models.py`: SQLAlchemyモデル定義
-  - 8つのメインテーブル: User, Material, Density, Location, Lot, Item, Movement, AuditLog
-  - Enumクラス: UserRole, MaterialShape, MovementType
+  - 10つのメインテーブル: User, Material, Density, Location, Lot, Item, Movement, PurchaseOrder, PurchaseOrderItem, AuditLog
+  - Enumクラス: UserRole, MaterialShape, MovementType, PurchaseOrderStatus, PurchaseOrderItemStatus
   - 外部キー関係と制約が完全定義済み
 - `src/db/__init__.py`: データベース接続・セッション管理
   - 接続プール設定（pool_pre_ping=True, pool_recycle=300）
@@ -121,19 +121,19 @@ pytest --cov=src
   - create_tables() 起動時テーブル作成関数
 - `reset_db.py`: 開発環境用のDB完全リセットスクリプト
   - 安全確認付きDB削除・再作成
-  - 初期データ投入（ユーザー4名、置き場250箇所、サンプル材料4種、ロット12件、在庫アイテム25件）
-  - UUID管理コード自動生成によるサンプル在庫データ
+  - 初期データ投入（ユーザー4名、置き場250箇所、サンプル材料4種、ロット12件、在庫アイテム25件、発注3件）
+  - UUID管理コード自動生成によるサンプル在庫・発注データ
 
 ### API層
 - `src/api/`: FastAPI ルーター
-  - 各機能毎にモジュール分割（materials, inventory, movements, labels, auth）
+  - 各機能毎にモジュール分割（materials, inventory, movements, labels, auth, purchase_orders, density_presets）
   - RESTful APIエンドポイント
 
 ### テンプレート層
 - `src/templates/`: Jinja2テンプレート
   - `base.html`: 共通レイアウト（ナビゲーション、スタイル、トースト通知、認証チェック）
   - `dashboard.html`: ダッシュボード画面（在庫一覧表示、UUID検索、管理コードコピー機能）
-  - 各機能画面のテンプレート（materials, inventory, movements, scan, login）
+  - 各機能画面のテンプレート（materials, inventory, movements, scan, login, purchase_orders, receiving, settings）
 
 ### ユーティリティ
 - `src/utils/auth.py`: 認証関連ユーティリティ（実装済みだが現在はスキップ可能）
@@ -148,15 +148,19 @@ pytest --cov=src
 - **データベース初期化**: 起動時自動テーブル作成、リセットスクリプト
 
 ### 実装済み（新規追加）
-- **在庫管理API**: `src/api/inventory.py` - 完全実装済み（一覧取得、検索、サマリー、低在庫検知）
+- **在庫管理API**: `src/api/inventory.py` - 完全実装済み（一覧取得、検索、サマリー、低在庫検知、置き場一覧）
+- **発注管理API**: `src/api/purchase_orders.py` - 完全実装済み（発注作成、一覧、詳細、入庫確認）
+- **比重プリセットAPI**: `src/api/density_presets.py` - 完全実装済み（比重設定管理）
 - **静的ファイル**: `src/static/js/` - JavaScript API クライアント、ユーティリティ実装済み
 - **ダッシュボード在庫表示**: 在庫一覧、UUID検索、管理コードコピー機能
+- **発注管理画面**: 発注作成・一覧・詳細表示画面
+- **入庫確認画面**: 入庫処理・ロット登録画面
 
 ### 実装待ち（スタブのみ）
-- **材料管理API**: `src/api/materials.py`
-- **入出庫管理API**: `src/api/movements.py`
-- **ラベル印刷API**: `src/api/labels.py`
-- **その他のフロントエンド機能**: 材料管理、入出庫管理のJavaScript実装
+- **材料管理API**: `src/api/materials.py` - 完全実装済み（※更新が必要）
+- **入出庫管理API**: `src/api/movements.py` - スタブのみ
+- **ラベル印刷API**: `src/api/labels.py` - スタブのみ
+- **その他のフロントエンド機能**: 入出庫管理のJavaScript実装
 - **テスト**: `tests/` ディレクトリ未作成
 
 ## 主要機能要件
@@ -165,6 +169,12 @@ pytest --cov=src
 - 材質・断面形状（丸/六角/角）・寸法管理
 - 比重による本数⇔重量の相互換算
 - ロット単位（束）での管理
+
+### 発注管理
+- 発注から入庫までの一元管理
+- 事前管理コード生成（UUID）
+- 新規材料の自動登録
+- 複数ロット対応と現品票印刷
 
 ### 入出庫管理
 - QRコードスキャンによる高速呼出
@@ -189,12 +199,15 @@ pytest --cov=src
 ### データベース設計
 重要なテーブルとリレーション:
 - `materials`: 材料マスタ（材質・形状・寸法・比重）
-- `lots`: ロット管理（束単位、supplier情報）
+- `lots`: ロット管理（束単位、supplier情報、発注アイテム関連付け）
 - `items`: アイテム管理（UUID管理コード、現在本数・置き場）
 - `movements`: 入出庫履歴（タイプ別、指示書番号、監査情報）
 - `locations`: 置き場（1〜250初期登録、ユーザー管理可能）
 - `densities`: 比重履歴（材質別、効力期間管理）
 - `users`: ユーザー管理（ロール別権限）
+- `purchase_orders`: 発注管理（発注番号、仕入先、状態管理）
+- `purchase_order_items`: 発注アイテム（材料情報、数量、管理コード事前生成）
+- `density_presets`: 比重プリセット（材質別の標準比重値）
 - `audit_logs`: 操作監査（誰が・いつ・何を変更したか）
 
 ### 重量・本数換算ロジック
@@ -206,8 +219,10 @@ pytest --cov=src
 
 ### API設計（FastAPI）
 - 認証: `POST /api/auth/login`（実装済みだが現在は不要）
-- 材料: `GET/POST /api/materials/`（実装待ち）
-- 在庫: `GET /api/inventory/`、`GET /api/inventory/summary/`、`GET /api/inventory/search/{code}`、`GET /api/inventory/low-stock/`（実装済み）
+- 材料: `GET/POST /api/materials/`（実装済み）
+- 在庫: `GET /api/inventory/`、`GET /api/inventory/summary/`、`GET /api/inventory/search/{code}`、`GET /api/inventory/low-stock/`、`GET /api/inventory/locations/`（実装済み）
+- 発注: `GET/POST /api/purchase-orders/`、`GET /api/purchase-orders/pending/items/`、`POST /api/purchase-orders/items/{item_id}/receive/`（実装済み）
+- 比重プリセット: `GET/POST /api/density-presets/`（実装済み）
 - 入出庫: `POST /api/movements/{type}`（実装待ち）
 - ラベル: `POST /api/labels/print`（実装待ち）
 
@@ -215,8 +230,11 @@ pytest --cov=src
 - `/`: ダッシュボード画面
 - `/materials`: 材料管理画面
 - `/inventory`: 在庫管理画面
+- `/purchase-orders`: 発注管理画面
+- `/receiving`: 入庫確認画面
 - `/movements`: 入出庫管理画面
 - `/scan`: QRスキャン画面
+- `/settings`: 設定画面
 - `/login`: ログイン画面（現在は不要）
 
 ### フロントエンド
@@ -254,13 +272,14 @@ pytest --cov=src
 
 ## 開発優先順位
 新機能実装時の推奨順序:
-1. **材料管理機能** (`src/api/materials.py` を実装) ← 次の実装対象
+1. ✅ **材料管理機能** (`src/api/materials.py` を実装) ← 完了済み
 2. ✅ **在庫管理機能** (`src/api/inventory.py` を実装) ← 完了済み
-3. **入出庫管理機能** (`src/api/movements.py` を実装)
+3. ✅ **発注管理機能** (`src/api/purchase_orders.py` を実装) ← 完了済み
 4. ✅ **静的ファイル管理** (`src/static/` ディレクトリ作成) ← 完了済み
-5. **QRスキャン機能** (フロントエンド JavaScript)
-6. **ラベル印刷機能** (`src/api/labels.py` を実装)
-7. **テスト実装** (`tests/` ディレクトリ作成)
+5. **入出庫管理機能** (`src/api/movements.py` を実装) ← 次の実装対象
+6. **QRスキャン機能** (フロントエンド JavaScript)
+7. **ラベル印刷機能** (`src/api/labels.py` を実装)
+8. **テスト実装** (`tests/` ディレクトリ作成)
 
 ## デフォルトユーザー（reset_db.py実行後）
 ※現在ログイン機能は不要ですが、データベースには以下のユーザーが作成されます：
@@ -291,6 +310,26 @@ pytest --cov=src
 - 再利用可能なUIコンポーネントの作成
 - 統一されたスタイリングルールの適用
 - Jinja2マクロとTailwindクラスの組み合わせによる効率的な開発
+
+## 発注管理ワークフロー
+
+### 1. 発注段階 (`/purchase-orders`)
+- 材料情報の入力（既存材料選択または新規材料登録）
+- 数量・単価・納期などの発注情報入力
+- UUID管理コードの事前生成
+- 発注状態の追跡（pending/partial/completed/cancelled）
+
+### 2. 入庫確認段階 (`/receiving`)
+- 発注済み材料の入庫待ちアイテム一覧表示
+- ロット番号の入力と実際の入庫数量確認
+- 新規材料の場合は自動的に材料マスタに登録
+- ロット・アイテム・在庫データの自動生成
+- 現品票の即座印刷（ラベル印刷API連携）
+
+### 3. データ連携
+- 発注アイテム → ロット → 在庫アイテムの自動連携
+- 発注状態の自動更新（一部入庫/完了判定）
+- 材料重複防止（同一仕様材料の自動検出）
 
 [byterover-mcp]
 

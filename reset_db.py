@@ -7,7 +7,7 @@
 
 import sys
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # プロジェクトルートをPythonパスに追加
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -15,7 +15,10 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 from src.config import settings
-from src.db.models import Base, User, Material, Location, Lot, Item, MaterialShape, UserRole, DensityPreset
+from src.db.models import (
+    Base, User, Material, Location, Lot, Item, MaterialShape, UserRole, DensityPreset,
+    PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, PurchaseOrderItemStatus
+)
 from src.utils.auth import get_password_hash
 from src.db import SessionLocal
 
@@ -422,6 +425,161 @@ def insert_initial_data():
 
     return True
 
+def insert_sample_purchase_orders():
+    """サンプル発注データを投入"""
+    print("サンプル発注データを投入中...")
+
+    try:
+        db = SessionLocal()
+
+        # ユーザー取得（発注者として使用）
+        admin_user = db.query(User).filter(User.username == "admin").first()
+        purchase_user = db.query(User).filter(User.username == "purchase").first()
+
+        if not admin_user or not purchase_user:
+            print("エラー: ユーザーデータが見つかりません")
+            return False
+
+        # 材料データ取得
+        s45c = db.query(Material).filter(Material.name == "S45C").first()
+        sus304 = db.query(Material).filter(Material.name == "SUS304").first()
+
+        if not s45c or not sus304:
+            print("エラー: 材料データが見つかりません")
+            return False
+
+        # サンプル発注作成
+        sample_orders = [
+            {
+                "order": PurchaseOrder(
+                    order_number="PO-2025-001",
+                    supplier="東京鋼材株式会社",
+                    order_date=datetime.now() - timedelta(days=10),
+                    expected_delivery_date=datetime.now() + timedelta(days=5),
+                    status=PurchaseOrderStatus.PENDING,
+                    notes="定期発注分",
+                    total_amount=150000.0,
+                    created_by=purchase_user.id
+                ),
+                "items": [
+                    PurchaseOrderItem(
+                        material_id=s45c.id,
+                        material_name="S45C",
+                        shape=MaterialShape.ROUND,
+                        diameter_mm=20.0,
+                        length_mm=3000,
+                        density=7.85,
+                        ordered_quantity=50,
+                        unit_price=2500.0,
+                        is_new_material=False,
+                        status=PurchaseOrderItemStatus.PENDING
+                    ),
+                    PurchaseOrderItem(
+                        material_id=s45c.id,
+                        material_name="S45C",
+                        shape=MaterialShape.ROUND,
+                        diameter_mm=25.0,
+                        length_mm=4000,
+                        density=7.85,
+                        ordered_quantity=30,
+                        unit_price=3500.0,
+                        is_new_material=False,
+                        status=PurchaseOrderItemStatus.PENDING
+                    )
+                ]
+            },
+            {
+                "order": PurchaseOrder(
+                    order_number="PO-2025-002",
+                    supplier="関西スチール工業",
+                    order_date=datetime.now() - timedelta(days=7),
+                    expected_delivery_date=datetime.now() + timedelta(days=3),
+                    status=PurchaseOrderStatus.PENDING,
+                    notes="SUS304材料の緊急発注",
+                    total_amount=200000.0,
+                    created_by=admin_user.id
+                ),
+                "items": [
+                    PurchaseOrderItem(
+                        material_id=sus304.id,
+                        material_name="SUS304",
+                        shape=MaterialShape.ROUND,
+                        diameter_mm=15.0,
+                        length_mm=2000,
+                        density=8.03,
+                        ordered_quantity=40,
+                        unit_price=4000.0,
+                        is_new_material=False,
+                        status=PurchaseOrderItemStatus.PENDING
+                    ),
+                    PurchaseOrderItem(
+                        material_id=sus304.id,
+                        material_name="SUS304",
+                        shape=MaterialShape.HEXAGON,
+                        diameter_mm=12.0,
+                        length_mm=3000,
+                        density=8.03,
+                        ordered_quantity=25,
+                        unit_price=4800.0,
+                        is_new_material=False,
+                        status=PurchaseOrderItemStatus.PENDING
+                    )
+                ]
+            },
+            {
+                "order": PurchaseOrder(
+                    order_number="PO-2025-003",
+                    supplier="大阪金属商事",
+                    order_date=datetime.now() - timedelta(days=3),
+                    expected_delivery_date=datetime.now() + timedelta(days=7),
+                    status=PurchaseOrderStatus.PENDING,
+                    notes="新規材料A6061の試験発注",
+                    total_amount=80000.0,
+                    created_by=purchase_user.id
+                ),
+                "items": [
+                    PurchaseOrderItem(
+                        material_id=None,  # 新規材料
+                        material_name="A6061",
+                        shape=MaterialShape.SQUARE,
+                        diameter_mm=30.0,
+                        length_mm=2500,
+                        density=2.70,
+                        ordered_quantity=20,
+                        unit_price=4000.0,
+                        is_new_material=True,
+                        status=PurchaseOrderItemStatus.PENDING
+                    )
+                ]
+            }
+        ]
+
+        # 発注データを投入
+        for order_data in sample_orders:
+            # 発注を追加
+            db.add(order_data["order"])
+            db.flush()  # IDを取得
+
+            # 発注アイテムを追加
+            for item in order_data["items"]:
+                item.purchase_order_id = order_data["order"].id
+                db.add(item)
+
+        db.commit()
+
+        print("サンプル発注データの投入が完了しました")
+        print(f"- 発注: {db.query(PurchaseOrder).count()}件")
+        print(f"- 発注アイテム: {db.query(PurchaseOrderItem).count()}件")
+
+    except SQLAlchemyError as e:
+        print(f"サンプル発注データ投入エラー: {e}")
+        db.rollback()
+        return False
+    finally:
+        db.close()
+
+    return True
+
 def main():
     """メイン処理"""
     import sys
@@ -464,6 +622,11 @@ def main():
     # 4. 初期データ投入
     if not insert_initial_data():
         print("初期データ投入に失敗しました")
+        return
+
+    # 5. サンプル発注データ投入
+    if not insert_sample_purchase_orders():
+        print("サンプル発注データ投入に失敗しました")
         return
 
     end_time = datetime.now()

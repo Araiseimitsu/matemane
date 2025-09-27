@@ -21,6 +21,17 @@ class MovementType(enum.Enum):
     IN = "in"
     OUT = "out"
 
+class PurchaseOrderStatus(enum.Enum):
+    PENDING = "pending"      # 発注済み（入庫待ち）
+    PARTIAL = "partial"      # 一部入庫
+    COMPLETED = "completed"  # 完了
+    CANCELLED = "cancelled"  # キャンセル
+
+class PurchaseOrderItemStatus(enum.Enum):
+    PENDING = "pending"      # 入庫待ち
+    RECEIVED = "received"    # 入庫済み
+    CANCELLED = "cancelled"  # キャンセル
+
 class User(Base):
     __tablename__ = "users"
 
@@ -84,6 +95,7 @@ class Lot(Base):
     id = Column(Integer, primary_key=True, index=True)
     lot_number = Column(String(100), unique=True, nullable=False, comment="ロット番号")
     material_id = Column(Integer, ForeignKey("materials.id"), nullable=False)
+    purchase_order_item_id = Column(Integer, ForeignKey("purchase_order_items.id"), nullable=True, comment="発注アイテムID")
     length_mm = Column(Integer, nullable=False, comment="長さ（mm）")
     initial_quantity = Column(Integer, nullable=False, comment="初期本数")
     supplier = Column(String(200), comment="仕入先")
@@ -95,6 +107,7 @@ class Lot(Base):
 
     # リレーション
     material = relationship("Material", back_populates="lots")
+    purchase_order_item = relationship("PurchaseOrderItem", back_populates="lots")
     items = relationship("Item", back_populates="lot")
 
 class Item(Base):
@@ -140,6 +153,50 @@ class DensityPreset(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+class PurchaseOrder(Base):
+    __tablename__ = "purchase_orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    order_number = Column(String(50), unique=True, nullable=False, comment="発注番号")
+    supplier = Column(String(200), nullable=False, comment="仕入先")
+    order_date = Column(DateTime(timezone=True), nullable=False, comment="発注日")
+    expected_delivery_date = Column(DateTime(timezone=True), comment="納期予定日")
+    status = Column(Enum(PurchaseOrderStatus), nullable=False, default=PurchaseOrderStatus.PENDING, comment="発注状態")
+    notes = Column(Text, comment="備考")
+    total_amount = Column(Float, comment="合計金額")
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # リレーション
+    creator = relationship("User")
+    items = relationship("PurchaseOrderItem", back_populates="purchase_order")
+
+class PurchaseOrderItem(Base):
+    __tablename__ = "purchase_order_items"
+
+    id = Column(Integer, primary_key=True, index=True)
+    purchase_order_id = Column(Integer, ForeignKey("purchase_orders.id"), nullable=False)
+    material_id = Column(Integer, ForeignKey("materials.id"), nullable=True, comment="材料ID（新規材料の場合はNULL）")
+    material_name = Column(String(100), nullable=False, comment="材料名")
+    shape = Column(Enum(MaterialShape), nullable=False, comment="断面形状")
+    diameter_mm = Column(Float, nullable=False, comment="直径または一辺の長さ（mm）")
+    length_mm = Column(Integer, nullable=False, comment="長さ（mm）")
+    density = Column(Float, nullable=False, comment="比重（g/cm³）")
+    ordered_quantity = Column(Integer, nullable=False, comment="発注数量")
+    received_quantity = Column(Integer, default=0, comment="入庫数量")
+    unit_price = Column(Float, comment="単価")
+    management_code = Column(CHAR(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()), comment="事前生成UUID管理コード")
+    is_new_material = Column(Boolean, default=False, comment="新規材料フラグ")
+    status = Column(Enum(PurchaseOrderItemStatus), nullable=False, default=PurchaseOrderItemStatus.PENDING, comment="アイテム状態")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # リレーション
+    purchase_order = relationship("PurchaseOrder", back_populates="items")
+    material = relationship("Material")
+    lots = relationship("Lot", back_populates="purchase_order_item")
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"

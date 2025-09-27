@@ -349,3 +349,17 @@ async def get_low_stock_items(
         })
 
     return {"threshold": threshold, "items": result}
+
+@router.get("/locations/", response_model=List[LocationInfo])
+async def get_locations(
+    is_active: Optional[bool] = Query(True, description="有効な置き場のみ取得"),
+    db: Session = Depends(get_db)
+):
+    """置き場一覧取得"""
+    query = db.query(Location)
+
+    if is_active is not None:
+        query = query.filter(Location.is_active == is_active)
+
+    locations = query.order_by(Location.name).all()
+    return locations
