@@ -230,12 +230,15 @@ async function initializePage() {
 // 初期データの読み込み
 async function loadInitialData() {
     try {
-        const [materialsData] = await Promise.all([
-            APIClient.getMaterials()
+        const [materialsData, locationsData] = await Promise.all([
+            APIClient.getMaterials(),
+            APIClient.getLocations()
         ]);
 
         materials = materialsData;
+        locations = locationsData;
         populateMaterialFilter();
+        populateLocationFilter();
     } catch (error) {
         console.error('初期データ読み込みエラー:', error);
     }
@@ -250,9 +253,24 @@ function populateMaterialFilter() {
         if (material.is_active) {
             const option = document.createElement('option');
             option.value = material.id;
-            option.textContent = `${material.name} (${material.shape} φ${material.diameter_mm})`;
+            const shapeText = material.shape === 'round' ? '丸棒' :
+                            material.shape === 'hexagon' ? '六角棒' : '角棒';
+            option.textContent = `${material.name} (${shapeText} φ${material.diameter_mm}mm)`;
             select.appendChild(option);
         }
+    });
+}
+
+// 置き場フィルタの設定
+function populateLocationFilter() {
+    const select = document.getElementById('locationFilter');
+    select.innerHTML = '<option value="">すべて</option>';
+
+    locations.forEach(location => {
+        const option = document.createElement('option');
+        option.value = location.id;
+        option.textContent = location.name;
+        select.appendChild(option);
     });
 }
 
@@ -290,7 +308,7 @@ function setupEventListeners() {
 }
 
 // 在庫データの読み込み
-async function loadInventory() {
+async function loadInventory(params = {}) {
     try {
         const loadingIndicator = document.getElementById('loadingIndicator');
         const noDataIndicator = document.getElementById('noDataIndicator');
@@ -299,7 +317,7 @@ async function loadInventory() {
         loadingIndicator.classList.remove('hidden');
         noDataIndicator.classList.add('hidden');
 
-        inventory = await APIClient.getInventory();
+        inventory = await APIClient.getInventory(params);
 
         if (inventory.length === 0) {
             noDataIndicator.classList.remove('hidden');
@@ -390,8 +408,35 @@ function updateItemCount() {
 
 // フィルタ機能
 function filterInventory() {
-    // 実際の実装では、APIにフィルタパラメータを送信
-    loadInventory();
+    const params = {};
+
+    // 材料フィルタ
+    const materialId = document.getElementById('materialFilter').value;
+    if (materialId) {
+        params.material_id = parseInt(materialId);
+    }
+
+    // 置き場フィルタ
+    const locationId = document.getElementById('locationFilter').value;
+    if (locationId) {
+        params.location_id = parseInt(locationId);
+    }
+
+    // 在庫状況フィルタ
+    const stockFilter = document.getElementById('stockFilter').value;
+    if (stockFilter !== '') {
+        params.has_stock = stockFilter === 'true';
+    }
+
+    // 管理コード検索は別途処理（検索時に他のフィルタをクリア）
+    const codeSearch = document.getElementById('codeSearch').value.trim();
+    if (codeSearch) {
+        // 管理コード検索時は他のフィルタを無視
+        searchByManagementCode(codeSearch);
+        return;
+    }
+
+    loadInventory(params);
 }
 
 // フィルタリセット
@@ -400,7 +445,7 @@ function resetFilters() {
     document.getElementById('materialFilter').value = '';
     document.getElementById('locationFilter').value = '';
     document.getElementById('stockFilter').value = '';
-    loadInventory();
+    loadInventory(); // パラメータなしで全件取得
 }
 
 // 管理コード検索

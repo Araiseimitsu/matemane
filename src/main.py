@@ -101,10 +101,6 @@ async def movements_page(request: Request):
     """入出庫管理画面"""
     return templates.TemplateResponse("movements.html", {"request": request})
 
-@app.get("/scan")
-async def scan_page(request: Request):
-    """QRコードスキャンページ"""
-    return templates.TemplateResponse("scan.html", {"request": request})
 
 
 @app.get("/purchase-orders")
@@ -125,6 +121,15 @@ async def settings_page(request: Request):
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
     """404エラーハンドラー"""
+    # APIエンドポイントの場合はJSONレスポンスを返す
+    if request.url.path.startswith("/api/"):
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=404,
+            content={"detail": "指定されたリソースが見つかりません"}
+        )
+
+    # 通常のページの場合はHTMLテンプレートを返す
     return templates.TemplateResponse(
         "error.html",
         {"request": request, "error_code": 404, "error_message": "ページが見つかりません"}

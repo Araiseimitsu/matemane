@@ -3,456 +3,347 @@
 {% block title %}入出庫管理 - 材料管理システム{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-    <!-- ページヘッダー -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">入出庫管理</h1>
-                <p class="mt-2 text-gray-600">材料の入庫・出庫を管理します</p>
-            </div>
-            <div class="flex space-x-3">
-                <button id="newLotBtn" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1">
-                    <i class="fas fa-plus mr-2"></i>新規ロット作成
-                </button>
-                <button id="newItemBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
-                    <i class="fas fa-box mr-2"></i>新規アイテム作成
-                </button>
+<div class="min-h-screen bg-gray-50">
+    <!-- ヘッダー -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="px-4 py-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">入出庫管理</h1>
+                    <p class="text-gray-600 mt-1">在庫アイテムの入庫・出庫を処理します</p>
+                </div>
+                <div class="flex space-x-4">
+                    <button id="qrScanBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h2M4 4h4m4 0h2m0 0h.01M4 20h4m12 0h2m-6 0h2M4 8h2.5"></path>
+                        </svg>
+                        QRスキャン
+                    </button>
+                    <button id="refreshBtn" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        更新
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- クイックアクション -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <!-- 入庫操作 -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center mb-4">
-                <div class="p-2 bg-green-50 rounded-lg mr-3">
-                    <i class="fas fa-arrow-down text-green-600 text-lg"></i>
+    <!-- コンテンツエリア -->
+    <div class="px-4 py-6">
+        <!-- 入出庫処理カード -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- 入庫処理 -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center mb-4">
+                    <div class="p-2 bg-green-50 rounded-lg mr-3">
+                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900">入庫処理</h3>
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900">入庫処理</h3>
-            </div>
 
-            <form id="inForm" class="space-y-4">
-                                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">対象アイテム</label>
+                <form id="inForm" class="space-y-4">
                     <input type="hidden" name="item_id">
-                    <div class="space-y-2">
-                        <div id="inSelectedItemSummary" class="p-3 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-500">
-                            アイテムが選択されていません
-                        </div>
-                        <div class="flex space-x-2">
-                            <button type="button" id="inSelectItemBtn" class="flex-1 inline-flex items-center justify-center px-4 py-2.5 border border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
-                                <i class="fas fa-search mr-2"></i>アイテムを検索
-                            </button>
-                            <button type="button" id="inClearItemBtn" class="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
-                                <i class="fas fa-times mr-2"></i>クリア
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">入庫数量</label>
-                    <input type="number" name="quantity" min="1" step="1"
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="本数を入力 (任意)">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">入庫重量 (kg)</label>
-                    <input type="number" name="weight_kg" min="0.001" step="0.001"
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="重量を入力 (任意)">
-                    <p class="mt-1 text-xs text-gray-500">数量または重量のいずれかを入力してください。</p>
-                </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
-                    <textarea name="notes" rows="2"
-                              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="入庫に関する備考"></textarea>
-                </div>
-
-                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1">
-                    <i class="fas fa-arrow-down mr-2"></i>入庫実行
-                </button>
-            </form>
-        </div>
-
-        <!-- 出庫操作 -->
-        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div class="flex items-center mb-4">
-                <div class="p-2 bg-red-50 rounded-lg mr-3">
-                    <i class="fas fa-arrow-up text-red-600 text-lg"></i>
-                </div>
-                <h3 class="text-lg font-semibold text-gray-900">出庫処理</h3>
-            </div>
-
-            <form id="outForm" class="space-y-4">
-                                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">対象アイテム</label>
-                    <input type="hidden" name="item_id">
-                    <div class="space-y-2">
-                        <div id="outSelectedItemSummary" class="p-3 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-500">
-                            アイテムが選択されていません
-                        </div>
-                        <div class="flex space-x-2">
-                            <button type="button" id="outSelectItemBtn" class="flex-1 inline-flex items-center justify-center px-4 py-2.5 border border-blue-500 text-blue-600 rounded-lg hover:bg-blue-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
-                                <i class="fas fa-search mr-2"></i>アイテムを検索
-                            </button>
-                            <button type="button" id="outClearItemBtn" class="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
-                                <i class="fas fa-times mr-2"></i>クリア
-                            </button>
+                    <!-- アイテム選択 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">対象アイテム</label>
+                        <div class="space-y-2">
+                            <div id="inSelectedItemSummary" class="p-3 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-500">
+                                アイテムが選択されていません
+                            </div>
+                            <div class="flex space-x-2">
+                                <button type="button" id="inSelectItemBtn" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                    </svg>
+                                    アイテム検索
+                                </button>
+                                <button type="button" id="inClearItemBtn" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                                    クリア
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">出庫数量</label>
-                    <input type="number" name="quantity" min="1" step="1"
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="本数を入力 (任意)">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">出庫重量 (kg)</label>
-                    <input type="number" name="weight_kg" min="0.001" step="0.001"
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="重量を入力 (任意)">
-                    <p class="mt-1 text-xs text-gray-500">数量または重量のいずれかを入力してください。</p>
-                </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
-                    <textarea name="notes" rows="2"
-                              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="出庫に関する備考"></textarea>
-                </div>
-
-                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1">
-                    <i class="fas fa-arrow-up mr-2"></i>出庫実行
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- ロット管理セクション -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-900">ロット管理</h3>
-                <div class="flex space-x-3">
-                    <select id="materialFilter" class="w-40 px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
-                        <option value="">すべての材料</option>
-                        <!-- 動的に材料を読み込み -->
-                    </select>
-                    <input type="text" id="lotSearchInput" placeholder="ロット番号・仕入先で検索"
-                           class="w-56 px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
-                </div>
-            </div>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            管理コード
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            材料
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            ロット
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            寸法・長さ
-                        </th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            現在庫(本)
-                        </th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            重量(kg)
-                        </th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            置き場
-                        </th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            操作
-                        </th>
-                    </tr>
-                </thead>
-                <tbody id="lotsTableBody" class="bg-white divide-y divide-gray-200">
-                    <!-- データはJavaScriptで動的に生成 -->
-                </tbody>
-            </table>
-        </div>
-
-        <!-- ローディング表示 -->
-        <div id="lotsLoadingIndicator" class="text-center py-12">
-            <div class="inline-flex items-center">
-                <div class="spinner mr-3"></div>
-                <span class="text-gray-600">ロットデータを読み込んでいます...</span>
-            </div>
-        </div>
-
-        <!-- データなし表示 -->
-        <div id="lotsNoDataIndicator" class="hidden text-center py-12">
-            <div class="text-gray-400 mb-4">
-                <i class="fas fa-box text-4xl"></i>
-            </div>
-            <p class="text-gray-600 font-medium">ロットがありません</p>
-            <p class="text-sm text-gray-500 mt-1">上記の「新規ロット作成」ボタンからロットを作成してください</p>
-        </div>
-    </div>
-
-    <!-- 入出庫履歴 -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-900">入出庫履歴</h3>
-                <div class="flex space-x-3">
-                    <select id="typeFilter" class="w-32 px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
-                        <option value="">すべて</option>
-                        <option value="in">入庫のみ</option>
-                        <option value="out">出庫のみ</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            処理日時
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            種別
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            管理コード
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            材料・ロット
-                        </th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            数量
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            備考
-                        </th>
-                    </tr>
-                </thead>
-                <tbody id="movementsTableBody" class="bg-white divide-y divide-gray-200">
-                    <!-- データはJavaScriptで動的に生成 -->
-                </tbody>
-            </table>
-        </div>
-
-        <!-- ローディング表示 -->
-        <div id="loadingIndicator" class="text-center py-12">
-            <div class="inline-flex items-center">
-                <div class="spinner mr-3"></div>
-                <span class="text-gray-600">履歴データを読み込んでいます...</span>
-            </div>
-        </div>
-
-        <!-- データなし表示 -->
-        <div id="noDataIndicator" class="hidden text-center py-12">
-            <div class="text-gray-400 mb-4">
-                <i class="fas fa-history text-4xl"></i>
-            </div>
-            <p class="text-gray-600 font-medium">入出庫履歴がありません</p>
-            <p class="text-sm text-gray-500 mt-1">上記のフォームから入出庫処理を行ってください</p>
-        </div>
-    </div>
-</div>
-
-<!-- ロット作成モーダル -->
-<!-- アイテム検索モーダル -->
-<div id="itemSearchModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
-                <h3 id="itemSearchModalTitle" class="text-lg font-semibold text-gray-900">アイテムを検索</h3>
-                <button type="button" id="itemSearchCloseBtn" class="text-gray-500 hover:text-gray-700 transition-colors">
-                    <i class="fas fa-times text-lg"></i>
-                </button>
-            </div>
-            <div class="flex-1 overflow-y-auto">
-                <div class="p-6 space-y-4">
-                    <form id="itemSearchForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- 数量・重量入力 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">材料名</label>
-                            <input type="text" name="material_name" placeholder="例: SUS"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                            <label class="block text-sm font-medium text-gray-700 mb-2">入庫数量（本）</label>
+                            <input type="number" name="quantity" min="1" step="1"
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="本数を入力">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">径 (mm)</label>
-                            <input type="number" name="diameter_mm" min="0" step="1" placeholder="例: 10"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                            <label class="block text-sm font-medium text-gray-700 mb-2">入庫重量（kg）</label>
+                            <input type="number" name="weight_kg" min="0.001" step="0.001"
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="重量を入力">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">ロット番号</label>
-                            <input type="text" name="lot_number" placeholder="ロット番号を入力"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                        </div>
-                        <div class="flex items-end space-x-2">
-                            <button type="submit" class="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
-                                <i class="fas fa-search mr-2"></i>検索
-                            </button>
-                            <button type="button" id="itemSearchResetBtn" class="inline-flex items-center justify-center px-4 py-2.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
-                                リセット
-                            </button>
-                        </div>
-                    </form>
-                    <div id="itemSearchStatus" class="hidden text-sm text-gray-500"></div>
-                    <div id="itemSearchEmpty" class="hidden text-center text-gray-500 py-8">
-                        <div class="text-3xl mb-2"><i class="fas fa-box-open"></i></div>
-                        <p>条件に合致するアイテムが見つかりませんでした。</p>
                     </div>
-                    <div id="itemSearchTableWrapper" class="hidden border border-gray-200 rounded-lg max-h-96 overflow-y-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50 sticky top-0">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">管理コード</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">材料情報</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ロット</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">残数量(本)</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">総重量(kg)</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ロケーション</th>
-                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">選択</th>
-                                </tr>
-                            </thead>
-                            <tbody id="itemSearchResults" class="bg-white divide-y divide-gray-200">
-                                <!-- JSで描画 -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+                    <p class="text-sm text-gray-500">※数量または重量のいずれかを入力してください（相互換算されます）</p>
 
-<div id="lotModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900">新規ロット作成</h3>
-            </div>
-
-            <form id="lotForm" class="p-6">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">材料 *</label>
-                        <select name="material_id" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
-                            <option value="">選択してください</option>
-                            <!-- 動的に材料を読み込み -->
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">ロット番号 *</label>
-                        <input type="text" name="lot_number" required
-                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="LOT-2024-0001">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">長さ(mm) *</label>
-                        <input type="number" name="length_mm" required min="1" step="1"
-                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="2500">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">初期本数 *</label>
-                        <input type="number" name="initial_quantity" required min="1" step="1"
-                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="50">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">仕入先</label>
-                        <input type="text" name="supplier"
-                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="供給業者名">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">入荷日</label>
-                        <input type="date" name="received_date"
-                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
-                    </div>
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
-                        <textarea name="notes"
-                                  class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="ロットに関する備考"></textarea>
+                        <textarea name="notes" rows="2"
+                                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="入庫に関する備考"></textarea>
                     </div>
-                </div>
 
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" id="cancelLotBtn" class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
-                        キャンセル
+                    <button type="submit" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        入庫実行
                     </button>
-                    <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1">
-                        作成
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- アイテム作成モーダル -->
-<div id="itemModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900">新規アイテム作成</h3>
+                </form>
             </div>
 
-            <form id="itemForm" class="p-6">
-                <div class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">ロット *</label>
-                        <select name="lot_id" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
-                            <option value="">選択してください</option>
-                            <!-- 動的にロットを読み込み -->
-                        </select>
+            <!-- 出庫処理 -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center mb-4">
+                    <div class="p-2 bg-red-50 rounded-lg mr-3">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                        </svg>
                     </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">置き場</label>
-                        <select name="location_id" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
-                            <option value="">未配置</option>
-                            <!-- 動的に置き場を読み込み -->
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">初期本数 *</label>
-                        <input type="number" name="initial_quantity" required min="1" step="1"
-                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400" placeholder="10">
-                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900">出庫処理</h3>
                 </div>
 
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button type="button" id="cancelItemBtn" class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
-                        キャンセル
+                <form id="outForm" class="space-y-4">
+                    <input type="hidden" name="item_id">
+
+                    <!-- アイテム選択 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">対象アイテム</label>
+                        <div class="space-y-2">
+                            <div id="outSelectedItemSummary" class="p-3 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-500">
+                                アイテムが選択されていません
+                            </div>
+                            <div class="flex space-x-2">
+                                <button type="button" id="outSelectItemBtn" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                    </svg>
+                                    アイテム検索
+                                </button>
+                                <button type="button" id="outClearItemBtn" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
+                                    クリア
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 数量・重量入力 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">出庫数量（本）</label>
+                            <input type="number" name="quantity" min="1" step="1"
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="本数を入力">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">出庫重量（kg）</label>
+                            <input type="number" name="weight_kg" min="0.001" step="0.001"
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="重量を入力">
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500">※数量または重量のいずれかを入力してください（相互換算されます）</p>
+
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
+                        <textarea name="notes" rows="2"
+                                  class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="出庫に関する備考"></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+                        </svg>
+                        出庫実行
                     </button>
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1">
-                        作成
-                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 在庫アイテム一覧 -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+            <div class="p-4 border-b">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-semibold text-gray-900">在庫アイテム一覧</h2>
+                    <div class="flex space-x-4">
+                        <input type="text" id="materialSearchInput" placeholder="材料名で検索"
+                               class="w-48 p-2 border border-gray-300 rounded-md">
+                        <input type="text" id="lotSearchInput" placeholder="ロット番号で検索"
+                               class="w-48 p-2 border border-gray-300 rounded-md">
+                        <select id="locationFilter" class="w-32 p-2 border border-gray-300 rounded-md">
+                            <option value="">すべて</option>
+                            <!-- 動的に生成 -->
+                        </select>
+                    </div>
                 </div>
-            </form>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">管理コード</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">材料名</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">形状・寸法</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">ロット番号</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">長さ</th>
+                            <th class="px-4 py-3 text-right text-sm font-medium text-gray-500">現在庫</th>
+                            <th class="px-4 py-3 text-right text-sm font-medium text-gray-500">重量</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">置き場</th>
+                            <th class="px-4 py-3 text-center text-sm font-medium text-gray-500">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventoryTableBody" class="divide-y divide-gray-200">
+                        <!-- 動的に生成 -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="inventoryLoading" class="text-center py-8 hidden">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p class="mt-2 text-gray-600">読み込み中...</p>
+            </div>
+            <div id="inventoryEmpty" class="text-center py-8 hidden">
+                <p class="text-gray-500">該当するアイテムがありません</p>
+            </div>
+        </div>
+
+        <!-- 入出庫履歴 -->
+        <div class="bg-white rounded-lg shadow-sm">
+            <div class="p-4 border-b">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-semibold text-gray-900">入出庫履歴</h2>
+                    <div class="flex space-x-4">
+                        <select id="typeFilter" class="w-32 p-2 border border-gray-300 rounded-md">
+                            <option value="">すべて</option>
+                            <option value="in">入庫のみ</option>
+                            <option value="out">出庫のみ</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">処理日時</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">種別</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">管理コード</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">材料・ロット</th>
+                            <th class="px-4 py-3 text-right text-sm font-medium text-gray-500">数量・重量</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">備考</th>
+                        </tr>
+                    </thead>
+                    <tbody id="movementsTableBody" class="divide-y divide-gray-200">
+                        <!-- 動的に生成 -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="movementsLoading" class="text-center py-8 hidden">
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <p class="mt-2 text-gray-600">読み込み中...</p>
+            </div>
+            <div id="movementsEmpty" class="text-center py-8 hidden">
+                <p class="text-gray-500">入出庫履歴がありません</p>
+            </div>
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_scripts %}
+<!-- アイテム検索モーダル -->
+<div id="itemSearchModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4 modal-backdrop">
+        <div class="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden" onclick="event.stopPropagation()">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h2 id="itemSearchModalTitle" class="text-xl font-semibold text-gray-900">アイテムを検索</h2>
+                    <button id="closeItemSearchModal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <!-- 検索フィルター -->
+                <form id="itemSearchForm" class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">材料名</label>
+                        <input type="text" name="material_name" placeholder="材料名を入力"
+                               class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">径（mm）</label>
+                        <input type="number" name="diameter_mm" placeholder="径を入力"
+                               class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">ロット番号</label>
+                        <input type="text" name="lot_number" placeholder="ロット番号を入力"
+                               class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div class="flex items-end space-x-2">
+                        <button type="submit" class="flex-1 bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors">
+                            検索
+                        </button>
+                        <button type="button" id="resetSearchBtn" class="bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600 transition-colors">
+                            リセット
+                        </button>
+                    </div>
+                </form>
+
+                <!-- 検索結果 -->
+                <div id="searchResultsContainer" class="border border-gray-200 rounded-lg max-h-96 overflow-y-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 sticky top-0">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">管理コード</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">材料情報</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">ロット</th>
+                                <th class="px-4 py-3 text-right text-sm font-medium text-gray-500">残数量</th>
+                                <th class="px-4 py-3 text-right text-sm font-medium text-gray-500">重量</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">置き場</th>
+                                <th class="px-4 py-3 text-center text-sm font-medium text-gray-500">選択</th>
+                            </tr>
+                        </thead>
+                        <tbody id="searchResultsBody" class="divide-y divide-gray-200">
+                            <!-- 動的に生成 -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="searchLoading" class="text-center py-8 hidden">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <p class="mt-2 text-gray-600">検索中...</p>
+                </div>
+                <div id="searchEmpty" class="text-center py-8 hidden">
+                    <p class="text-gray-500">条件に合致するアイテムが見つかりませんでした</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QRスキャンモーダルは qr-scanner.js で動的に作成されます -->
+
 <script>
 // グローバル変数
-let movements = [];
-let materials = [];
-let lots = [];
-let locations = [];
-let allLots = [];
+let inventoryItems = [];
+let movementHistory = [];
 let selectedItems = { in: null, out: null };
 let currentItemTarget = null;
-let itemSearchResults = [];
+// QRScannerはqr-scanner.jsで既に定義されているので削除
 
 // ページ読み込み時の初期化
 document.addEventListener('DOMContentLoaded', function() {
@@ -463,177 +354,84 @@ document.addEventListener('DOMContentLoaded', function() {
 // ページ初期化
 async function initializePage() {
     try {
-        await loadInitialData();
-        await loadLots();
+        await loadInventory();
         await loadMovements();
+        await loadLocations();
     } catch (error) {
         console.error('初期化エラー:', error);
-        Utils.showToast('ページの初期化に失敗しました', 'error');
+        showToast('ページの初期化に失敗しました', 'error');
     }
 }
 
-// 初期データの読み込み
-async function loadInitialData() {
+// 在庫データ読み込み
+async function loadInventory() {
+    const loading = document.getElementById('inventoryLoading');
+    const empty = document.getElementById('inventoryEmpty');
+    const tableBody = document.getElementById('inventoryTableBody');
+
+    loading.classList.remove('hidden');
+    empty.classList.add('hidden');
+
     try {
-        materials = await APIClient.getMaterials();
-        populateMaterialSelects();
-        populateMaterialFilter();
-    } catch (error) {
-        console.error('初期データ読み込みエラー:', error);
-    }
-}
+        inventoryItems = await APIClient.getInventory();
+        renderInventoryTable();
 
-// 材料選択肢の設定
-function populateMaterialSelects() {
-    const selects = document.querySelectorAll('select[name="material_id"]');
-    selects.forEach(select => {
-        select.innerHTML = '<option value="">選択してください</option>';
-        materials.forEach(material => {
-            if (material.is_active) {
-                const option = document.createElement('option');
-                option.value = material.id;
-                option.textContent = `${material.name} (${material.shape} φ${material.diameter_mm}mm)`;
-                select.appendChild(option);
-            }
-        });
-    });
-}
-
-// 材料フィルタの設定
-function populateMaterialFilter() {
-    const select = document.getElementById('materialFilter');
-    select.innerHTML = '<option value="">すべての材料</option>';
-    materials.forEach(material => {
-        if (material.is_active) {
-            const option = document.createElement('option');
-            option.value = material.id;
-            option.textContent = `${material.name} (${material.shape} φ${material.diameter_mm}mm)`;
-            select.appendChild(option);
-        }
-    });
-}
-
-// ロット一覧の読み込み
-async function loadLots() {
-    try {
-        const lotsLoadingIndicator = document.getElementById('lotsLoadingIndicator');
-        const lotsNoDataIndicator = document.getElementById('lotsNoDataIndicator');
-
-        lotsLoadingIndicator.classList.remove('hidden');
-        lotsNoDataIndicator.classList.add('hidden');
-
-        const materialId = document.getElementById('materialFilter').value || undefined;
-        const search = document.getElementById('lotSearchInput').value.trim() || undefined;
-
-        const params = new URLSearchParams();
-        if (materialId) params.append('material_id', materialId);
-        if (search) params.append('search', search);
-
-        const url = `/api/movements/lots${params.toString() ? '?' + params.toString() : ''}`;
-        const response = await fetch(url);
-        allLots = await response.json();
-
-        if (allLots.length === 0) {
-            lotsNoDataIndicator.classList.remove('hidden');
-        } else {
-            renderLotsTable();
+        if (inventoryItems.length === 0) {
+            empty.classList.remove('hidden');
         }
     } catch (error) {
-        console.error('ロット読み込みエラー:', error);
-        Utils.showToast('ロットの読み込みに失敗しました', 'error');
+        console.error('在庫読み込みエラー:', error);
+        showToast('在庫データの読み込みに失敗しました', 'error');
     } finally {
-        document.getElementById('lotsLoadingIndicator').classList.add('hidden');
+        loading.classList.add('hidden');
     }
 }
 
-// ロットテーブルの描画（アイテム単位で表示）
-function renderLotsTable() {
-    const tbody = document.getElementById('lotsTableBody');
+// 在庫テーブルの描画
+function renderInventoryTable() {
+    const tableBody = document.getElementById('inventoryTableBody');
 
-    // 全ロットのアイテムを平坦化
-    const allItems = [];
-    allLots.forEach(lot => {
-        if (lot.items && lot.items.length > 0) {
-            lot.items.forEach(item => {
-                // 重量計算
-                const weightKg = (item.current_quantity * lot.calculated.weight_per_piece_kg).toFixed(2);
-
-                allItems.push({
-                    ...item,
-                    lot: lot,
-                    material: lot.material,
-                    weightKg: weightKg
-                });
-            });
-        }
-    });
-
-    if (allItems.length === 0) {
-        tbody.innerHTML = `
+    if (inventoryItems.length === 0) {
+        tableBody.innerHTML = `
             <tr>
-                <td colspan="8" class="px-4 py-8 text-center text-gray-500">
-                    <i class="fas fa-box text-2xl mb-2"></i>
-                    <div>アイテムがありません</div>
+                <td colspan="9" class="px-4 py-8 text-center text-gray-500">
+                    在庫アイテムがありません
                 </td>
             </tr>
         `;
         return;
     }
 
-    const shapeNames = {
-        'round': '丸棒',
-        'hexagon': '六角棒',
-        'square': '角棒'
-    };
-
-    tbody.innerHTML = allItems.map(item => {
-        const alertClass = item.current_quantity === 0 ? 'text-red-600' :
+    tableBody.innerHTML = inventoryItems.map(item => {
+        const shapeText = getShapeText(item.material.shape);
+        const stockClass = item.current_quantity === 0 ? 'text-red-600' :
                           item.current_quantity <= 5 ? 'text-yellow-600' : 'text-gray-900';
 
         return `
-            <tr class="hover:bg-gray-50 transition-colors duration-200">
+            <tr class="hover:bg-gray-50">
                 <td class="px-4 py-3">
-                    <div class="font-mono text-xs text-gray-900">
-                        ${item.management_code.substring(0, 8)}...
-                    </div>
+                    <div class="font-mono text-xs text-gray-900">${item.management_code.substring(0, 8)}...</div>
                     <button onclick="copyToClipboard('${item.management_code}')"
-                            class="text-xs text-indigo-600 hover:text-indigo-800 mt-1">
-                        <i class="fas fa-copy mr-1"></i>コピー
+                            class="text-xs text-blue-600 hover:text-blue-800 mt-1">
+                        コピー
                     </button>
                 </td>
-                <td class="px-4 py-3">
-                    <div class="font-medium text-gray-900">${item.material.name}</div>
-                    <div class="text-xs text-gray-500">
-                        ${shapeNames[item.material.shape]} φ${item.material.diameter_mm}mm
-                    </div>
-                </td>
-                <td class="px-4 py-3">
-                    <div class="text-sm text-gray-900">${item.lot.lot_number}</div>
-                    ${item.lot.supplier ? `<div class="text-xs text-gray-500">${item.lot.supplier}</div>` : ''}
-                </td>
-                <td class="px-4 py-3 text-sm text-gray-900">
-                    φ${item.material.diameter_mm}mm × ${Utils.formatNumber(item.lot.length_mm)}mm
-                </td>
-                <td class="px-4 py-3 text-right">
-                    <span class="text-sm font-medium ${alertClass}">${Utils.formatNumber(item.current_quantity)}</span>
-                </td>
-                <td class="px-4 py-3 text-right text-sm text-gray-900">
-                    ${item.weightKg}
-                </td>
-                <td class="px-4 py-3 text-sm text-gray-900">
-                    ${item.location_name || '未配置'}
-                </td>
+                <td class="px-4 py-3 text-sm text-gray-900">${item.material.name}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">${shapeText} φ${item.material.diameter_mm}mm</td>
+                <td class="px-4 py-3 text-sm text-gray-900">${item.lot.lot_number}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">${item.lot.length_mm}mm</td>
+                <td class="px-4 py-3 text-right text-sm font-medium ${stockClass}">${item.current_quantity}本</td>
+                <td class="px-4 py-3 text-right text-sm text-gray-600">${(item.total_weight_kg || 0).toFixed(3)}kg</td>
+                <td class="px-4 py-3 text-sm text-gray-600">${item.location ? item.location.name : '未配置'}</td>
                 <td class="px-4 py-3 text-center">
                     <div class="flex justify-center space-x-1">
-                        <button onclick="printLotTag(${item.lot.id}, 'standard', 1)"
-                                class="bg-blue-500 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-                                title="現品票印刷">
-                            <i class="fas fa-print mr-1"></i>印刷
+                        <button onclick="selectItemForMovement(${item.id}, 'in')"
+                                class="bg-green-600 text-white text-xs px-2 py-1 rounded hover:bg-green-700 transition-colors">
+                            入庫
                         </button>
-                        <button onclick="previewLotTag(${item.lot.id})"
-                                class="bg-gray-500 hover:bg-gray-600 text-white text-xs px-2 py-1 rounded transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
-                                title="プレビュー">
-                            <i class="fas fa-eye mr-1"></i>詳細
+                        <button onclick="selectItemForMovement(${item.id}, 'out')"
+                                class="bg-red-600 text-white text-xs px-2 py-1 rounded hover:bg-red-700 transition-colors">
+                            出庫
                         </button>
                     </div>
                 </td>
@@ -642,820 +440,539 @@ function renderLotsTable() {
     }).join('');
 }
 
-// イベントリスナーの設定
-function setupEventListeners() {
-    // ボタンイベント
-    document.getElementById('newLotBtn').addEventListener('click', openLotModal);
-    document.getElementById('newItemBtn').addEventListener('click', openItemModal);
-    document.getElementById('cancelLotBtn').addEventListener('click', closeLotModal);
-    document.getElementById('cancelItemBtn').addEventListener('click', closeItemModal);
-
-    // アイテム選択イベント
-    document.getElementById('inSelectItemBtn').addEventListener('click', () => openItemSearchModal('in'));
-    document.getElementById('outSelectItemBtn').addEventListener('click', () => openItemSearchModal('out'));
-    document.getElementById('inClearItemBtn').addEventListener('click', () => clearSelectedItem('in'));
-    document.getElementById('outClearItemBtn').addEventListener('click', () => clearSelectedItem('out'));
-
-    // フォーム送信
-    document.getElementById('inForm').addEventListener('submit', handleInMovement);
-    document.getElementById('outForm').addEventListener('submit', handleOutMovement);
-    document.getElementById('lotForm').addEventListener('submit', handleLotCreate);
-    document.getElementById('itemForm').addEventListener('submit', handleItemCreate);
-    document.getElementById('itemSearchForm').addEventListener('submit', handleItemSearchSubmit);
-
-    ['in', 'out'].forEach(target => {
-        const form = document.getElementById(`${target}Form`);
-        if (!form) {
-            return;
-        }
-
-        const quantityInput = form.querySelector('input[name="quantity"]');
-        const weightInput = form.querySelector('input[name="weight_kg"]');
-
-        if (quantityInput) {
-            quantityInput.addEventListener('input', () => syncQuantityToWeight(target));
-        }
-
-        if (weightInput) {
-            weightInput.addEventListener('input', () => syncWeightToQuantity(target));
-        }
-    });
-
-    // モーダル操作
-    document.getElementById('itemSearchCloseBtn').addEventListener('click', closeItemSearchModal);
-    document.getElementById('itemSearchResetBtn').addEventListener('click', resetItemSearchForm);
-
-    // フィルタ
-    document.getElementById('typeFilter').addEventListener('change', filterMovements);
-    document.getElementById('materialFilter').addEventListener('change', loadLots);
-    document.getElementById('lotSearchInput').addEventListener('input', Utils.debounce(loadLots, 500));
-
-    // モーダル初期化
-    Utils.modal.setupEventListeners(['lotModal', 'itemModal', 'itemSearchModal']);
-
-    updateSelectedItemDisplay('in');
-    updateSelectedItemDisplay('out');
-}
-
-function openItemSearchModal(target) {
-    currentItemTarget = target;
-    const form = document.getElementById('itemSearchForm');
-    if (form) {
-        form.reset();
-    }
-    const title = document.getElementById('itemSearchModalTitle');
-    if (title) {
-        title.textContent = target === 'in' ? '入庫で使用するアイテムを選択' : '出庫で使用するアイテムを選択';
-    }
-    itemSearchResults = [];
-    renderItemSearchResults([]);
-    setItemSearchState({ loading: false, showTable: false, empty: false, message: '検索条件を入力して検索を実行してください。' });
-    Utils.modal.open('itemSearchModal');
-    handleItemSearchSubmit();
-}
-
-function closeItemSearchModal() {
-    Utils.modal.close('itemSearchModal');
-    currentItemTarget = null;
-}
-
-function resetItemSearchForm() {
-    const form = document.getElementById('itemSearchForm');
-    if (form) {
-        form.reset();
-    }
-    handleItemSearchSubmit();
-}
-
-async function handleItemSearchSubmit(event) {
-    if (event) {
-        event.preventDefault();
-    }
-    const form = document.getElementById('itemSearchForm');
-    if (!form) {
-        return;
-    }
-
-    const formData = new FormData(form);
-    const params = {};
-    formData.forEach((value, key) => {
-        if (typeof value === 'string') {
-            value = value.trim();
-        }
-        if (value !== null && value !== undefined && value !== '') {
-            params[key] = value;
-        }
-    });
-
-    setItemSearchState({ loading: true, showTable: false, empty: false, message: '' });
-
-    try {
-        itemSearchResults = await APIClient.searchMovementItems(params);
-        if (itemSearchResults.length > 0) {
-            renderItemSearchResults(itemSearchResults);
-            setItemSearchState({ loading: false, showTable: true, empty: false, message: '' });
-        } else {
-            renderItemSearchResults([]);
-            setItemSearchState({ loading: false, showTable: false, empty: true, message: '条件に合致するアイテムが見つかりませんでした。' });
-        }
-    } catch (error) {
-        console.error('アイテム検索エラー:', error);
-        Utils.showToast(error.message || 'アイテム検索に失敗しました', 'error');
-        renderItemSearchResults([]);
-        setItemSearchState({ loading: false, showTable: false, empty: false, message: '検索に失敗しました。条件を確認してください。' });
-    }
-}
-
-function setItemSearchState({ loading = false, message = '', empty = false, showTable = false } = {}) {
-    const statusEl = document.getElementById('itemSearchStatus');
-    const emptyEl = document.getElementById('itemSearchEmpty');
-    const tableWrapper = document.getElementById('itemSearchTableWrapper');
-
-    if (statusEl) {
-        if (loading) {
-            statusEl.textContent = '検索中です...';
-            statusEl.classList.remove('hidden');
-        } else if (message) {
-            statusEl.textContent = message;
-            statusEl.classList.remove('hidden');
-        } else {
-            statusEl.textContent = '';
-            statusEl.classList.add('hidden');
-        }
-    }
-
-    if (emptyEl) {
-        emptyEl.classList.toggle('hidden', !empty);
-    }
-
-    if (tableWrapper) {
-        tableWrapper.classList.toggle('hidden', !showTable);
-    }
-}
-
-function renderItemSearchResults(items) {
-    const tbody = document.getElementById('itemSearchResults');
-    if (!tbody) {
-        return;
-    }
-
-    if (!items || items.length === 0) {
-        tbody.innerHTML = '';
-        return;
-    }
-
-    const rows = items.map(item => {
-        const material = item.material || {};
-        const lot = item.lot || {};
-        const location = item.location || {};
-        const quantity = Utils.formatNumber(item.current_quantity || 0);
-        const totalWeight = item.calculated ? item.calculated.total_weight_kg.toFixed(3) : '-';
-        const perWeight = item.calculated ? item.calculated.weight_per_piece_kg.toFixed(3) : '-';
-        const codeShort = item.management_code ? `${item.management_code.substring(0, 8)}...` : '---';
-        const isSelected = (selectedItems.in && selectedItems.in.id === item.id) || (selectedItems.out && selectedItems.out.id === item.id);
-        const supplierLine = lot.supplier ? `<div class="text-xs text-gray-500">${lot.supplier}</div>` : '';
-
-        return `
-            <tr class="${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'} transition-colors duration-150">
-                <td class="px-4 py-3">
-                    <div class="font-mono text-xs text-gray-900">${codeShort}</div>
-                    <div class="text-xs text-gray-500">${item.management_code || '---'}</div>
-                </td>
-                <td class="px-4 py-3 text-sm text-gray-900">
-                    <div>${material.name || '---'}</div>
-                    <div class="text-xs text-gray-500">${material.shape_name || material.shape || ''} φ${material.diameter_mm || '-'}mm × ${Utils.formatNumber(lot.length_mm || 0)}mm</div>
-                </td>
-                <td class="px-4 py-3 text-sm text-gray-900">
-                    <div>${lot.lot_number || '---'}</div>
-                    ${supplierLine}
-                </td>
-                <td class="px-4 py-3 text-right text-sm text-gray-900">${quantity}</td>
-                <td class="px-4 py-3 text-right text-sm text-gray-900">${totalWeight}</td>
-                <td class="px-4 py-3 text-sm text-gray-900">${location.name || '未登録'}</td>
-                <td class="px-4 py-3 text-center">
-                    <button type="button" class="inline-flex items-center px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1" onclick="selectItemFromSearch(${item.id})">選択</button>
-                </td>
-            </tr>
-        `;
-    }).join('');
-
-    tbody.innerHTML = rows;
-}
-
-function selectItemFromSearch(itemId) {
-    const numericId = Number(itemId);
-    const item = itemSearchResults.find(entry => entry.id === numericId);
-    if (!item) {
-        Utils.showToast('アイテム情報が取得できませんでした', 'error');
-        return;
-    }
-    if (!currentItemTarget) {
-        Utils.showToast('選択対象のフォームが不明です', 'error');
-        return;
-    }
-
-    selectedItems[currentItemTarget] = item;
-    updateSelectedItemDisplay(currentItemTarget);
-    Utils.showToast('アイテムを選択しました', 'success');
-    closeItemSearchModal();
-}
-
-function clearSelectedItem(target) {
-    selectedItems[target] = null;
-    const form = document.getElementById(`${target}Form`);
-    if (form) {
-        const quantityInput = form.querySelector('input[name="quantity"]');
-        const weightInput = form.querySelector('input[name="weight_kg"]');
-        if (quantityInput) {
-            quantityInput.value = '';
-        }
-        if (weightInput) {
-            weightInput.value = '';
-        }
-    }
-    updateSelectedItemDisplay(target);
-}
-
-function getSelectedItemWeightPerPiece(target) {
-    const item = selectedItems[target];
-    if (!item || !item.calculated) {
-        return null;
-    }
-    return item.calculated.weight_per_piece_kg;
-}
-
-function syncQuantityToWeight(target) {
-    const form = document.getElementById(`${target}Form`);
-    if (!form) {
-        return;
-    }
-
-    const quantityInput = form.querySelector('input[name="quantity"]');
-    const weightInput = form.querySelector('input[name="weight_kg"]');
-    const weightPerPiece = getSelectedItemWeightPerPiece(target);
-
-    if (!quantityInput || !weightInput) {
-        return;
-    }
-
-    const quantity = parseInt(quantityInput.value, 10);
-    if (weightPerPiece && !Number.isNaN(quantity) && quantity > 0) {
-        weightInput.value = (quantity * weightPerPiece).toFixed(3);
-    } else if (!quantityInput.value) {
-        weightInput.value = '';
-    }
-}
-
-function syncWeightToQuantity(target) {
-    const form = document.getElementById(`${target}Form`);
-    if (!form) {
-        return;
-    }
-
-    const quantityInput = form.querySelector('input[name="quantity"]');
-    const weightInput = form.querySelector('input[name="weight_kg"]');
-    const weightPerPiece = getSelectedItemWeightPerPiece(target);
-
-    if (!quantityInput || !weightInput) {
-        return;
-    }
-
-    const weight = parseFloat(weightInput.value);
-    if (weightPerPiece && !Number.isNaN(weight) && weight > 0) {
-        const quantity = Math.max(1, Math.round(weight / weightPerPiece));
-        quantityInput.value = quantity;
-    } else if (!weightInput.value) {
-        quantityInput.value = '';
-    }
-}
-
-function updateSelectedItemDisplay(target) {
-    const summaryEl = document.getElementById(`${target}SelectedItemSummary`);
-    const form = document.getElementById(`${target}Form`);
-    if (!summaryEl || !form) {
-        return;
-    }
-
-    const hiddenInput = form.querySelector('input[name="item_id"]');
-    const item = selectedItems[target];
-
-    if (!item) {
-        if (hiddenInput) {
-            hiddenInput.value = '';
-        }
-        summaryEl.classList.add('border-dashed', 'bg-gray-50', 'text-gray-500');
-        summaryEl.classList.remove('bg-blue-50', 'border-blue-400', 'text-gray-900');
-        summaryEl.innerHTML = 'アイテムが選択されていません';
-        return;
-    }
-
-    if (hiddenInput) {
-        hiddenInput.value = item.id;
-    }
-
-    summaryEl.classList.remove('border-dashed', 'text-gray-500', 'bg-gray-50');
-    summaryEl.classList.add('bg-blue-50', 'border-blue-400', 'text-gray-900');
-
-    const material = item.material || {};
-    const lot = item.lot || {};
-    const location = item.location || {};
-    const totalWeight = item.calculated ? item.calculated.total_weight_kg.toFixed(3) : '-';
-    const perWeight = item.calculated ? item.calculated.weight_per_piece_kg.toFixed(3) : '-';
-    const quantity = Utils.formatNumber(item.current_quantity || 0);
-
-    summaryEl.innerHTML = `
-        <div class="font-mono text-xs text-gray-700">${item.management_code || '---'}</div>
-        <div class="mt-1 text-sm text-gray-900">${material.name || '---'} / ${material.shape_name || material.shape || ''} φ${material.diameter_mm || '-'}mm × ${Utils.formatNumber(lot.length_mm || 0)}mm</div>
-        <div class="mt-1 text-xs text-gray-600">ロット: ${lot.lot_number || '---'} / 残量: ${quantity}本 (${totalWeight}kg)</div>
-        <div class="mt-1 text-xs text-gray-600">1本あたり: ${perWeight}kg / ロケーション: ${location.name || '未登録'}</div>
-    `;
-
-    const quantityInput = form.querySelector('input[name="quantity"]');
-    const weightInput = form.querySelector('input[name="weight_kg"]');
-
-    if (item) {
-        if (quantityInput && quantityInput.value) {
-            syncQuantityToWeight(target);
-        } else if (weightInput && weightInput.value) {
-            syncWeightToQuantity(target);
-        }
-    }
-}
-
-
-
-
-// 入出庫履歴の読み込み
+// 入出庫履歴読み込み
 async function loadMovements() {
+    const loading = document.getElementById('movementsLoading');
+    const empty = document.getElementById('movementsEmpty');
+    const tableBody = document.getElementById('movementsTableBody');
+
+    loading.classList.remove('hidden');
+    empty.classList.add('hidden');
+
     try {
-        const loadingIndicator = document.getElementById('loadingIndicator');
-        const noDataIndicator = document.getElementById('noDataIndicator');
+        movementHistory = await APIClient.getMovements();
+        renderMovementsTable();
 
-        loadingIndicator.classList.remove('hidden');
-        noDataIndicator.classList.add('hidden');
-
-        const response = await fetch('/api/movements/');
-        movements = await response.json();
-
-        if (movements.length === 0) {
-            noDataIndicator.classList.remove('hidden');
-        } else {
-            renderMovementsTable();
+        if (movementHistory.length === 0) {
+            empty.classList.remove('hidden');
         }
     } catch (error) {
         console.error('履歴読み込みエラー:', error);
-        Utils.showToast('履歴の読み込みに失敗しました', 'error');
+        showToast('履歴データの読み込みに失敗しました', 'error');
     } finally {
-        document.getElementById('loadingIndicator').classList.add('hidden');
+        loading.classList.add('hidden');
     }
 }
 
 // 履歴テーブルの描画
 function renderMovementsTable() {
-    const tbody = document.getElementById('movementsTableBody');
+    const tableBody = document.getElementById('movementsTableBody');
 
-    tbody.innerHTML = movements.map(movement => {
+    if (movementHistory.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                    入出庫履歴がありません
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tableBody.innerHTML = movementHistory.map(movement => {
         const typeClass = movement.movement_type === 'in' ? 'text-green-600' : 'text-red-600';
-        const typeIcon = movement.movement_type === 'in' ? 'fa-arrow-down' : 'fa-arrow-up';
         const typeText = movement.movement_type === 'in' ? '入庫' : '出庫';
+        const typeIcon = movement.movement_type === 'in' ? '+' : '-';
 
         return `
             <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4 text-sm text-gray-900">
+                <td class="px-4 py-3 text-sm text-gray-900">
                     ${new Date(movement.processed_at).toLocaleString('ja-JP')}
                 </td>
-                <td class="px-6 py-4">
+                <td class="px-4 py-3">
                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${typeClass} bg-${movement.movement_type === 'in' ? 'green' : 'red'}-50">
-                        <i class="fas ${typeIcon} mr-1"></i>
                         ${typeText}
                     </span>
                 </td>
-                <td class="px-6 py-4">
-                    <div class="font-mono text-sm text-gray-900">
-                        ${movement.item_management_code?.substring(0, 8)}...
-                    </div>
+                <td class="px-4 py-3 font-mono text-xs text-gray-900">
+                    ${movement.item_management_code ? movement.item_management_code.substring(0, 8) + '...' : '-'}
                 </td>
-                <td class="px-6 py-4 text-sm">
-                    <div class="font-medium text-gray-900">${movement.material_name || '-'}</div>
-                    <div class="text-gray-500">${movement.lot_number || '-'}</div>
+                <td class="px-4 py-3 text-sm">
+                    <div class="text-gray-900">${movement.material_name || '-'}</div>
+                    <div class="text-gray-500 text-xs">${movement.lot_number || '-'}</div>
                 </td>
-                <td class="px-6 py-4 text-right text-sm font-medium ${typeClass}">
-                    <div>${movement.movement_type === 'in' ? '+' : '-'}${movement.quantity}本</div>
-                    <div class="text-xs text-gray-500">${movement.weight_kg !== null && movement.weight_kg !== undefined ? `${Number(movement.weight_kg).toFixed(3)}kg` : '-'}</div>
+                <td class="px-4 py-3 text-right text-sm font-medium ${typeClass}">
+                    <div>${typeIcon}${movement.quantity}本</div>
+                    <div class="text-xs text-gray-500">${movement.weight_kg ? movement.weight_kg.toFixed(3) + 'kg' : '-'}</div>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-500">
-                    ${movement.notes || '-'}
+                <td class="px-4 py-3 text-sm text-gray-500">${movement.notes || '-'}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// 置き場一覧読み込み
+async function loadLocations() {
+    try {
+        const locations = await APIClient.getLocations();
+        const select = document.getElementById('locationFilter');
+
+        select.innerHTML = '<option value="">すべて</option>';
+        locations.forEach(location => {
+            const option = document.createElement('option');
+            option.value = location.id;
+            option.textContent = location.name;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('置き場読み込みエラー:', error);
+    }
+}
+
+// イベントリスナー設定
+function setupEventListeners() {
+    // フォーム送信
+    document.getElementById('inForm').addEventListener('submit', handleInMovement);
+    document.getElementById('outForm').addEventListener('submit', handleOutMovement);
+
+    // アイテム選択
+    document.getElementById('inSelectItemBtn').addEventListener('click', () => openItemSearchModal('in'));
+    document.getElementById('outSelectItemBtn').addEventListener('click', () => openItemSearchModal('out'));
+    document.getElementById('inClearItemBtn').addEventListener('click', () => clearSelectedItem('in'));
+    document.getElementById('outClearItemBtn').addEventListener('click', () => clearSelectedItem('out'));
+
+    // モーダル
+    document.getElementById('closeItemSearchModal').addEventListener('click', closeItemSearchModal);
+    document.getElementById('itemSearchForm').addEventListener('submit', handleItemSearch);
+    document.getElementById('resetSearchBtn').addEventListener('click', resetItemSearch);
+
+    // アイテム検索モーダルの背景クリック時の処理
+    document.getElementById('itemSearchModal').addEventListener('click', (e) => {
+        // モーダルの背景部分（itemSearchModal自体）またはflexコンテナ部分をクリックした場合に閉じる
+        if (e.target.id === 'itemSearchModal' || e.target.classList.contains('modal-backdrop')) {
+            closeItemSearchModal();
+        }
+    });
+
+    // ESCキーでモーダルを閉じる処理
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const itemSearchModal = document.getElementById('itemSearchModal');
+            if (itemSearchModal && !itemSearchModal.classList.contains('hidden')) {
+                closeItemSearchModal();
+            }
+        }
+    });
+
+    // QRスキャン
+    document.getElementById('qrScanBtn').addEventListener('click', openQRScanner);
+
+    // フィルター
+    document.getElementById('materialSearchInput').addEventListener('input', debounce(filterInventory, 300));
+    document.getElementById('lotSearchInput').addEventListener('input', debounce(filterInventory, 300));
+    document.getElementById('locationFilter').addEventListener('change', filterInventory);
+    document.getElementById('typeFilter').addEventListener('change', filterMovements);
+
+    // 更新ボタン
+    document.getElementById('refreshBtn').addEventListener('click', refreshData);
+
+    // 数量・重量の相互換算
+    setupQuantityWeightSync();
+}
+
+// 数量・重量の相互換算設定
+function setupQuantityWeightSync() {
+    ['in', 'out'].forEach(type => {
+        const form = document.getElementById(`${type}Form`);
+        const quantityInput = form.querySelector('input[name="quantity"]');
+        const weightInput = form.querySelector('input[name="weight_kg"]');
+
+        quantityInput.addEventListener('input', () => syncQuantityToWeight(type));
+        weightInput.addEventListener('input', () => syncWeightToQuantity(type));
+    });
+}
+
+// 本数から重量への換算
+function syncQuantityToWeight(type) {
+    const item = selectedItems[type];
+    if (!item || !item.weight_per_piece_kg) return;
+
+    const form = document.getElementById(`${type}Form`);
+    const quantityInput = form.querySelector('input[name="quantity"]');
+    const weightInput = form.querySelector('input[name="weight_kg"]');
+
+    const quantity = parseInt(quantityInput.value);
+    if (quantity > 0) {
+        const weight = quantity * item.weight_per_piece_kg;
+        weightInput.value = weight.toFixed(3);
+    } else {
+        weightInput.value = '';
+    }
+}
+
+// 重量から本数への換算
+function syncWeightToQuantity(type) {
+    const item = selectedItems[type];
+    if (!item || !item.weight_per_piece_kg) return;
+
+    const form = document.getElementById(`${type}Form`);
+    const quantityInput = form.querySelector('input[name="quantity"]');
+    const weightInput = form.querySelector('input[name="weight_kg"]');
+
+    const weight = parseFloat(weightInput.value);
+    if (weight > 0) {
+        const quantity = Math.max(1, Math.round(weight / item.weight_per_piece_kg));
+        quantityInput.value = quantity;
+    } else {
+        quantityInput.value = '';
+    }
+}
+
+// アイテム検索モーダルを開く
+function openItemSearchModal(target) {
+    currentItemTarget = target;
+    document.getElementById('itemSearchModalTitle').textContent =
+        target === 'in' ? '入庫するアイテムを選択' : '出庫するアイテムを選択';
+    document.getElementById('itemSearchModal').classList.remove('hidden');
+
+    // 初期検索実行
+    handleItemSearch({ preventDefault: () => {} });
+}
+
+// アイテム検索モーダルを閉じる
+function closeItemSearchModal() {
+    document.getElementById('itemSearchModal').classList.add('hidden');
+    currentItemTarget = null;
+}
+
+// アイテム検索処理
+async function handleItemSearch(event) {
+    event.preventDefault();
+
+    const loading = document.getElementById('searchLoading');
+    const empty = document.getElementById('searchEmpty');
+    const container = document.getElementById('searchResultsContainer');
+
+    loading.classList.remove('hidden');
+    container.classList.add('hidden');
+    empty.classList.add('hidden');
+
+    try {
+        const formData = new FormData(document.getElementById('itemSearchForm'));
+        const params = {};
+
+        formData.forEach((value, key) => {
+            if (value.trim()) {
+                params[key] = value.trim();
+            }
+        });
+
+        const results = await APIClient.searchMovementItems(params);
+        renderSearchResults(results);
+
+        if (results.length === 0) {
+            empty.classList.remove('hidden');
+        } else {
+            container.classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error('検索エラー:', error);
+        showToast('検索に失敗しました', 'error');
+    } finally {
+        loading.classList.add('hidden');
+    }
+}
+
+// 検索結果の描画
+function renderSearchResults(results) {
+    const tableBody = document.getElementById('searchResultsBody');
+
+    if (results.length === 0) {
+        tableBody.innerHTML = '';
+        return;
+    }
+
+    tableBody.innerHTML = results.map(item => {
+        const shapeText = getShapeText(item.material.shape);
+        const isSelected = selectedItems[currentItemTarget] && selectedItems[currentItemTarget].id === item.id;
+
+        return `
+            <tr class="${isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'}">
+                <td class="px-4 py-3 font-mono text-xs text-gray-900">${item.management_code.substring(0, 8)}...</td>
+                <td class="px-4 py-3 text-sm">
+                    <div class="text-gray-900">${item.material.name}</div>
+                    <div class="text-gray-500 text-xs">${shapeText} φ${item.material.diameter_mm}mm × ${item.lot.length_mm}mm</div>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-900">${item.lot.lot_number}</td>
+                <td class="px-4 py-3 text-right text-sm text-gray-900">${item.current_quantity}本</td>
+                <td class="px-4 py-3 text-right text-sm text-gray-600">${(item.total_weight_kg || 0).toFixed(3)}kg</td>
+                <td class="px-4 py-3 text-sm text-gray-600">${item.location ? item.location.name : '未配置'}</td>
+                <td class="px-4 py-3 text-center">
+                    <button onclick="selectSearchResult(${item.id})"
+                            class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors">
+                        選択
+                    </button>
                 </td>
             </tr>
         `;
     }).join('');
 }
 
-// フィルタ機能
-function filterMovements() {
-    // 実装：APIにフィルタパラメータを送信して再読み込み
-    loadMovements();
+// 検索結果からアイテムを選択
+function selectSearchResult(itemId) {
+    const item = inventoryItems.find(i => i.id === itemId);
+    if (!item) {
+        showToast('アイテムが見つかりません', 'error');
+        return;
+    }
+
+    selectedItems[currentItemTarget] = item;
+    updateSelectedItemDisplay(currentItemTarget);
+    closeItemSearchModal();
+    showToast('アイテムを選択しました', 'success');
+}
+
+// 直接アイテムを選択（テーブルから）
+function selectItemForMovement(itemId, type) {
+    const item = inventoryItems.find(i => i.id === itemId);
+    if (!item) {
+        showToast('アイテムが見つかりません', 'error');
+        return;
+    }
+
+    selectedItems[type] = item;
+    updateSelectedItemDisplay(type);
+    showToast(`${type === 'in' ? '入庫' : '出庫'}アイテムを選択しました`, 'success');
+}
+
+// 選択アイテムの表示更新
+function updateSelectedItemDisplay(type) {
+    const summary = document.getElementById(`${type}SelectedItemSummary`);
+    const form = document.getElementById(`${type}Form`);
+    const hiddenInput = form.querySelector('input[name="item_id"]');
+
+    const item = selectedItems[type];
+
+    if (!item) {
+        summary.innerHTML = 'アイテムが選択されていません';
+        summary.className = 'p-3 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-500';
+        hiddenInput.value = '';
+        return;
+    }
+
+    hiddenInput.value = item.id;
+    summary.className = 'p-3 border border-blue-300 rounded-lg bg-blue-50 text-sm text-gray-900';
+
+    const shapeText = getShapeText(item.material.shape);
+    summary.innerHTML = `
+        <div class="font-mono text-xs text-gray-700">${item.management_code}</div>
+        <div class="mt-1 text-sm">${item.material.name} / ${shapeText} φ${item.material.diameter_mm}mm × ${item.lot.length_mm}mm</div>
+        <div class="mt-1 text-xs text-gray-600">ロット: ${item.lot.lot_number} / 残量: ${item.current_quantity}本 (${(item.total_weight_kg || 0).toFixed(3)}kg)</div>
+        <div class="mt-1 text-xs text-gray-600">1本あたり: ${(item.weight_per_piece_kg || 0).toFixed(3)}kg / 置き場: ${item.location ? item.location.name : '未配置'}</div>
+    `;
+}
+
+// 選択アイテムのクリア
+function clearSelectedItem(type) {
+    selectedItems[type] = null;
+    updateSelectedItemDisplay(type);
+
+    const form = document.getElementById(`${type}Form`);
+    form.querySelector('input[name="quantity"]').value = '';
+    form.querySelector('input[name="weight_kg"]').value = '';
 }
 
 // 入庫処理
-async function handleInMovement(e) {
-    e.preventDefault();
+async function handleInMovement(event) {
+    event.preventDefault();
 
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
-    const itemId = data.item_id ? parseInt(data.item_id, 10) : null;
+    const formData = new FormData(event.target);
+    const itemId = parseInt(formData.get('item_id'));
 
-    if (!itemId || Number.isNaN(itemId)) {
-        Utils.showToast('対象アイテムを選択してください', 'error');
+    if (!itemId) {
+        showToast('対象アイテムを選択してください', 'error');
         return;
     }
 
-    const quantityRaw = typeof data.quantity === 'string' ? data.quantity.trim() : '';
-    const weightRaw = typeof data.weight_kg === 'string' ? data.weight_kg.trim() : '';
+    const quantity = formData.get('quantity') ? parseInt(formData.get('quantity')) : null;
+    const weight = formData.get('weight_kg') ? parseFloat(formData.get('weight_kg')) : null;
 
-    const quantity = quantityRaw ? parseInt(quantityRaw, 10) : null;
-    const weight = weightRaw ? parseFloat(weightRaw) : null;
-
-    if ((!quantity || Number.isNaN(quantity) || quantity <= 0) && (!weight || Number.isNaN(weight) || weight <= 0)) {
-        Utils.showToast('数量または重量を入力してください', 'error');
+    if (!quantity && !weight) {
+        showToast('数量または重量を入力してください', 'error');
         return;
     }
 
     try {
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        Utils.setLoading(submitBtn, true);
-
-        const payload = {
-            instruction_number: data.instruction_number || null,
-            notes: data.notes || null
+        const data = {
+            notes: formData.get('notes') || null
         };
 
-        if (quantity && !Number.isNaN(quantity) && quantity > 0) {
-            payload.quantity = quantity;
-        }
+        if (quantity) data.quantity = quantity;
+        if (weight) data.weight_kg = weight;
 
-        if (weight && !Number.isNaN(weight) && weight > 0) {
-            payload.weight_kg = weight;
-        }
+        const result = await APIClient.inMovement(itemId, data);
 
-        const result = await fetch(`/api/movements/in/${itemId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+        showToast(`入庫が完了しました (${result.old_quantity}本 → ${result.new_quantity}本)`, 'success');
 
-        if (!result.ok) {
-            const error = await result.json();
-            throw new Error(error.detail || '入庫処理に失敗しました');
-        }
-
-        const response = await result.json();
-        const weightInfo = response.calculated_weight_kg ? ` / ${response.calculated_weight_kg}kg` : '';
-        Utils.showToast(`入庫が完了しました (${response.old_quantity}本 → ${response.new_quantity}本${weightInfo})`, 'success');
-
-        if (selectedItems.in && Number(selectedItems.in.id) === itemId) {
-            selectedItems.in.current_quantity = response.new_quantity;
-            if (selectedItems.in.calculated) {
-                selectedItems.in.calculated.total_weight_kg = selectedItems.in.calculated.weight_per_piece_kg * response.new_quantity;
-            }
-        }
-
-        if (selectedItems.out && Number(selectedItems.out.id) === itemId) {
-            selectedItems.out.current_quantity = response.new_quantity;
-            if (selectedItems.out.calculated) {
-                selectedItems.out.calculated.total_weight_kg = selectedItems.out.calculated.weight_per_piece_kg * response.new_quantity;
-            }
-            updateSelectedItemDisplay('out');
-        }
-
-        e.target.reset();
+        // データ更新
+        event.target.reset();
         clearSelectedItem('in');
-        loadMovements();
-        loadLots();
+        await loadInventory();
+        await loadMovements();
 
     } catch (error) {
         console.error('入庫処理エラー:', error);
-        Utils.showToast(error.message || '入庫処理に失敗しました', 'error');
-    } finally {
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        Utils.setLoading(submitBtn, false);
+        showToast(error.message || '入庫処理に失敗しました', 'error');
     }
 }
 
-
 // 出庫処理
-async function handleOutMovement(e) {
-    e.preventDefault();
+async function handleOutMovement(event) {
+    event.preventDefault();
 
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
-    const itemId = data.item_id ? parseInt(data.item_id, 10) : null;
+    const formData = new FormData(event.target);
+    const itemId = parseInt(formData.get('item_id'));
 
-    if (!itemId || Number.isNaN(itemId)) {
-        Utils.showToast('対象アイテムを選択してください', 'error');
+    if (!itemId) {
+        showToast('対象アイテムを選択してください', 'error');
         return;
     }
 
-    const quantityRaw = typeof data.quantity === 'string' ? data.quantity.trim() : '';
-    const weightRaw = typeof data.weight_kg === 'string' ? data.weight_kg.trim() : '';
+    const quantity = formData.get('quantity') ? parseInt(formData.get('quantity')) : null;
+    const weight = formData.get('weight_kg') ? parseFloat(formData.get('weight_kg')) : null;
 
-    const quantityInputValue = quantityRaw ? parseInt(quantityRaw, 10) : null;
-    const weightInputValue = weightRaw ? parseFloat(weightRaw) : null;
-
-    if ((!quantityInputValue || Number.isNaN(quantityInputValue) || quantityInputValue <= 0) && (!weightInputValue || Number.isNaN(weightInputValue) || weightInputValue <= 0)) {
-        Utils.showToast('数量または重量を入力してください', 'error');
-        return;
-    }
-
-    let resolvedQuantity = quantityInputValue;
-    const selectedItem = selectedItems.out;
-    const weightPerPiece = selectedItem && selectedItem.calculated ? selectedItem.calculated.weight_per_piece_kg : null;
-
-    if ((!resolvedQuantity || Number.isNaN(resolvedQuantity) || resolvedQuantity <= 0) && weightInputValue && !Number.isNaN(weightInputValue) && weightInputValue > 0 && weightPerPiece) {
-        resolvedQuantity = Math.max(1, Math.round(weightInputValue / weightPerPiece));
-    }
-
-    if (!resolvedQuantity || Number.isNaN(resolvedQuantity) || resolvedQuantity <= 0) {
-        Utils.showToast('数量換算に失敗しました。入力内容を確認してください', 'error');
-        return;
-    }
-
-    if (selectedItem && resolvedQuantity > selectedItem.current_quantity) {
-        Utils.showToast(`在庫が不足しています。現在庫: ${selectedItem.current_quantity}本`, 'error');
+    if (!quantity && !weight) {
+        showToast('数量または重量を入力してください', 'error');
         return;
     }
 
     try {
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        Utils.setLoading(submitBtn, true);
-
-        const payload = {
-            instruction_number: data.instruction_number || null,
-            notes: data.notes || null
+        const data = {
+            notes: formData.get('notes') || null
         };
 
-        if (quantityInputValue && !Number.isNaN(quantityInputValue) && quantityInputValue > 0) {
-            payload.quantity = quantityInputValue;
-        } else if (resolvedQuantity && !Number.isNaN(resolvedQuantity) && resolvedQuantity > 0) {
-            payload.quantity = resolvedQuantity;
-        }
+        if (quantity) data.quantity = quantity;
+        if (weight) data.weight_kg = weight;
 
-        if (weightInputValue && !Number.isNaN(weightInputValue) && weightInputValue > 0) {
-            payload.weight_kg = weightInputValue;
-        }
+        const result = await APIClient.outMovement(itemId, data);
 
-        const result = await fetch(`/api/movements/out/${itemId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+        showToast(`出庫が完了しました (${result.old_quantity}本 → ${result.new_quantity}本)`, 'success');
 
-        if (!result.ok) {
-            const error = await result.json();
-            throw new Error(error.detail || '出庫処理に失敗しました');
-        }
-
-        const response = await result.json();
-        const weightInfo = response.calculated_weight_kg ? ` / ${response.calculated_weight_kg}kg` : '';
-        Utils.showToast(`出庫が完了しました (${response.old_quantity}本 → ${response.new_quantity}本${weightInfo})`, 'success');
-
-        if (selectedItems.out && Number(selectedItems.out.id) === itemId) {
-            selectedItems.out.current_quantity = response.new_quantity;
-            if (selectedItems.out.calculated) {
-                selectedItems.out.calculated.total_weight_kg = selectedItems.out.calculated.weight_per_piece_kg * response.new_quantity;
-            }
-        }
-
-        if (selectedItems.in && Number(selectedItems.in.id) === itemId) {
-            selectedItems.in.current_quantity = response.new_quantity;
-            if (selectedItems.in.calculated) {
-                selectedItems.in.calculated.total_weight_kg = selectedItems.in.calculated.weight_per_piece_kg * response.new_quantity;
-            }
-            updateSelectedItemDisplay('in');
-        }
-
-        e.target.reset();
+        // データ更新
+        event.target.reset();
         clearSelectedItem('out');
-        loadMovements();
-        loadLots();
+        await loadInventory();
+        await loadMovements();
 
     } catch (error) {
         console.error('出庫処理エラー:', error);
-        Utils.showToast(error.message || '出庫処理に失敗しました', 'error');
-    } finally {
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        Utils.setLoading(submitBtn, false);
+        showToast(error.message || '出庫処理に失敗しました', 'error');
     }
 }
 
-
-// ロット作成モーダルを開く
-function openLotModal() {
-    Utils.modal.open('lotModal');
-    // 今日の日付を設定
-    const today = new Date().toISOString().split('T')[0];
-    document.querySelector('input[name="received_date"]').value = today;
-}
-
-// ロット作成モーダルを閉じる
-function closeLotModal() {
-    Utils.modal.close('lotModal');
-}
-
-// アイテム作成モーダルを開く
-async function openItemModal() {
-    Utils.modal.open('itemModal');
-
-    // ロット選択肢を更新
-    try {
-        const response = await fetch('/api/movements/');
-        // 実際にはロット一覧APIを作成する必要がある
-
-        // 仮実装：既存の材料から推測
-        const lotSelect = document.querySelector('select[name="lot_id"]');
-        lotSelect.innerHTML = '<option value="">選択してください</option>';
-
-    } catch (error) {
-        console.error('ロット読み込みエラー:', error);
-    }
-}
-
-// アイテム作成モーダルを閉じる
-function closeItemModal() {
-    Utils.modal.close('itemModal');
-}
-
-// ロット作成処理
-async function handleLotCreate(e) {
-    e.preventDefault();
-
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
-
-    // 数値型に変換
-    data.material_id = parseInt(data.material_id);
-    data.length_mm = parseInt(data.length_mm);
-    data.initial_quantity = parseInt(data.initial_quantity);
-
-    try {
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        Utils.setLoading(submitBtn, true);
-
-        const result = await fetch('/api/movements/lots', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-
-        if (!result.ok) {
-            const error = await result.json();
-            throw new Error(error.detail || 'ロット作成に失敗しました');
+        // QRスキャン開始
+        function openQRScanner() {
+            if (window.qrScanner) {
+                // QRScannerクラスのモーダルを開く
+                window.qrScanner.openScanModal();
+                // コールバック関数を設定
+                window.qrScanner.scanCallback = handleQRScan;
+            } else {
+                showToast('QRスキャナーが利用できません', 'error');
+            }
         }
 
-        const response = await result.json();
-        Utils.showToast(`ロット「${response.lot_number}」を作成しました`, 'success');
+        // QRスキャン結果処理
+        async function handleQRScan(code) {
+            try {
+                const result = await APIClient.searchByManagementCode(code);
 
-        // 現品票印刷確認
-        const printTag = await Utils.confirm(
-            `ロット「${response.lot_number}」の現品票を印刷しますか？`,
-            '現品票印刷'
-        );
+                if (result) {
+                    // アイテムを自動選択（入庫または出庫の選択ダイアログ表示）
+                    const action = confirm('スキャンしたアイテムを入庫しますか？\n「キャンセル」で出庫を選択できます。');
+                    selectedItems[action ? 'in' : 'out'] = result;
+                    updateSelectedItemDisplay(action ? 'in' : 'out');
 
-        if (printTag) {
-            await printLotTag(response.id, 'standard', 1);
+                    showToast('QRコードからアイテムを選択しました', 'success');
+                } else {
+                    showToast('該当するアイテムが見つかりませんでした', 'error');
+                }
+            } catch (error) {
+                console.error('QRスキャン結果処理エラー:', error);
+                showToast('QRコードの処理に失敗しました', 'error');
+            }
         }
 
-        closeLotModal();
-
-    } catch (error) {
-        console.error('ロット作成エラー:', error);
-        Utils.showToast(error.message || 'ロット作成に失敗しました', 'error');
-    } finally {
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        Utils.setLoading(submitBtn, false);
-    }
+// フィルター処理
+function filterInventory() {
+    // 実装予定：フィルタリング処理
+    console.log('在庫フィルター処理');
 }
 
-// アイテム作成処理
-async function handleItemCreate(e) {
-    e.preventDefault();
-
-    const formData = new FormData(e.target);
-    const data = Object.fromEntries(formData.entries());
-
-    // 数値型に変換
-    data.lot_id = parseInt(data.lot_id);
-    data.location_id = data.location_id ? parseInt(data.location_id) : null;
-    data.initial_quantity = parseInt(data.initial_quantity);
-
-    try {
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        Utils.setLoading(submitBtn, true);
-
-        const result = await fetch('/api/movements/items', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-
-        if (!result.ok) {
-            const error = await result.json();
-            throw new Error(error.detail || 'アイテム作成に失敗しました');
-        }
-
-        const response = await result.json();
-        Utils.showToast(`アイテム「${response.management_code}」を作成しました`, 'success');
-
-        closeItemModal();
-
-    } catch (error) {
-        console.error('アイテム作成エラー:', error);
-        Utils.showToast(error.message || 'アイテム作成に失敗しました', 'error');
-    } finally {
-        const submitBtn = e.target.querySelector('button[type="submit"]');
-        Utils.setLoading(submitBtn, false);
-    }
+function filterMovements() {
+    // 実装予定：フィルタリング処理
+    console.log('履歴フィルター処理');
 }
 
-// 現品票印刷
-async function printLotTag(lotId, labelType = 'standard', copies = 1) {
-    try {
-        const response = await fetch('/api/labels/lot-tag', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                lot_id: lotId,
-                label_type: labelType,
-                copies: copies
-            })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || '現品票印刷に失敗しました');
-        }
-
-        // PDFダウンロード
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `lot_tag_${lotId}_${new Date().getTime()}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-
-        Utils.showToast('現品票PDFをダウンロードしました', 'success');
-
-    } catch (error) {
-        console.error('現品票印刷エラー:', error);
-        Utils.showToast(error.message || '現品票印刷に失敗しました', 'error');
-    }
+// 検索リセット
+function resetItemSearch() {
+    document.getElementById('itemSearchForm').reset();
+    handleItemSearch({ preventDefault: () => {} });
 }
 
-// 現品票プレビュー
-async function previewLotTag(lotId) {
-    try {
-        const response = await fetch(`/api/labels/lot-preview/${lotId}`);
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'プレビュー取得に失敗しました');
-        }
-
-        const data = await response.json();
-
-        // プレビュー情報を表示（簡易実装）
-        const previewText = `
-現品票プレビュー
-----------------
-ロット番号: ${data.lot.lot_number}
-材質: ${data.material.name}
-形状: ${data.material.shape_name}
-寸法: φ${data.material.diameter_mm}mm
-長さ: ${data.lot.length_mm}mm
-単重: ${data.calculated.weight_per_piece_kg}kg/本
-仕入先: ${data.lot.supplier || '未登録'}
-入荷日: ${data.lot.received_date || '未登録'}
-        `;
-
-        alert(previewText);
-
-    } catch (error) {
-        console.error('プレビューエラー:', error);
-        Utils.showToast(error.message || 'プレビュー取得に失敗しました', 'error');
-    }
+// データ更新
+async function refreshData() {
+    await Promise.all([loadInventory(), loadMovements()]);
+    showToast('データを更新しました', 'success');
 }
 
-// 管理コードをクリップボードにコピー（在庫管理ページと同じ）
+// ユーティリティ関数
+function getShapeText(shape) {
+    const shapeMap = {
+        'round': '丸棒',
+        'hexagon': '六角棒',
+        'square': '角棒'
+    };
+    return shapeMap[shape] || shape;
+}
+
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
-        Utils.showToast('管理コードをコピーしました', 'success');
+        showToast('管理コードをコピーしました', 'success');
     }).catch(() => {
-        Utils.showToast('コピーに失敗しました', 'error');
+        showToast('コピーに失敗しました', 'error');
     });
 }
 
+function showToast(message, type = 'info') {
+    // トースト通知の実装
+    console.log(`${type.toUpperCase()}: ${message}`);
+
+    // 簡易実装
+    const toast = document.createElement('div');
+    toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
+        type === 'success' ? 'bg-green-600' :
+        type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+    }`;
+    toast.textContent = message;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
 </script>
 {% endblock %}

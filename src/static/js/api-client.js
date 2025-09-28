@@ -199,10 +199,24 @@ class APIClient {
     }
 
     /**
-     * アイテム検索（材料名や径などで絞り込み）
+     * アイテム検索（材料名や径などで絞り込み） - 在庫管理APIを使用
      */
     static async searchMovementItems(params = {}) {
-        return this.get('/movements/search-items', params);
+        return this.get('/inventory/', params);
+    }
+
+    /**
+     * 入庫処理（アイテムIDベース）
+     */
+    static async inMovement(itemId, data) {
+        return this.post(`/movements/in/${itemId}`, data);
+    }
+
+    /**
+     * 出庫処理（アイテムIDベース）
+     */
+    static async outMovement(itemId, data) {
+        return this.post(`/movements/out/${itemId}`, data);
     }
 
     // ===== ラベル印刷 =====
@@ -220,16 +234,23 @@ class APIClient {
      * 置き場一覧取得
      */
     static async getLocations(params = {}) {
-        return this.get('/locations', params);
+        return this.get('/inventory/locations/', params);
     }
 
-    // ===== ロット管理 =====
+    // ===== 発注管理 =====
 
     /**
-     * ロット一覧取得
+     * 発注一覧取得
      */
-    static async getLots(params = {}) {
-        return this.get('/lots', params);
+    static async getPurchaseOrders(params = {}) {
+        return this.get('/purchase-orders/', params);
+    }
+
+    /**
+     * 入庫待ちアイテム一覧取得
+     */
+    static async getPendingItems() {
+        return this.get('/purchase-orders/pending/items/');
     }
 }
 

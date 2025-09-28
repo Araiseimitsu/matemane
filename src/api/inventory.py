@@ -233,7 +233,7 @@ async def get_inventory_summary(
 
     return summary_list
 
-@router.get("/search/{management_code}")
+@router.get("/search/{management_code}", response_model=InventoryItem)
 async def search_by_management_code(management_code: str, db: Session = Depends(get_db)):
     """管理コード（UUID）による検索"""
     item = db.query(Item).options(
@@ -268,15 +268,14 @@ async def search_by_management_code(management_code: str, db: Session = Depends(
     weight_per_piece_kg = (volume_cm3 * material.current_density) / 1000
     total_weight_kg = weight_per_piece_kg * item.current_quantity
 
-    return {
-        "item": {
-            "id": item.id,
-            "management_code": item.management_code,
-            "current_quantity": item.current_quantity,
-            "is_active": item.is_active,
-            "created_at": item.created_at,
-            "updated_at": item.updated_at
-        },
+    # InventoryItem形式で返却（在庫一覧APIと同じ構造）
+    item_dict = {
+        "id": item.id,
+        "management_code": item.management_code,
+        "current_quantity": item.current_quantity,
+        "is_active": item.is_active,
+        "created_at": item.created_at,
+        "updated_at": item.updated_at,
         "lot": {
             "id": item.lot.id,
             "lot_number": item.lot.lot_number,
@@ -288,7 +287,7 @@ async def search_by_management_code(management_code: str, db: Session = Depends(
         "material": {
             "id": material.id,
             "name": material.name,
-            "shape": material.shape.value,
+            "shape": material.shape,
             "diameter_mm": material.diameter_mm,
             "current_density": material.current_density
         },
@@ -300,6 +299,8 @@ async def search_by_management_code(management_code: str, db: Session = Depends(
         "weight_per_piece_kg": round(weight_per_piece_kg, 3),
         "total_weight_kg": round(total_weight_kg, 3)
     }
+
+    return InventoryItem(**item_dict)
 
 @router.get("/low-stock")
 async def get_low_stock_items(

@@ -92,9 +92,6 @@
                     <a href="/movements" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
                         <i class="fas fa-exchange-alt mr-2"></i>入出庫
                     </a>
-                    <a href="/scan" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-                        <i class="fas fa-qrcode mr-2"></i>QRスキャン
-                    </a>
                 </div>
 
                 <!-- ユーザーメニュー -->
@@ -136,9 +133,6 @@
                 </a>
                 <a href="/movements" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
                     <i class="fas fa-exchange-alt mr-2"></i>入出庫
-                </a>
-                <a href="/scan" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
-                    <i class="fas fa-qrcode mr-2"></i>QRスキャン
                 </a>
             </div>
         </div>
@@ -230,22 +224,22 @@
             }, 5000);
         }
 
-        // 認証チェック
-        function checkAuth() {
-            const token = localStorage.getItem('access_token');
-            if (!token && window.location.pathname !== '/login') {
-                window.location.href = '/login';
-                return false;
-            }
-            return true;
-        }
+        // 認証チェック（現在無効化中）
+        // function checkAuth() {
+        //     const token = localStorage.getItem('access_token');
+        //     if (!token && window.location.pathname !== '/login') {
+        //         window.location.href = '/login';
+        //         return false;
+        //     }
+        //     return true;
+        // }
 
-        // ページ読み込み時の認証チェック
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.location.pathname !== '/login') {
-                checkAuth();
-            }
-        });
+        // ページ読み込み時の認証チェック（現在無効化中）
+        // document.addEventListener('DOMContentLoaded', function() {
+        //     if (window.location.pathname !== '/login') {
+        //         checkAuth();
+        //     }
+        // });
     </script>
 
     {% block extra_scripts %}{% endblock %}
