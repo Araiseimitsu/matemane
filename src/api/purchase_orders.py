@@ -9,6 +9,7 @@ from src.db.models import (
     PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, PurchaseOrderItemStatus,
     Material, MaterialShape, Lot, Item, Location, OrderType
 )
+from src.api.order_utils import generate_order_number
 
 router = APIRouter()
 
@@ -81,7 +82,7 @@ class PurchaseOrderItemCreate(BaseModel):
             return quantity, self.ordered_weight_kg
 
 class PurchaseOrderCreate(BaseModel):
-    order_number: str = Field(..., max_length=50, description="発注番号")
+    order_number: Optional[str] = Field(None, max_length=50, description="発注番号（未指定時は自動生成）")
     supplier: str = Field(..., max_length=200, description="仕入先")
     order_date: datetime = Field(..., description="発注日")
     expected_delivery_date: Optional[datetime] = Field(None, description="納期予定日")
@@ -186,19 +187,25 @@ async def get_purchase_order(order_id: int, db: Session = Depends(get_db)):
 async def create_purchase_order(order: PurchaseOrderCreate, db: Session = Depends(get_db)):
     """発注作成"""
     # 発注番号の重複チェック
-    existing = db.query(PurchaseOrder).filter(
-        PurchaseOrder.order_number == order.order_number
-    ).first()
+    provided_order_number = (order.order_number or "").strip()
 
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="同じ発注番号が既に存在します"
-        )
+    if provided_order_number:
+        existing = db.query(PurchaseOrder).filter(
+            PurchaseOrder.order_number == provided_order_number
+        ).first()
+
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="同じ発注番号が既に存在します"
+            )
+        order_number_value = provided_order_number
+    else:
+        order_number_value = generate_order_number(db)
 
     # 発注作成
     db_order = PurchaseOrder(
-        order_number=order.order_number,
+        order_number=order_number_value,
         supplier=order.supplier,
         order_date=order.order_date,
         expected_delivery_date=order.expected_delivery_date,

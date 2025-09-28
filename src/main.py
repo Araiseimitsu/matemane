@@ -9,7 +9,7 @@ import logging
 
 from src.config import settings
 from src.db import create_tables
-from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders
+from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders, order_utils
 
 # ログ設定
 logging.basicConfig(
@@ -55,6 +55,7 @@ app.include_router(movements.router, prefix="/api/movements", tags=["入出庫�
 app.include_router(labels.router, prefix="/api/labels", tags=["ラベル印刷"])
 app.include_router(density_presets.router, prefix="/api/density-presets", tags=["比重プリセット管理"])
 app.include_router(purchase_orders.router, prefix="/api/purchase-orders", tags=["発注管理"])
+app.include_router(order_utils.router, prefix="/api/order-utils", tags=["発注ユーティリティ"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -101,8 +102,6 @@ async def movements_page(request: Request):
     """入出庫管理画面"""
     return templates.TemplateResponse("movements.html", {"request": request})
 
-
-
 @app.get("/purchase-orders")
 async def purchase_orders_page(request: Request):
     """発注管理画面"""
@@ -121,7 +120,8 @@ async def settings_page(request: Request):
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
     """404エラーハンドラー"""
-    # APIエンドポイントの場合はJSONレスポンスを返す
+    logger.warning("未検出パスにアクセスされました: %s", request.url.path)
+
     if request.url.path.startswith("/api/"):
         from fastapi.responses import JSONResponse
         return JSONResponse(
@@ -129,16 +129,24 @@ async def not_found_handler(request: Request, exc):
             content={"detail": "指定されたリソースが見つかりません"}
         )
 
-    # 通常のページの場合はHTMLテンプレートを返す
     return templates.TemplateResponse(
         "error.html",
-        {"request": request, "error_code": 404, "error_message": "ページが見つかりません"}
+        {"request": request, "error_code": 404, "error_message": "ページが見つかりません"},
+        status_code=404
     )
 
 @app.exception_handler(500)
 async def internal_error_handler(request: Request, exc):
     """500エラーハンドラー"""
     logger.error(f"内部サーバーエラー: {exc}")
+
+    if request.url.path.startswith("/api/"):
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "内部サーバーエラーが発生しました。ログを確認してください。"}
+        )
+
     return templates.TemplateResponse(
         "error.html",
         {"request": request, "error_code": 500, "error_message": "内部サーバーエラーが発生しました"}
