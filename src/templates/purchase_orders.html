@@ -26,7 +26,7 @@
     <div class="px-4 py-6">
         <!-- フィルター -->
         <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">状態</label>
                     <select id="statusFilter" class="w-full p-2 border border-gray-300 rounded-md">
@@ -40,6 +40,11 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">仕入先</label>
                     <input type="text" id="supplierFilter" placeholder="仕入先名で絞り込み"
+                           class="w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">用途</label>
+                    <input type="text" id="purposeFilter" placeholder="用途・製品名で絞り込み"
                            class="w-full p-2 border border-gray-300 rounded-md">
                 </div>
                 <div>
@@ -66,10 +71,11 @@
                         <tr>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">発注番号</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">仕入先</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 hidden md:table-cell">用途</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">発注日</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">納期予定</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 hidden lg:table-cell">納期予定</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">状態</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">合計金額</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500 hidden lg:table-cell">合計金額</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">操作</th>
                         </tr>
                     </thead>
@@ -91,8 +97,8 @@
 
 <!-- 新規発注モーダル -->
 <div id="addOrderModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen p-4 modal-overlay">
+        <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b">
                 <div class="flex justify-between items-center">
                     <h2 class="text-xl font-semibold text-gray-900">新規発注作成</h2>
@@ -130,6 +136,13 @@
                 </div>
 
                 <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">用途・製品名</label>
+                    <input type="text" name="purpose" placeholder="例：○○製品用材料、◇◇部品加工用"
+                           class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <p class="text-sm text-gray-500 mt-1">この材料がどの製品・用途に使用されるかを入力してください（任意）</p>
+                </div>
+
+                <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
                     <textarea name="notes" rows="3"
                               class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
@@ -164,8 +177,8 @@
 
 <!-- 発注詳細モーダル -->
 <div id="orderDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen p-4 modal-overlay">
+        <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b">
                 <div class="flex justify-between items-center">
                     <h2 class="text-xl font-semibold text-gray-900">発注詳細</h2>
@@ -240,13 +253,17 @@ function createOrderRow(order) {
     const totalAmount = order.total_amount ?
         `¥${order.total_amount.toLocaleString()}` : '-';
 
+    const purpose = order.purpose || '-';
+    const purposeText = purpose.length > 20 ? purpose.substring(0, 20) + '...' : purpose;
+
     row.innerHTML = `
         <td class="px-4 py-3 text-sm font-medium text-gray-900">${order.order_number}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${order.supplier}</td>
+        <td class="px-4 py-3 text-sm text-gray-600 hidden md:table-cell" title="${purpose}">${purposeText}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${orderDate}</td>
-        <td class="px-4 py-3 text-sm text-gray-600">${deliveryDate}</td>
+        <td class="px-4 py-3 text-sm text-gray-600 hidden lg:table-cell">${deliveryDate}</td>
         <td class="px-4 py-3">${statusBadge}</td>
-        <td class="px-4 py-3 text-sm text-gray-600">${totalAmount}</td>
+        <td class="px-4 py-3 text-sm text-gray-600 hidden lg:table-cell">${totalAmount}</td>
         <td class="px-4 py-3">
             <button onclick="viewOrderDetail(${order.id})"
                     class="text-blue-600 hover:text-blue-800 text-sm font-medium">
@@ -283,6 +300,32 @@ function setupEventListeners() {
     document.getElementById('closeAddOrderModal').addEventListener('click', hideAddOrderModal);
     document.getElementById('cancelAddOrder').addEventListener('click', hideAddOrderModal);
     document.getElementById('closeOrderDetailModal').addEventListener('click', hideOrderDetailModal);
+
+    // モーダル外クリック閉じ
+    document.getElementById('addOrderModal').addEventListener('click', function(e) {
+        if (e.target === this || e.target.classList.contains('modal-overlay')) {
+            hideAddOrderModal();
+        }
+    });
+    document.getElementById('orderDetailModal').addEventListener('click', function(e) {
+        if (e.target === this || e.target.classList.contains('modal-overlay')) {
+            hideOrderDetailModal();
+        }
+    });
+
+    // ESCキー処理
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const addModal = document.getElementById('addOrderModal');
+            const detailModal = document.getElementById('orderDetailModal');
+
+            if (!addModal.classList.contains('hidden')) {
+                hideAddOrderModal();
+            } else if (!detailModal.classList.contains('hidden')) {
+                hideOrderDetailModal();
+            }
+        }
+    });
 
     // フォーム送信
     document.getElementById('addOrderForm').addEventListener('submit', handleAddOrder);
@@ -336,7 +379,8 @@ function addOrderItem() {
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">形状 *</label>
                 <select name="items[${itemIndex}][shape]" required
-                        class="w-full p-2 border border-gray-300 rounded-md">
+                        class="w-full p-2 border border-gray-300 rounded-md"
+                        onchange="calculateConversion(${itemIndex})">
                     <option value="round">丸棒</option>
                     <option value="hexagon">六角棒</option>
                     <option value="square">角棒</option>
@@ -344,23 +388,57 @@ function addOrderItem() {
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">直径/一辺 (mm) *</label>
-                <input type="number" name="items[${itemIndex}][diameter_mm]" step="0.1" required
-                       class="w-full p-2 border border-gray-300 rounded-md">
+                <input type="number" name="items[${itemIndex}][diameter_mm]" step="0.1" min="0.1" required
+                       class="w-full p-2 border border-gray-300 rounded-md"
+                       onchange="calculateConversion(${itemIndex})">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">長さ (mm) *</label>
-                <input type="number" name="items[${itemIndex}][length_mm]" required
-                       class="w-full p-2 border border-gray-300 rounded-md">
+                <input type="number" name="items[${itemIndex}][length_mm]" min="1" required
+                       class="w-full p-2 border border-gray-300 rounded-md"
+                       onchange="calculateConversion(${itemIndex})">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">比重 (g/cm³) *</label>
-                <input type="number" name="items[${itemIndex}][density]" step="0.01" required
-                       class="w-full p-2 border border-gray-300 rounded-md">
+                <input type="number" name="items[${itemIndex}][density]" step="0.01" min="0.01" required
+                       class="w-full p-2 border border-gray-300 rounded-md"
+                       onchange="calculateConversion(${itemIndex})">
             </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">数量 *</label>
-                <input type="number" name="items[${itemIndex}][ordered_quantity]" required
-                       class="w-full p-2 border border-gray-300 rounded-md">
+            <div class="col-span-3">
+                <label class="block text-sm font-medium text-gray-700 mb-1">発注方式 *</label>
+                <div class="flex space-x-4">
+                    <label class="flex items-center">
+                        <input type="radio" name="items[${itemIndex}][order_type]" value="quantity" checked
+                               class="mr-2" onchange="toggleOrderType(${itemIndex}, 'quantity')">
+                        本数指定
+                    </label>
+                    <label class="flex items-center">
+                        <input type="radio" name="items[${itemIndex}][order_type]" value="weight"
+                               class="mr-2" onchange="toggleOrderType(${itemIndex}, 'weight')">
+                        重量指定
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+            <div id="quantityField_${itemIndex}">
+                <label class="block text-sm font-medium text-gray-700 mb-1">数量（本） *</label>
+                <input type="number" name="items[${itemIndex}][ordered_quantity]" min="1"
+                       class="w-full p-2 border border-gray-300 rounded-md order-input-field"
+                       onchange="calculateConversion(${itemIndex})"
+                       placeholder="例: 10">
+            </div>
+            <div id="weightField_${itemIndex}" class="hidden">
+                <label class="block text-sm font-medium text-gray-700 mb-1">重量（kg） *</label>
+                <input type="number" name="items[${itemIndex}][ordered_weight_kg]" step="0.001" min="0.001"
+                       class="w-full p-2 border border-gray-300 rounded-md order-input-field"
+                       onchange="calculateConversion(${itemIndex})"
+                       placeholder="例: 15.5">
+            </div>
+            <div id="conversionDisplay_${itemIndex}" class="flex items-center">
+                <div class="text-sm text-gray-600">
+                    <div id="conversionResult_${itemIndex}">換算結果が表示されます</div>
+                </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">単価</label>
@@ -410,6 +488,7 @@ async function handleAddOrder(event) {
         supplier: formData.get('supplier'),
         order_date: formData.get('order_date'),
         expected_delivery_date: formData.get('expected_delivery_date') || null,
+        purpose: formData.get('purpose') || null,
         notes: formData.get('notes') || null,
         items: []
     };
@@ -417,16 +496,25 @@ async function handleAddOrder(event) {
     // アイテムデータ収集
     const container = document.getElementById('orderItems');
     Array.from(container.children).forEach((item, index) => {
+        const orderType = formData.get(`items[${index}][order_type]`);
         const itemData = {
             material_name: formData.get(`items[${index}][material_name]`),
             shape: formData.get(`items[${index}][shape]`),
             diameter_mm: parseFloat(formData.get(`items[${index}][diameter_mm]`)),
             length_mm: parseInt(formData.get(`items[${index}][length_mm]`)),
             density: parseFloat(formData.get(`items[${index}][density]`)),
-            ordered_quantity: parseInt(formData.get(`items[${index}][ordered_quantity]`)),
+            order_type: orderType,
             unit_price: formData.get(`items[${index}][unit_price]`) ?
                         parseFloat(formData.get(`items[${index}][unit_price]`)) : null
         };
+
+        // 発注方式に応じてデータを設定
+        if (orderType === 'quantity') {
+            itemData.ordered_quantity = parseInt(formData.get(`items[${index}][ordered_quantity]`));
+        } else {
+            itemData.ordered_weight_kg = parseFloat(formData.get(`items[${index}][ordered_weight_kg]`));
+        }
+
         orderData.items.push(itemData);
     });
 
@@ -482,13 +570,27 @@ function createOrderDetailHTML(order) {
         const itemTotal = item.unit_price ?
             `¥${(item.unit_price * item.ordered_quantity).toLocaleString()}` : '-';
 
+        // 発注方式と数量表示を決定
+        let orderDisplay = '';
+        if (item.order_type === 'weight') {
+            orderDisplay = `${item.ordered_weight_kg}kg (${item.ordered_quantity}本)`;
+        } else {
+            orderDisplay = `${item.ordered_quantity}本`;
+            if (item.ordered_weight_kg) {
+                orderDisplay += ` (${item.ordered_weight_kg}kg)`;
+            }
+        }
+
         itemsHTML += `
             <tr class="border-b">
                 <td class="px-4 py-3 text-sm">${item.material_name}</td>
                 <td class="px-4 py-3 text-sm">${getShapeText(item.shape)}</td>
                 <td class="px-4 py-3 text-sm">${item.diameter_mm}mm</td>
                 <td class="px-4 py-3 text-sm">${item.length_mm}mm</td>
-                <td class="px-4 py-3 text-sm">${item.ordered_quantity}</td>
+                <td class="px-4 py-3 text-sm">
+                    <div>${orderDisplay}</div>
+                    <small class="text-gray-500">${item.order_type === 'weight' ? '重量指定' : '本数指定'}</small>
+                </td>
                 <td class="px-4 py-3 text-sm">${item.received_quantity}</td>
                 <td class="px-4 py-3 text-sm">${getStatusBadge(item.status)}</td>
                 <td class="px-4 py-3 text-sm">${itemTotal}</td>
@@ -517,6 +619,10 @@ function createOrderDetailHTML(order) {
                     <div>
                         <dt class="text-sm font-medium text-gray-500">納期予定日</dt>
                         <dd class="text-sm text-gray-900">${deliveryDate}</dd>
+                    </div>
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">用途・製品名</dt>
+                        <dd class="text-sm text-gray-900">${order.purpose || '-'}</dd>
                     </div>
                 </dl>
             </div>
@@ -575,17 +681,220 @@ function getShapeText(shape) {
     return shapeMap[shape] || shape;
 }
 
+// 発注方式切り替え
+function toggleOrderType(itemIndex, orderType) {
+    console.log(`発注方式切り替え: アイテム${itemIndex}, 方式: ${orderType}`); // デバッグログ追加
+
+    const quantityField = document.getElementById(`quantityField_${itemIndex}`);
+    const weightField = document.getElementById(`weightField_${itemIndex}`);
+    const quantityInput = quantityField.querySelector('input');
+    const weightInput = weightField.querySelector('input');
+
+    if (orderType === 'quantity') {
+        quantityField.classList.remove('hidden');
+        weightField.classList.add('hidden');
+        quantityInput.required = true;
+        weightInput.required = false;
+        weightInput.value = '';
+        console.log('本数指定に切り替え');
+    } else {
+        quantityField.classList.add('hidden');
+        weightField.classList.remove('hidden');
+        quantityInput.required = false;
+        weightInput.required = true;
+        quantityInput.value = '';
+        console.log('重量指定に切り替え');
+    }
+
+    // 換算結果をクリア
+    const conversionResult = document.getElementById(`conversionResult_${itemIndex}`);
+    conversionResult.textContent = '換算結果が表示されます';
+
+    // 切り替え後、既に値が入力されている場合は換算を実行
+    setTimeout(() => {
+        const hasQuantity = orderType === 'quantity' && quantityInput.value;
+        const hasWeight = orderType === 'weight' && weightInput.value;
+        if (hasQuantity || hasWeight) {
+            console.log('値が入力済みのため換算を実行');
+            calculateConversion(itemIndex);
+        }
+    }, 100);
+}
+
+// 重量⇔本数換算計算
+async function calculateConversion(itemIndex) {
+    console.log(`換算計算開始: アイテム ${itemIndex}`); // デバッグログ追加
+
+    const container = document.getElementById('orderItems').children[itemIndex];
+    if (!container) {
+        console.error(`アイテム ${itemIndex} のコンテナが見つかりません`);
+        return;
+    }
+
+    const materialName = container.querySelector('input[name*="[material_name]"]').value;
+    const shape = container.querySelector('select[name*="[shape]"]').value;
+    const diameterInput = container.querySelector('input[name*="[diameter_mm]"]').value;
+    const lengthInput = container.querySelector('input[name*="[length_mm]"]').value;
+    const densityInput = container.querySelector('input[name*="[density]"]').value;
+
+    console.log(`入力値: 材料名=${materialName}, 形状=${shape}, 直径=${diameterInput}, 長さ=${lengthInput}, 比重=${densityInput}`);
+
+    // 入力値をパースして検証
+    const diameter = parseFloat(diameterInput);
+    const length = parseInt(lengthInput);
+    const density = parseFloat(densityInput);
+
+    // 必要な値が入力されているかと数値の妥当性をチェック
+    if (!shape || !diameterInput || !lengthInput || !densityInput) {
+        document.getElementById(`conversionResult_${itemIndex}`).textContent = '材料情報を入力してください';
+        return;
+    }
+
+    if (isNaN(diameter) || diameter <= 0) {
+        document.getElementById(`conversionResult_${itemIndex}`).textContent = '直径/一辺は正の数値を入力してください';
+        return;
+    }
+
+    if (isNaN(length) || length <= 0) {
+        document.getElementById(`conversionResult_${itemIndex}`).textContent = '長さは正の整数を入力してください';
+        return;
+    }
+
+    if (isNaN(density) || density <= 0) {
+        document.getElementById(`conversionResult_${itemIndex}`).textContent = '比重は正の数値を入力してください';
+        return;
+    }
+
+    // 発注方式を確認
+    const orderTypeRadios = container.querySelectorAll('input[name*="[order_type]"]');
+    let orderType = null;
+    for (const radio of orderTypeRadios) {
+        if (radio.checked) {
+            orderType = radio.value;
+            break;
+        }
+    }
+
+    console.log(`発注方式: ${orderType}`);
+
+    let quantity = null;
+    let weightKg = null;
+
+    if (orderType === 'quantity') {
+        const quantityInput = container.querySelector('input[name*="[ordered_quantity]"]');
+        const quantityValue = quantityInput.value;
+        console.log(`本数指定: 入力値=${quantityValue}`);
+        if (!quantityValue) {
+            document.getElementById(`conversionResult_${itemIndex}`).textContent = '数量を入力してください';
+            return;
+        }
+        quantity = parseInt(quantityValue);
+        if (isNaN(quantity) || quantity <= 0) {
+            document.getElementById(`conversionResult_${itemIndex}`).textContent = '数量は正の整数を入力してください';
+            return;
+        }
+        console.log(`本数指定: パース後=${quantity}`);
+    } else {
+        const weightInput = container.querySelector('input[name*="[ordered_weight_kg]"]');
+        const weightValue = weightInput.value;
+        console.log(`重量指定: 入力値=${weightValue}`);
+        if (!weightValue) {
+            document.getElementById(`conversionResult_${itemIndex}`).textContent = '重量を入力してください';
+            return;
+        }
+        weightKg = parseFloat(weightValue);
+        if (isNaN(weightKg) || weightKg <= 0) {
+            document.getElementById(`conversionResult_${itemIndex}`).textContent = '重量は正の数値を入力してください';
+            return;
+        }
+        console.log(`重量指定: パース後=${weightKg}`);
+    }
+
+    try {
+        const requestData = {
+            shape: shape,
+            diameter_mm: diameter,
+            length_mm: length,
+            density: density
+        };
+
+        if (quantity !== null) {
+            requestData.quantity = quantity;
+        }
+        if (weightKg !== null) {
+            requestData.weight_kg = weightKg;
+        }
+
+        console.log('換算リクエストデータ:', requestData); // デバッグログ追加
+
+        const response = await fetch('/api/purchase-orders/calculate-conversion/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        });
+
+        console.log('換算レスポンス状態:', response.status); // デバッグログ追加
+
+        if (response.ok) {
+            const result = await response.json();
+            console.log('換算結果:', result); // デバッグログ追加
+            const conversionResult = document.getElementById(`conversionResult_${itemIndex}`);
+
+            if (result.conversion_type === 'quantity_to_weight') {
+                conversionResult.innerHTML = `
+                    <strong>換算重量:</strong> ${result.calculated_weight_kg} kg<br>
+                    <small class="text-gray-500">${quantity}本 → ${result.calculated_weight_kg}kg</small>
+                `;
+                console.log(`本数→重量換算成功: ${quantity}本 → ${result.calculated_weight_kg}kg`);
+            } else {
+                conversionResult.innerHTML = `
+                    <strong>換算本数:</strong> ${result.calculated_quantity} 本<br>
+                    <small class="text-gray-500">${weightKg}kg → ${result.calculated_quantity}本</small>
+                `;
+                console.log(`重量→本数換算成功: ${weightKg}kg → ${result.calculated_quantity}本`);
+            }
+        } else {
+            let errorMessage = '換算計算に失敗しました';
+            console.log('換算API失敗、ステータス:', response.status); // デバッグログ追加
+            try {
+                const error = await response.json();
+                console.log('換算エラー詳細:', error); // デバッグログ追加
+                if (error.detail) {
+                    if (Array.isArray(error.detail)) {
+                        // Pydanticバリデーションエラーの場合
+                        const messages = error.detail.map(e => e.msg).join(', ');
+                        errorMessage = `入力エラー: ${messages}`;
+                    } else {
+                        errorMessage = `計算エラー: ${error.detail}`;
+                    }
+                }
+            } catch (e) {
+                console.log('JSONパースエラー:', e); // デバッグログ追加
+                // JSONパースエラーの場合はデフォルトメッセージを使用
+            }
+            document.getElementById(`conversionResult_${itemIndex}`).textContent = errorMessage;
+        }
+    } catch (error) {
+        console.error('換算計算エラー:', error);
+        document.getElementById(`conversionResult_${itemIndex}`).textContent = 'ネットワークエラーが発生しました';
+    }
+}
+
 // 検索機能
 async function searchOrders() {
     // フィルター値取得
     const status = document.getElementById('statusFilter').value;
     const supplier = document.getElementById('supplierFilter').value;
+    const purpose = document.getElementById('purposeFilter').value;
     const orderNumber = document.getElementById('orderNumberFilter').value;
 
     // パラメータ構築
     const params = new URLSearchParams();
     if (status) params.append('status', status);
     if (supplier) params.append('supplier', supplier);
+    if (purpose) params.append('purpose', purpose);
 
     try {
         const response = await fetch(`/api/purchase-orders/?${params.toString()}`);

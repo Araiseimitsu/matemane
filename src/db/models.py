@@ -30,7 +30,10 @@ class PurchaseOrderStatus(enum.Enum):
 class PurchaseOrderItemStatus(enum.Enum):
     PENDING = "pending"      # 入庫待ち
     RECEIVED = "received"    # 入庫済み
-    CANCELLED = "cancelled"  # キャンセル
+
+class OrderType(enum.Enum):
+    QUANTITY = "quantity"    # 本数指定
+    WEIGHT = "weight"        # 重量指定
 
 class User(Base):
     __tablename__ = "users"
@@ -163,6 +166,7 @@ class PurchaseOrder(Base):
     order_date = Column(DateTime(timezone=True), nullable=False, comment="発注日")
     expected_delivery_date = Column(DateTime(timezone=True), comment="納期予定日")
     status = Column(Enum(PurchaseOrderStatus), nullable=False, default=PurchaseOrderStatus.PENDING, comment="発注状態")
+    purpose = Column(Text, comment="用途・製品名（例：○○製品用材料）")
     notes = Column(Text, comment="備考")
     total_amount = Column(Float, comment="合計金額")
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -184,8 +188,11 @@ class PurchaseOrderItem(Base):
     diameter_mm = Column(Float, nullable=False, comment="直径または一辺の長さ（mm）")
     length_mm = Column(Integer, nullable=False, comment="長さ（mm）")
     density = Column(Float, nullable=False, comment="比重（g/cm³）")
-    ordered_quantity = Column(Integer, nullable=False, comment="発注数量")
-    received_quantity = Column(Integer, default=0, comment="入庫数量")
+    order_type = Column(Enum(OrderType), nullable=False, default=OrderType.QUANTITY, comment="発注方式")
+    ordered_quantity = Column(Integer, comment="発注数量（本数指定時）")
+    received_quantity = Column(Integer, default=0, comment="入庫数量（本数）")
+    ordered_weight_kg = Column(Float, comment="発注重量（重量指定時、kg）")
+    received_weight_kg = Column(Float, comment="入庫重量（kg）")
     unit_price = Column(Float, comment="単価")
     management_code = Column(CHAR(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()), comment="事前生成UUID管理コード")
     is_new_material = Column(Boolean, default=False, comment="新規材料フラグ")

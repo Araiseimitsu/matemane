@@ -61,7 +61,7 @@
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">材料名</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">形状・寸法</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">長さ</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">発注数量</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">発注数量/重量</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">管理コード</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">操作</th>
                         </tr>
@@ -84,8 +84,8 @@
 
 <!-- 入庫確認モーダル -->
 <div id="receiveModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto">
+    <div class="flex items-center justify-center min-h-screen p-4 modal-overlay">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div class="p-6 border-b">
                 <div class="flex justify-between items-center">
                     <h2 class="text-xl font-semibold text-gray-900">入庫確認</h2>
@@ -117,11 +117,61 @@
                                placeholder="例: L202501001">
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">入庫数量 *</label>
-                        <input type="number" name="received_quantity" required min="1"
-                               class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <p class="text-sm text-gray-500 mt-1">発注数量と異なる場合は、実際の入庫数量を入力してください</p>
+                    <!-- 入庫数量・重量（両方対応、相互換算） -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- 本数入力 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">入庫数量（本）</label>
+                            <input type="number" id="quantityInput" name="received_quantity" min="1" step="1"
+                                   class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="本数を入力">
+                            <p class="text-sm text-gray-500 mt-1">本数で指定する場合</p>
+                        </div>
+
+                        <!-- 重量入力 -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">入庫重量（kg）</label>
+                            <input type="number" id="weightInput" name="received_weight" step="0.001" min="0.001"
+                                   class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="重量を入力">
+                            <p class="text-sm text-gray-500 mt-1">重量で指定する場合</p>
+                        </div>
+                    </div>
+
+                    <!-- 換算結果表示 -->
+                    <div id="conversionDisplay" class="bg-blue-50 rounded-lg p-4 mt-3">
+                        <h4 class="text-sm font-medium text-blue-900 mb-2">換算結果</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div class="bg-white rounded p-3">
+                                <span class="font-medium text-gray-700">本数:</span>
+                                <span id="displayQuantity" class="text-blue-600 font-mono">-</span>本
+                            </div>
+                            <div class="bg-white rounded p-3">
+                                <span class="font-medium text-gray-700">重量:</span>
+                                <span id="displayWeight" class="text-blue-600 font-mono">-</span>kg
+                            </div>
+                        </div>
+                        <div class="mt-2 bg-white rounded p-3">
+                            <span class="font-medium text-gray-700">1本あたりの重量:</span>
+                            <span id="displayUnitWeight" class="text-green-600 font-mono">-</span>kg
+                        </div>
+                    </div>
+
+                    <!-- 入力方式選択 -->
+                    <div class="mt-4">
+                        <p class="text-sm text-gray-600 mb-2">入力方式を選択してください</p>
+                        <div class="flex space-x-4">
+                            <label class="flex items-center">
+                                <input type="radio" name="input_method" value="quantity" checked
+                                       class="mr-2 text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm font-medium text-gray-700">本数で入力</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="radio" name="input_method" value="weight"
+                                       class="mr-2 text-blue-600 focus:ring-blue-500">
+                                <span class="text-sm font-medium text-gray-700">重量で入力</span>
+                            </label>
+                        </div>
                     </div>
 
                     <div>
@@ -157,7 +207,7 @@
 
 <!-- 入庫完了モーダル -->
 <div id="receiveCompleteModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
+    <div class="flex items-center justify-center min-h-screen p-4 modal-overlay">
         <div class="bg-white rounded-lg max-w-md w-full">
             <div class="p-6">
                 <div class="flex items-center mb-4">
@@ -284,7 +334,7 @@ function createItemRow(item) {
         <td class="px-4 py-3 text-sm text-gray-600">${item.material_name}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${dimensions}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${item.length_mm}mm</td>
-        <td class="px-4 py-3 text-sm text-gray-600">${item.ordered_quantity}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${getOrderDisplayText(item)}</td>
         <td class="px-4 py-3 text-sm font-mono text-xs">${item.management_code}</td>
         <td class="px-4 py-3">
             <button onclick="showReceiveModal(${item.id})"
@@ -307,6 +357,94 @@ function getShapeText(shape) {
     return shapeMap[shape] || shape;
 }
 
+// 発注方式テキスト取得
+function getOrderTypeText(orderType) {
+    const typeMap = {
+        'quantity': '本数指定',
+        'weight': '重量指定'
+    };
+    return typeMap[orderType] || orderType;
+}
+
+// 発注表示テキスト取得
+function getOrderDisplayText(item) {
+    if (item.order_type === 'weight') {
+        return `${item.ordered_weight_kg}kg`;
+    } else {
+        return `${item.ordered_quantity}本`;
+    }
+}
+
+// 本数・重量の相互換算と表示更新
+async function updateConversion(item, quantity, weight) {
+    try {
+        let calculatedQuantity = quantity;
+        let calculatedWeight = weight;
+        let unitWeight = 0;
+
+        if (quantity && !weight) {
+            // 本数から重量を計算
+            const response = await fetch('/api/purchase-orders/calculate-conversion/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    shape: item.shape,
+                    diameter_mm: item.diameter_mm,
+                    length_mm: item.length_mm,
+                    density: item.density,
+                    quantity: quantity
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                calculatedWeight = result.calculated_weight_kg;
+            }
+        } else if (weight && !quantity) {
+            // 重量から本数を計算
+            const response = await fetch('/api/purchase-orders/calculate-conversion/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    shape: item.shape,
+                    diameter_mm: item.diameter_mm,
+                    length_mm: item.length_mm,
+                    density: item.density,
+                    weight_kg: weight
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                calculatedQuantity = result.calculated_quantity;
+            }
+        }
+
+        // 1本あたりの重量を計算
+        if (calculatedQuantity && calculatedWeight) {
+            unitWeight = calculatedWeight / calculatedQuantity;
+        }
+
+        // 表示を更新
+        document.getElementById('displayQuantity').textContent =
+            calculatedQuantity ? calculatedQuantity.toString() : '-';
+        document.getElementById('displayWeight').textContent =
+            calculatedWeight ? calculatedWeight.toFixed(3) : '-';
+        document.getElementById('displayUnitWeight').textContent =
+            unitWeight ? unitWeight.toFixed(3) : '-';
+
+    } catch (error) {
+        console.error('換算計算エラー:', error);
+        document.getElementById('displayQuantity').textContent = 'エラー';
+        document.getElementById('displayWeight').textContent = 'エラー';
+        document.getElementById('displayUnitWeight').textContent = 'エラー';
+    }
+}
+
 // イベントリスナー設定
 function setupEventListeners() {
     // 更新ボタン
@@ -316,6 +454,32 @@ function setupEventListeners() {
     document.getElementById('closeReceiveModal').addEventListener('click', hideReceiveModal);
     document.getElementById('cancelReceive').addEventListener('click', hideReceiveModal);
     document.getElementById('closeCompleteModal').addEventListener('click', hideCompleteModal);
+
+    // モーダル外クリック閉じ
+    document.getElementById('receiveModal').addEventListener('click', function(e) {
+        if (e.target === this || e.target.classList.contains('modal-overlay')) {
+            hideReceiveModal();
+        }
+    });
+    document.getElementById('receiveCompleteModal').addEventListener('click', function(e) {
+        if (e.target === this || e.target.classList.contains('modal-overlay')) {
+            hideCompleteModal();
+        }
+    });
+
+    // ESCキー処理
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const receiveModal = document.getElementById('receiveModal');
+            const completeModal = document.getElementById('receiveCompleteModal');
+
+            if (!receiveModal.classList.contains('hidden')) {
+                hideReceiveModal();
+            } else if (!completeModal.classList.contains('hidden')) {
+                hideCompleteModal();
+            }
+        }
+    });
 
     // フォーム送信
     document.getElementById('receiveForm').addEventListener('submit', handleReceive);
@@ -370,8 +534,12 @@ async function showReceiveModal(itemId) {
                 <dd class="text-gray-900">${item.length_mm}mm</dd>
             </div>
             <div>
-                <dt class="font-medium text-gray-500">発注数量</dt>
-                <dd class="text-gray-900">${item.ordered_quantity}</dd>
+                <dt class="font-medium text-gray-500">発注方式</dt>
+                <dd class="text-gray-900">${getOrderTypeText(item.order_type)}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">${item.order_type === 'quantity' ? '発注数量' : '発注重量'}</dt>
+                <dd class="text-gray-900">${item.order_type === 'quantity' ? item.ordered_quantity + '本' : item.ordered_weight_kg + 'kg'}</dd>
             </div>
             <div>
                 <dt class="font-medium text-gray-500">管理コード</dt>
@@ -379,8 +547,65 @@ async function showReceiveModal(itemId) {
             </div>
         `;
 
-        // 発注数量をデフォルト値に設定
-        document.querySelector('input[name="received_quantity"]').value = item.ordered_quantity;
+        // 発注方式に応じてフィールドを切り替え
+        const quantityField = document.getElementById('quantityField');
+        const weightField = document.getElementById('weightField');
+        const conversionInfo = document.getElementById('conversionInfo');
+
+        // 入力フィールドの参照を取得
+        const quantityInput = document.getElementById('quantityInput');
+        const weightInput = document.getElementById('weightInput');
+        const displayQuantity = document.getElementById('displayQuantity');
+        const displayWeight = document.getElementById('displayWeight');
+        const displayUnitWeight = document.getElementById('displayUnitWeight');
+        const inputMethodRadios = document.querySelectorAll('input[name="input_method"]');
+
+        // 発注方式に応じてデフォルト値を設定
+        if (item.order_type === 'weight') {
+            // 重量指定発注の場合は重量をデフォルトに
+            weightInput.value = item.ordered_weight_kg;
+            document.querySelector('input[name="input_method"][value="weight"]').checked = true;
+            updateConversion(item, null, item.ordered_weight_kg);
+        } else {
+            // 本数指定発注の場合は本数をデフォルトに
+            quantityInput.value = item.ordered_quantity;
+            document.querySelector('input[name="input_method"][value="quantity"]').checked = true;
+            updateConversion(item, item.ordered_quantity, null);
+        }
+
+        // 本数入力時のイベントリスナー
+        quantityInput.addEventListener('input', function() {
+            if (this.value) {
+                // 本数入力時は重量をクリアして換算
+                weightInput.value = '';
+                document.querySelector('input[name="input_method"][value="quantity"]').checked = true;
+                updateConversion(item, parseInt(this.value), null);
+            }
+        });
+
+        // 重量入力時のイベントリスナー
+        weightInput.addEventListener('input', function() {
+            if (this.value) {
+                // 重量入力時は本数をクリアして換算
+                quantityInput.value = '';
+                document.querySelector('input[name="input_method"][value="weight"]').checked = true;
+                updateConversion(item, null, parseFloat(this.value));
+            }
+        });
+
+        // 入力方式選択時のイベントリスナー
+        inputMethodRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'quantity') {
+                    quantityInput.focus();
+                    weightInput.value = '';
+                } else {
+                    weightInput.focus();
+                    quantityInput.value = '';
+                }
+                updateConversion(item, null, null);
+            });
+        });
 
         document.getElementById('receiveModal').classList.remove('hidden');
     } catch (error) {
@@ -393,6 +618,14 @@ async function showReceiveModal(itemId) {
 function hideReceiveModal() {
     document.getElementById('receiveModal').classList.add('hidden');
     document.getElementById('receiveForm').reset();
+
+    // 新しいフィールドもリセット
+    document.getElementById('quantityInput').value = '';
+    document.getElementById('weightInput').value = '';
+    document.getElementById('displayQuantity').textContent = '-';
+    document.getElementById('displayWeight').textContent = '-';
+    document.getElementById('displayUnitWeight').textContent = '-';
+    document.querySelector('input[name="input_method"][value="quantity"]').checked = true;
 }
 
 // 入庫完了モーダル非表示
@@ -406,12 +639,26 @@ async function handleReceive(event) {
 
     const formData = new FormData(event.target);
     const itemId = formData.get('item_id');
+    // 入力方式を判定
+    const inputMethod = document.querySelector('input[name="input_method"]:checked').value;
+    const quantityInput = document.getElementById('quantityInput');
+    const weightInput = document.getElementById('weightInput');
+
     const receiveData = {
         lot_number: formData.get('lot_number'),
-        received_quantity: parseInt(formData.get('received_quantity')),
         location_id: formData.get('location_id') || null,
         notes: formData.get('notes') || null
     };
+
+    // 入力された値を取得
+    if (inputMethod === 'weight' && weightInput.value) {
+        receiveData.received_weight_kg = parseFloat(weightInput.value);
+    } else if (inputMethod === 'quantity' && quantityInput.value) {
+        receiveData.received_quantity = parseInt(quantityInput.value);
+    } else {
+        showToast('入庫数量または重量を入力してください', 'error');
+        return;
+    }
 
     try {
         const response = await fetch(`/api/purchase-orders/items/${itemId}/receive/`, {
