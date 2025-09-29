@@ -22,6 +22,10 @@ python-dotenv==1.0.0
 qrcode[pil]==7.4.2
 reportlab==4.0.7
 
+# Excel関連
+pandas==2.3.0
+openpyxl==3.1.2
+
 # 開発・テスト関連
 pytest==7.4.3
 pytest-asyncio==0.21.1

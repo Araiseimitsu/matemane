@@ -35,6 +35,8 @@ class OrderType(enum.Enum):
     QUANTITY = "quantity"    # 本数指定
     WEIGHT = "weight"        # 重量指定
 
+
+
 class User(Base):
     __tablename__ = "users"
 
@@ -221,3 +223,5 @@ class AuditLog(Base):
 
     # リレーション
     user = relationship("User")
+
+

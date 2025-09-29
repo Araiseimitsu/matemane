@@ -145,6 +145,12 @@ def insert_initial_data():
                 is_active=True
             ),
             DensityPreset(
+                name="SUS303",
+                density=7.93,
+                description="ステンレス鋼（快削性）",
+                is_active=True
+            ),
+            DensityPreset(
                 name="SUS304",
                 density=7.93,
                 description="ステンレス鋼",
@@ -175,6 +181,12 @@ def insert_initial_data():
                 is_active=True
             ),
             DensityPreset(
+                name="C3602LCD",
+                density=8.50,
+                description="快削黄銅（C3602Lcd）",
+                is_active=True
+            ),
+            DensityPreset(
                 name="C3604",
                 density=8.50,
                 description="快削黄銅",
@@ -202,8 +214,43 @@ def insert_initial_data():
 
         db.add_all(density_presets)
 
-        # サンプル材料を作成
+        # サンプル材料を作成（実際のExcelファイルに合わせた仕様）
         sample_materials = [
+            # SUS303系（Excelで実際に使用されている材料）
+            Material(
+                name="SUS303",
+                description="ステンレス鋼（SUS303）",
+                shape=MaterialShape.ROUND,
+                diameter_mm=5.0,
+                current_density=7.93,
+                is_active=True
+            ),
+            Material(
+                name="SUS303",
+                description="ステンレス鋼（SUS303）",
+                shape=MaterialShape.ROUND,
+                diameter_mm=10.0,
+                current_density=7.93,
+                is_active=True
+            ),
+            Material(
+                name="SUS303",
+                description="ステンレス鋼（SUS303）",
+                shape=MaterialShape.ROUND,
+                diameter_mm=12.0,
+                current_density=7.93,
+                is_active=True
+            ),
+            # C3602系（真鍮系快削材）
+            Material(
+                name="C3602LCD",
+                description="快削黄銅（C3602Lcd）",
+                shape=MaterialShape.ROUND,
+                diameter_mm=12.0,
+                current_density=8.5,
+                is_active=True
+            ),
+            # その他のよく使用される材料
             Material(
                 name="S45C",
                 description="機械構造用炭素鋼",
@@ -214,7 +261,7 @@ def insert_initial_data():
             ),
             Material(
                 name="SUS304",
-                description="ステンレス鋼",
+                description="ステンレス鋼（SUS304）",
                 shape=MaterialShape.ROUND,
                 diameter_mm=25.0,
                 current_density=7.93,
@@ -248,18 +295,85 @@ def insert_initial_data():
 
         # 材料IDを取得（データベースから再度読み込み）
         s45c = db.query(Material).filter(Material.name == "S45C").first()
+        sus303_5 = db.query(Material).filter(Material.name == "SUS303", Material.diameter_mm == 5.0).first()
+        sus303_10 = db.query(Material).filter(Material.name == "SUS303", Material.diameter_mm == 10.0).first()
+        sus303_12 = db.query(Material).filter(Material.name == "SUS303", Material.diameter_mm == 12.0).first()
+        c3602_12 = db.query(Material).filter(Material.name == "C3602LCD", Material.diameter_mm == 12.0).first()
         sus304 = db.query(Material).filter(Material.name == "SUS304").first()
         a5056 = db.query(Material).filter(Material.name == "A5056").first()
         c1020 = db.query(Material).filter(Material.name == "C1020").first()
 
-        print(f"材料データ確認: S45C={s45c.id if s45c else None}, SUS304={sus304.id if sus304 else None}, A5056={a5056.id if a5056 else None}, C1020={c1020.id if c1020 else None}")
+        print(f"材料データ確認:")
+        print(f"  S45C={s45c.id if s45c else None}")
+        print(f"  SUS303(5mm)={sus303_5.id if sus303_5 else None}")
+        print(f"  SUS303(10mm)={sus303_10.id if sus303_10 else None}")
+        print(f"  SUS303(12mm)={sus303_12.id if sus303_12 else None}")
+        print(f"  C3602LCD(12mm)={c3602_12.id if c3602_12 else None}")
+        print(f"  SUS304={sus304.id if sus304 else None}")
 
-        if not s45c or not sus304 or not a5056 or not c1020:
-            print("エラー: 材料データが見つかりません")
+        if not all([s45c, sus303_5, sus303_10, sus303_12, c3602_12, sus304]):
+            print("エラー: 必要な材料データが見つかりません")
             return False
 
         sample_lots = [
-            # S45C用ロット（SS400をS45Cに変更）
+            # SUS303系（Excelでよく使用される材料）
+            Lot(
+                lot_number="SUS303-5-241001-001",
+                material_id=sus303_5.id,
+                length_mm=3000,
+                initial_quantity=100,
+                supplier="ステンレス工業",
+                received_date=datetime.now() - timedelta(days=10),
+                notes="SUS303 ∅5.0 標準品"
+            ),
+            Lot(
+                lot_number="SUS303-10-241001-001",
+                material_id=sus303_10.id,
+                length_mm=3000,
+                initial_quantity=200,
+                supplier="ステンレス工業",
+                received_date=datetime.now() - timedelta(days=10),
+                notes="SUS303 ∅10.0 標準品"
+            ),
+            Lot(
+                lot_number="SUS303-12-241001-001",
+                material_id=sus303_12.id,
+                length_mm=3000,
+                initial_quantity=150,
+                supplier="ステンレス工業",
+                received_date=datetime.now() - timedelta(days=10),
+                notes="SUS303 ∅12.0 標準品"
+            ),
+            # C3602LCD（真鍮快削材）
+            Lot(
+                lot_number="C3602-12-241001-001",
+                material_id=c3602_12.id,
+                length_mm=3000,
+                initial_quantity=120,
+                supplier="黄銅商事",
+                received_date=datetime.now() - timedelta(days=8),
+                notes="C3602Lcd ∅12.0 快削品"
+            ),
+            # 追加の在庫（バリエーション用）
+            Lot(
+                lot_number="SUS303-5-241015-002",
+                material_id=sus303_5.id,
+                length_mm=4000,
+                initial_quantity=50,
+                supplier="関西ステンレス",
+                received_date=datetime.now() - timedelta(days=5),
+                notes="SUS303 ∅5.0 長尺品"
+            ),
+            Lot(
+                lot_number="SUS303-10-241015-002",
+                material_id=sus303_10.id,
+                length_mm=4000,
+                initial_quantity=80,
+                supplier="関西ステンレス",
+                received_date=datetime.now() - timedelta(days=5),
+                notes="SUS303 ∅10.0 長尺品"
+            ),
+            # S45C・その他（従来の材料も維持）
             Lot(
                 lot_number="S45C-240901-001",
                 material_id=s45c.id,
@@ -270,35 +384,6 @@ def insert_initial_data():
                 notes="定期入荷分"
             ),
             Lot(
-                lot_number="S45C-240915-002",
-                material_id=s45c.id,
-                length_mm=4000,
-                initial_quantity=30,
-                supplier="関西スチール",
-                received_date=datetime.now() - timedelta(days=8),
-                notes="特注長さ"
-            ),
-            # S45C用ロット
-            Lot(
-                lot_number="S45C-240905-001",
-                material_id=s45c.id,
-                length_mm=2500,
-                initial_quantity=40,
-                supplier="大阪金属",
-                received_date=datetime.now() - timedelta(days=12),
-                notes="機械加工用"
-            ),
-            Lot(
-                lot_number="S45C-240920-002",
-                material_id=s45c.id,
-                length_mm=3500,
-                initial_quantity=25,
-                supplier="東京鋼材",
-                received_date=datetime.now() - timedelta(days=5),
-                notes="高精度品"
-            ),
-            # SUS304用ロット
-            Lot(
                 lot_number="SUS304-240910-001",
                 material_id=sus304.id,
                 length_mm=3000,
@@ -306,53 +391,6 @@ def insert_initial_data():
                 supplier="ステンレス工業",
                 received_date=datetime.now() - timedelta(days=10),
                 notes="耐食性重視"
-            ),
-            Lot(
-                lot_number="SUS304-240922-002",
-                material_id=sus304.id,
-                length_mm=2000,
-                initial_quantity=35,
-                supplier="関西ステンレス",
-                received_date=datetime.now() - timedelta(days=3),
-                notes="短尺品"
-            ),
-            # A5056用ロット
-            Lot(
-                lot_number="A5056-240912-001",
-                material_id=a5056.id,
-                length_mm=4000,
-                initial_quantity=15,
-                supplier="アルミ工業",
-                received_date=datetime.now() - timedelta(days=8),
-                notes="軽量化用途"
-            ),
-            Lot(
-                lot_number="A5056-240925-002",
-                material_id=a5056.id,
-                length_mm=3000,
-                initial_quantity=28,
-                supplier="東京アルミ",
-                received_date=datetime.now() - timedelta(days=1),
-                notes="新規入荷"
-            ),
-            # C1020用ロット
-            Lot(
-                lot_number="C1020-240918-001",
-                material_id=c1020.id,
-                length_mm=2000,
-                initial_quantity=20,
-                supplier="銅材商事",
-                received_date=datetime.now() - timedelta(days=6),
-                notes="電気用途"
-            ),
-            Lot(
-                lot_number="C1020-240923-002",
-                material_id=c1020.id,
-                length_mm=2500,
-                initial_quantity=18,
-                supplier="関東銅業",
-                received_date=datetime.now() - timedelta(days=2),
-                notes="高純度品"
             )
         ]
 

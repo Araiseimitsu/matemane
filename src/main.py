@@ -9,7 +9,7 @@ import logging
 
 from src.config import settings
 from src.db import create_tables
-from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders, order_utils
+from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders, order_utils, excel_viewer
 
 # ログ設定
 logging.basicConfig(
@@ -56,6 +56,7 @@ app.include_router(labels.router, prefix="/api/labels", tags=["ラベル印刷"]
 app.include_router(density_presets.router, prefix="/api/density-presets", tags=["比重プリセット管理"])
 app.include_router(purchase_orders.router, prefix="/api/purchase-orders", tags=["発注管理"])
 app.include_router(order_utils.router, prefix="/api/order-utils", tags=["発注ユーティリティ"])
+app.include_router(excel_viewer.router, tags=["Excelビューア"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -111,6 +112,12 @@ async def purchase_orders_page(request: Request):
 async def receiving_page(request: Request):
     """入庫確認画面"""
     return templates.TemplateResponse("receiving.html", {"request": request})
+
+
+@app.get("/excel-viewer")
+async def excel_viewer_page(request: Request):
+    """Excel在庫照合ビューア画面"""
+    return templates.TemplateResponse("excel_viewer.html", {"request": request})
 
 @app.get("/settings")
 async def settings_page(request: Request):
