@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     # アプリケーション設定
     debug: bool = os.getenv("DEBUG", "True").lower() == "true"
     cors_origins: List[str] = os.getenv("CORS_ORIGINS", "http://localhost:8000").split(",")
+    # 許可するホスト（本番で iPhone 等の外部端末からアクセスする場合はここに LAN IP/ドメインを追加）
+    allowed_hosts: List[str] = os.getenv(
+        "ALLOWED_HOSTS",
+        "localhost,127.0.0.1,*.localhost"
+    ).split(",")
 
     # ラベル印刷設定
     label_width_mm: int = int(os.getenv("LABEL_WIDTH_MM", "50"))

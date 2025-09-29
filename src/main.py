@@ -37,7 +37,7 @@ app.add_middleware(
 
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["localhost", "127.0.0.1", "*.localhost"]
+    allowed_hosts=["*"] if settings.debug else settings.allowed_hosts
 )
 
 # 静的ファイルとテンプレート設定
