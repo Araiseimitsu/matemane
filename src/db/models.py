@@ -54,6 +54,7 @@ class Material(Base):
     __tablename__ = "materials"
 
     id = Column(Integer, primary_key=True, index=True)
+    part_number = Column(String(100), nullable=True, comment="品番")
     name = Column(String(100), nullable=False, comment="材質名（例：S45C）")
     description = Column(Text, comment="説明")
     shape = Column(Enum(MaterialShape), nullable=False, comment="断面形状")

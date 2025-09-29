@@ -4,6 +4,11 @@ class MaterialManager {
   constructor() {
     this.materials = [];
     this.editingMaterial = null;
+    this.currentPage = 1;
+    this.itemsPerPage = 100;
+    this.totalItems = 0;
+    this.totalPages = 0;
+    this.currentFilters = {};
     this.init();
   }
 
@@ -90,6 +95,69 @@ class MaterialManager {
         this.onDensityPresetChange(e)
       );
     }
+
+    // ページネーション関連のイベント
+    const prevPage = document.getElementById("prevPage");
+    const nextPage = document.getElementById("nextPage");
+    const prevPageMobile = document.getElementById("prevPageMobile");
+    const nextPageMobile = document.getElementById("nextPageMobile");
+
+    // 上部ページネーション要素
+    const prevPageTop = document.getElementById("prevPageTop");
+    const nextPageTop = document.getElementById("nextPageTop");
+    const prevPageMobileTop = document.getElementById("prevPageMobileTop");
+    const nextPageMobileTop = document.getElementById("nextPageMobileTop");
+
+    if (prevPage) {
+      prevPage.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.goToPage(this.currentPage - 1);
+      });
+    }
+    if (nextPage) {
+      nextPage.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.goToPage(this.currentPage + 1);
+      });
+    }
+    if (prevPageMobile) {
+      prevPageMobile.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.goToPage(this.currentPage - 1);
+      });
+    }
+    if (nextPageMobile) {
+      nextPageMobile.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.goToPage(this.currentPage + 1);
+      });
+    }
+
+    // 上部ページネーションイベントバインディング
+    if (prevPageTop) {
+      prevPageTop.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.goToPage(this.currentPage - 1);
+      });
+    }
+    if (nextPageTop) {
+      nextPageTop.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.goToPage(this.currentPage + 1);
+      });
+    }
+    if (prevPageMobileTop) {
+      prevPageMobileTop.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.goToPage(this.currentPage - 1);
+      });
+    }
+    if (nextPageMobileTop) {
+      nextPageMobileTop.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.goToPage(this.currentPage + 1);
+      });
+    }
   }
 
   // モーダル共通処理設定
@@ -113,20 +181,41 @@ class MaterialManager {
       this.showLoading();
       const params = new URLSearchParams();
 
+      // ページネーション設定
+      params.append('skip', ((this.currentPage - 1) * this.itemsPerPage).toString());
+      params.append('limit', this.itemsPerPage.toString());
+
+      // フィルター設定
       Object.keys(filters).forEach((key) => {
         if (filters[key] !== null && filters[key] !== "") {
           params.append(key, filters[key]);
         }
       });
 
-      const response = await fetch(`/api/materials?${params}`);
-      if (!response.ok) {
+      this.currentFilters = filters;
+
+      // 材料データと総件数を並行取得
+      const [materialsResponse, countResponse] = await Promise.all([
+        fetch(`/api/materials/?${params}`),
+        fetch(`/api/materials/count?${new URLSearchParams(filters)}`)
+      ]);
+
+      if (!materialsResponse.ok || !countResponse.ok) {
         throw new Error("材料データの取得に失敗しました");
       }
 
-      this.materials = await response.json();
+      this.materials = await materialsResponse.json();
+      const countData = await countResponse.json();
+      this.totalItems = countData.total || 0;
+      this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage) || 1;
+
+      console.log(`材料データ取得完了: ${this.materials.length}件 (総件数: ${this.totalItems}件)`);
       this.renderMaterialsList();
-      this.showToast("材料一覧を更新しました", "success");
+      this.updatePagination();
+
+      if (this.currentPage === 1) {
+        this.showToast(`材料一覧を更新しました (総件数: ${this.totalItems}件)`, "success");
+      }
     } catch (error) {
       console.error("Error loading materials:", error);
       this.showToast(error.message, "error");
@@ -253,12 +342,13 @@ class MaterialManager {
       square: "角棒",
     };
 
-    const statusBadge = material.is_active
-      ? '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">有効</span>'
-      : '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">無効</span>';
-
     return `
             <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">${
+                      material.part_number || "-"
+                    }</div>
+                </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm font-medium text-gray-900">${
                       material.name
@@ -278,9 +368,6 @@ class MaterialManager {
                     <div class="text-sm text-gray-900">${
                       material.current_density
                     }</div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    ${statusBadge}
                 </td>
                 <td class="px-6 py-4">
                     <div class="text-sm text-gray-500 max-w-xs truncate" title="${
@@ -353,6 +440,7 @@ class MaterialManager {
 
   // 編集フォームにデータ設定
   populateEditForm(material) {
+    document.getElementById("part_number").value = material.part_number || "";
     document.getElementById("name").value = material.name;
     document.getElementById("description").value = material.description || "";
     document.getElementById("shape").value = material.shape;
@@ -438,114 +526,20 @@ class MaterialManager {
       }
     });
 
-    // 現在の材料リストをフィルタリング
-    this.applyTableFilter(filters);
+    // 検索時は1ページ目に戻る
+    this.currentPage = 1;
+    this.loadMaterials(filters);
   }
 
-  // テーブルフィルタリング
-  applyTableFilter(filters = {}) {
-    const tbody = document.getElementById("materialsTableBody");
-    if (!tbody) return;
-
-    const rows = tbody.querySelectorAll("tr");
-    let visibleCount = 0;
-
-    rows.forEach((row) => {
-      // ヘッダー行をスキップ
-      if (row.cells.length < 7) return;
-
-      const materialName = row.cells[0].textContent.toLowerCase();
-      const shape = row.cells[1].textContent.toLowerCase();
-      const diameter = row.cells[2].textContent.toLowerCase();
-      const density = row.cells[3].textContent.toLowerCase();
-      const status = row.cells[4].textContent.toLowerCase();
-      const description = row.cells[5].textContent.toLowerCase();
-
-      // 検索テキストでフィルタリング
-      const searchText = filters.name ? filters.name.toLowerCase() : "";
-      const shapeFilter = filters.shape || "";
-      const statusFilter = filters.is_active || "";
-
-      const matchesSearch =
-        !searchText ||
-        materialName.includes(searchText) ||
-        shape.includes(searchText) ||
-        diameter.includes(searchText) ||
-        density.includes(searchText) ||
-        description.includes(searchText);
-
-      const matchesShape =
-        !shapeFilter || shape.includes(shapeFilter.toLowerCase());
-      const matchesStatus =
-        !statusFilter ||
-        (statusFilter === "true" && status.includes("有効")) ||
-        (statusFilter === "false" && status.includes("無効"));
-
-      const shouldShow = matchesSearch && matchesShape && matchesStatus;
-
-      row.style.display = shouldShow ? "" : "none";
-
-      if (shouldShow) {
-        visibleCount++;
-      }
-    });
-
-    // 結果が0件の場合のメッセージ
-    if (visibleCount === 0 && Object.keys(filters).length > 0) {
-      this.showNoResultsMessage();
-    } else {
-      this.hideNoResultsMessage();
-    }
-
-    // 件数を更新
-    this.updateResultCount(visibleCount);
-  }
-
-  // 検索結果0件時のメッセージ
-  showNoResultsMessage() {
-    const tbody = document.getElementById("materialsTableBody");
-    if (!tbody) return;
-
-    const noResultsRow = document.getElementById("no-results-row");
-    if (noResultsRow) {
-      noResultsRow.style.display = "";
-    } else {
-      const row = document.createElement("tr");
-      row.id = "no-results-row";
-      row.innerHTML = `
-                <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-                    <p class="text-lg">検索条件に一致する材料がありません</p>
-                    <button onclick="materialManager.clearSearch()"
-                            class="mt-2 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
-                        検索条件をクリア
-                    </button>
-                </td>
-            `;
-      tbody.appendChild(row);
-    }
-  }
-
-  // 検索結果0件時のメッセージを非表示
-  hideNoResultsMessage() {
-    const noResultsRow = document.getElementById("no-results-row");
-    if (noResultsRow) {
-      noResultsRow.style.display = "none";
-    }
-  }
 
   // 検索条件をクリア
   clearSearch() {
     const searchForm = document.getElementById("searchForm");
     if (searchForm) {
       searchForm.reset();
-      this.applyTableFilter({});
+      this.currentPage = 1;
+      this.loadMaterials({});
     }
-  }
-
-  // 結果件数を更新
-  updateResultCount(count) {
-    // 必要に応じて件数表示を追加可能
-    console.log(`表示中: ${count} 件の材料`);
   }
 
   // 検索デバウンス
@@ -767,6 +761,167 @@ class MaterialManager {
     if (selectedDensity && densityInput) {
       densityInput.value = selectedDensity;
     }
+  }
+
+  // ページ移動
+  goToPage(page) {
+    if (page < 1 || (this.totalPages && page > this.totalPages)) {
+      return;
+    }
+    this.currentPage = page;
+    this.loadMaterials(this.currentFilters);
+  }
+
+  // ページネーション表示更新
+  updatePagination() {
+    // データがない場合はスキップ
+    if (this.totalItems === undefined || this.totalItems === null) {
+      console.log('総件数が未定義のためページネーション更新をスキップ');
+      return;
+    }
+
+    // ページ情報更新
+    const pageInfo = document.getElementById("pageInfo");
+    const pageInfoMobile = document.getElementById("pageInfoMobile");
+    // 上部ページネーション情報
+    const pageInfoTop = document.getElementById("pageInfoTop");
+    const pageInfoMobileTop = document.getElementById("pageInfoMobileTop");
+
+    const startItem = (this.currentPage - 1) * this.itemsPerPage + 1;
+    const endItem = Math.min(this.currentPage * this.itemsPerPage, this.totalItems);
+    const infoText = `${startItem.toLocaleString()} - ${endItem.toLocaleString()} / ${this.totalItems.toLocaleString()} 件`;
+
+    if (pageInfo) {
+      pageInfo.textContent = infoText;
+    }
+    if (pageInfoMobile) {
+      pageInfoMobile.textContent = infoText;
+    }
+    // 上部ページネーション情報更新
+    if (pageInfoTop) {
+      pageInfoTop.textContent = infoText;
+    }
+    if (pageInfoMobileTop) {
+      pageInfoMobileTop.textContent = infoText;
+    }
+
+    // ボタン状態更新
+    this.updatePaginationButtons();
+
+    // ページ番号ボタン更新
+    this.updatePageNumbers();
+  }
+
+  // ページネーションボタンの状態更新
+  updatePaginationButtons() {
+    const prevButtons = ["prevPage", "prevPageMobile"];
+    const nextButtons = ["nextPage", "nextPageMobile"];
+    // 上部ページネーションボタン
+    const prevButtonsTop = ["prevPageTop", "prevPageMobileTop"];
+    const nextButtonsTop = ["nextPageTop", "nextPageMobileTop"];
+
+    prevButtons.forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) {
+        btn.disabled = this.currentPage <= 1;
+        btn.classList.toggle("text-gray-400", this.currentPage <= 1);
+        btn.classList.toggle("cursor-not-allowed", this.currentPage <= 1);
+      }
+    });
+
+    nextButtons.forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) {
+        btn.disabled = this.currentPage >= this.totalPages;
+        btn.classList.toggle("text-gray-400", this.currentPage >= this.totalPages);
+        btn.classList.toggle("cursor-not-allowed", this.currentPage >= this.totalPages);
+      }
+    });
+
+    // 上部ページネーションボタン状態更新
+    prevButtonsTop.forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) {
+        btn.disabled = this.currentPage <= 1;
+        btn.classList.toggle("text-gray-400", this.currentPage <= 1);
+        btn.classList.toggle("cursor-not-allowed", this.currentPage <= 1);
+      }
+    });
+
+    nextButtonsTop.forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) {
+        btn.disabled = this.currentPage >= this.totalPages;
+        btn.classList.toggle("text-gray-400", this.currentPage >= this.totalPages);
+        btn.classList.toggle("cursor-not-allowed", this.currentPage >= this.totalPages);
+      }
+    });
+  }
+
+  // ページ番号ボタン更新
+  updatePageNumbers() {
+    const pageNumbers = document.getElementById("pageNumbers");
+    // 上部ページ番号要素
+    const pageNumbersTop = document.getElementById("pageNumbersTop");
+    
+    if (!pageNumbers && !pageNumbersTop) return;
+
+    // 総ページ数が未定義の場合はスキップ
+    if (this.totalPages === undefined || this.totalPages === null || this.totalPages <= 0) {
+      if (pageNumbers) pageNumbers.innerHTML = '';
+      if (pageNumbersTop) pageNumbersTop.innerHTML = '';
+      return;
+    }
+
+    // 表示するページ番号の範囲を計算
+    const maxVisible = 5; // 最大表示ページ数
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxVisible - 1);
+
+    // 最後の方で調整
+    if (endPage - startPage < maxVisible - 1) {
+      startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+
+    let html = "";
+
+    // 「最初」ボタン
+    if (startPage > 1) {
+      html += `
+        <button onclick="materialManager.goToPage(1)"
+                class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700">
+          1
+        </button>`;
+      if (startPage > 2) {
+        html += `<span class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300">...</span>`;
+      }
+    }
+
+    // ページ番号ボタン
+    for (let i = startPage; i <= endPage; i++) {
+      const isActive = i === this.currentPage;
+      html += `
+        <button onclick="materialManager.goToPage(${i})"
+                class="px-3 py-2 text-sm leading-tight ${isActive ? 'text-blue-600 bg-blue-50 border border-blue-300' : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700'}">
+          ${i}
+        </button>`;
+    }
+
+    // 「最後」ボタン
+    if (endPage < this.totalPages) {
+      if (endPage < this.totalPages - 1) {
+        html += `<span class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300">...</span>`;
+      }
+      html += `
+        <button onclick="materialManager.goToPage(${this.totalPages})"
+                class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700">
+          ${this.totalPages}
+        </button>`;
+    }
+
+    // ページ番号ボタンを更新
+    if (pageNumbers) pageNumbers.innerHTML = html;
+    if (pageNumbersTop) pageNumbersTop.innerHTML = html;
   }
 
   // CSVインポートモーダル表示
