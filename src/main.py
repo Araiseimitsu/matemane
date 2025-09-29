@@ -9,7 +9,7 @@ import logging
 
 from src.config import settings
 from src.db import create_tables
-from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders, order_utils, excel_viewer
+from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders, order_utils, excel_viewer, production_schedule, material_management
 
 # ログ設定
 logging.basicConfig(
@@ -57,6 +57,8 @@ app.include_router(density_presets.router, prefix="/api/density-presets", tags=[
 app.include_router(purchase_orders.router, prefix="/api/purchase-orders", tags=["発注管理"])
 app.include_router(order_utils.router, prefix="/api/order-utils", tags=["発注ユーティリティ"])
 app.include_router(excel_viewer.router, tags=["Excelビューア"])
+app.include_router(production_schedule.router, tags=["生産中一覧"])
+app.include_router(material_management.router, tags=["材料管理"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -112,6 +114,18 @@ async def purchase_orders_page(request: Request):
 async def receiving_page(request: Request):
     """入庫確認画面"""
     return templates.TemplateResponse("receiving.html", {"request": request})
+
+
+@app.get("/material-management")
+async def material_management_page(request: Request):
+    """材料管理ページ"""
+    return templates.TemplateResponse("material_management.html", {"request": request})
+
+
+@app.get("/production-schedule")
+async def production_schedule_page(request: Request):
+    """生産中一覧ページ"""
+    return templates.TemplateResponse("production_schedule.html", {"request": request})
 
 
 @app.get("/excel-viewer")

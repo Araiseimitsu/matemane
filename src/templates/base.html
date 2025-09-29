@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}材料管理システム{% endblock %}</title>
 
-    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CSS CDN (Development only) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- TODO: For production, install Tailwind locally -->
 
     <!-- Font Awesome for icons -->
     <link
@@ -90,7 +91,7 @@
               href="/materials"
               class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
             >
-              <i class="fas fa-cogs mr-2"></i>材料管理
+              <i class="fas fa-cogs mr-2"></i>材料マスタ
             </a>
             <a
               href="/inventory"
@@ -121,6 +122,18 @@
               class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
             >
               <i class="fas fa-file-excel mr-2"></i>Excel照合
+            </a>
+            <a
+              href="/production-schedule"
+              class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+            >
+              <i class="fas fa-list-check mr-2"></i>生産中一覧
+            </a>
+            <a
+              href="/material-management"
+              class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+            >
+              <i class="fas fa-box mr-2"></i>材料管理
             </a>
           </div>
 
@@ -174,7 +187,7 @@
             href="/materials"
             class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
           >
-            <i class="fas fa-cogs mr-2"></i>材料管理
+            <i class="fas fa-cogs mr-2"></i>材料マスタ
           </a>
           <a
             href="/inventory"
@@ -205,6 +218,12 @@
             class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
           >
             <i class="fas fa-file-excel mr-2"></i>Excel照合
+          </a>
+          <a
+            href="/production-schedule"
+            class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
+          >
+            <i class="fas fa-list-check mr-2"></i>生産中一覧
           </a>
         </div>
       </div>

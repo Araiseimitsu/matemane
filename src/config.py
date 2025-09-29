@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import List
+from pathlib import Path
 import os
 from dotenv import load_dotenv
 
@@ -31,6 +32,7 @@ class Settings(BaseSettings):
     label_width_mm: int = int(os.getenv("LABEL_WIDTH_MM", "50"))
     label_height_mm: int = int(os.getenv("LABEL_HEIGHT_MM", "30"))
     qr_size_mm: int = int(os.getenv("QR_SIZE_MM", "20"))
+    production_schedule_path: str = os.getenv("PRODUCTION_SCHEDULE_PATH", str((Path(__file__).resolve().parent.parent / 'セット予定表.xlsx').resolve()))
 
     @property
     def database_url(self) -> str:

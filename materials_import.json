@@ -1,0 +1,5570 @@
+[
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ8.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 4.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd Hex4.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ6.0 平目 22山",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ8.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ5.0 ﾀﾃﾒR 15山",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 6.5,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ6.5",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ10.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ8.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SF-20T",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-20T φ10.0D",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ6.0CM",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ5.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ9.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SUS440C",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.7,
+    "description": "CSVからインポート: SUS440C φ6.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ5.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ10.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ6.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ4.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 8.6,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ8.6 ﾀﾃﾒR",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ10.0D",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ3.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 5.5,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ5.5G",
+    "is_active": true
+  },
+  {
+    "name": "C5191",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 8.8,
+    "description": "CSVからインポート: C5191 φ4.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ9.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 26.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ26.0CM  2m",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 22.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd Hex22.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 2.5,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ2.5",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ3.0CM",
+    "is_active": true
+  },
+  {
+    "name": "1144 ASTM A311",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: 1144 ASTM A311 φ6.0G  2m (支給材)",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 7.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ7.5 ﾀﾃﾒR m=0.3",
+    "is_active": true
+  },
+  {
+    "name": "ASK2200R",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2200R φ10.0CM",
+    "is_active": true
+  },
+  {
+    "name": "ASK2200R",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2200R φ8.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3604（一般）",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3604（一般） φ4.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "hexagon",
+    "diameter_mm": 17.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 Hex17.0  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ4.0G",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 25.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ25.0",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ12.0",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ13.0",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ15.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "hexagon",
+    "diameter_mm": 12.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 Hex12.0  2m",
+    "is_active": true
+  },
+  {
+    "name": "S45CFS",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CFS φ10.0D",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ4.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd φ7.0 (NB5N)",
+    "is_active": true
+  },
+  {
+    "name": "S45CF",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CF φ12.0Ｄ",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ7.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 11.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ11.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ17.0CM",
+    "is_active": true
+  },
+  {
+    "name": "TLS",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: TLS φ9.0D",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd φ4.0 (NB5N)",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ10.0G",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 2.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ2.0G  2.1m",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ12.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ7.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 5.2,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ5.2",
+    "is_active": true
+  },
+  {
+    "name": "SK4F",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SK4F φ3.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SCM435",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SCM435 φ14.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "S35CFS",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S35CFS φ12.0D (支給材)",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ17.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "SF-20T",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-20T φ5.0G",
+    "is_active": true
+  },
+  {
+    "name": "SDF",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SDF φ3.0D",
+    "is_active": true
+  },
+  {
+    "name": "SCM435",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SCM435 φ8.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "SF-13E",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-13E φ6.0D",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ20.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 19.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ19.0",
+    "is_active": true
+  },
+  {
+    "name": "CB156",
+    "shape": "round",
+    "diameter_mm": 3.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: CB156 φ3.5",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "hexagon",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 Hex10.0",
+    "is_active": true
+  },
+  {
+    "name": "C6782Lcd",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C6782Lcd φ6.0  2m",
+    "is_active": true
+  },
+  {
+    "name": "ASK500F",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK500F φ4.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ3.0",
+    "is_active": true
+  },
+  {
+    "name": "1215",
+    "shape": "round",
+    "diameter_mm": 4.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: 1215 φ4.5  (-10,-20)",
+    "is_active": true
+  },
+  {
+    "name": "SGD3M",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SGD3M φ8.0D  2.0m",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ18.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ16.0CM",
+    "is_active": true
+  },
+  {
+    "name": "STKM11A",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: STKM11A φ10.0ｘ1.6t",
+    "is_active": true
+  },
+  {
+    "name": "A2017",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2017 φ15.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "STKM13A",
+    "shape": "round",
+    "diameter_mm": 21.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: STKM13A φ21.0×15.0×2500 （客先有償支給）",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ12.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS416",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS416 φ5.0G",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "hexagon",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 Hex7.0",
+    "is_active": true
+  },
+  {
+    "name": "SDF",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SDF φ8.0 平目R ﾓｼﾞｭｰﾙ0.2  40山",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 14.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd Hex14.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 17.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd Hex17.0",
+    "is_active": true
+  },
+  {
+    "name": "SDF",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SDF φ14.0D",
+    "is_active": true
+  },
+  {
+    "name": "C5441",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C5441 φ12.0",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ18.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd φ12.0 (NB5N)",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 3.5,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ3.5G",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 30.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ30.0G",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd φ17.0 (NB5N) (C3603-1/2H表記)",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 22.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ22.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ15.0CM",
+    "is_active": true
+  },
+  {
+    "name": "ASK3000S",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK3000S φ8.0G",
+    "is_active": true
+  },
+  {
+    "name": "A7075-T6",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A7075-T6 φ15.0",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 11.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ11.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 28.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ28.0",
+    "is_active": true
+  },
+  {
+    "name": "A2017",
+    "shape": "round",
+    "diameter_mm": 21.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2017 φ21.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ18.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 9.2,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ9.2  1.5m 客先支給材",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "round",
+    "diameter_mm": 3.5,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd φ3.5 (NB5N)",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd φ5.0 (NB5N)",
+    "is_active": true
+  },
+  {
+    "name": "SGD3M",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SGD3M φ13.0D  2.0m",
+    "is_active": true
+  },
+  {
+    "name": "SGD3M",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SGD3M φ14.0D  2.0m",
+    "is_active": true
+  },
+  {
+    "name": "SGD3M",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SGD3M φ18.0D  2.0m",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "hexagon",
+    "diameter_mm": 13.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 Hex13.0  2m",
+    "is_active": true
+  },
+  {
+    "name": "SF-27E",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-27E φ3.0G",
+    "is_active": true
+  },
+  {
+    "name": "C1100",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C1100 φ5.0",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 φ17.0CM",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ17.0CM",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ16.0CM",
+    "is_active": true
+  },
+  {
+    "name": "S45CFS",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CFS φ8.0D",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ18.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3604 A-Lcd",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604 A-Lcd φ6.0 (焼鈍材) (支給材)",
+    "is_active": true
+  },
+  {
+    "name": "ASK3000T",
+    "shape": "round",
+    "diameter_mm": 3.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK3000T φ3.5G",
+    "is_active": true
+  },
+  {
+    "name": "C1100",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C1100 φ3.0（支給材）",
+    "is_active": true
+  },
+  {
+    "name": "ASK3000S",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK3000S φ4.0G",
+    "is_active": true
+  },
+  {
+    "name": "TLS",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: TLS φ5.0D　指定",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ14.0 (NB5S)",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 22.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ22.0 (NB5S指定)",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ16.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ12.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ14.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd φ3.0 (NB5N) (C3601表記）",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ13.0",
+    "is_active": true
+  },
+  {
+    "name": "C1100",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C1100 φ6.0",
+    "is_active": true
+  },
+  {
+    "name": "TLS",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: TLS φ4.0D",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd φ6.0 (NB5N)",
+    "is_active": true
+  },
+  {
+    "name": "S45CL2",
+    "shape": "round",
+    "diameter_mm": 22.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CL2 φ22.0D",
+    "is_active": true
+  },
+  {
+    "name": "S45CFS",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CFS φ6.0D",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ9.0CM",
+    "is_active": true
+  },
+  {
+    "name": "POM（白）",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: POM（白） φ20.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "ME1F",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ME1F φ10.0CM",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 11.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ11.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ13.0D",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 11.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ11.0D",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ15.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3604異形材",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3604異形材 φ8.0 (支給材）",
+    "is_active": true
+  },
+  {
+    "name": "SUM22",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM22 φ7.0 客先支給材",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "round",
+    "diameter_mm": 22.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 φ22.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 3.5,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ3.5",
+    "is_active": true
+  },
+  {
+    "name": "SGD3M",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SGD3M φ15.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "ｱﾙﾐ青銅",
+    "shape": "round",
+    "diameter_mm": 17.06,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ｱﾙﾐ青銅 φ17.06 客先支給材",
+    "is_active": true
+  },
+  {
+    "name": "SF-13E",
+    "shape": "round",
+    "diameter_mm": 6.04,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-13E φ6.04D",
+    "is_active": true
+  },
+  {
+    "name": "C2700T",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C2700T φ18.0×2.0t",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 25.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ25.0CM",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 22.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ22.0CM",
+    "is_active": true
+  },
+  {
+    "name": "PBT（GF30％）",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: PBT（GF30％） φ20.0G 1m",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ13.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 6.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd Hex6.0",
+    "is_active": true
+  },
+  {
+    "name": "SF-13E",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-13E φ14.0D or G",
+    "is_active": true
+  },
+  {
+    "name": "C5191",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 8.8,
+    "description": "CSVからインポート: C5191 φ15.0",
+    "is_active": true
+  },
+  {
+    "name": "ｱﾙﾐ青銅",
+    "shape": "round",
+    "diameter_mm": 32.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ｱﾙﾐ青銅 φ32.0  2m 客先支給材",
+    "is_active": true
+  },
+  {
+    "name": "SUS400系",
+    "shape": "round",
+    "diameter_mm": 10.69,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS400系 φ10.69  2.0m",
+    "is_active": true
+  },
+  {
+    "name": "TLS",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: TLS φ6.0D (-30,-50)",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd φ18.0 (NB5N)",
+    "is_active": true
+  },
+  {
+    "name": "SGD3M",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SGD3M φ10.0D  2.0m",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ10.0",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ20.0CM",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 φ20.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd φ8.0 (NB5N)",
+    "is_active": true
+  },
+  {
+    "name": "SF-20T",
+    "shape": "round",
+    "diameter_mm": 3.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-20T φ3.5G",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ12.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ7.0D",
+    "is_active": true
+  },
+  {
+    "name": "SUS420F",
+    "shape": "round",
+    "diameter_mm": 6.1,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420F φ6.1D (支給材）",
+    "is_active": true
+  },
+  {
+    "name": "SUS420F",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420F φ6.0G",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ15.0",
+    "is_active": true
+  },
+  {
+    "name": "A2017",
+    "shape": "round",
+    "diameter_mm": 23.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2017 φ23.0 2m (住軽材)",
+    "is_active": true
+  },
+  {
+    "name": "C3604（一般）",
+    "shape": "round",
+    "diameter_mm": 3604.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3604（一般） □6.5",
+    "is_active": true
+  },
+  {
+    "name": "SGD3M or SUS303",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SGD3M or SUS303 φ6.0  2.0m",
+    "is_active": true
+  },
+  {
+    "name": "S45CF",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CF φ10.0D",
+    "is_active": true
+  },
+  {
+    "name": "SF-20T",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-20T φ12.0D",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 24.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ24.0",
+    "is_active": true
+  },
+  {
+    "name": "SF-20T",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-20T φ4.0G",
+    "is_active": true
+  },
+  {
+    "name": "SF-20T",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-20T φ6.0G",
+    "is_active": true
+  },
+  {
+    "name": "SUS303Cu",
+    "shape": "hexagon",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303Cu Hex10.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 4.5,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ4.5 ﾀﾃﾒR",
+    "is_active": true
+  },
+  {
+    "name": "TLS",
+    "shape": "round",
+    "diameter_mm": 3.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: TLS φ3.5D",
+    "is_active": true
+  },
+  {
+    "name": "C2700T",
+    "shape": "round",
+    "diameter_mm": 7.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C2700T φ7.5×0.5t",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ5.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "C3604（一般）",
+    "shape": "hexagon",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3604（一般） Hex5.0",
+    "is_active": true
+  },
+  {
+    "name": "SF-20T",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-20T φ8.0G",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 8.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd Hex8.0",
+    "is_active": true
+  },
+  {
+    "name": "SF-20T",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-20T φ9.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ17.0",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 φ14.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SF-20T",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-20T φ7.0G",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 5.97,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ5.97",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ20.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303G",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303G　φ10.0",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 22.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ22.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS420F",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420F φ5.0G",
+    "is_active": true
+  },
+  {
+    "name": "CB156",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: CB156 φ9.0",
+    "is_active": true
+  },
+  {
+    "name": "CB156",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: CB156 φ10.0",
+    "is_active": true
+  },
+  {
+    "name": "S25C",
+    "shape": "round",
+    "diameter_mm": 5.9,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S25C φ5.9G (+5,0)  2m",
+    "is_active": true
+  },
+  {
+    "name": "C3604（一般）",
+    "shape": "round",
+    "diameter_mm": 21.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3604（一般） φ21.0",
+    "is_active": true
+  },
+  {
+    "name": "SF-13E",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-13E φ4.0D",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ16.0",
+    "is_active": true
+  },
+  {
+    "name": "POM（黒）",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: POM（黒） φ10.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ9.0D",
+    "is_active": true
+  },
+  {
+    "name": "TLS",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: TLS φ14.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604 A-Lcd",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604 A-Lcd φ10.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ4.0",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ8.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ9.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ10.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ13.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "CB156",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: CB156 φ6.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604 A-Lcd",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604 A-Lcd φ9.0(大木材)  ﾀﾃﾒR",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd φ10.0 (NB5N)",
+    "is_active": true
+  },
+  {
+    "name": "CB156",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: CB156 φ5.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "hexagon",
+    "diameter_mm": 14.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 Hex14.0  2m",
+    "is_active": true
+  },
+  {
+    "name": "C3604 A-Lcd",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604 A-Lcd φ3.0",
+    "is_active": true
+  },
+  {
+    "name": "A2017",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2017 φ8.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "S45CF",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CF φ13.0D",
+    "is_active": true
+  },
+  {
+    "name": "S45CFS",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CFS φ12.0D",
+    "is_active": true
+  },
+  {
+    "name": "SKD11",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SKD11 φ14.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SK4F",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SK4F φ8.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ6.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SDF",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SDF φ7.0D",
+    "is_active": true
+  },
+  {
+    "name": "POM（白）",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: POM（白） φ10.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "S45CFS",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CFS φ16.0D",
+    "is_active": true
+  },
+  {
+    "name": "S45CF",
+    "shape": "round",
+    "diameter_mm": 21.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CF φ21.0D",
+    "is_active": true
+  },
+  {
+    "name": "S45CFS",
+    "shape": "round",
+    "diameter_mm": 19.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CFS φ19.0D (S45CL2)",
+    "is_active": true
+  },
+  {
+    "name": "S45CF",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CF φ8.0",
+    "is_active": true
+  },
+  {
+    "name": "SDF",
+    "shape": "round",
+    "diameter_mm": 11.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SDF φ11.0D",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 19.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ19.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "S45CFS",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CFS φ14.0D (S45CL2)",
+    "is_active": true
+  },
+  {
+    "name": "S45CFS",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CFS φ20.0D",
+    "is_active": true
+  },
+  {
+    "name": "S45CL2",
+    "shape": "round",
+    "diameter_mm": 32.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CL2 φ32.0D",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 28.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ28.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "hexagon",
+    "diameter_mm": 5.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 Hex5.5",
+    "is_active": true
+  },
+  {
+    "name": "SF-20T",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-20T",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 4.5,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ4.5G",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 φ5.0G (+2,-4）",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 φ8.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3604（一般）",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3604（一般） φ7.0",
+    "is_active": true
+  },
+  {
+    "name": "S45CL",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CL φ5.0D",
+    "is_active": true
+  },
+  {
+    "name": "SUY-B1",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUY-B1 φ4.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "C3604（一般）",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3604（一般） φ6.0",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ9.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 2.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ2.0",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 φ9.0CM",
+    "is_active": true
+  },
+  {
+    "name": "CB156",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: CB156 φ17.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ8.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SGD3M",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SGD3M φ20.0D  2.0m",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ14.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 5.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd Hex5.0",
+    "is_active": true
+  },
+  {
+    "name": "SDF",
+    "shape": "round",
+    "diameter_mm": 13.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SDF φ13.5 ｱﾔﾒR",
+    "is_active": true
+  },
+  {
+    "name": "C5441",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C5441 φ5.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 11.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ11.0D (下村)",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ7.0",
+    "is_active": true
+  },
+  {
+    "name": "C1100H",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C1100H φ6.0",
+    "is_active": true
+  },
+  {
+    "name": "SGD400",
+    "shape": "round",
+    "diameter_mm": 24.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SGD400 φ24.0 (林精鋼）",
+    "is_active": true
+  },
+  {
+    "name": "S45CF",
+    "shape": "round",
+    "diameter_mm": 19.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CF φ19.0D",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 19.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ19.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SUS630",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS630 φ7.0G",
+    "is_active": true
+  },
+  {
+    "name": "C6191",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C6191 φ20.0G (0,-0.03)  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS303Cu",
+    "shape": "hexagon",
+    "diameter_mm": 5.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303Cu Hex5.5",
+    "is_active": true
+  },
+  {
+    "name": "SDF",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SDF φ6.0 (-10,-30)",
+    "is_active": true
+  },
+  {
+    "name": "12L14",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: 12L14 φ10.0D  (-30,-50)",
+    "is_active": true
+  },
+  {
+    "name": "SWRM",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SWRM φ5.0D",
+    "is_active": true
+  },
+  {
+    "name": "CB156",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: CB156 φ13.0 (φ12.0から変更）",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 26.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ26.0",
+    "is_active": true
+  },
+  {
+    "name": "SF-13E",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-13E φ7.0D",
+    "is_active": true
+  },
+  {
+    "name": "SK4F",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SK4F φ7.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "C3604 A-Lcd",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604 A-Lcd φ14.0",
+    "is_active": true
+  },
+  {
+    "name": "CB156",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: CB156 φ12.0",
+    "is_active": true
+  },
+  {
+    "name": "POM",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: POM φ5.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 32.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ32.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604（一般）",
+    "shape": "round",
+    "diameter_mm": 11.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3604（一般） φ11.0",
+    "is_active": true
+  },
+  {
+    "name": "CB156",
+    "shape": "round",
+    "diameter_mm": 22.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: CB156 φ22.0",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ7.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "GT209",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: GT209 φ10.0",
+    "is_active": true
+  },
+  {
+    "name": "GT209",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: GT209 φ16.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303Cu",
+    "shape": "hexagon",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303Cu Hex7.0",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ4.0 2m (住軽材)",
+    "is_active": true
+  },
+  {
+    "name": "POM（白）",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: POM（白） φ3.0  2m",
+    "is_active": true
+  },
+  {
+    "name": "CB156",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: CB156 φ18.0",
+    "is_active": true
+  },
+  {
+    "name": "A2017",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2017 φ13.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "A6061",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061 φ6.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "CB156",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: CB156 φ7.0 （6.0）",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 30.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ30.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "S20C",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S20C φ10.0D  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "BZ5A",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: BZ5A φ6.0 ｱﾔﾒR",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 2.5,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ2.5G （-10.-20）",
+    "is_active": true
+  },
+  {
+    "name": "SK4F",
+    "shape": "round",
+    "diameter_mm": 3.6,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SK4F φ3.6G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUY-B1",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUY-B1 φ5.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "C3604 SA-Lcd",
+    "shape": "round",
+    "diameter_mm": 2.5,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604 SA-Lcd φ2.5",
+    "is_active": true
+  },
+  {
+    "name": "SUS303Cu",
+    "shape": "hexagon",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303Cu Hex8.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ14.0D",
+    "is_active": true
+  },
+  {
+    "name": "SF-20T",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-20T φ3.0G",
+    "is_active": true
+  },
+  {
+    "name": "SF-27E",
+    "shape": "round",
+    "diameter_mm": 3.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-27E φ3.5D",
+    "is_active": true
+  },
+  {
+    "name": "C2700T",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C2700T φ10.0×0.8t",
+    "is_active": true
+  },
+  {
+    "name": "BZ5A",
+    "shape": "round",
+    "diameter_mm": 6.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: BZ5A φ6.5",
+    "is_active": true
+  },
+  {
+    "name": "BZ5A",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: BZ5A φ5.0 ｱﾔﾒR",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 11.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ11.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS303Cu",
+    "shape": "hexagon",
+    "diameter_mm": 4.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303Cu Hex4.5",
+    "is_active": true
+  },
+  {
+    "name": "S45CL2",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CL2 φ18.0D",
+    "is_active": true
+  },
+  {
+    "name": "C3604（一般）",
+    "shape": "hexagon",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3604（一般） Hex12.0 A45",
+    "is_active": true
+  },
+  {
+    "name": "A2017",
+    "shape": "round",
+    "diameter_mm": 32.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2017 φ32.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "POM",
+    "shape": "round",
+    "diameter_mm": 22.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: POM φ22.0G",
+    "is_active": true
+  },
+  {
+    "name": "POM（白）",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: POM（白） φ16.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 12.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd Hex12.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303Cu",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303Cu φ3.0G",
+    "is_active": true
+  },
+  {
+    "name": "S45CL2",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CL2 φ7.0Ｄ",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "hexagon",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 Hex10.0",
+    "is_active": true
+  },
+  {
+    "name": "TLS",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: TLS φ8.0",
+    "is_active": true
+  },
+  {
+    "name": "SDF",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SDF φ4.0D",
+    "is_active": true
+  },
+  {
+    "name": "TLS",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: TLS φ3.0D",
+    "is_active": true
+  },
+  {
+    "name": "SUS303G",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303G　φ5.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS304相当材",
+    "shape": "round",
+    "diameter_mm": 4.17,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS304相当材 φ4.17 (支給材)",
+    "is_active": true
+  },
+  {
+    "name": "SUS304相当材",
+    "shape": "round",
+    "diameter_mm": 5.8,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS304相当材 φ5.8 (支給材)",
+    "is_active": true
+  },
+  {
+    "name": "SUS630",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS630 φ3.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "TLS",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: TLS φ7.0D",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 φ14.0",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 φ12.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ12.0D",
+    "is_active": true
+  },
+  {
+    "name": "BZ5A",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: BZ5A φ7.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 21.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd Hex21.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604 （一般）",
+    "shape": "hexagon",
+    "diameter_mm": 22.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604 （一般） Hex22.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604(一般)",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3604(一般) φ20.0",
+    "is_active": true
+  },
+  {
+    "name": "SGD3M",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SGD3M φ16.0D  2.0m",
+    "is_active": true
+  },
+  {
+    "name": "SGD3M",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SGD3M φ12.0D  2.0m",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ13.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SUS303G",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303G　φ17.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "hexagon",
+    "diameter_mm": 5.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 Hex5.0  2m",
+    "is_active": true
+  },
+  {
+    "name": "S45C",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45C φ18.0D  2.5m 母材(大同特殊鋼)・伸線(下村)min2t/LT/4M",
+    "is_active": true
+  },
+  {
+    "name": "A6061",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061 φ10.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "S45CL2",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CL2 φ16.0D",
+    "is_active": true
+  },
+  {
+    "name": "S45CL2",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CL2 φ10.0D",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "hexagon",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 Hex12.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 1.5,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ1.5G  2.1m",
+    "is_active": true
+  },
+  {
+    "name": "SUM22",
+    "shape": "hexagon",
+    "diameter_mm": 22.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM22 Hex22.0 （支給材）",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 5.27,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ5.27D (+10,-10)",
+    "is_active": true
+  },
+  {
+    "name": "A2024-T4",
+    "shape": "round",
+    "diameter_mm": 8.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2024-T4 φ8.5 or φ10.0 (支給材)",
+    "is_active": true
+  },
+  {
+    "name": "A2014-T4",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2014-T4 φ12.0 (支給材)",
+    "is_active": true
+  },
+  {
+    "name": "AMS4612 ﾈｰﾊﾞﾙ黄銅",
+    "shape": "round",
+    "diameter_mm": 12.3,
+    "current_density": 7.85,
+    "description": "CSVからインポート: AMS4612 ﾈｰﾊﾞﾙ黄銅 φ12.3  1.5m （支給材）",
+    "is_active": true
+  },
+  {
+    "name": "A2219-T6",
+    "shape": "round",
+    "diameter_mm": 5.56,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2219-T6 φ5.56 (支給材)",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 φ10.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 3604.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd □4.8",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 12.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd Hex12.0 (A36NP指定)",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 φ16.0",
+    "is_active": true
+  },
+  {
+    "name": "A7075-T6",
+    "shape": "hexagon",
+    "diameter_mm": 7.14,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A7075-T6 Hex7.14 （客先支給）",
+    "is_active": true
+  },
+  {
+    "name": "A7075-T6",
+    "shape": "hexagon",
+    "diameter_mm": 8.78,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A7075-T6 Hex8.78 （客先支給）",
+    "is_active": true
+  },
+  {
+    "name": "A2219-T6",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2219-T6 φ14.0 (支給材)",
+    "is_active": true
+  },
+  {
+    "name": "A6061",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061 φ9.0 (支給材)",
+    "is_active": true
+  },
+  {
+    "name": "SUS303Cu",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303Cu φ10.0D",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 31.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ31.0  2.5m 日伸",
+    "is_active": true
+  },
+  {
+    "name": "SKD11",
+    "shape": "round",
+    "diameter_mm": 21.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SKD11 φ21.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SF-13",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-13 φ4.0G （-20,-30）",
+    "is_active": true
+  },
+  {
+    "name": "SF-13E",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-13E φ8.0D",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 5.98,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ5.98CM",
+    "is_active": true
+  },
+  {
+    "name": "SF-13E",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-13E φ5.0G",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "round",
+    "diameter_mm": 5.98,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 φ5.98CM",
+    "is_active": true
+  },
+  {
+    "name": "S45CFS",
+    "shape": "round",
+    "diameter_mm": 19.95,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CFS φ19.95G",
+    "is_active": true
+  },
+  {
+    "name": "SUS420F",
+    "shape": "round",
+    "diameter_mm": 11.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420F φ11.0G",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 7.97,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ7.97CM",
+    "is_active": true
+  },
+  {
+    "name": "TLS",
+    "shape": "round",
+    "diameter_mm": 5.7,
+    "current_density": 7.85,
+    "description": "CSVからインポート: TLS φ5.7 ﾀﾃﾒR",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 3.5,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ3.5G  2m",
+    "is_active": true
+  },
+  {
+    "name": "ASK500F",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK500F φ9.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 8.5,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ8.5 ｱﾔﾒR m=0.25",
+    "is_active": true
+  },
+  {
+    "name": "SUS420F",
+    "shape": "round",
+    "diameter_mm": 5.2,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420F φ5.2D",
+    "is_active": true
+  },
+  {
+    "name": "SUS420F2",
+    "shape": "round",
+    "diameter_mm": 5.1,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420F2 φ5.1",
+    "is_active": true
+  },
+  {
+    "name": "SUS420F",
+    "shape": "round",
+    "diameter_mm": 4.1,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420F φ4.1D",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ16.0D",
+    "is_active": true
+  },
+  {
+    "name": "C6782",
+    "shape": "hexagon",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C6782 Hex7.0 (支給材)",
+    "is_active": true
+  },
+  {
+    "name": "C6782Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C6782Lcd Hex7.0 (支給材)",
+    "is_active": true
+  },
+  {
+    "name": "C3604（一般）",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3604（一般） φ10.0",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 26.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ26.0  2.5m ﾚｿﾞﾅｯｸ",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 4.6,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ4.6 ｱﾔﾒR M0.2",
+    "is_active": true
+  },
+  {
+    "name": "S45CL2",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CL2 φ12.0D",
+    "is_active": true
+  },
+  {
+    "name": "SK4F",
+    "shape": "round",
+    "diameter_mm": 3.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SK4F φ3.5G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS420F",
+    "shape": "round",
+    "diameter_mm": 2.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420F φ2.0G (-2,-8) 1.995狙い  2m",
+    "is_active": true
+  },
+  {
+    "name": "A7075",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A7075 φ18.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "C5341",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C5341 φ15.0",
+    "is_active": true
+  },
+  {
+    "name": "SCM415",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SCM415 φ9.0  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "SCM415",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SCM415 φ5.0D  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "SK4F",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SK4F φ6.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SCM415",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SCM415 φ6.0D  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "A5052",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5052 φ20.0D 2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS303Cu",
+    "shape": "hexagon",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303Cu Hex5.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS416",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS416 φ18.0G ｻﾝﾄｸ製 C11以上 ﾅｶﾆｼ様向",
+    "is_active": true
+  },
+  {
+    "name": "SCM415",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SCM415 φ10.0  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "POM（白）",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: POM（白） φ12.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "S45CF",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CF φ20.0D",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 21.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ21.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS316",
+    "shape": "round",
+    "diameter_mm": 19.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS316 φ19.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 19.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ19.0D",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 21.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ21.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "SCM435",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SCM435 φ4.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 26.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ26.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 24.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd Hex24.0",
+    "is_active": true
+  },
+  {
+    "name": "TLS",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: TLS φ15.0D",
+    "is_active": true
+  },
+  {
+    "name": "C3604（一般）",
+    "shape": "hexagon",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3604（一般） Hex6.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 7.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd Hex7.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 5.5,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd Hex5.5",
+    "is_active": true
+  },
+  {
+    "name": "SCM435",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SCM435 φ12.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "C3604（一般）",
+    "shape": "hexagon",
+    "diameter_mm": 5.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3604（一般） Hex5.5",
+    "is_active": true
+  },
+  {
+    "name": "A6061",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061 φ20.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "ASK2200R",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2200R φ6.0G (-26,-34)",
+    "is_active": true
+  },
+  {
+    "name": "ASK2200R",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2200R φ5.0G (-26,-34)",
+    "is_active": true
+  },
+  {
+    "name": "S93D",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S93D φ12.0G  2m (客先支給→協栄で研磨）",
+    "is_active": true
+  },
+  {
+    "name": "S45C",
+    "shape": "round",
+    "diameter_mm": 26.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45C φ26.0 (支給材)",
+    "is_active": true
+  },
+  {
+    "name": "A2017",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2017 φ5.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "A2017",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2017 φ6.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 5.5,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ5.5",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ8.0",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 10.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd Hex10.0 (ﾒｰｶｰ不問)",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 φ6.0",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "hexagon",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S Hex8.0",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "hexagon",
+    "diameter_mm": 5.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S Hex5.5",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 28.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ28.0",
+    "is_active": true
+  },
+  {
+    "name": "SCM415",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SCM415 φ12.0G (-30,-40)   1.5m",
+    "is_active": true
+  },
+  {
+    "name": "SUM24EZC",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM24EZC φ6.0G (-26,-34)",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 21.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ21.0CM",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 23.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ23.0CM",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 15.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd Hex15.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 10.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd Hex10.0",
+    "is_active": true
+  },
+  {
+    "name": "BZ5A",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: BZ5A φ8.0",
+    "is_active": true
+  },
+  {
+    "name": "ASK2200R",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2200R φ4.0CM",
+    "is_active": true
+  },
+  {
+    "name": "ASK3000T",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK3000T φ6.0G",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd φ9.0 (NB5N)",
+    "is_active": true
+  },
+  {
+    "name": "SUS303Cu",
+    "shape": "round",
+    "diameter_mm": 11.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303Cu φ11.0D",
+    "is_active": true
+  },
+  {
+    "name": "SUM22",
+    "shape": "round",
+    "diameter_mm": 8.165,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM22φ8.165G",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "hexagon",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 Hex8.0",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "hexagon",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 Hex12.0",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "hexagon",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S Hex17.0",
+    "is_active": true
+  },
+  {
+    "name": "SUM24L",
+    "shape": "hexagon",
+    "diameter_mm": 19.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM24L Hex19.0",
+    "is_active": true
+  },
+  {
+    "name": "A2017",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2017 φ10.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS303cu",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303cu φ5.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ17.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 6.5,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ6.5G",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ20.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 23.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ23.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 25.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ25.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "round",
+    "diameter_mm": 8.7,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 φ8.7 ｱﾔﾒR",
+    "is_active": true
+  },
+  {
+    "name": "S35C",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S35C φ12.0D",
+    "is_active": true
+  },
+  {
+    "name": "ASK2300",
+    "shape": "round",
+    "diameter_mm": 9.98,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2300 φ9.98CM",
+    "is_active": true
+  },
+  {
+    "name": "A2017",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2017 φ16.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "SGD3M",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SGD3M φ9.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ6.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "CB156",
+    "shape": "round",
+    "diameter_mm": 25.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: CB156 φ25.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "hexagon",
+    "diameter_mm": 10.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 Hex10.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303Cu",
+    "shape": "hexagon",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303Cu Hex6.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS440C",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 7.7,
+    "description": "CSVからインポート: SUS440C φ3.0G",
+    "is_active": true
+  },
+  {
+    "name": "C5441",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C5441 φ4.0",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "round",
+    "diameter_mm": 5.95,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 φ5.95CM",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 24.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ24.0D",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 23.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ23.0CM",
+    "is_active": true
+  },
+  {
+    "name": "A6061",
+    "shape": "round",
+    "diameter_mm": 25.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061 φ25.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "A6061",
+    "shape": "round",
+    "diameter_mm": 19.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061 φ19.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd φ14.0 (A36NP) 手配時要確認",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 14.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd Hex14.0 (A36NP) 手配時要確認",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 φ5.0",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 φ17.0",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "round",
+    "diameter_mm": 11.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 φ11.0",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 φ9.0",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 φ8.0",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 φ7.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "hexagon",
+    "diameter_mm": 9.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd Hex9.0",
+    "is_active": true
+  },
+  {
+    "name": "SF-13E",
+    "shape": "round",
+    "diameter_mm": 2.4,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-13E φ2.4G",
+    "is_active": true
+  },
+  {
+    "name": "ASK3500A",
+    "shape": "round",
+    "diameter_mm": 3.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK3500A φ3.5G",
+    "is_active": true
+  },
+  {
+    "name": "SF-13E",
+    "shape": "round",
+    "diameter_mm": 2.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-13E φ2.5D",
+    "is_active": true
+  },
+  {
+    "name": "SF-13",
+    "shape": "round",
+    "diameter_mm": 2.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-13 φ2.0G",
+    "is_active": true
+  },
+  {
+    "name": "CB156",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: CB156 φ14.0",
+    "is_active": true
+  },
+  {
+    "name": "S45CL",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CL φ20.0",
+    "is_active": true
+  },
+  {
+    "name": "S45CFS",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CFS φ18.0D",
+    "is_active": true
+  },
+  {
+    "name": "ASK2200R",
+    "shape": "round",
+    "diameter_mm": 11.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2200R φ11.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SUS630",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS630 φ5.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ15.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "SF-27E",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-27E φ4.0D",
+    "is_active": true
+  },
+  {
+    "name": "NASF",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: NASF φ4.0Ｇ",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 3.95,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ3.95G (0,-10)",
+    "is_active": true
+  },
+  {
+    "name": "SDF",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SDF φ10.0D",
+    "is_active": true
+  },
+  {
+    "name": "SD200",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SD200 φ6.0D",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600",
+    "shape": "round",
+    "diameter_mm": 4.98,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600 φ4.98CM",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 30.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ30.0",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ20.0 平目R 62山",
+    "is_active": true
+  },
+  {
+    "name": "HB-71-1/2H",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: HB-71-1/2H φ13.0 (+0.05,0)支給材",
+    "is_active": true
+  },
+  {
+    "name": "SUS316L",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS316L φ5.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ20.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 29.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ29.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "hexagon",
+    "diameter_mm": 24.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 Hex24.0",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "hexagon",
+    "diameter_mm": 27.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 Hex27.0",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "hexagon",
+    "diameter_mm": 19.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 Hex19.0",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "hexagon",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 Hex14.0",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "hexagon",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 Hex17.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 3.2,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ3.2G (+0,-10) ｼﾙﾊﾞｰﾛｯﾄﾞ",
+    "is_active": true
+  },
+  {
+    "name": "S25CL",
+    "shape": "hexagon",
+    "diameter_mm": 19.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S25CL Hex19.0 3m 客先支給材",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 19.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ19.0",
+    "is_active": true
+  },
+  {
+    "name": "SKD61",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SKD61 φ3.0",
+    "is_active": true
+  },
+  {
+    "name": "A6061",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061 φ17.0 2.5m",
+    "is_active": true
+  },
+  {
+    "name": "S25CL",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S25CL φ17.0  2m 支給材",
+    "is_active": true
+  },
+  {
+    "name": "SUS303Cu",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303Cu φ9.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 24.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ24.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "ASK2200R",
+    "shape": "round",
+    "diameter_mm": 10.1,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2200R φ10.1G (-20,-40)",
+    "is_active": true
+  },
+  {
+    "name": "C3771 (一般)",
+    "shape": "hexagon",
+    "diameter_mm": 21.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3771 (一般) Hex21.0  2m",
+    "is_active": true
+  },
+  {
+    "name": "S35C",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S35C φ10.0D",
+    "is_active": true
+  },
+  {
+    "name": "C6782",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C6782 φ18.0",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 31.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ31.0",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "round",
+    "diameter_mm": 10.5,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd φ10.5 (MBB-2B指定)",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 24.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ24.0CM",
+    "is_active": true
+  },
+  {
+    "name": "ASK2200R",
+    "shape": "round",
+    "diameter_mm": 7.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2200R φ7.5G (+24,+15)",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ17.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS304L",
+    "shape": "round",
+    "diameter_mm": 28.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS304L φ28.0G  2m (大同母材)",
+    "is_active": true
+  },
+  {
+    "name": "SKD11",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SKD11 φ9.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "A7075",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A7075 φ15.0G  2m （客先支給材）",
+    "is_active": true
+  },
+  {
+    "name": "SUM22",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM22 φ8.0D (林精鋼・神戸母材） 2.5m",
+    "is_active": true
+  },
+  {
+    "name": "S25C",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S25C φ13.0D  2m  客先支給材",
+    "is_active": true
+  },
+  {
+    "name": "S25C",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S25C φ12.0  2m 客先支給材",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 21.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ21.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ14.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 0.8,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ0.8",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 22.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ22.0D  2m (山陽指定）",
+    "is_active": true
+  },
+  {
+    "name": "S45C",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45C φ8.0D  2m 調質材HBW201～269",
+    "is_active": true
+  },
+  {
+    "name": "S45C",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45C φ12.0D  2m 調質材HBW201～269",
+    "is_active": true
+  },
+  {
+    "name": "K-M31",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: K-M31 φ7.0G 2.5m（客先支給材）",
+    "is_active": true
+  },
+  {
+    "name": "A1070",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A1070 φ20.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "ASK500F",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK500F φ15.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "S45CF",
+    "shape": "round",
+    "diameter_mm": 28.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CF φ28.0D",
+    "is_active": true
+  },
+  {
+    "name": "S45C",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45C φ15.0D",
+    "is_active": true
+  },
+  {
+    "name": "ASK8000",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK8000 φ10.0CM",
+    "is_active": true
+  },
+  {
+    "name": "YST1",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: YST1 φ13.0",
+    "is_active": true
+  },
+  {
+    "name": "A2017",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2017 φ12.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "SCM435",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SCM435 φ10.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 16.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ16.5 (日伸)",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 17.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ17.5 (日伸)",
+    "is_active": true
+  },
+  {
+    "name": "SUS420F2",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420F2 φ6.0G",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 22.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ22.0 レゾナック",
+    "is_active": true
+  },
+  {
+    "name": "S45CF",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CF φ9.0D",
+    "is_active": true
+  },
+  {
+    "name": "S45C",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45C φ10.0D 調質材HRC20～28",
+    "is_active": true
+  },
+  {
+    "name": "SUS316",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS316 φ14.0G  2.2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS316",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS316 φ9.0G  2.2m",
+    "is_active": true
+  },
+  {
+    "name": "ASK2200R",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2200R φ20.0CM",
+    "is_active": true
+  },
+  {
+    "name": "チタンF136",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: チタンF136 φ10.0",
+    "is_active": true
+  },
+  {
+    "name": "S35C",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S35C φ8.0D  1.5m　※端材保管",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ14.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303cu",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303cu φ13.0D",
+    "is_active": true
+  },
+  {
+    "name": "A2017",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2017 φ14.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "S25C",
+    "shape": "round",
+    "diameter_mm": 28.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S25C φ28.0  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "SCM435",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SCM435 φ7.0D  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "SF-20T",
+    "shape": "round",
+    "diameter_mm": 11.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-20T φ11.0D",
+    "is_active": true
+  },
+  {
+    "name": "C5441",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C5441 φ7.0",
+    "is_active": true
+  },
+  {
+    "name": "K-M31",
+    "shape": "round",
+    "diameter_mm": 16.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: K-M31 φ16.5G (±0.015)（客先有償支給）",
+    "is_active": true
+  },
+  {
+    "name": "SUS303Cu",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303Cu φ5.0D",
+    "is_active": true
+  },
+  {
+    "name": "K-M31",
+    "shape": "round",
+    "diameter_mm": 29.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: K-M31 φ29.0G (+0.05,-0)  2m（客先有償支給）",
+    "is_active": true
+  },
+  {
+    "name": "S45CF",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CF φ7.0D",
+    "is_active": true
+  },
+  {
+    "name": "C5441",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C5441 φ17.0",
+    "is_active": true
+  },
+  {
+    "name": "C3602Lcd",
+    "shape": "round",
+    "diameter_mm": 22.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3602Lcd φ22.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS303cu",
+    "shape": "hexagon",
+    "diameter_mm": 5.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303cu Hex5.5",
+    "is_active": true
+  },
+  {
+    "name": "SGD3M",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SGD3M φ4.0  2m",
+    "is_active": true
+  },
+  {
+    "name": "AB4-1/2H",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: AB4-1/2H φ13.0 2.5m 客先支給材",
+    "is_active": true
+  },
+  {
+    "name": "ASK2200R",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2200R φ14.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SUM22",
+    "shape": "round",
+    "diameter_mm": 22.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM22 φ22.0D  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "SUM22",
+    "shape": "round",
+    "diameter_mm": 25.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM22 φ25.0D  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "HB-71-1/2H",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: HB-71-1/2H φ12.0 (+0.05,0)支給材",
+    "is_active": true
+  },
+  {
+    "name": "S45CHT",
+    "shape": "round",
+    "diameter_mm": 28.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CHT φ28.0D  2.2m （林精鋼）",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ6.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ5.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ8.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "A6061",
+    "shape": "round",
+    "diameter_mm": 31.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061 φ31.0",
+    "is_active": true
+  },
+  {
+    "name": "SUM23",
+    "shape": "round",
+    "diameter_mm": 31.955,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM23 φ31.955G (±0.015)",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 32.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ32.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS416F",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS416F φ10.0G (-30,-40)",
+    "is_active": true
+  },
+  {
+    "name": "K-M31",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: K-M31 φ10.0G (0,+0.03) 支給材",
+    "is_active": true
+  },
+  {
+    "name": "SUM22",
+    "shape": "round",
+    "diameter_mm": 11.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM22 φ11.0 (ASK2200R)",
+    "is_active": true
+  },
+  {
+    "name": "SF-20F",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-20F φ6.0D",
+    "is_active": true
+  },
+  {
+    "name": "SCM440",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SCM440 φ12.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "S45C",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45C φ20.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "C6932",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C6932 φ8.0 ﾈｵﾌﾞﾗｽ  1.5m (客先支給）",
+    "is_active": true
+  },
+  {
+    "name": "SCM440調質材",
+    "shape": "round",
+    "diameter_mm": 440.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SCM440調質材 HRC35～40",
+    "is_active": true
+  },
+  {
+    "name": "4141",
+    "shape": "round",
+    "diameter_mm": 30.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: 4141 φ30.0 800mm",
+    "is_active": true
+  },
+  {
+    "name": "S45C",
+    "shape": "round",
+    "diameter_mm": 45.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45C 調質材 HB165-229",
+    "is_active": true
+  },
+  {
+    "name": "C6932",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C6932 φ6.0 ｴｺﾌﾞﾗｽ 客先支給材",
+    "is_active": true
+  },
+  {
+    "name": "KFX41B",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: KFX41B φ6.0 Pbﾌﾘｰﾘﾝ青銅 客先支給材",
+    "is_active": true
+  },
+  {
+    "name": "A2017",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2017 φ7.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "ASK2200R",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2200R φ12.0CM",
+    "is_active": true
+  },
+  {
+    "name": "HB-71 5AL",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: HB-71 5AL φ13.0 2.5m 客先支給材",
+    "is_active": true
+  },
+  {
+    "name": "ﾈｵﾌﾞﾗｽ",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ﾈｵﾌﾞﾗｽ φ15.0 客先支給材",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 35.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ35.0  2m 押出",
+    "is_active": true
+  },
+  {
+    "name": "BZ5A",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: BZ5A φ10.0",
+    "is_active": true
+  },
+  {
+    "name": "SF-13E",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-13E φ20.0D",
+    "is_active": true
+  },
+  {
+    "name": "K-M31",
+    "shape": "round",
+    "diameter_mm": 11.2,
+    "current_density": 7.85,
+    "description": "CSVからインポート: K-M31 φ11.2G 支給材",
+    "is_active": true
+  },
+  {
+    "name": "CB156",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: CB156 φ15.0",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 38.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ38.0  2m 押出",
+    "is_active": true
+  },
+  {
+    "name": "ASK1100BG",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK1100BG φ9.0CM  2m",
+    "is_active": true
+  },
+  {
+    "name": "SCM440H",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SCM440H φ12.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SCM440H",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SCM440H φ18.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "ASK2200R",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2200R φ7.0G",
+    "is_active": true
+  },
+  {
+    "name": "S45C",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45C φ9.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "hexagon",
+    "diameter_mm": 24.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 Hex24.0  2m",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 36.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ36.0D  2.5m ﾚｿﾞﾅｯｸ",
+    "is_active": true
+  },
+  {
+    "name": "SUM22",
+    "shape": "round",
+    "diameter_mm": 26.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM22 φ26.0D  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "SUM22",
+    "shape": "round",
+    "diameter_mm": 24.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM22 φ24.0D  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "ASK2200R",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2200R φ16.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SUS630",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS630 φ8.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUM22",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM22 φ16.0D  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "S20C",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S20C φ8.0D　1.5m　※端材保管",
+    "is_active": true
+  },
+  {
+    "name": "S20C",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S20C φ12.0D  1.5m　※端材保管",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 23.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ23.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 27.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ27.0G  2m (大同 千金様)",
+    "is_active": true
+  },
+  {
+    "name": "CB156",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: CB156 φ8.0",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 35.1,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ35.1D 昭和材",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600R",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600R φ20.0CM",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600R",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600R φ15.0CM",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600R",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600R φ8.0CM",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600R",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600R φ9.0CM",
+    "is_active": true
+  },
+  {
+    "name": "S45CH 調質材",
+    "shape": "round",
+    "diameter_mm": 22.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CH 調質材 φ22.0  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "C3603Lcd",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3603Lcd φ6.0 (3604NB5S可)",
+    "is_active": true
+  },
+  {
+    "name": "S45CH 調質材",
+    "shape": "round",
+    "diameter_mm": 30.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CH 調質材 φ30.0D  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "K-M31",
+    "shape": "round",
+    "diameter_mm": 30.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: K-M31 φ30.0G (0,-20)  2m（客先有償支給）",
+    "is_active": true
+  },
+  {
+    "name": "BZ5A",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: BZ5A φ15.0 (C6801) 客先へ手配要 有償支給材",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ7.0CM",
+    "is_active": true
+  },
+  {
+    "name": "S45C",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45C φ5.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "HB-71-1/2H",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: HB-71-1/2H φ15.0 支給材",
+    "is_active": true
+  },
+  {
+    "name": "SUS420F",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420F φ18.0G",
+    "is_active": true
+  },
+  {
+    "name": "A5056-H18",
+    "shape": "round",
+    "diameter_mm": 31.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056-H18 φ31.0 2m (客先支給材)",
+    "is_active": true
+  },
+  {
+    "name": "A5056-H18",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056-H18 φ12.0 2m (客先支給材)",
+    "is_active": true
+  },
+  {
+    "name": "A5056-H18",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056-H18 φ17.0 2m (客先支給材)",
+    "is_active": true
+  },
+  {
+    "name": "A5056-H18",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056-H18 φ14.0 2m (客先支給材)",
+    "is_active": true
+  },
+  {
+    "name": "HB-71 1/2H",
+    "shape": "round",
+    "diameter_mm": 11.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: HB-71 1/2H φ11.0G",
+    "is_active": true
+  },
+  {
+    "name": "C1100BD-H",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C1100BD-H φ16.0",
+    "is_active": true
+  },
+  {
+    "name": "ELCH2S",
+    "shape": "round",
+    "diameter_mm": 10.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ELCH2S φ10.0D h9 客先無償支給",
+    "is_active": true
+  },
+  {
+    "name": "SUS316L",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS316L φ9.0G  2m 　メガサス",
+    "is_active": true
+  },
+  {
+    "name": "SUS316L",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS316L φ12.0G  2m  愛知精鋼",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600S",
+    "shape": "round",
+    "diameter_mm": 3.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600S φ3.0CM",
+    "is_active": true
+  },
+  {
+    "name": "S45CH 調質材",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45CH 調質材 φ12.0D  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "SUS420F",
+    "shape": "round",
+    "diameter_mm": 4.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420F φ4.0G",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ18.0D  原則秋山材",
+    "is_active": true
+  },
+  {
+    "name": "SUS316L",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS316L φ13.0G  2.0m",
+    "is_active": true
+  },
+  {
+    "name": "S20C",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S20C φ6.0D  1.5m  ※端材保管",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600R",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600R φ16.0CM",
+    "is_active": true
+  },
+  {
+    "name": "SUS316L",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS316L φ18.0G  2.0m G4303大同 P研磨",
+    "is_active": true
+  },
+  {
+    "name": "A7075",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A7075 φ12.0G",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600R",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600R φ7.0CM",
+    "is_active": true
+  },
+  {
+    "name": "ASK2600R",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: ASK2600R φ17.0CM",
+    "is_active": true
+  },
+  {
+    "name": "S45C",
+    "shape": "round",
+    "diameter_mm": 25.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45C φ25.0D  2.0m",
+    "is_active": true
+  },
+  {
+    "name": "HB-71-1/2H",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: HB-71-1/2H φ9.0 (φ12.0から加工）",
+    "is_active": true
+  },
+  {
+    "name": "C6801",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C6801 φ13.0 (客先支給材）",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 29.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ29.0",
+    "is_active": true
+  },
+  {
+    "name": "C3604Lcd",
+    "shape": "round",
+    "diameter_mm": 37.0,
+    "current_density": 8.49,
+    "description": "CSVからインポート: C3604Lcd φ37.0",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 36.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ36.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 32.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ32.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "A5056",
+    "shape": "round",
+    "diameter_mm": 37.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056 φ37.0 2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS316",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS316 φ12.0G  2.2m ｼﾙﾊﾞｰ（千葉金）",
+    "is_active": true
+  },
+  {
+    "name": "SF-20F",
+    "shape": "round",
+    "diameter_mm": 5.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SF-20F φ5.0G",
+    "is_active": true
+  },
+  {
+    "name": "S35C",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S35C φ18.0G  2m　  ※端材保管",
+    "is_active": true
+  },
+  {
+    "name": "A5052",
+    "shape": "round",
+    "diameter_mm": 28.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5052 φ28.0  2m 引抜材",
+    "is_active": true
+  },
+  {
+    "name": "SUS420J2",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420J2 φ17.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 38.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ38.0G  2.1m",
+    "is_active": true
+  },
+  {
+    "name": "SUM22",
+    "shape": "round",
+    "diameter_mm": 9.3,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM22 φ9.3D (林製鋼・神戸母材) 1.5ｍ",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 28.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ28.0G",
+    "is_active": true
+  },
+  {
+    "name": "SUS420J2",
+    "shape": "round",
+    "diameter_mm": 19.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420J2 φ19.0G  2m",
+    "is_active": true
+  },
+  {
+    "name": "SUS420F",
+    "shape": "round",
+    "diameter_mm": 20.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420F φ20.0G",
+    "is_active": true
+  },
+  {
+    "name": "SUS316",
+    "shape": "round",
+    "diameter_mm": 13.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS316 φ13.0G 2.2m ｼﾙﾊﾞｰ(千葉金)",
+    "is_active": true
+  },
+  {
+    "name": "SUS303Cu",
+    "shape": "round",
+    "diameter_mm": 6.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS303Cu φ6.0D",
+    "is_active": true
+  },
+  {
+    "name": "SUS316F",
+    "shape": "round",
+    "diameter_mm": 8.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS316F φ8.0G",
+    "is_active": true
+  },
+  {
+    "name": "C3603Lcd-1/2H",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C3603Lcd-1/2H φ17.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS420J2",
+    "shape": "round",
+    "diameter_mm": 22.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420J2 φ22.0D  2m",
+    "is_active": true
+  },
+  {
+    "name": "BZ5A",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: BZ5A φ14.0",
+    "is_active": true
+  },
+  {
+    "name": "BZ5A",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: BZ5A φ9.0",
+    "is_active": true
+  },
+  {
+    "name": "A5052",
+    "shape": "round",
+    "diameter_mm": 37.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5052 φ37.0  2m",
+    "is_active": true
+  },
+  {
+    "name": "HB-71 1/2H",
+    "shape": "round",
+    "diameter_mm": 26.5,
+    "current_density": 7.85,
+    "description": "CSVからインポート: HB-71 1/2H φ26.5 (±0.08)  2.5m  客先無償支給材",
+    "is_active": true
+  },
+  {
+    "name": "SUS303",
+    "shape": "round",
+    "diameter_mm": 25.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS303 φ25.0G",
+    "is_active": true
+  },
+  {
+    "name": "SUS420J2",
+    "shape": "round",
+    "diameter_mm": 21.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420J2 φ21.0  2.5m",
+    "is_active": true
+  },
+  {
+    "name": "SUS420F",
+    "shape": "round",
+    "diameter_mm": 21.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420F φ21.0  2.5m",
+    "is_active": true
+  },
+  {
+    "name": "C6801",
+    "shape": "round",
+    "diameter_mm": 25.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C6801 φ25.0 (BZ5A) 客先有償支給材",
+    "is_active": true
+  },
+  {
+    "name": "SUM23",
+    "shape": "round",
+    "diameter_mm": 26.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM23 φ26.0  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 25.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ25.0",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 22.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ22.0",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 23.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ23.0",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 24.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ24.0",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 32.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ32.0",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 33.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ33.0",
+    "is_active": true
+  },
+  {
+    "name": "A5052",
+    "shape": "round",
+    "diameter_mm": 36.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5052 φ36.0  2m",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ17.0",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ18.0",
+    "is_active": true
+  },
+  {
+    "name": "G23-T8",
+    "shape": "round",
+    "diameter_mm": 21.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: G23-T8 φ21.0",
+    "is_active": true
+  },
+  {
+    "name": "S20C",
+    "shape": "round",
+    "diameter_mm": 17.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S20C φ17.0  1.5m",
+    "is_active": true
+  },
+  {
+    "name": "SUM23",
+    "shape": "round",
+    "diameter_mm": 32.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUM23 φ32.0  1.5m（林精鋼）",
+    "is_active": true
+  },
+  {
+    "name": "C6801",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C6801 φ15.0 (BZ5A) 客先有償支給材",
+    "is_active": true
+  },
+  {
+    "name": "SUS304",
+    "shape": "round",
+    "diameter_mm": 15.0,
+    "current_density": 7.93,
+    "description": "CSVからインポート: SUS304 φ15.0 支給材",
+    "is_active": true
+  },
+  {
+    "name": "A5052",
+    "shape": "round",
+    "diameter_mm": 26.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5052 φ26.0",
+    "is_active": true
+  },
+  {
+    "name": "A5052",
+    "shape": "round",
+    "diameter_mm": 30.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5052 φ30.0",
+    "is_active": true
+  },
+  {
+    "name": "C1100",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: C1100 φ16.0",
+    "is_active": true
+  },
+  {
+    "name": "A5056-H34",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A5056-H34 φ7.0",
+    "is_active": true
+  },
+  {
+    "name": "A6061-T6",
+    "shape": "round",
+    "diameter_mm": 7.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A6061-T6 φ7.0G 2m",
+    "is_active": true
+  },
+  {
+    "name": "S20C",
+    "shape": "round",
+    "diameter_mm": 18.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S20C φ18.0 1.5m",
+    "is_active": true
+  },
+  {
+    "name": "S20C",
+    "shape": "round",
+    "diameter_mm": 30.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S20C φ30.0 1.5m",
+    "is_active": true
+  },
+  {
+    "name": "GT209",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: GT209 φ12.0",
+    "is_active": true
+  },
+  {
+    "name": "HB-71 1/2H",
+    "shape": "round",
+    "diameter_mm": 12.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: HB-71 1/2H φ12.0",
+    "is_active": true
+  },
+  {
+    "name": "S45C",
+    "shape": "round",
+    "diameter_mm": 16.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: S45C φ16.0 2.0ｍ",
+    "is_active": true
+  },
+  {
+    "name": "A2017",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: A2017 φ9.0",
+    "is_active": true
+  },
+  {
+    "name": "SUS420F",
+    "shape": "round",
+    "diameter_mm": 14.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420F φ14.0G 客先有償支給材",
+    "is_active": true
+  },
+  {
+    "name": "SUS420J2",
+    "shape": "round",
+    "diameter_mm": 26.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS420J2 φ26.0 2m 客先有償支給材",
+    "is_active": true
+  },
+  {
+    "name": "SUS416",
+    "shape": "round",
+    "diameter_mm": 25.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS416 φ25.0G 客先有償支給材",
+    "is_active": true
+  },
+  {
+    "name": "SUS416",
+    "shape": "round",
+    "diameter_mm": 28.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: SUS416 φ28.0G 客先有償支給材",
+    "is_active": true
+  },
+  {
+    "name": "9",
+    "shape": "round",
+    "diameter_mm": 9.0,
+    "current_density": 7.85,
+    "description": "CSVからインポート: 9",
+    "is_active": true
+  }
+]
