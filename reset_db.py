@@ -17,7 +17,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from src.config import settings
 from src.db.models import (
     Base, User, Material, Location, Lot, Item, MaterialShape, UserRole, DensityPreset,
-    PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, PurchaseOrderItemStatus
+    PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, PurchaseOrderItemStatus,
+    MaterialStandard, MaterialGrade, MaterialProduct, MaterialAlias, UsageType
 )
 from src.utils.auth import get_password_hash
 from src.db import SessionLocal
@@ -463,6 +464,233 @@ def insert_initial_data():
 
     return True
 
+def insert_hierarchy_data():
+    """階層データ（標準材質・グレード・製品・別名）を投入"""
+    print("階層データを投入中...")
+
+    db = SessionLocal()
+    try:
+        # ========================================
+        # 第1層: 標準材質（MaterialStandard）
+        # ========================================
+        standards_data = [
+            # ステンレス系
+            {"jis_code": "SUS303", "jis_name": "ステンレス鋼（快削性）", "category": "ステンレス", "description": "快削性に優れたステンレス鋼"},
+            {"jis_code": "SUS304", "jis_name": "ステンレス鋼", "category": "ステンレス", "description": "最も一般的なステンレス鋼"},
+            {"jis_code": "SUS316", "jis_name": "ステンレス鋼（耐食性向上）", "category": "ステンレス", "description": "耐食性に優れたステンレス鋼"},
+            # 炭素鋼系
+            {"jis_code": "S45C", "jis_name": "機械構造用炭素鋼", "category": "炭素鋼", "description": "一般的な機械構造用鋼材"},
+            {"jis_code": "S50C", "jis_name": "機械構造用炭素鋼", "category": "炭素鋼", "description": "炭素含有量0.50%前後の鋼材"},
+            {"jis_code": "SK", "jis_name": "炭素工具鋼", "category": "炭素鋼", "description": "工具用途の炭素鋼"},
+            # 黄銅系
+            {"jis_code": "C3604", "jis_name": "快削黄銅", "category": "黄銅", "description": "快削性に優れた黄銅"},
+            {"jis_code": "C3602", "jis_name": "快削黄銅", "category": "黄銅", "description": "快削黄銅の一種"},
+            # アルミニウム系
+            {"jis_code": "A5056", "jis_name": "アルミニウム合金", "category": "アルミニウム", "description": "耐食性に優れたアルミニウム合金"},
+            {"jis_code": "A6061", "jis_name": "アルミニウム合金（構造用）", "category": "アルミニウム", "description": "構造材として広く使用されるアルミニウム合金"},
+        ]
+
+        standards = []
+        for data in standards_data:
+            standard = MaterialStandard(**data)
+            db.add(standard)
+            standards.append(standard)
+
+        db.commit()  # 標準規格IDを取得するために一度コミット
+
+        # 作成した標準規格を辞書で管理
+        standards_dict = {s.jis_code: s for s in db.query(MaterialStandard).all()}
+
+        # ========================================
+        # 第2層: グレード（MaterialGrade）
+        # ========================================
+        grades_data = [
+            # SUS303系
+            {"standard_code": "SUS303", "grade_code": "標準", "characteristics": "標準品", "description": "一般的なSUS303"},
+            # SUS304系
+            {"standard_code": "SUS304", "grade_code": "標準", "characteristics": "標準品", "description": "一般的なSUS304"},
+            # C3604系
+            {"standard_code": "C3604", "grade_code": "LCD", "characteristics": "快削性向上", "description": "快削性を向上させたグレード"},
+            {"standard_code": "C3604", "grade_code": "標準", "characteristics": "標準品", "description": "一般的なC3604"},
+            # C3602系
+            {"standard_code": "C3602", "grade_code": "LCD", "characteristics": "快削性向上", "description": "快削性を向上させたグレード"},
+            # S45C系
+            {"standard_code": "S45C", "grade_code": "標準", "characteristics": "標準品", "description": "一般的なS45C"},
+            {"standard_code": "S45C", "grade_code": "FS", "characteristics": "快削性向上", "description": "快削鋼（Free Steel）"},
+            # A5056系
+            {"standard_code": "A5056", "grade_code": "標準", "characteristics": "標準品", "description": "一般的なA5056"},
+            # A6061系
+            {"standard_code": "A6061", "grade_code": "標準", "characteristics": "標準品", "description": "一般的なA6061"},
+        ]
+
+        grades = []
+        for data in grades_data:
+            standard_code = data.pop("standard_code")
+            if standard_code in standards_dict:
+                grade = MaterialGrade(
+                    standard_id=standards_dict[standard_code].id,
+                    **data
+                )
+                db.add(grade)
+                grades.append(grade)
+
+        db.commit()  # グレードIDを取得するために一度コミット
+
+        # ========================================
+        # 第3層: 製品（MaterialProduct）
+        # ========================================
+        # グレードを辞書で管理
+        grades_list = db.query(MaterialGrade).all()
+        grades_dict = {}
+        for grade in grades_list:
+            standard = db.query(MaterialStandard).filter(MaterialStandard.id == grade.standard_id).first()
+            key = f"{standard.jis_code}-{grade.grade_code}"
+            grades_dict[key] = grade
+
+        products_data = [
+            # SUS303系製品
+            {"grade_key": "SUS303-標準", "product_code": "SUS303", "manufacturer": None, "is_equivalent": False, "description": "標準SUS303製品"},
+            # S45C系製品
+            {"grade_key": "S45C-標準", "product_code": "S45C", "manufacturer": None, "is_equivalent": False, "description": "標準S45C製品"},
+            {"grade_key": "S45C-FS", "product_code": "S45CFS", "manufacturer": None, "is_equivalent": False, "description": "快削S45C製品"},
+            {"grade_key": "S45C-標準", "product_code": "ASK3000", "manufacturer": "愛知製鋼", "is_equivalent": True, "description": "S45C同等品（メーカーブランド）"},
+            # C3604系製品
+            {"grade_key": "C3604-LCD", "product_code": "C3604LCD", "manufacturer": None, "is_equivalent": False, "description": "快削黄銅LCD品"},
+            {"grade_key": "C3604-標準", "product_code": "C3604", "manufacturer": None, "is_equivalent": False, "description": "標準C3604製品"},
+            # C3602系製品
+            {"grade_key": "C3602-LCD", "product_code": "C3602LCD", "manufacturer": None, "is_equivalent": False, "description": "C3602快削品"},
+            # SUS304系製品
+            {"grade_key": "SUS304-標準", "product_code": "SUS304", "manufacturer": None, "is_equivalent": False, "description": "標準SUS304製品"},
+            # アルミニウム系製品
+            {"grade_key": "A5056-標準", "product_code": "A5056", "manufacturer": None, "is_equivalent": False, "description": "標準A5056製品"},
+            {"grade_key": "A6061-標準", "product_code": "A6061", "manufacturer": None, "is_equivalent": False, "description": "標準A6061製品"},
+        ]
+
+        products = []
+        for data in products_data:
+            grade_key = data.pop("grade_key")
+            if grade_key in grades_dict:
+                product = MaterialProduct(
+                    grade_id=grades_dict[grade_key].id,
+                    **data
+                )
+                db.add(product)
+                products.append(product)
+
+        db.commit()
+
+        print("階層データの投入が完了しました")
+        print(f"- 標準材質: {db.query(MaterialStandard).count()}件")
+        print(f"- グレード: {db.query(MaterialGrade).count()}件")
+        print(f"- 製品: {db.query(MaterialProduct).count()}件")
+
+    except SQLAlchemyError as e:
+        print(f"階層データ投入エラー: {e}")
+        db.rollback()
+        return False
+    finally:
+        db.close()
+
+    return True
+
+def map_existing_materials_to_hierarchy():
+    """既存材料データを階層構造にマッピング"""
+    print("既存材料データの階層マッピング中...")
+
+    db = SessionLocal()
+    try:
+        # 製品を辞書で管理
+        products = db.query(MaterialProduct).all()
+        products_dict = {}
+        for product in products:
+            products_dict[product.product_code] = product
+
+        # 既存の材料データを取得
+        materials = db.query(Material).all()
+
+        mapped_count = 0
+        for material in materials:
+            # 材料名から製品コードを推測してマッピング
+            material_name = material.name.upper()
+
+            # 製品コードとのマッチング
+            for product_code, product in products_dict.items():
+                if product_code in material_name:
+                    material.product_id = product.id
+                    mapped_count += 1
+                    break
+
+        db.commit()
+
+        print(f"階層マッピングが完了しました: {mapped_count}/{len(materials)} 件マッピング")
+
+    except SQLAlchemyError as e:
+        print(f"階層マッピングエラー: {e}")
+        db.rollback()
+        return False
+    finally:
+        db.close()
+
+    return True
+
+def insert_sample_aliases():
+    """サンプル別名データを投入（表記揺れ対応）"""
+    print("サンプル別名データを投入中...")
+
+    db = SessionLocal()
+    try:
+        # 材料を取得
+        sus303_5 = db.query(Material).filter(Material.name == "SUS303", Material.diameter_mm == 5.0).first()
+        sus303_10 = db.query(Material).filter(Material.name == "SUS303", Material.diameter_mm == 10.0).first()
+        sus303_12 = db.query(Material).filter(Material.name == "SUS303", Material.diameter_mm == 12.0).first()
+        c3602_12 = db.query(Material).filter(Material.name == "C3602LCD", Material.diameter_mm == 12.0).first()
+
+        aliases_data = []
+
+        # SUS303 ∅5.0 の別名
+        if sus303_5:
+            aliases_data.extend([
+                MaterialAlias(material_id=sus303_5.id, alias_name="SUS303 φ5.0D", description="表記揺れ（φとD）"),
+                MaterialAlias(material_id=sus303_5.id, alias_name="SUS303 ∅5.0CM", description="表記揺れ（∅とCM）"),
+                MaterialAlias(material_id=sus303_5.id, alias_name="SUS303 Φ5", description="表記揺れ（Φ）"),
+            ])
+
+        # SUS303 ∅10.0 の別名
+        if sus303_10:
+            aliases_data.extend([
+                MaterialAlias(material_id=sus303_10.id, alias_name="SUS303 φ10.0D", description="表記揺れ（φとD）"),
+                MaterialAlias(material_id=sus303_10.id, alias_name="SUS303 ∅10.0CM", description="表記揺れ（∅とCM）"),
+                MaterialAlias(material_id=sus303_10.id, alias_name="SUS303 Φ10", description="表記揺れ（Φ）"),
+            ])
+
+        # SUS303 ∅12.0 の別名
+        if sus303_12:
+            aliases_data.extend([
+                MaterialAlias(material_id=sus303_12.id, alias_name="SUS303 φ12.0D", description="表記揺れ（φとD）"),
+                MaterialAlias(material_id=sus303_12.id, alias_name="SUS303 ∅12.0CM", description="表記揺れ（∅とCM）"),
+            ])
+
+        # C3602LCD ∅12.0 の別名
+        if c3602_12:
+            aliases_data.extend([
+                MaterialAlias(material_id=c3602_12.id, alias_name="C3602Lcd ∅12.0 (NB5N)", description="表記揺れ（括弧付き品番）"),
+                MaterialAlias(material_id=c3602_12.id, alias_name="C3602LCD φ12", description="表記揺れ（φ表記）"),
+            ])
+
+        db.add_all(aliases_data)
+        db.commit()
+
+        print(f"サンプル別名データの投入が完了しました: {len(aliases_data)}件")
+
+    except SQLAlchemyError as e:
+        print(f"サンプル別名データ投入エラー: {e}")
+        db.rollback()
+        return False
+    finally:
+        db.close()
+
+    return True
+
 def insert_sample_purchase_orders():
     """サンプル発注データを投入"""
     print("サンプル発注データを投入中...")
@@ -662,7 +890,22 @@ def main():
         print("初期データ投入に失敗しました")
         return
 
-    # 5. サンプル発注データ投入
+    # 5. 階層データ投入
+    if not insert_hierarchy_data():
+        print("階層データ投入に失敗しました")
+        return
+
+    # 6. 既存材料データの階層マッピング
+    if not map_existing_materials_to_hierarchy():
+        print("階層マッピングに失敗しました")
+        return
+
+    # 7. サンプル別名データ投入
+    if not insert_sample_aliases():
+        print("サンプル別名データ投入に失敗しました")
+        return
+
+    # 8. サンプル発注データ投入
     if not insert_sample_purchase_orders():
         print("サンプル発注データ投入に失敗しました")
         return

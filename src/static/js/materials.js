@@ -80,6 +80,8 @@ class MaterialManager {
       shapeSelect.addEventListener("change", () => this.updateShapeLabel());
     }
 
+    // 用途区分変更時の処理は不要（専用品番フィールドは常に表示）
+
     // モーダル閉じる処理
     const closeButtons = document.querySelectorAll('[data-dismiss="modal"]');
     closeButtons.forEach((btn) => {
@@ -182,8 +184,11 @@ class MaterialManager {
       const params = new URLSearchParams();
 
       // ページネーション設定
-      params.append('skip', ((this.currentPage - 1) * this.itemsPerPage).toString());
-      params.append('limit', this.itemsPerPage.toString());
+      params.append(
+        "skip",
+        ((this.currentPage - 1) * this.itemsPerPage).toString()
+      );
+      params.append("limit", this.itemsPerPage.toString());
 
       // フィルター設定
       Object.keys(filters).forEach((key) => {
@@ -197,7 +202,7 @@ class MaterialManager {
       // 材料データと総件数を並行取得
       const [materialsResponse, countResponse] = await Promise.all([
         fetch(`/api/materials/?${params}`),
-        fetch(`/api/materials/count?${new URLSearchParams(filters)}`)
+        fetch(`/api/materials/count?${new URLSearchParams(filters)}`),
       ]);
 
       if (!materialsResponse.ok || !countResponse.ok) {
@@ -209,12 +214,17 @@ class MaterialManager {
       this.totalItems = countData.total || 0;
       this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage) || 1;
 
-      console.log(`材料データ取得完了: ${this.materials.length}件 (総件数: ${this.totalItems}件)`);
+      console.log(
+        `材料データ取得完了: ${this.materials.length}件 (総件数: ${this.totalItems}件)`
+      );
       this.renderMaterialsList();
       this.updatePagination();
 
       if (this.currentPage === 1) {
-        this.showToast(`材料一覧を更新しました (総件数: ${this.totalItems}件)`, "success");
+        this.showToast(
+          `材料一覧を更新しました (総件数: ${this.totalItems}件)`,
+          "success"
+        );
       }
     } catch (error) {
       console.error("Error loading materials:", error);
@@ -232,7 +242,7 @@ class MaterialManager {
     if (this.materials.length === 0) {
       tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                    <td colspan="8" class="px-6 py-12 text-center text-gray-500">
                         <p class="text-lg mb-4">登録された材料がありません</p>
                         <button onclick="materialManager.showCreateForm()"
                                 class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
@@ -342,6 +352,26 @@ class MaterialManager {
       square: "角棒",
     };
 
+    // 表示名の処理
+    const displayNameHtml = material.display_name
+      ? `<div class="text-xs text-blue-600 font-medium">${material.display_name}</div>`
+      : "";
+
+    // 用途区分
+    const usageTypeNames = { general: "汎用", dedicated: "専用" };
+    const usageTypeName =
+      usageTypeNames[material.usage_type] || material.usage_type || "汎用";
+    const badgeColor =
+      material.usage_type === "dedicated"
+        ? "bg-purple-100 text-purple-800"
+        : "bg-gray-100 text-gray-800";
+    const usageTypeHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${badgeColor}">${usageTypeName}</span>`;
+
+    // 専用品番・追加情報（CSVインポート時の追加情報がここに表示されます）
+    const dedicatedPartNumberHtml = material.dedicated_part_number
+      ? `<div class="text-sm text-gray-900">${material.dedicated_part_number}</div>`
+      : '<span class="text-xs text-gray-400">なし</span>';
+
     return `
             <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap">
@@ -353,6 +383,7 @@ class MaterialManager {
                     <div class="text-sm font-medium text-gray-900">${
                       material.name
                     }</div>
+                    ${displayNameHtml}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm text-gray-900">${
@@ -369,11 +400,21 @@ class MaterialManager {
                       material.current_density
                     }</div>
                 </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    ${usageTypeHtml}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    ${dedicatedPartNumberHtml}
+                </td>
                 <td class="px-6 py-4">
                     <div class="text-sm text-gray-500 max-w-xs truncate" title="${
                       material.description || "説明なし"
                     }">
-                        ${material.description || "説明なし"}
+                        ${
+                          !material.description || material.description === ""
+                            ? '<span class="text-xs text-gray-400">説明なし</span>'
+                            : material.description
+                        }
                     </div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -442,10 +483,20 @@ class MaterialManager {
   populateEditForm(material) {
     document.getElementById("part_number").value = material.part_number || "";
     document.getElementById("name").value = material.name;
-    document.getElementById("description").value = material.description || "";
+    document.getElementById("display_name").value = material.display_name || "";
+    document.getElementById("description").value =
+      !material.description || material.description === ""
+        ? ""
+        : material.description;
     document.getElementById("shape").value = material.shape;
     document.getElementById("diameter_mm").value = material.diameter_mm;
     document.getElementById("current_density").value = material.current_density;
+    document.getElementById("usage_type").value =
+      material.usage_type || "general";
+    document.getElementById("dedicated_part_number").value =
+      material.dedicated_part_number || "";
+
+    // 専用品番フィールドは常に表示されるため、表示切り替えは不要
     this.updateShapeLabel();
   }
 
@@ -477,6 +528,11 @@ class MaterialManager {
       document.getElementById("createMaterialForm")
     );
     const data = Object.fromEntries(formData.entries());
+
+    // 説明フィールドが空の場合は適切に処理
+    if (data.description === "" || !data.description) {
+      data.description = null;
+    }
 
     // 数値フィールド変換
     data.diameter_mm = parseFloat(data.diameter_mm);
@@ -530,7 +586,6 @@ class MaterialManager {
     this.currentPage = 1;
     this.loadMaterials(filters);
   }
-
 
   // 検索条件をクリア
   clearSearch() {
@@ -753,6 +808,12 @@ class MaterialManager {
     });
   }
 
+  // 専用品番フィールドは常に表示されるため、この関数は不要
+  // （後方互換性のため空関数として残す）
+  toggleDedicatedPartNumberField() {
+    // 何もしない
+  }
+
   // 比重プリセット選択時の処理
   onDensityPresetChange(event) {
     const selectedDensity = event.target.value;
@@ -776,7 +837,7 @@ class MaterialManager {
   updatePagination() {
     // データがない場合はスキップ
     if (this.totalItems === undefined || this.totalItems === null) {
-      console.log('総件数が未定義のためページネーション更新をスキップ');
+      console.log("総件数が未定義のためページネーション更新をスキップ");
       return;
     }
 
@@ -788,7 +849,10 @@ class MaterialManager {
     const pageInfoMobileTop = document.getElementById("pageInfoMobileTop");
 
     const startItem = (this.currentPage - 1) * this.itemsPerPage + 1;
-    const endItem = Math.min(this.currentPage * this.itemsPerPage, this.totalItems);
+    const endItem = Math.min(
+      this.currentPage * this.itemsPerPage,
+      this.totalItems
+    );
     const infoText = `${startItem.toLocaleString()} - ${endItem.toLocaleString()} / ${this.totalItems.toLocaleString()} 件`;
 
     if (pageInfo) {
@@ -820,7 +884,7 @@ class MaterialManager {
     const prevButtonsTop = ["prevPageTop", "prevPageMobileTop"];
     const nextButtonsTop = ["nextPageTop", "nextPageMobileTop"];
 
-    prevButtons.forEach(id => {
+    prevButtons.forEach((id) => {
       const btn = document.getElementById(id);
       if (btn) {
         btn.disabled = this.currentPage <= 1;
@@ -829,17 +893,23 @@ class MaterialManager {
       }
     });
 
-    nextButtons.forEach(id => {
+    nextButtons.forEach((id) => {
       const btn = document.getElementById(id);
       if (btn) {
         btn.disabled = this.currentPage >= this.totalPages;
-        btn.classList.toggle("text-gray-400", this.currentPage >= this.totalPages);
-        btn.classList.toggle("cursor-not-allowed", this.currentPage >= this.totalPages);
+        btn.classList.toggle(
+          "text-gray-400",
+          this.currentPage >= this.totalPages
+        );
+        btn.classList.toggle(
+          "cursor-not-allowed",
+          this.currentPage >= this.totalPages
+        );
       }
     });
 
     // 上部ページネーションボタン状態更新
-    prevButtonsTop.forEach(id => {
+    prevButtonsTop.forEach((id) => {
       const btn = document.getElementById(id);
       if (btn) {
         btn.disabled = this.currentPage <= 1;
@@ -848,12 +918,18 @@ class MaterialManager {
       }
     });
 
-    nextButtonsTop.forEach(id => {
+    nextButtonsTop.forEach((id) => {
       const btn = document.getElementById(id);
       if (btn) {
         btn.disabled = this.currentPage >= this.totalPages;
-        btn.classList.toggle("text-gray-400", this.currentPage >= this.totalPages);
-        btn.classList.toggle("cursor-not-allowed", this.currentPage >= this.totalPages);
+        btn.classList.toggle(
+          "text-gray-400",
+          this.currentPage >= this.totalPages
+        );
+        btn.classList.toggle(
+          "cursor-not-allowed",
+          this.currentPage >= this.totalPages
+        );
       }
     });
   }
@@ -863,13 +939,17 @@ class MaterialManager {
     const pageNumbers = document.getElementById("pageNumbers");
     // 上部ページ番号要素
     const pageNumbersTop = document.getElementById("pageNumbersTop");
-    
+
     if (!pageNumbers && !pageNumbersTop) return;
 
     // 総ページ数が未定義の場合はスキップ
-    if (this.totalPages === undefined || this.totalPages === null || this.totalPages <= 0) {
-      if (pageNumbers) pageNumbers.innerHTML = '';
-      if (pageNumbersTop) pageNumbersTop.innerHTML = '';
+    if (
+      this.totalPages === undefined ||
+      this.totalPages === null ||
+      this.totalPages <= 0
+    ) {
+      if (pageNumbers) pageNumbers.innerHTML = "";
+      if (pageNumbersTop) pageNumbersTop.innerHTML = "";
       return;
     }
 
@@ -902,7 +982,11 @@ class MaterialManager {
       const isActive = i === this.currentPage;
       html += `
         <button onclick="materialManager.goToPage(${i})"
-                class="px-3 py-2 text-sm leading-tight ${isActive ? 'text-blue-600 bg-blue-50 border border-blue-300' : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700'}">
+                class="px-3 py-2 text-sm leading-tight ${
+                  isActive
+                    ? "text-blue-600 bg-blue-50 border border-blue-300"
+                    : "text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700"
+                }">
           ${i}
         </button>`;
     }

@@ -412,7 +412,18 @@ endblock %} {% block content %}
 
       <div class="p-6">
         <!-- 検索フィルター -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2"
+              >品番</label
+            >
+            <input
+              type="text"
+              id="searchMaterialPartNumber"
+              placeholder="品番で検索"
+              class="w-full p-2 border border-gray-300 rounded-md"
+            />
+          </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2"
               >材料名</label
@@ -495,6 +506,17 @@ endblock %} {% block content %}
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1"
+                >品番</label
+              >
+              <input
+                type="text"
+                id="newMaterialPartNumber"
+                placeholder="品番（任意）"
+                class="w-full p-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1"
                 >材料名 *</label
               >
               <input
@@ -543,6 +565,18 @@ endblock %} {% block content %}
                 required
                 class="w-full p-2 border border-gray-300 rounded-md"
               />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1"
+                >用途区分</label
+              >
+              <select
+                id="newMaterialUsageType"
+                class="w-full p-2 border border-gray-300 rounded-md"
+              >
+                <option value="general">汎用</option>
+                <option value="dedicated">専用</option>
+              </select>
             </div>
           </div>
           <div class="mb-4">
@@ -890,6 +924,7 @@ endblock %} {% block content %}
     document.getElementById("materialSearchModal").classList.remove("hidden");
 
     // 検索フォームをリセット
+    document.getElementById("searchMaterialPartNumber").value = "";
     document.getElementById("searchMaterialName").value = "";
     document.getElementById("searchMaterialShape").value = "";
     document.getElementById("searchMaterialDiameter").value = "";
@@ -919,10 +954,12 @@ endblock %} {% block content %}
     document.getElementById("searchResults").classList.remove("hidden");
 
     // フォームをリセット
+    document.getElementById("newMaterialPartNumber").value = "";
     document.getElementById("newMaterialName").value = "";
     document.getElementById("newMaterialShape").value = "round";
     document.getElementById("newMaterialDiameter").value = "";
     document.getElementById("newMaterialDensity").value = "";
+    document.getElementById("newMaterialUsageType").value = "general";
     document.getElementById("newMaterialDescription").value = "";
   }
 
@@ -930,6 +967,111 @@ endblock %} {% block content %}
   let materialsCache = [];
   let materialSelectInstances = [];
   let currentSearchItemIndex = null;
+
+  // デバウンス用の変数
+  let partNumberSearchTimeouts = {};
+
+  // 品番から材料情報を取得して自動設定（予測入力対応）
+  async function searchMaterialByPartNumber(itemIndex, partNumber) {
+    // 既存のタイムアウトをクリア
+    if (partNumberSearchTimeouts[itemIndex]) {
+      clearTimeout(partNumberSearchTimeouts[itemIndex]);
+    }
+
+    // 1文字未満の場合は検索しない
+    if (!partNumber || partNumber.length < 1) {
+      hidePartNumberDropdown(itemIndex);
+      return;
+    }
+
+    // デバウンス処理：入力が止まってから300ms後に検索を実行
+    partNumberSearchTimeouts[itemIndex] = setTimeout(async () => {
+      try {
+        console.log(`品番予測検索実行: ${partNumber} (アイテム ${itemIndex})`);
+
+        // 部分一致検索で材料を検索
+        const response = await fetch(
+          `/api/materials/?part_number_contains=${encodeURIComponent(
+            partNumber
+          )}`
+        );
+        const materials = await response.json();
+
+        console.log(`予測検索結果: ${materials.length}件`);
+
+        if (materials.length > 0) {
+          // 予測候補を表示
+          showPartNumberDropdown(itemIndex, materials);
+        } else {
+          hidePartNumberDropdown(itemIndex);
+          console.log(`該当する材料が見つかりませんでした: ${partNumber}`);
+        }
+      } catch (error) {
+        console.error("品番予測検索エラー:", error);
+        hidePartNumberDropdown(itemIndex);
+      }
+    }, 300); // 300msデバウンス
+  }
+
+  // 品番予測候補を表示
+  function showPartNumberDropdown(itemIndex, materials) {
+    const dropdown = document.getElementById(`partNumberDropdown_${itemIndex}`);
+    if (!dropdown) return;
+
+    // 他の品番ドロップダウンを閉じる
+    document.querySelectorAll('[id^="partNumberDropdown_"]').forEach((dd) => {
+      if (dd.id !== `partNumberDropdown_${itemIndex}`) {
+        dd.classList.add("hidden");
+      }
+    });
+
+    dropdown.innerHTML = "";
+
+    // 最大10件表示
+    const displayMaterials = materials.slice(0, 10);
+
+    displayMaterials.forEach((material) => {
+      const item = document.createElement("div");
+      item.className =
+        "px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0";
+      item.innerHTML = `
+        <div class="text-sm font-medium text-gray-900">${
+          material.part_number
+        }</div>
+        <div class="text-xs text-gray-500">
+          ${material.name} | 形状: ${getShapeText(material.shape)} | 直径: ${
+        material.diameter_mm
+      }mm
+        </div>
+      `;
+      item.onclick = () => selectMaterialFromPartNumber(itemIndex, material);
+      dropdown.appendChild(item);
+    });
+
+    dropdown.classList.remove("hidden");
+  }
+
+  // 品番予測候補を非表示
+  function hidePartNumberDropdown(itemIndex) {
+    const dropdown = document.getElementById(`partNumberDropdown_${itemIndex}`);
+    if (dropdown) {
+      dropdown.classList.add("hidden");
+    }
+  }
+
+  // 品番予測候補から材料を選択
+  function selectMaterialFromPartNumber(itemIndex, material) {
+    selectMaterial(itemIndex, material);
+    hidePartNumberDropdown(itemIndex);
+
+    // 品番入力フィールドに選択した品番を設定
+    const partNumberInput = document.getElementById(
+      `partNumberInput_${itemIndex}`
+    );
+    if (partNumberInput && material.part_number) {
+      partNumberInput.value = material.part_number;
+    }
+  }
 
   // 発注アイテム追加
   async function addOrderItem() {
@@ -948,6 +1090,27 @@ endblock %} {% block content %}
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">品番</label>
+                <div class="relative">
+                    <input type="text"
+                           id="partNumberInput_${itemIndex}"
+                           placeholder="品番を入力（例: 20836030）"
+                           class="w-full p-2 border border-gray-300 rounded-md"
+                           autocomplete="off"
+                           oninput="searchMaterialByPartNumber(${itemIndex}, this.value)">
+                    <div id="partNumberDropdown_${itemIndex}"
+                         class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        <!-- 予測候補が動的に表示される -->
+                    </div>
+                    <div class="mt-1">
+                        <button type="button" onclick="showMaterialSearchModal(${itemIndex})"
+                                class="text-xs text-blue-600 hover:text-blue-800">
+                            品番が見つからない場合はこちら
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">材料 *</label>
                 <div class="relative">
                     <input type="text"
@@ -960,16 +1123,13 @@ endblock %} {% block content %}
                     <input type="hidden"
                            name="items[${itemIndex}][material_id]"
                            id="materialSelect_${itemIndex}">
+                    <input type="hidden"
+                           name="items[${itemIndex}][material_name]"
+                           id="materialName_${itemIndex}">
                     <div id="materialDropdown_${itemIndex}"
                          class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
                         <!-- 動的に生成 -->
                     </div>
-                </div>
-                <div class="mt-1">
-                    <button type="button" onclick="showMaterialSearchModal(${itemIndex})"
-                            class="text-xs text-blue-600 hover:text-blue-800">
-                        材料が見つからない場合はこちら
-                    </button>
                 </div>
             </div>
             <div>
@@ -986,7 +1146,7 @@ endblock %} {% block content %}
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">長さ (mm) *</label>
-                <input type="number" name="items[${itemIndex}][length_mm]" id="lengthInput_${itemIndex}" min="1" required
+                <input type="number" name="items[${itemIndex}][length_mm]" id="lengthInput_${itemIndex}" min="1" required value="2500"
                        class="w-full p-2 border border-gray-300 rounded-md"
                        onchange="calculateConversion(${itemIndex})">
             </div>
@@ -1076,13 +1236,18 @@ endblock %} {% block content %}
   // 材料ドロップダウンを表示
   function showMaterialDropdown(itemIndex) {
     const dropdown = document.getElementById(`materialDropdown_${itemIndex}`);
-    dropdown.classList.remove('hidden');
+    dropdown.classList.remove("hidden");
 
     // 他のドロップダウンを閉じる
-    document.querySelectorAll('[id^="materialDropdown_"]').forEach(dd => {
+    document.querySelectorAll('[id^="materialDropdown_"]').forEach((dd) => {
       if (dd.id !== `materialDropdown_${itemIndex}`) {
-        dd.classList.add('hidden');
+        dd.classList.add("hidden");
       }
+    });
+
+    // 品番ドロップダウンも閉じる
+    document.querySelectorAll('[id^="partNumberDropdown_"]').forEach((dd) => {
+      dd.classList.add("hidden");
     });
   }
 
@@ -1090,14 +1255,14 @@ endblock %} {% block content %}
   function hideMaterialDropdown(itemIndex) {
     const dropdown = document.getElementById(`materialDropdown_${itemIndex}`);
     if (dropdown) {
-      dropdown.classList.add('hidden');
+      dropdown.classList.add("hidden");
     }
   }
 
   // 材料をフィルタリング
   function filterMaterials(itemIndex, searchTerm) {
     const materials = materialSelectInstances[itemIndex] || [];
-    const filteredMaterials = materials.filter(material =>
+    const filteredMaterials = materials.filter((material) =>
       material.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
     renderMaterialDropdown(itemIndex, filteredMaterials);
@@ -1109,7 +1274,7 @@ endblock %} {% block content %}
     const dropdown = document.getElementById(`materialDropdown_${itemIndex}`);
     if (!dropdown) return;
 
-    dropdown.innerHTML = '';
+    dropdown.innerHTML = "";
 
     if (materials.length === 0) {
       dropdown.innerHTML = `
@@ -1122,14 +1287,16 @@ endblock %} {% block content %}
 
     // 材料オプションを追加
     materials.forEach((material) => {
-      const item = document.createElement('div');
-      item.className = 'px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0';
+      const item = document.createElement("div");
+      item.className =
+        "px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0";
       item.innerHTML = `
         <div class="text-sm font-medium text-gray-900">${material.name}</div>
         <div class="text-xs text-gray-500">
           形状: ${getShapeText(material.shape)} |
           直径: ${material.diameter_mm}mm |
           比重: ${material.current_density}
+          ${material.part_number ? `| 品番: ${material.part_number}` : ""}
         </div>
       `;
       item.onclick = () => selectMaterial(itemIndex, material);
@@ -1137,8 +1304,9 @@ endblock %} {% block content %}
     });
 
     // 新規材料登録オプションを追加
-    const newItem = document.createElement('div');
-    newItem.className = 'px-3 py-2 bg-gray-50 hover:bg-gray-100 cursor-pointer border-t-2 border-blue-200';
+    const newItem = document.createElement("div");
+    newItem.className =
+      "px-3 py-2 bg-gray-50 hover:bg-gray-100 cursor-pointer border-t-2 border-blue-200";
     newItem.innerHTML = `
       <div class="text-sm font-medium text-blue-600 italic">
         +++ 新規材料を登録 +++
@@ -1152,16 +1320,36 @@ endblock %} {% block content %}
   function selectMaterial(itemIndex, material) {
     const searchInput = document.getElementById(`materialSearch_${itemIndex}`);
     const hiddenInput = document.getElementById(`materialSelect_${itemIndex}`);
+    const materialNameInput = document.getElementById(
+      `materialName_${itemIndex}`
+    );
+    const partNumberInput = document.getElementById(
+      `partNumberInput_${itemIndex}`
+    );
     const shapeDisplay = document.getElementById(`shapeDisplay_${itemIndex}`);
     const shapeValue = document.getElementById(`shapeValue_${itemIndex}`);
-    const diameterDisplay = document.getElementById(`diameterDisplay_${itemIndex}`);
+    const diameterDisplay = document.getElementById(
+      `diameterDisplay_${itemIndex}`
+    );
     const diameterValue = document.getElementById(`diameterValue_${itemIndex}`);
-    const densityDisplay = document.getElementById(`densityDisplay_${itemIndex}`);
+    const densityDisplay = document.getElementById(
+      `densityDisplay_${itemIndex}`
+    );
     const densityValue = document.getElementById(`densityValue_${itemIndex}`);
 
     // 検索フィールドに材料名を設定
     searchInput.value = material.name;
     hiddenInput.value = material.id;
+
+    // 材料名を隠しフィールドにも設定
+    if (materialNameInput) {
+      materialNameInput.value = material.name;
+    }
+
+    // 品番を設定
+    if (partNumberInput && material.part_number) {
+      partNumberInput.value = material.part_number;
+    }
 
     // 材料情報を設定
     shapeDisplay.value = getShapeText(material.shape);
@@ -1179,65 +1367,80 @@ endblock %} {% block content %}
   }
 
   // ドロップダウン外クリック時に閉じる処理
-  document.addEventListener('click', function(event) {
+  document.addEventListener("click", function (event) {
     // 材料検索フィールドまたはドロップダウン内のクリックは無視
-    if (!event.target.closest('[id^="materialSearch_"]') &&
-        !event.target.closest('[id^="materialDropdown_"]')) {
-      document.querySelectorAll('[id^="materialDropdown_"]').forEach(dd => {
-        dd.classList.add('hidden');
+    if (
+      !event.target.closest('[id^="materialSearch_"]') &&
+      !event.target.closest('[id^="materialDropdown_"]') &&
+      !event.target.closest('[id^="partNumberInput_"]') &&
+      !event.target.closest('[id^="partNumberDropdown_"]')
+    ) {
+      document.querySelectorAll('[id^="materialDropdown_"]').forEach((dd) => {
+        dd.classList.add("hidden");
+      });
+      document.querySelectorAll('[id^="partNumberDropdown_"]').forEach((dd) => {
+        dd.classList.add("hidden");
       });
     }
   });
 
   // 材料検索
-    async function searchMaterials() {
-      const nameInput = document.getElementById("searchMaterialName");
-      const shapeInput = document.getElementById("searchMaterialShape");
-      const diameterInput = document.getElementById("searchMaterialDiameter");
+  async function searchMaterials() {
+    const partNumberInput = document.getElementById("searchMaterialPartNumber");
+    const nameInput = document.getElementById("searchMaterialName");
+    const shapeInput = document.getElementById("searchMaterialShape");
+    const diameterInput = document.getElementById("searchMaterialDiameter");
 
-      const resultsContainer = document.getElementById("searchResultsList");
-      const loading = document.getElementById("searchResultsLoading");
-      const empty = document.getElementById("searchResultsEmpty");
+    const resultsContainer = document.getElementById("searchResultsList");
+    const loading = document.getElementById("searchResultsLoading");
+    const empty = document.getElementById("searchResultsEmpty");
 
-      loading.classList.remove("hidden");
-      resultsContainer.classList.add("hidden");
-      empty.classList.add("hidden");
-      resultsContainer.innerHTML = "";
+    loading.classList.remove("hidden");
+    resultsContainer.classList.add("hidden");
+    empty.classList.add("hidden");
+    resultsContainer.innerHTML = "";
 
-      try {
-        const params = new URLSearchParams();
-        if (nameInput.value) params.append("name", nameInput.value);
-        if (shapeInput.value) params.append("shape", shapeInput.value);
-        if (diameterInput.value)
-          params.append("diameter_mm", diameterInput.value);
+    try {
+      const params = new URLSearchParams();
+      if (partNumberInput.value)
+        params.append("part_number", partNumberInput.value);
+      if (nameInput.value) params.append("name", nameInput.value);
+      if (shapeInput.value) params.append("shape", shapeInput.value);
+      if (diameterInput.value)
+        params.append("diameter_mm", diameterInput.value);
 
-        const response = await fetch(`/api/materials/?${params.toString()}`);
-        const materials = await response.json();
+      const response = await fetch(`/api/materials/?${params.toString()}`);
+      const materials = await response.json();
 
-        loading.classList.add("hidden");
+      loading.classList.add("hidden");
 
-        if (materials.length === 0) {
-          empty.classList.remove("hidden");
-          return;
-        }
+      if (materials.length === 0) {
+        empty.classList.remove("hidden");
+        return;
+      }
 
-        resultsContainer.classList.remove("hidden");
+      resultsContainer.classList.remove("hidden");
 
-        materials.forEach((material) => {
-          const resultItem = document.createElement("div");
-          resultItem.className =
-            "p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100";
-          resultItem.innerHTML = `
+      materials.forEach((material) => {
+        const resultItem = document.createElement("div");
+        resultItem.className =
+          "p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100";
+        resultItem.innerHTML = `
                 <div class="flex justify-between items-center">
-                    <div>
+                    <div class="flex-1">
                         <div class="font-medium text-gray-900">${
                           material.name
                         }</div>
                         <div class="text-sm text-gray-600">
                             ${getShapeText(material.shape)} - ${
-            material.diameter_mm
-          }mm -
+          material.diameter_mm
+        }mm
                         </div>
+                        ${
+                          material.part_number
+                            ? `<div class="text-xs text-blue-600 font-mono">品番: ${material.part_number}</div>`
+                            : ""
+                        }
                     </div>
                     <button onclick="selectMaterialFromSearch(${material.id})"
                             class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors">
@@ -1245,21 +1448,21 @@ endblock %} {% block content %}
                     </button>
                 </div>
             `;
-          resultsContainer.appendChild(resultItem);
-        });
-      } catch (error) {
-        loading.classList.add("hidden");
-        console.error("材料検索エラー:", error);
-        showToast("材料検索に失敗しました", "error");
-      }
+        resultsContainer.appendChild(resultItem);
+      });
+    } catch (error) {
+      loading.classList.add("hidden");
+      console.error("材料検索エラー:", error);
+      showToast("材料検索に失敗しました", "error");
     }
+  }
 
   // 検索結果から材料を選択
   function selectMaterialFromSearch(materialId) {
     if (currentSearchItemIndex === null) return;
 
     // 材料をキャッシュから取得
-    const material = materialsCache.find(m => m.id === materialId);
+    const material = materialsCache.find((m) => m.id === materialId);
     if (material) {
       selectMaterial(currentSearchItemIndex, material);
     }
@@ -1270,13 +1473,13 @@ endblock %} {% block content %}
 
   // 新規材料登録
   async function registerNewMaterial() {
+    const partNumberInput = document.getElementById("newMaterialPartNumber");
     const nameInput = document.getElementById("newMaterialName");
     const shapeInput = document.getElementById("newMaterialShape");
     const diameterInput = document.getElementById("newMaterialDiameter");
     const densityInput = document.getElementById("newMaterialDensity");
-    const descriptionInput = document.getElementById(
-      "newMaterialDescription"
-    );
+    const usageTypeInput = document.getElementById("newMaterialUsageType");
+    const descriptionInput = document.getElementById("newMaterialDescription");
 
     // バリデーション
     if (
@@ -1290,10 +1493,12 @@ endblock %} {% block content %}
     }
 
     const materialData = {
+      part_number: partNumberInput.value || null,
       name: nameInput.value,
       shape: shapeInput.value,
       diameter_mm: parseFloat(diameterInput.value),
       current_density: parseFloat(densityInput.value),
+      usage_type: usageTypeInput.value,
       description: descriptionInput.value || null,
     };
 
@@ -1377,6 +1582,13 @@ endblock %} {% block content %}
             input.id = `${parts[0]}_${index}`;
           }
         }
+
+        // 品番入力フィールドの場合はイベントリスナーも再設定
+        if (id && id.startsWith("partNumberInput_")) {
+          input.oninput = function () {
+            searchMaterialByPartNumber(index, this.value);
+          };
+        }
       });
 
       // 材料選択セレクトのインスタンスを更新
@@ -1451,17 +1663,44 @@ endblock %} {% block content %}
 
       // 発注方式に応じてデータを設定
       if (orderType === "quantity") {
-        itemData.ordered_quantity = parseInt(
+        const quantity = parseInt(
           formData.get(`items[${index}][ordered_quantity]`)
         );
+        if (isNaN(quantity) || quantity <= 0) {
+          console.error(`アイテム ${index}: 無効な数量: ${quantity}`);
+          showToast(
+            `アイテム ${index + 1}: 数量を正しく入力してください`,
+            "error"
+          );
+          return;
+        }
+        itemData.ordered_quantity = quantity;
+        console.log(
+          `アイテム ${index}: 本数指定 - 数量: ${itemData.ordered_quantity}`
+        );
       } else {
-        itemData.ordered_weight_kg = parseFloat(
+        const weight = parseFloat(
           formData.get(`items[${index}][ordered_weight_kg]`)
+        );
+        if (isNaN(weight) || weight <= 0) {
+          console.error(`アイテム ${index}: 無効な重量: ${weight}`);
+          showToast(
+            `アイテム ${index + 1}: 重量を正しく入力してください`,
+            "error"
+          );
+          return;
+        }
+        itemData.ordered_weight_kg = weight;
+        console.log(
+          `アイテム ${index}: 重量指定 - 重量: ${itemData.ordered_weight_kg}`
         );
       }
 
+      console.log(`アイテム ${index} 送信データ:`, itemData);
       orderData.items.push(itemData);
     });
+
+    console.log("全体送信データ:", orderData);
 
     try {
       const response = await fetch("/api/purchase-orders/", {
@@ -1693,9 +1932,10 @@ endblock %} {% block content %}
       return;
     }
 
-    const materialName = container.querySelector(
-      'input[name*="[material_name]"]'
-    ).value;
+    const materialNameInput = document.getElementById(
+      `materialName_${itemIndex}`
+    );
+    const materialName = materialNameInput ? materialNameInput.value : "";
     const shape = container.querySelector('select[name*="[shape]"]').value;
     const diameterInput = container.querySelector(
       'input[name*="[diameter_mm]"]'

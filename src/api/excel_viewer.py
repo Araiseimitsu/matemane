@@ -15,7 +15,7 @@ from sqlalchemy import func
 from pydantic import BaseModel
 
 from src.db import get_db
-from src.db.models import Material, Item, Lot, MaterialShape
+from src.db.models import Material, Item, Lot, MaterialShape, UsageType
 
 router = APIRouter(prefix="/api/excel-viewer", tags=["excel-viewer"])
 
@@ -30,18 +30,30 @@ class ExcelRowResponse(BaseModel):
     stock_status: str  # "sufficient", "shortage", "unknown"
 
 def parse_material_info(material_spec: str) -> Dict[str, Any]:
-    """材料仕様文字列を解析"""
+    """
+    材料仕様文字列を解析
+
+    例:
+    - SUS303 ∅10.0CM → {material_name: 'SUS303', diameter: 10.0, shape: round}
+    - C3602Lcd ∅12.0 (NB5N) → {material_name: 'C3602LCD', diameter: 12.0, shape: round, dedicated_part_number: 'NB5N'}
+    """
     if not material_spec or pd.isna(material_spec):
         return None
 
     material_spec = str(material_spec).strip()
 
+    # 専用品番の抽出（カッコ内）
+    dedicated_part_number = None
+    dedicated_match = re.search(r'\(([^)]+)\)', material_spec)
+    if dedicated_match:
+        dedicated_part_number = dedicated_match.group(1).strip()
+
     # パターンマッチング（実際のExcelデータに合わせて調整）
     patterns = [
         # SUS303 ∅10.0CM の形式
         r'^(SUS\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)(?:CM|cm)?',
-        # C3602Lcd ∅12.0 (NB5N) の形式
-        r'^(C\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)\s*(?:\([^)]*\))?',
+        # C3602Lcd ∅12.0 の形式
+        r'^(C\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)',
         # その他の材質
         r'^([A-Z]+\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)',
     ]
@@ -53,46 +65,74 @@ def parse_material_info(material_spec: str) -> Dict[str, Any]:
             diameter = float(match.group(2))
 
             # 材料名の正規化
+            material_name = material_name.replace('Lcd', 'LCD')
             if material_name.startswith('C3602LCD') or material_name.startswith('C3602Lcd'):
                 material_name = 'C3602LCD'
 
             return {
                 'material_name': material_name,
                 'diameter': diameter,
-                'shape': MaterialShape.ROUND  # 基本的に丸棒と仮定
+                'shape': MaterialShape.ROUND,  # 基本的に丸棒と仮定
+                'dedicated_part_number': dedicated_part_number
             }
 
     return None
 
 def get_current_stock(db: Session, material_info: Dict[str, Any]) -> int:
-    """指定された材料の現在在庫数を取得"""
+    """
+    指定された材料の現在在庫数を取得
+
+    汎用材料: 材質名・形状・寸法が一致すれば在庫を集計
+    専用材料: 上記に加えて専用品番も一致する場合のみ在庫を集計
+    """
     if not material_info:
         return 0
 
     try:
-        # 材料を検索（名前と直径で）
-        material = db.query(Material).filter(
+        dedicated_part_number = material_info.get('dedicated_part_number')
+
+        # 基本条件で材料を検索
+        query = db.query(Material).filter(
             Material.name == material_info['material_name'],
             Material.diameter_mm == material_info['diameter'],
             Material.shape == material_info['shape'],
             Material.is_active == True
-        ).first()
+        )
 
-        if not material:
+        # 専用品番が指定されている場合
+        if dedicated_part_number:
+            # 専用材料で専用品番が一致するもの、または汎用材料
+            query = query.filter(
+                (Material.usage_type == UsageType.DEDICATED) & (Material.dedicated_part_number == dedicated_part_number) |
+                (Material.usage_type == UsageType.GENERAL)
+            )
+        else:
+            # 汎用材料のみ
+            query = query.filter(Material.usage_type == UsageType.GENERAL)
+
+        materials = query.all()
+
+        if not materials:
             return 0
 
-        # 在庫数を合計
-        total_stock = db.query(func.sum(Item.current_quantity)).join(
-            Lot, Item.lot_id == Lot.id
-        ).filter(
-            Lot.material_id == material.id,
-            Item.is_active == True
-        ).scalar()
+        # すべてのマッチした材料の在庫を合計
+        total_stock = 0
+        for material in materials:
+            stock = db.query(func.sum(Item.current_quantity)).join(
+                Lot, Item.lot_id == Lot.id
+            ).filter(
+                Lot.material_id == material.id,
+                Item.is_active == True
+            ).scalar()
 
-        return total_stock or 0
+            total_stock += (stock or 0)
+
+        return total_stock
 
     except Exception as e:
         print(f"在庫取得エラー: {e}")
+        import traceback
+        traceback.print_exc()
         return 0
 
 @router.post("/analyze")

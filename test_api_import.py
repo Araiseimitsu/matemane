@@ -1,42 +1,50 @@
-import requests
-import os
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+材料CSVインポートのテストスクリプト
+dedicated_part_number フィールドに正しく保存されているか確認
+"""
 
-def test_csv_import():
-    """CSVインポートAPIをテスト"""
-    # テスト用CSVファイルのパス
-    csv_file_path = "test_materials.csv"
+import sys
+sys.path.append('.')
 
-    if not os.path.exists(csv_file_path):
-        print(f"テストファイルが見つかりません: {csv_file_path}")
-        return
+from src.db.models import Material, UsageType
+from src.db import SessionLocal
 
+def check_imported_materials():
+    """インポートされた材料のdedicated_part_numberを確認"""
+    db = SessionLocal()
     try:
-        # ファイルを開いてアップロード
-        with open(csv_file_path, 'rb') as f:
-            files = {'file': ('test_materials.csv', f, 'text/csv')}
-            response = requests.post('http://localhost:8000/api/materials/import-csv', files=files)
+        # 最初の20件の材料を取得
+        materials = db.query(Material).limit(20).all()
 
-        print(f"ステータスコード: {response.status_code}")
+        print("=" * 80)
+        print("材料データ確認（最初の20件）")
+        print("=" * 80)
 
-        if response.status_code == 200:
-            result = response.json()
-            print("インポート成功:")
-            print(f"  インポート件数: {result['imported_count']}")
-            print(f"  スキップ件数: {result['skipped_count']}")
-            print(f"  処理済み件数: {result['total_processed']}")
-            if result['errors']:
-                print("エラー:")
-                for error in result['errors']:
-                    print(f"  - {error}")
-        else:
-            try:
-                error_data = response.json()
-                print(f"エラー: {error_data.get('detail', '不明なエラー')}")
-            except:
-                print(f"HTTPエラー: {response.status_code}")
+        for i, material in enumerate(materials, 1):
+            print(f"\n{i}. 材質名: {material.name}")
+            print(f"   品番: {material.part_number or '(なし)'}")
+            print(f"   形状: {material.shape.value}")
+            print(f"   寸法: {material.diameter_mm}mm")
+            print(f"   用途: {material.usage_type.value}")
+            print(f"   専用品番・追加情報: {material.dedicated_part_number or '(なし)'}")
+            print(f"   説明: {material.description or '(なし)'}")
 
-    except Exception as e:
-        print(f"リクエストエラー: {e}")
+        print("\n" + "=" * 80)
 
-if __name__ == "__main__":
-    test_csv_import()
+        # dedicated_part_numberが設定されている材料をカウント
+        with_dedicated = db.query(Material).filter(Material.dedicated_part_number.isnot(None)).count()
+        total = db.query(Material).count()
+
+        print(f"\n統計:")
+        print(f"  総材料数: {total}")
+        print(f"  専用品番・追加情報あり: {with_dedicated}")
+        print(f"  専用品番・追加情報なし: {total - with_dedicated}")
+        print("=" * 80)
+
+    finally:
+        db.close()
+
+if __name__ == '__main__':
+    check_imported_materials()

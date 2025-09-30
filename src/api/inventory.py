@@ -6,9 +6,102 @@ from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 
 from src.db import get_db
-from src.db.models import Item, Lot, Material, Location, MaterialShape
+from src.db.models import Item, Lot, Material, Location, MaterialShape, UsageType
 
 router = APIRouter()
+
+# ========================================
+# 材料マッチング用ヘルパー関数
+# ========================================
+
+def match_material_for_allocation(
+    db: Session,
+    material_name: str,
+    diameter_mm: float,
+    shape: MaterialShape,
+    dedicated_part_number: Optional[str] = None,
+    length_mm: Optional[int] = None
+) -> List[Material]:
+    """
+    在庫引当用の材料マッチング
+
+    汎用材料: 材質名・形状・寸法が一致すれば使用可能
+    専用材料: 上記に加えて専用品番も一致する場合のみ使用可能
+
+    Args:
+        db: データベースセッション
+        material_name: 材質名（例: SUS303, C3604LCD）
+        diameter_mm: 直径（mm）
+        shape: 形状（round/hexagon/square）
+        dedicated_part_number: 専用品番（専用材料の場合）
+        length_mm: 長さ（mm）※オプション
+
+    Returns:
+        マッチした材料のリスト
+    """
+    # 材質名を正規化
+    normalized_name = material_name.strip().upper()
+    normalized_name = normalized_name.replace('Lcd', 'LCD')
+
+    # 基本条件（材質名・形状・寸法）
+    query = db.query(Material).filter(
+        Material.name == normalized_name,
+        Material.shape == shape,
+        Material.diameter_mm == diameter_mm,
+        Material.is_active == True
+    )
+
+    # 専用品番が指定されている場合
+    if dedicated_part_number:
+        # 専用材料で専用品番が一致するもの、または汎用材料を検索
+        query = query.filter(
+            (Material.usage_type == UsageType.DEDICATED) & (Material.dedicated_part_number == dedicated_part_number) |
+            (Material.usage_type == UsageType.GENERAL)
+        )
+    else:
+        # 汎用材料のみを検索
+        query = query.filter(Material.usage_type == UsageType.GENERAL)
+
+    return query.all()
+
+def get_available_stock_for_material(
+    db: Session,
+    material_id: int,
+    required_quantity: int,
+    dedicated_part_number: Optional[str] = None
+) -> int:
+    """
+    指定材料の利用可能在庫数を取得
+
+    Args:
+        db: データベースセッション
+        material_id: 材料ID
+        required_quantity: 必要数量
+        dedicated_part_number: 専用品番（専用材料の場合）
+
+    Returns:
+        利用可能な在庫数
+    """
+    # 材料情報を取得
+    material = db.query(Material).filter(Material.id == material_id).first()
+    if not material:
+        return 0
+
+    # 専用材料の場合、専用品番が一致するかチェック
+    if material.usage_type == UsageType.DEDICATED:
+        if not dedicated_part_number or material.dedicated_part_number != dedicated_part_number:
+            return 0  # 専用品番が一致しない場合は使用不可
+
+    # 在庫数を合計
+    total_stock = db.query(func.sum(Item.current_quantity)).join(
+        Lot, Item.lot_id == Lot.id
+    ).filter(
+        Lot.material_id == material.id,
+        Item.is_active == True,
+        Item.current_quantity > 0
+    ).scalar()
+
+    return total_stock or 0
 
 # Pydantic スキーマ
 class LocationInfo(BaseModel):
@@ -76,7 +169,8 @@ async def get_inventory(
     location_id: Optional[int] = Query(None, description="置き場IDでフィルタ"),
     lot_number: Optional[str] = Query(None, description="ロット番号で検索"),
     is_active: Optional[bool] = Query(True, description="有効フラグでフィルタ"),
-    has_stock: Optional[bool] = Query(None, description="在庫有無でフィルタ"),
+    has_stock: Optional[bool] = Query(True, description="在庫有無でフィルタ（デフォルト: 在庫ありのみ）"),
+    include_zero_stock: Optional[bool] = Query(False, description="在庫数=0のアイテムも含める"),
     db: Session = Depends(get_db)
 ):
     """在庫一覧取得"""
@@ -88,11 +182,15 @@ async def get_inventory(
     if is_active is not None:
         query = query.filter(Item.is_active == is_active)
 
-    if has_stock is not None:
+    # 在庫フィルタリングロジックを更新
+    if has_stock is not None and not include_zero_stock:
         if has_stock:
             query = query.filter(Item.current_quantity > 0)
         else:
             query = query.filter(Item.current_quantity == 0)
+    elif include_zero_stock:
+        # 在庫数=0のアイテムも含める場合、has_stockフィルタを無視
+        pass
 
     if material_id is not None:
         query = query.join(Lot).filter(Lot.material_id == material_id)
@@ -301,6 +399,97 @@ async def search_by_management_code(management_code: str, db: Session = Depends(
     }
 
     return InventoryItem(**item_dict)
+
+@router.get("/search", response_model=List[InventoryItem])
+async def search_inventory_items(
+    query: str = Query(..., description="検索クエリ（管理コード、材料名、ロット番号等）"),
+    include_zero_stock: Optional[bool] = Query(False, description="在庫数=0のアイテムも含める"),
+    limit: int = Query(50, ge=1, le=200, description="検索結果の上限数"),
+    db: Session = Depends(get_db)
+):
+    """在庫アイテム検索（管理コード、材料名、ロット番号等で検索）"""
+    # 基本クエリ
+    query_obj = db.query(Item).options(
+        joinedload(Item.lot).joinedload(Lot.material),
+        joinedload(Item.location)
+    ).filter(Item.is_active == True)
+
+    # 在庫数=0のアイテムを含めるかどうか
+    if not include_zero_stock:
+        query_obj = query_obj.filter(Item.current_quantity > 0)
+
+    # 検索条件（複数のフィールドで検索）
+    search_filter = (
+        Item.management_code.ilike(f"%{query}%") |
+        Lot.lot_number.ilike(f"%{query}%") |
+        Material.name.ilike(f"%{query}%") |
+        Material.display_name.ilike(f"%{query}%") |
+        Material.part_number.ilike(f"%{query}%")
+    )
+
+    query_obj = query_obj.join(Lot).join(Material).filter(search_filter)
+
+    items = query_obj.limit(limit).all()
+
+    # 重量計算を追加
+    result = []
+    for item in items:
+        material = item.lot.material
+
+        # 体積計算（cm³）
+        if material.shape == MaterialShape.ROUND:
+            radius_cm = (material.diameter_mm / 2) / 10
+            length_cm = item.lot.length_mm / 10
+            volume_cm3 = 3.14159 * (radius_cm ** 2) * length_cm
+        elif material.shape == MaterialShape.HEXAGON:
+            side_cm = (material.diameter_mm / 2) / 10
+            length_cm = item.lot.length_mm / 10
+            volume_cm3 = (3 * (3 ** 0.5) / 2) * (side_cm ** 2) * length_cm
+        elif material.shape == MaterialShape.SQUARE:
+            side_cm = material.diameter_mm / 10
+            length_cm = item.lot.length_mm / 10
+            volume_cm3 = (side_cm ** 2) * length_cm
+        else:
+            volume_cm3 = 0
+
+        weight_per_piece_kg = (volume_cm3 * material.current_density) / 1000
+        total_weight_kg = weight_per_piece_kg * item.current_quantity
+
+        # アイテムを辞書に変換して重量情報を追加
+        item_dict = {
+            "id": item.id,
+            "management_code": item.management_code,
+            "current_quantity": item.current_quantity,
+            "is_active": item.is_active,
+            "created_at": item.created_at,
+            "updated_at": item.updated_at,
+            "lot": {
+                "id": item.lot.id,
+                "lot_number": item.lot.lot_number,
+                "length_mm": item.lot.length_mm,
+                "initial_quantity": item.lot.initial_quantity,
+                "supplier": item.lot.supplier,
+                "received_date": item.lot.received_date
+            },
+            "material": {
+                "id": material.id,
+                "name": material.name,
+                "shape": material.shape,
+                "diameter_mm": material.diameter_mm,
+                "current_density": material.current_density
+            },
+            "location": {
+                "id": item.location.id,
+                "name": item.location.name,
+                "description": item.location.description
+            } if item.location else None,
+            "weight_per_piece_kg": round(weight_per_piece_kg, 3),
+            "total_weight_kg": round(total_weight_kg, 3)
+        }
+
+        result.append(InventoryItem(**item_dict))
+
+    return result
 
 @router.get("/low-stock")
 async def get_low_stock_items(

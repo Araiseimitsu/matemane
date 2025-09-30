@@ -159,6 +159,7 @@ async def create_in_movement(
             detail="指定されたアイテムが見つかりません"
         )
 
+    # 無効なアイテムには入庫できないが、在庫数=0のアイテムは入庫可能
     if not item.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
