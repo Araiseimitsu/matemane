@@ -1,201 +1,203 @@
 {% extends "base.html" %}
 
-{% block title %}在庫管理 - 材料管理システム{% endblock %}
+{% block title %}在庫管理 - 同等品ビュー{% endblock %}
 
 {% block content %}
 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-    <!-- ページヘッダー -->
     <div class="mb-8">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between flex-wrap gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">在庫管理</h1>
-                <p class="mt-2 text-gray-600">現在の在庫状況を確認できます</p>
+                <h1 class="text-3xl font-bold text-gray-900">在庫管理（同等品ビュー）</h1>
+                <p class="mt-2 text-gray-600">材料マスターに登録された情報をもとに、汎用・専用の同等品単位で在庫を把握します。</p>
             </div>
-            <div class="flex space-x-3">
-                <button id="lowStockBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-1">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>在庫不足アラート
-                </button>
-                <button id="summaryBtn" class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
-                    <i class="fas fa-chart-bar mr-2"></i>サマリー表示
-                </button>
+            <div class="flex items-center space-x-3">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">材料マスター連携</span>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-700">ロット在庫追跡</span>
             </div>
         </div>
     </div>
 
-    <!-- 検索・フィルタバー -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">絞り込み</h2>
+            <button id="resetFilters" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                <i class="fas fa-undo mr-2"></i>リセット
+            </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">管理コード検索</label>
-                <input type="text" id="codeSearch" placeholder="UUIDで検索..."
-                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+                <label for="filterName" class="block text-sm font-medium text-gray-700 mb-2">材料名</label>
+                <input type="text" id="filterName" placeholder="例: SUS303" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">材料</label>
-                <select id="materialFilter" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+                <label for="filterUsage" class="block text-sm font-medium text-gray-700 mb-2">用途区分</label>
+                <select id="filterUsage" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
                     <option value="">すべて</option>
-                    <!-- 動的に材料を読み込み -->
+                    <option value="general">汎用</option>
+                    <option value="dedicated">専用</option>
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">置き場</label>
-                <select id="locationFilter" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+                <label for="filterShape" class="block text-sm font-medium text-gray-700 mb-2">形状</label>
+                <select id="filterShape" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
                     <option value="">すべて</option>
-                    <!-- 動的に置き場を読み込み -->
+                    <option value="round">丸棒</option>
+                    <option value="hexagon">六角</option>
+                    <option value="square">平角</option>
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">在庫状況</label>
-                <select id="stockFilter" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
-                    <option value="">すべて</option>
-                    <option value="true">在庫あり</option>
-                    <option value="false">在庫なし</option>
-                </select>
+                <label for="filterDiameter" class="block text-sm font-medium text-gray-700 mb-2">寸法（mm）</label>
+                <input type="text" id="filterDiameter" placeholder="例: 10 / 12.7" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
             </div>
-            <div class="flex items-end">
-                <button id="resetFilters" class="w-full bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
-                    <i class="fas fa-undo mr-2"></i>リセット
-                </button>
+            <div>
+                <label for="filterDedicated" class="block text-sm font-medium text-gray-700 mb-2">専用品番・追加情報</label>
+                <input type="text" id="filterDedicated" placeholder="例: CM-001" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
             </div>
         </div>
     </div>
 
-    <!-- 在庫一覧 -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-900">在庫一覧</h3>
-                <span id="itemCount" class="text-sm text-gray-500">-</span>
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <p class="text-sm text-gray-500">対象材料（ユニーク）</p>
+                <p id="summaryMaterialCount" class="mt-1 text-2xl font-semibold text-gray-900">-</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">汎用同等品グループ</p>
+                <p id="summaryGeneralGroupCount" class="mt-1 text-2xl font-semibold text-gray-900">-</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">専用同等品グループ</p>
+                <p id="summaryDedicatedGroupCount" class="mt-1 text-2xl font-semibold text-gray-900">-</p>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">在庫ありロット</p>
+                <p id="summaryLotCount" class="mt-1 text-2xl font-semibold text-gray-900">-</p>
             </div>
         </div>
+        <p class="mt-4 text-sm text-gray-500 leading-6">
+            汎用品は「材料名 × 形状 × 寸法」、専用品は「材料名 × 寸法 × 専用品番・追加情報」で同等品グループを構成します。
+            グループを開くと在庫中のロット番号が一覧表示されます。
+        </p>
+    </div>
 
+    <div id="groupLoading" class="bg-white border border-gray-200 rounded-lg py-16 flex flex-col items-center justify-center text-gray-500">
+        <div class="mb-4">
+            <svg class="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0116 0h-2a6 6 0 00-12 0H4z"></path>
+            </svg>
+        </div>
+        <p>同等品グループを読み込んでいます...</p>
+    </div>
+
+    <div id="groupEmpty" class="hidden bg-white border border-gray-200 rounded-lg p-10 text-center text-gray-500">
+        <p class="text-lg font-medium mb-2">条件に合致する同等品グループがありません</p>
+        <p class="text-sm">絞り込み条件を緩めるか、材料マスターの登録内容をご確認ください。</p>
+    </div>
+
+        <div id="groupPaginationTop" class="bg-white border border-gray-200 rounded-lg mb-4 px-4 py-3 flex items-center justify-between text-sm text-gray-600 hidden">
+        <div id="groupPaginationTopStatus">表示件数: -</div>
+        <div class="flex items-center space-x-2">
+            <button type="button" id="groupPaginationTopPrev" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">前へ</button>
+            <span id="groupPaginationTopIndicator" class="min-w-[80px] text-center">- / -</span>
+            <button type="button" id="groupPaginationTopNext" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">次へ</button>
+        </div>
+    </div>
+
+    <div id="groupTableWrapper" class="bg-white rounded-lg shadow-sm border border-gray-200 hidden">
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200" id="inventoryTable">
+            <table id="groupTable" class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            管理コード
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            材料
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            ロット
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            寸法・長さ
-                        </th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            現在庫(本)
-                        </th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            重量(kg)
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            置き場
-                        </th>
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            操作
-                        </th>
+                    <tr class="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                        <th scope="col" class="px-4 py-3 text-left">用途区分</th>
+                        <th scope="col" class="px-4 py-3 text-left">材料情報</th>
+                        <th scope="col" class="px-4 py-3 text-left">長さバリエーション</th>
+                        <th scope="col" class="px-4 py-3 text-left">専用品番・追加情報</th>
+                        <th scope="col" class="px-4 py-3 text-right">登録材料数</th>
+                        <th scope="col" class="px-4 py-3 text-right">在庫ロット数</th>
+                        <th scope="col" class="px-4 py-3 text-right">在庫合計（本）</th>
+                        <th scope="col" class="px-4 py-3 text-right">在庫重量（kg）</th>
+                        <th scope="col" class="px-4 py-3 text-right">管理コード数</th>
+                        <th scope="col" class="px-4 py-3 text-center">詳細</th>
                     </tr>
                 </thead>
-                <tbody id="inventoryTableBody" class="bg-white divide-y divide-gray-200">
-                    <!-- データはJavaScriptで動的に生成 -->
-                </tbody>
+                <tbody id="groupTableBody" class="bg-white divide-y divide-gray-100"></tbody>
             </table>
         </div>
-
-        <!-- ローディング表示 -->
-        <div id="loadingIndicator" class="text-center py-12">
-            <div class="inline-flex items-center">
-                <div class="spinner mr-3"></div>
-                <span class="text-gray-600">在庫データを読み込んでいます...</span>
-            </div>
-        </div>
-
-        <!-- データなし表示 -->
-        <div id="noDataIndicator" class="hidden text-center py-12">
-            <div class="text-gray-400 mb-4">
-                <i class="fas fa-boxes text-4xl"></i>
-            </div>
-            <p class="text-gray-600 font-medium">在庫データがありません</p>
-            <p class="text-sm text-gray-500 mt-1">入出庫管理から在庫を追加してください</p>
+    </div>
+    <div id="groupPagination" class="bg-white border border-gray-200 rounded-lg mt-4 px-4 py-3 flex items-center justify-between text-sm text-gray-600 hidden">
+        <div id="groupPaginationStatus">表示件数: -</div>
+        <div class="flex items-center space-x-2">
+            <button type="button" id="groupPaginationPrev" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">前へ</button>
+            <span id="groupPaginationIndicator" class="min-w-[80px] text-center">- / -</span>
+            <button type="button" id="groupPaginationNext" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">次へ</button>
         </div>
     </div>
 </div>
 
-<!-- 詳細表示モーダル -->
-<div id="detailModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
+
+    </div>
+<!-- 同等品詳細モーダル -->
+<div id="groupDetailModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 hidden z-50">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900">在庫詳細</h3>
+        <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <div>
+                    <p id="groupDetailTag" class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full mr-3"></p>
+                    <h3 id="groupDetailTitle" class="text-xl font-semibold text-gray-900"></h3>
+                    <p id="groupDetailSubtitle" class="text-sm text-gray-500 mt-1"></p>
+                </div>
+                <button id="closeGroupDetail" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
             </div>
+            <div class="p-6 space-y-6">
+                <section>
+                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">概要</h4>
+                    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                        <div>
+                            <dt class="text-gray-500">登録材料数</dt>
+                            <dd id="detailMaterialCount" class="text-gray-900 font-medium">-</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">在庫ありロット数</dt>
+                            <dd id="detailLotCount" class="text-gray-900 font-medium">-</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">合計在庫数</dt>
+                            <dd id="detailTotalQuantity" class="text-gray-900 font-medium">-</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">合計在庫重量</dt>
+                            <dd id="detailTotalWeight" class="text-gray-900 font-medium">-</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">長さバリエーション</dt>
+                            <dd id="detailLengthVariations" class="text-gray-900 font-medium">-</dd>
+                        </div>
+                        <div>
+                            <dt class="text-gray-500">専用品番・追加情報</dt>
+                            <dd id="detailDedicatedInfo" class="text-gray-900 font-medium">-</dd>
+                        </div>
+                    </dl>
+                </section>
 
-            <div id="detailContent" class="p-6">
-                <!-- 詳細内容をJavaScriptで動的に生成 -->
+                <section>
+                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">材料マスター登録</h4>
+                    <div id="detailMaterials" class="border border-gray-200 rounded-lg divide-y divide-gray-200">
+                    </div>
+                </section>
+
+                <section>
+                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">在庫ロット</h4>
+                    <div id="detailLots" class="border border-gray-200 rounded-lg overflow-hidden">
+                    </div>
+                </section>
             </div>
-
             <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
-                <button id="closeDetailModal" class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
-                    閉じる
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 在庫不足アラートモーダル -->
-<div id="alertModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <div class="flex items-center">
-                    <i class="fas fa-exclamation-triangle text-yellow-500 text-xl mr-3"></i>
-                    <h3 class="text-lg font-semibold text-gray-900">在庫不足アラート</h3>
-                </div>
-            </div>
-
-            <div class="p-6">
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">下限値(本)</label>
-                    <input type="number" id="thresholdInput" value="5" min="0" step="1"
-                           class="input-field w-32">
-                </div>
-
-                <div id="alertContent">
-                    <!-- アラート内容をJavaScriptで動的に生成 -->
-                </div>
-            </div>
-
-            <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-                <button id="closeAlertModal" class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
-                    閉じる
-                </button>
-                <button id="checkAlerts" class="bg-yellow-500 hover:bg-yellow-600 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-1">
-                    <i class="fas fa-search mr-2"></i>チェック
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- サマリー表示モーダル -->
-<div id="summaryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900">在庫サマリー</h3>
-            </div>
-
-            <div id="summaryContent" class="p-6">
-                <!-- サマリー内容をJavaScriptで動的に生成 -->
-            </div>
-
-            <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
-                <button id="closeSummaryModal" class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1">
-                    閉じる
-                </button>
+                <button class="bg-white hover:bg-gray-100 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-colors" onclick="Utils.modal.close('groupDetailModal')">閉じる</button>
             </div>
         </div>
     </div>
@@ -204,489 +206,758 @@
 
 {% block extra_scripts %}
 <script>
-// グローバル変数
-let inventory = [];
-let materials = [];
-let locations = [];
-let currentItem = null;
+const shapeLabels = {
+    round: '丸棒',
+    hexagon: '六角',
+    square: '平角'
+};
 
-// ページ読み込み時の初期化
-document.addEventListener('DOMContentLoaded', function() {
-    initializePage();
-    setupEventListeners();
+const shapeDimensionPrefixes = {
+    round: 'φ',
+    hexagon: 'HEX',
+    square: '□'
+};
+
+const usageLabels = {
+    general: '汎用同等品',
+    dedicated: '専用同等品'
+};
+
+const ROWS_PER_PAGE = 100;
+const PAGINATION_CONFIGS = [
+    {
+        containerId: 'groupPaginationTop',
+        statusId: 'groupPaginationTopStatus',
+        indicatorId: 'groupPaginationTopIndicator',
+        prevId: 'groupPaginationTopPrev',
+        nextId: 'groupPaginationTopNext'
+    },
+    {
+        containerId: 'groupPagination',
+        statusId: 'groupPaginationStatus',
+        indicatorId: 'groupPaginationIndicator',
+        prevId: 'groupPaginationPrev',
+        nextId: 'groupPaginationNext'
+    }
+];
+
+let materialMaster = [];
+let inventoryItems = [];
+let groupStore = new Map();
+let filteredGroupsCache = [];
+let currentPage = 1;
+
+document.addEventListener('DOMContentLoaded', () => {
+    initializeEquivalenceView();
 });
 
-// ページ初期化
-async function initializePage() {
+async function initializeEquivalenceView() {
     try {
-        await loadInitialData();
-        await loadInventory();
+        toggleLoading(true);
+        await loadMasterAndInventory();
+        buildGroupStore();
+        registerFilterHandlers();
+        registerPaginationHandlers();
+        applyFiltersAndRender();
     } catch (error) {
-        console.error('初期化エラー:', error);
-        Utils.showToast('ページの初期化に失敗しました', 'error');
-    }
-}
-
-// 初期データの読み込み
-async function loadInitialData() {
-    try {
-        const [materialsData, locationsData] = await Promise.all([
-            APIClient.getMaterials(),
-            APIClient.getLocations()
-        ]);
-
-        materials = materialsData;
-        locations = locationsData;
-        populateMaterialFilter();
-        populateLocationFilter();
-    } catch (error) {
-        console.error('初期データ読み込みエラー:', error);
-    }
-}
-
-// 材料フィルタの設定
-function populateMaterialFilter() {
-    const select = document.getElementById('materialFilter');
-    select.innerHTML = '<option value="">すべて</option>';
-
-    materials.forEach(material => {
-        if (material.is_active) {
-            const option = document.createElement('option');
-            option.value = material.id;
-            const shapeText = material.shape === 'round' ? '丸棒' :
-                            material.shape === 'hexagon' ? '六角棒' : '角棒';
-            option.textContent = `${material.name} (${shapeText} φ${material.diameter_mm}mm)`;
-            select.appendChild(option);
-        }
-    });
-}
-
-// 置き場フィルタの設定
-function populateLocationFilter() {
-    const select = document.getElementById('locationFilter');
-    select.innerHTML = '<option value="">すべて</option>';
-
-    locations.forEach(location => {
-        const option = document.createElement('option');
-        option.value = location.id;
-        option.textContent = location.name;
-        select.appendChild(option);
-    });
-}
-
-// イベントリスナーの設定
-function setupEventListeners() {
-    // ボタンイベント
-    document.getElementById('lowStockBtn').addEventListener('click', openAlertModal);
-    document.getElementById('summaryBtn').addEventListener('click', openSummaryModal);
-    document.getElementById('resetFilters').addEventListener('click', resetFilters);
-
-    // フィルタイベント
-    document.getElementById('codeSearch').addEventListener('input', filterInventory);
-    document.getElementById('materialFilter').addEventListener('change', filterInventory);
-    document.getElementById('locationFilter').addEventListener('change', filterInventory);
-    document.getElementById('stockFilter').addEventListener('change', filterInventory);
-
-    // モーダルイベント
-    document.getElementById('closeDetailModal').addEventListener('click', closeDetailModal);
-    document.getElementById('closeAlertModal').addEventListener('click', closeAlertModal);
-    document.getElementById('closeSummaryModal').addEventListener('click', closeSummaryModal);
-    document.getElementById('checkAlerts').addEventListener('click', checkLowStock);
-
-    // 管理コード検索（Enter）
-    document.getElementById('codeSearch').addEventListener('keypress', async (e) => {
-        if (e.key === 'Enter') {
-            const code = e.target.value.trim();
-            if (code) {
-                await searchByManagementCode(code);
-            }
-        }
-    });
-
-    // モーダル共通処理設定
-    Utils.modal.setupEventListeners(['detailModal', 'alertModal', 'summaryModal']);
-}
-
-// 在庫データの読み込み
-async function loadInventory(params = {}) {
-    try {
-        const loadingIndicator = document.getElementById('loadingIndicator');
-        const noDataIndicator = document.getElementById('noDataIndicator');
-        const tableBody = document.getElementById('inventoryTableBody');
-
-        loadingIndicator.classList.remove('hidden');
-        noDataIndicator.classList.add('hidden');
-
-        inventory = await APIClient.getInventory(params);
-
-        if (inventory.length === 0) {
-            noDataIndicator.classList.remove('hidden');
-            tableBody.innerHTML = '';
-        } else {
-            renderInventoryTable();
-        }
-
-        updateItemCount();
-    } catch (error) {
-        console.error('在庫データの読み込みエラー:', error);
-        Utils.showToast('在庫データの読み込みに失敗しました', 'error');
+        console.error('同等品ビュー初期化エラー:', error);
+        Utils.showToast('同等品ビューの読み込みに失敗しました', 'error');
+        showEmptyState();
     } finally {
-        document.getElementById('loadingIndicator').classList.add('hidden');
+        toggleLoading(false);
     }
 }
 
-// テーブルの描画
-function renderInventoryTable() {
-    const tbody = document.getElementById('inventoryTableBody');
-    const shapeNames = {
-        'round': '丸棒',
-        'hexagon': '六角棒',
-        'square': '角棒'
+function registerPaginationHandlers() {
+    PAGINATION_CONFIGS.forEach(config => {
+        const prev = document.getElementById(config.prevId);
+        const next = document.getElementById(config.nextId);
+
+        if (prev) {
+            prev.addEventListener('click', () => changePage(-1));
+        }
+
+        if (next) {
+            next.addEventListener('click', () => changePage(1));
+        }
+    });
+}
+
+function changePage(delta) {
+    const totalPages = Math.max(1, Math.ceil(filteredGroupsCache.length / ROWS_PER_PAGE));
+    const newPage = Math.min(totalPages, Math.max(1, currentPage + delta));
+
+    if (newPage !== currentPage) {
+        currentPage = newPage;
+        renderCurrentPage();
+        updatePaginationControls();
+    }
+}
+
+function toggleLoading(isLoading) {
+    const loading = document.getElementById('groupLoading');
+    if (loading) {
+        loading.classList.toggle('hidden', !isLoading);
+    }
+
+    if (isLoading) {
+        const wrapper = document.getElementById('groupTableWrapper');
+        if (wrapper) {
+            wrapper.classList.add('hidden');
+        }
+
+        PAGINATION_CONFIGS.forEach(config => {
+            const container = document.getElementById(config.containerId);
+            if (container) {
+                container.classList.add('hidden');
+            }
+        });
+
+        hideEmptyState();
+    }
+}
+
+async function loadMasterAndInventory() {
+    const [materials, inventory] = await Promise.all([
+        fetchAllMaterials(),
+        fetchAllInventory()
+    ]);
+
+    materialMaster = materials;
+    inventoryItems = inventory;
+}
+
+async function fetchAllMaterials() {
+    const limit = 500;
+    let skip = 0;
+    const results = [];
+
+    while (true) {
+        const chunk = await APIClient.getMaterials({ skip, limit, is_active: true });
+        if (!Array.isArray(chunk) || chunk.length === 0) {
+            break;
+        }
+
+        results.push(...chunk);
+
+        if (chunk.length < limit) {
+            break;
+        }
+
+        skip += limit;
+    }
+
+    return results;
+}
+
+async function fetchAllInventory() {
+    const limit = 1000;
+    let skip = 0;
+    const results = [];
+
+    while (true) {
+        const chunk = await APIClient.getInventory({ skip, limit, is_active: true, include_zero_stock: false });
+        if (!Array.isArray(chunk) || chunk.length === 0) {
+            break;
+        }
+
+        results.push(...chunk);
+
+        if (chunk.length < limit) {
+            break;
+        }
+
+        skip += limit;
+    }
+
+    return results;
+}
+
+function buildGroupStore() {
+    groupStore = new Map();
+    const materialById = new Map(materialMaster.map(material => [material.id, material]));
+
+    const getGroupKey = (material) => {
+        const usageType = material.usage_type === 'dedicated' ? 'dedicated' : 'general';
+        if (usageType === 'dedicated') {
+            const dedicated = (material.dedicated_part_number || '').trim().toUpperCase();
+            return `${usageType}|${material.name.toUpperCase()}|${normalizeNumber(material.diameter_mm)}|${dedicated}`;
+        }
+        return `${usageType}|${material.name.toUpperCase()}|${material.shape}|${normalizeNumber(material.diameter_mm)}`;
     };
 
-    tbody.innerHTML = inventory.map(item => {
-        const alertClass = item.current_quantity === 0 ? 'text-red-600' :
-                          item.current_quantity <= 5 ? 'text-yellow-600' : 'text-gray-900';
+    materialMaster.forEach(material => {
+        const key = getGroupKey(material);
+        if (!groupStore.has(key)) {
+            groupStore.set(key, createEmptyGroup(key, material));
+        }
+        const group = groupStore.get(key);
+        group.materials.push(material);
+        group._materialIdSet.add(material.id);
+    });
 
-        return `
-            <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4">
-                    <div class="font-mono text-sm text-gray-900">
-                        ${item.management_code.substring(0, 8)}...
-                    </div>
-                    <button onclick="copyToClipboard('${item.management_code}')"
-                            class="text-xs text-blue-600 hover:text-blue-800">
-                        <i class="fas fa-copy mr-1"></i>コピー
-                    </button>
-                </td>
-                <td class="px-6 py-4">
-                    <div class="font-medium text-gray-900">${item.material.name}</div>
-                    <div class="text-sm text-gray-500">
-                        ${shapeNames[item.material.shape]} φ${item.material.diameter_mm}mm
-                    </div>
-                </td>
-                <td class="px-6 py-4">
-                    <div class="text-sm text-gray-900">${item.lot.lot_number}</div>
-                    ${item.lot.supplier ? `<div class="text-xs text-gray-500">${item.lot.supplier}</div>` : ''}
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-900">
-                    ${item.material.diameter_mm}mm × ${item.lot.length_mm}mm
-                </td>
-                <td class="px-6 py-4 text-right ${alertClass} font-medium">
-                    ${item.current_quantity}
-                </td>
-                <td class="px-6 py-4 text-right text-sm text-gray-900">
-                    ${item.total_weight_kg}
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-900">
-                    ${item.location?.name || '未配置'}
-                </td>
-                <td class="px-6 py-4 text-center">
-                    <div class="flex justify-center space-x-2">
-                        <button onclick="showDetail(${item.id})"
-                                class="text-blue-600 hover:text-blue-800" title="詳細">
-                            <i class="fas fa-info-circle"></i>
-                        </button>
-                        <button onclick="openQRCode('${item.management_code}')"
-                                class="text-green-600 hover:text-green-800" title="QRコード">
-                            <i class="fas fa-qrcode"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join('');
+    inventoryItems.forEach(item => {
+        const baseMaterial = materialById.get(item.material.id);
+        if (!baseMaterial) {
+            return;
+        }
+
+        const key = getGroupKey(baseMaterial);
+        if (!groupStore.has(key)) {
+            groupStore.set(key, createEmptyGroup(key, baseMaterial));
+        }
+        const group = groupStore.get(key);
+
+        if (!group._lotsMap) {
+            group._lotsMap = new Map();
+        }
+
+        const lotKey = item.lot.id;
+        const locationName = item.location ? item.location.name : '未割当';
+        if (!group._lotsMap.has(lotKey)) {
+            group._lotsMap.set(lotKey, {
+                lot_id: lotKey,
+                lot_number: item.lot.lot_number,
+                length_mm: item.lot.length_mm,
+                total_quantity: 0,
+                total_weight_kg: 0,
+                locations: new Set(),
+                management_codes: []
+            });
+        }
+
+        const lotEntry = group._lotsMap.get(lotKey);
+        lotEntry.total_quantity += item.current_quantity;
+        lotEntry.locations.add(locationName);
+        lotEntry.management_codes.push(item.management_code);
+
+        const weightPerPiece = Number(item.weight_per_piece_kg ?? 0);
+        const totalWeight = Number(item.total_weight_kg ?? (weightPerPiece * item.current_quantity));
+        if (!Number.isNaN(totalWeight)) {
+            lotEntry.total_weight_kg += totalWeight;
+        }
+
+        group._lengthSet.add(item.lot.length_mm);
+    });
+
+    groupStore.forEach(group => finalizeGroup(group));
 }
 
-// アイテム数の更新
-function updateItemCount() {
-    const count = inventory.length;
-    const stockCount = inventory.filter(item => item.current_quantity > 0).length;
-    document.getElementById('itemCount').textContent =
-        `全${count}件（在庫あり: ${stockCount}件）`;
+function createEmptyGroup(key, material) {
+    const usageType = material.usage_type === 'dedicated' ? 'dedicated' : 'general';
+    return {
+        key,
+        usage_type: usageType,
+        material_name: material.name,
+        shape: material.shape,
+        diameter_mm: material.diameter_mm,
+        dedicated_part_number: material.dedicated_part_number || '',
+        materials: [],
+        lots: [],
+        total_quantity: 0,
+        total_weight_kg: 0,
+        lot_count: 0,
+        management_code_count: 0,
+        length_variations: [],
+        material_count: 0,
+        _lotsMap: new Map(),
+        _lengthSet: new Set(),
+        _materialIdSet: new Set()
+    };
 }
 
-// フィルタ機能
-function filterInventory() {
-    const params = {};
+function finalizeGroup(group) {
+    if (group._lotsMap && group._lotsMap.size > 0) {
+        group.lots = Array.from(group._lotsMap.values()).map(lot => ({
+            lot_id: lot.lot_id,
+            lot_number: lot.lot_number,
+            length_mm: lot.length_mm,
+            total_quantity: lot.total_quantity,
+            total_weight_kg: lot.total_weight_kg,
+            locations: Array.from(lot.locations),
+            management_codes: lot.management_codes
+        })).sort((a, b) => a.lot_number.localeCompare(b.lot_number, 'ja'));
 
-    // 材料フィルタ
-    const materialId = document.getElementById('materialFilter').value;
-    if (materialId) {
-        params.material_id = parseInt(materialId);
+        group.total_quantity = group.lots.reduce((sum, lot) => sum + lot.total_quantity, 0);
+        group.total_weight_kg = group.lots.reduce((sum, lot) => sum + lot.total_weight_kg, 0);
+        group.lot_count = group.lots.length;
+        group.management_code_count = group.lots.reduce((sum, lot) => sum + lot.management_codes.length, 0);
+    } else {
+        group.lots = [];
+        group.total_quantity = 0;
+        group.total_weight_kg = 0;
+        group.lot_count = 0;
+        group.management_code_count = 0;
     }
 
-    // 置き場フィルタ
-    const locationId = document.getElementById('locationFilter').value;
-    if (locationId) {
-        params.location_id = parseInt(locationId);
-    }
+    group.length_variations = Array.from(group._lengthSet)
+        .filter(length => length !== null && length !== undefined)
+        .sort((a, b) => Number(a) - Number(b));
+    group.material_count = group._materialIdSet.size || group.materials.length;
 
-    // 在庫状況フィルタ
-    const stockFilter = document.getElementById('stockFilter').value;
-    if (stockFilter !== '') {
-        params.has_stock = stockFilter === 'true';
-    }
+    delete group._lotsMap;
+    delete group._lengthSet;
+    delete group._materialIdSet;
 
-    // 管理コード検索は別途処理（検索時に他のフィルタをクリア）
-    const codeSearch = document.getElementById('codeSearch').value.trim();
-    if (codeSearch) {
-        // 管理コード検索時は他のフィルタを無視
-        searchByManagementCode(codeSearch);
+    group.label = group.material_name;
+    group.subtitle = buildGroupSubtitle(group);
+}
+
+function buildGroupSubtitle(group) {
+    const dimension = formatDimension(group.shape, group.diameter_mm);
+    if (group.usage_type === 'dedicated') {
+        const dedicated = group.dedicated_part_number ? `専用品番 ${group.dedicated_part_number}` : '専用品番未設定';
+        return `寸法 ${dimension} / ${dedicated}`;
+    }
+    const shapeLabel = shapeLabels[group.shape] || group.shape;
+    return `${shapeLabel} / 寸法 ${dimension}`;
+}
+
+function normalizeNumber(value) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    return Number(value).toFixed(4);
+}
+
+function formatDimension(shape, diameter) {
+    if (diameter === null || diameter === undefined || diameter === '') {
+        return '―';
+    }
+    const numeric = Number(diameter);
+    if (Number.isNaN(numeric)) {
+        return String(diameter);
+    }
+    const formatted = Number.isInteger(numeric) ? numeric.toString() : numeric.toFixed(2);
+    const prefix = shapeDimensionPrefixes[shape] || '';
+    return `${prefix}${formatted}mm`;
+}
+
+function registerFilterHandlers() {
+    const filterIds = ['filterName', 'filterUsage', 'filterShape', 'filterDiameter', 'filterDedicated'];
+    filterIds.forEach(id => {
+        const element = document.getElementById(id);
+        if (!element) return;
+        const eventName = element.tagName === 'SELECT' ? 'change' : 'input';
+        element.addEventListener(eventName, debounce(() => {
+            currentPage = 1;
+            applyFiltersAndRender();
+        }, 200));
+    });
+
+    const resetButton = document.getElementById('resetFilters');
+    if (resetButton) {
+        resetButton.addEventListener('click', () => {
+            filterIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.value = '';
+            });
+            currentPage = 1;
+            applyFiltersAndRender();
+        });
+    }
+}
+
+function applyFiltersAndRender() {
+    const filters = {
+        name: document.getElementById('filterName')?.value.trim().toLowerCase() || '',
+        usage: document.getElementById('filterUsage')?.value || '',
+        shape: document.getElementById('filterShape')?.value || '',
+        diameter: document.getElementById('filterDiameter')?.value.trim().toLowerCase() || '',
+        dedicated: document.getElementById('filterDedicated')?.value.trim().toLowerCase() || ''
+    };
+
+    const groups = Array.from(groupStore.values()).filter(group => {
+        if (filters.usage && group.usage_type !== filters.usage) {
+            return false;
+        }
+
+        if (filters.shape && (group.shape || '').toLowerCase() !== filters.shape) {
+            return false;
+        }
+
+        if (filters.name) {
+            const matchName = group.material_name.toLowerCase().includes(filters.name);
+            const matchMaterials = group.materials.some(material =>
+                (material.display_name || '').toLowerCase().includes(filters.name) ||
+                material.name.toLowerCase().includes(filters.name) ||
+                (material.part_number || '').toLowerCase().includes(filters.name)
+            );
+            if (!matchName && !matchMaterials) {
+                return false;
+            }
+        }
+
+        if (filters.diameter) {
+            const dimensionText = formatDimension(group.shape, group.diameter_mm).toLowerCase();
+            if (!dimensionText.includes(filters.diameter)) {
+                return false;
+            }
+        }
+
+        if (filters.dedicated) {
+            const dedicatedText = (group.dedicated_part_number || '').toLowerCase();
+            const materialsDedicated = group.materials.some(material => (material.dedicated_part_number || '').toLowerCase().includes(filters.dedicated));
+            if (!dedicatedText.includes(filters.dedicated) && !materialsDedicated) {
+                return false;
+            }
+        }
+
+        return true;
+    });
+
+    filteredGroupsCache = groups.sort((a, b) => {
+        if (a.usage_type === b.usage_type) {
+            return a.material_name.localeCompare(b.material_name, 'ja');
+        }
+        return a.usage_type === 'general' ? -1 : 1;
+    });
+
+    currentPage = 1;
+    updateSummaryTiles(filteredGroupsCache);
+    renderCurrentPage();
+    updatePaginationControls();
+}
+
+function renderCurrentPage() {
+    const pageGroups = filteredGroupsCache.slice((currentPage - 1) * ROWS_PER_PAGE, currentPage * ROWS_PER_PAGE);
+    renderGroupTable(pageGroups);
+}
+
+function renderGroupTable(groups) {
+    const wrapper = document.getElementById('groupTableWrapper');
+    const tbody = document.getElementById('groupTableBody');
+    if (!wrapper || !tbody) {
         return;
     }
 
-    loadInventory(params);
-}
-
-// フィルタリセット
-function resetFilters() {
-    document.getElementById('codeSearch').value = '';
-    document.getElementById('materialFilter').value = '';
-    document.getElementById('locationFilter').value = '';
-    document.getElementById('stockFilter').value = '';
-    loadInventory(); // パラメータなしで全件取得
-}
-
-// 管理コード検索
-async function searchByManagementCode(code) {
-    try {
-        const item = await APIClient.searchByManagementCode(code);
-        inventory = [item];
-        renderInventoryTable();
-        updateItemCount();
-        Utils.showToast('検索が完了しました', 'success');
-    } catch (error) {
-        console.error('検索エラー:', error);
-        Utils.showToast('アイテムが見つかりませんでした', 'error');
+    if (!groups.length) {
+        tbody.innerHTML = '';
+        wrapper.classList.add('hidden');
+        showEmptyState();
+        return;
     }
-}
 
-// 詳細表示
-function showDetail(itemId) {
-    const item = inventory.find(i => i.id === itemId);
-    if (!item) return;
+    hideEmptyState();
+    wrapper.classList.remove('hidden');
 
-    const shapeNames = {
-        'round': '丸棒',
-        'hexagon': '六角棒',
-        'square': '角棒'
-    };
+    tbody.innerHTML = groups.map(group => createGroupRow(group)).join('');
 
-    const content = `
-        <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="text-sm font-medium text-gray-500">管理コード</label>
-                    <div class="font-mono text-sm break-all">${item.management_code}</div>
-                </div>
-                <div>
-                    <label class="text-sm font-medium text-gray-500">現在庫</label>
-                    <div class="text-lg font-bold ${item.current_quantity === 0 ? 'text-red-600' : 'text-gray-900'}">${item.current_quantity}本</div>
-                </div>
-            </div>
-
-            <div class="border-t pt-4">
-                <h4 class="font-medium text-gray-900 mb-2">材料情報</h4>
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <span class="text-gray-500">材質:</span> ${item.material.name}
-                    </div>
-                    <div>
-                        <span class="text-gray-500">形状:</span> ${shapeNames[item.material.shape]}
-                    </div>
-                    <div>
-                        <span class="text-gray-500">直径:</span> ${item.material.diameter_mm}mm
-                    </div>
-                    <div>
-                        <span class="text-gray-500">比重:</span> ${item.material.current_density}g/cm³
-                    </div>
-                </div>
-            </div>
-
-            <div class="border-t pt-4">
-                <h4 class="font-medium text-gray-900 mb-2">ロット情報</h4>
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <span class="text-gray-500">ロット番号:</span> ${item.lot.lot_number}
-                    </div>
-                    <div>
-                        <span class="text-gray-500">長さ:</span> ${item.lot.length_mm}mm
-                    </div>
-                    ${item.lot.supplier ? `
-                    <div>
-                        <span class="text-gray-500">仕入先:</span> ${item.lot.supplier}
-                    </div>
-                    ` : ''}
-                    ${item.lot.received_date ? `
-                    <div>
-                        <span class="text-gray-500">入荷日:</span> ${new Date(item.lot.received_date).toLocaleDateString('ja-JP')}
-                    </div>
-                    ` : ''}
-                </div>
-            </div>
-
-            <div class="border-t pt-4">
-                <h4 class="font-medium text-gray-900 mb-2">重量情報</h4>
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <span class="text-gray-500">1本あたり:</span> ${item.weight_per_piece_kg}kg
-                    </div>
-                    <div>
-                        <span class="text-gray-500">総重量:</span> ${item.total_weight_kg}kg
-                    </div>
-                </div>
-            </div>
-
-            ${item.location ? `
-            <div class="border-t pt-4">
-                <h4 class="font-medium text-gray-900 mb-2">置き場情報</h4>
-                <div class="text-sm">
-                    <span class="text-gray-500">置き場:</span> ${item.location.name}
-                    ${item.location.description ? `<br><span class="text-gray-500">説明:</span> ${item.location.description}` : ''}
-                </div>
-            </div>
-            ` : ''}
-        </div>
-    `;
-
-    document.getElementById('detailContent').innerHTML = content;
-    Utils.modal.open('detailModal');
-}
-
-// 詳細モーダルを閉じる
-function closeDetailModal() {
-    Utils.modal.close('detailModal');
-}
-
-// アラートモーダルを開く
-function openAlertModal() {
-    Utils.modal.open('alertModal');
-    checkLowStock();
-}
-
-// アラートモーダルを閉じる
-function closeAlertModal() {
-    Utils.modal.close('alertModal');
-}
-
-// 在庫不足チェック
-async function checkLowStock() {
-    try {
-        const threshold = parseInt(document.getElementById('thresholdInput').value) || 5;
-        const alerts = await APIClient.getLowStockItems(threshold);
-
-        const content = document.getElementById('alertContent');
-
-        if (alerts.items.length === 0) {
-            content.innerHTML = `
-                <div class="text-center py-8">
-                    <div class="text-green-500 mb-4">
-                        <i class="fas fa-check-circle text-4xl"></i>
-                    </div>
-                    <p class="text-gray-600 font-medium">在庫不足のアイテムはありません</p>
-                    <p class="text-sm text-gray-500 mt-1">下限値: ${threshold}本</p>
-                </div>
-            `;
-        } else {
-            content.innerHTML = `
-                <div class="mb-4 text-sm text-gray-600">
-                    在庫が${threshold}本以下のアイテム: ${alerts.items.length}件
-                </div>
-                <div class="space-y-3 max-h-64 overflow-y-auto">
-                    ${alerts.items.map(item => `
-                        <div class="p-3 border rounded-lg ${item.current_quantity === 0 ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'}">
-                            <div class="flex justify-between items-start">
-                                <div class="flex-1">
-                                    <div class="font-medium ${item.current_quantity === 0 ? 'text-red-900' : 'text-yellow-900'}">${item.material_name}</div>
-                                    <div class="text-sm ${item.current_quantity === 0 ? 'text-red-700' : 'text-yellow-700'}">
-                                        ロット: ${item.lot_number} | 置き場: ${item.location_name}
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <div class="font-bold ${item.current_quantity === 0 ? 'text-red-600' : 'text-yellow-600'}">${item.current_quantity}本</div>
-                                    <div class="text-xs ${item.current_quantity === 0 ? 'text-red-500' : 'text-yellow-500'}">${item.alert_level}</div>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-    } catch (error) {
-        console.error('在庫不足チェックエラー:', error);
-        Utils.showToast('在庫不足チェックに失敗しました', 'error');
-    }
-}
-
-// サマリーモーダルを開く
-async function openSummaryModal() {
-    Utils.modal.open('summaryModal');
-
-    try {
-        const summary = await fetch('/api/inventory/summary').then(r => r.json());
-
-        const content = `
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                ${summary.map(item => `
-                    <div class="border rounded-lg p-4">
-                        <div class="font-medium text-gray-900 mb-2">${item.material_name}</div>
-                        <div class="text-sm text-gray-600 mb-3">
-                            ${item.material_shape === 'round' ? '丸棒' :
-                              item.material_shape === 'hexagon' ? '六角棒' : '角棒'}
-                            φ${item.diameter_mm}mm × ${item.length_mm}mm
-                        </div>
-                        <div class="space-y-1 text-sm">
-                            <div class="flex justify-between">
-                                <span>総在庫:</span>
-                                <span class="font-medium">${item.total_quantity}本</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span>総重量:</span>
-                                <span class="font-medium">${item.total_weight_kg}kg</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span>ロット数:</span>
-                                <span class="font-medium">${item.lot_count}件</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span>置き場数:</span>
-                                <span class="font-medium">${item.location_count}箇所</span>
-                            </div>
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-
-        document.getElementById('summaryContent').innerHTML = content;
-    } catch (error) {
-        console.error('サマリー取得エラー:', error);
-        document.getElementById('summaryContent').innerHTML = `
-            <div class="text-center py-8">
-                <p class="text-red-600">サマリーデータの取得に失敗しました</p>
-            </div>
-        `;
-    }
-}
-
-// サマリーモーダルを閉じる
-function closeSummaryModal() {
-    Utils.modal.close('summaryModal');
-}
-
-// クリップボードにコピー
-function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        Utils.showToast('クリップボードにコピーしました', 'success');
-    }).catch(() => {
-        Utils.showToast('コピーに失敗しました', 'error');
+    tbody.querySelectorAll('[data-group-key]').forEach(button => {
+        button.addEventListener('click', () => {
+            const key = button.getAttribute('data-group-key');
+            const targetGroup = groupStore.get(key);
+            if (targetGroup) {
+                openGroupDetailModal(targetGroup);
+            }
+        });
     });
 }
 
-// QRコード表示（仮実装）
-function openQRCode(managementCode) {
-    Utils.showToast('QRコード機能は実装予定です', 'info');
+function createGroupRow(group) {
+    const badgeClasses = group.usage_type === 'general'
+        ? 'bg-blue-50 text-blue-700'
+        : 'bg-purple-50 text-purple-700';
+
+    const usageLabel = usageLabels[group.usage_type] || group.usage_type;
+    const lengthText = formatLengthList(group.length_variations);
+    const dedicatedDisplay = group.usage_type === 'dedicated'
+        ? (group.dedicated_part_number ? escapeHtml(group.dedicated_part_number) : '未設定')
+        : '汎用品（共通使用）';
+
+    const materialCount = group.material_count.toLocaleString('ja-JP');
+    const lotCount = group.lot_count.toLocaleString('ja-JP');
+    const totalQuantity = group.total_quantity.toLocaleString('ja-JP');
+    const totalWeight = formatWeight(group.total_weight_kg);
+    const managementCount = group.management_code_count.toLocaleString('ja-JP');
+
+    return `
+        <tr>
+            <td class="px-4 py-3">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${badgeClasses}">
+                    ${usageLabel}
+                </span>
+            </td>
+            <td class="px-4 py-3">
+                <p class="text-sm font-medium text-gray-900">${escapeHtml(group.material_name)}</p>
+                <p class="text-xs text-gray-500 mt-1">${escapeHtml(group.subtitle)}</p>
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-600">${escapeHtml(lengthText)}</td>
+            <td class="px-4 py-3 text-sm text-gray-600">${dedicatedDisplay}</td>
+            <td class="px-4 py-3 text-sm text-right text-gray-900">${materialCount}</td>
+            <td class="px-4 py-3 text-sm text-right text-gray-900">${lotCount}</td>
+            <td class="px-4 py-3 text-sm text-right text-gray-900">${totalQuantity}</td>
+            <td class="px-4 py-3 text-sm text-right text-gray-900">${totalWeight}</td>
+            <td class="px-4 py-3 text-sm text-right text-gray-900">${managementCount}</td>
+            <td class="px-4 py-3 text-center">
+                <button type="button" data-group-key="${group.key}" class="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700">
+                    詳細
+                </button>
+            </td>
+        </tr>
+    `;
+}
+
+function formatLengthList(lengths) {
+    if (!Array.isArray(lengths) || lengths.length === 0) {
+        return '―';
+    }
+    const formatted = lengths.map(length => formatLengthValue(length));
+    if (formatted.length <= 3) {
+        return formatted.join(' / ');
+    }
+    return `${formatted.slice(0, 3).join(' / ')} ほか${formatted.length - 3}種類`;
+}
+
+function formatLengthValue(value) {
+    if (value === null || value === undefined || value === '') {
+        return '―';
+    }
+    const numeric = Number(value);
+    if (Number.isNaN(numeric)) {
+        return String(value);
+    }
+    return `${numeric.toLocaleString('ja-JP')}mm`;
+}
+
+function formatWeight(value) {
+    const numeric = Number(value ?? 0);
+    if (Number.isNaN(numeric)) {
+        return '0.00';
+    }
+    return numeric.toLocaleString('ja-JP', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function updateSummaryTiles(groups) {
+    const materialIds = new Set();
+    let generalCount = 0;
+    let dedicatedCount = 0;
+    let totalLots = 0;
+
+    groups.forEach(group => {
+        group.materials.forEach(material => materialIds.add(material.id));
+        totalLots += group.lot_count;
+        if (group.usage_type === 'general') {
+            generalCount += 1;
+        } else if (group.usage_type === 'dedicated') {
+            dedicatedCount += 1;
+        }
+    });
+
+    document.getElementById('summaryMaterialCount').textContent = materialIds.size.toLocaleString('ja-JP');
+    document.getElementById('summaryGeneralGroupCount').textContent = generalCount.toLocaleString('ja-JP');
+    document.getElementById('summaryDedicatedGroupCount').textContent = dedicatedCount.toLocaleString('ja-JP');
+    document.getElementById('summaryLotCount').textContent = totalLots.toLocaleString('ja-JP');
+}
+
+function updatePaginationControls() {
+    const totalItems = filteredGroupsCache.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / ROWS_PER_PAGE));
+    const pageStart = totalItems ? (currentPage - 1) * ROWS_PER_PAGE + 1 : 0;
+    const pageEnd = totalItems ? Math.min(totalItems, currentPage * ROWS_PER_PAGE) : 0;
+
+    PAGINATION_CONFIGS.forEach(config => {
+        const container = document.getElementById(config.containerId);
+        const status = document.getElementById(config.statusId);
+        const indicator = document.getElementById(config.indicatorId);
+        const prev = document.getElementById(config.prevId);
+        const next = document.getElementById(config.nextId);
+
+        if (!container || !status || !indicator) {
+            return;
+        }
+
+        if (!totalItems) {
+            container.classList.add('hidden');
+            if (prev) prev.disabled = true;
+            if (next) next.disabled = true;
+            status.textContent = '表示件数: 0件';
+            indicator.textContent = '0 / 0';
+            return;
+        }
+
+        status.textContent = `表示件数: ${totalItems.toLocaleString('ja-JP')}件中 ${pageStart.toLocaleString('ja-JP')}件目〜${pageEnd.toLocaleString('ja-JP')}件目`;
+        indicator.textContent = `${currentPage} / ${totalPages}`;
+
+        if (prev) {
+            prev.disabled = currentPage <= 1;
+        }
+        if (next) {
+            next.disabled = currentPage >= totalPages;
+        }
+
+        container.classList.remove('hidden');
+    });
+}
+
+function showEmptyState() {
+    const empty = document.getElementById('groupEmpty');
+    if (empty) {
+        empty.classList.remove('hidden');
+    }
+
+    PAGINATION_CONFIGS.forEach(config => {
+        const container = document.getElementById(config.containerId);
+        if (container) {
+            container.classList.add('hidden');
+        }
+    });
+}
+
+function hideEmptyState() {
+    const empty = document.getElementById('groupEmpty');
+    if (empty) {
+        empty.classList.add('hidden');
+    }
+}
+
+function debounce(fn, delay) {
+    let timerId;
+    return (...args) => {
+        clearTimeout(timerId);
+        timerId = setTimeout(() => fn(...args), delay);
+    };
+}
+
+function escapeHtml(value) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+const detailModal = document.getElementById('groupDetailModal');
+
+function closeGroupDetailModal() {
+    Utils.modal.close('groupDetailModal');
+}
+
+document.getElementById('closeGroupDetail')?.addEventListener('click', closeGroupDetailModal);
+
+detailModal?.addEventListener('click', (event) => {
+    if (event.target === detailModal) {
+        closeGroupDetailModal();
+    }
+});
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && detailModal && !detailModal.classList.contains('hidden')) {
+        closeGroupDetailModal();
+    }
+});
+
+function openGroupDetailModal(group) {
+    document.getElementById('groupDetailTitle').textContent = group.label;
+    document.getElementById('groupDetailSubtitle').textContent = group.subtitle;
+    document.getElementById('detailMaterialCount').textContent = `${group.materials.length} 件`;
+    document.getElementById('detailLotCount').textContent = `${group.lot_count} 件`;
+    document.getElementById('detailTotalQuantity').textContent = `${group.total_quantity.toLocaleString('ja-JP')} 本`;
+    document.getElementById('detailTotalWeight').textContent = `${formatWeight(group.total_weight_kg)} kg`;
+    document.getElementById('detailLengthVariations').textContent = formatLengthList(group.length_variations);
+    document.getElementById('detailDedicatedInfo').textContent = group.usage_type === 'dedicated'
+        ? (group.dedicated_part_number || '未設定')
+        : '汎用品（共通使用）';
+
+    const badge = document.getElementById('groupDetailTag');
+    badge.textContent = usageLabels[group.usage_type] || group.usage_type;
+    badge.className = `inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${
+        group.usage_type === 'general' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
+    }`;
+
+    renderDetailMaterials(group);
+    renderDetailLots(group);
+
+    Utils.modal.open('groupDetailModal');
+}
+
+function renderDetailMaterials(group) {
+    const container = document.getElementById('detailMaterials');
+    if (!container) return;
+
+    if (!group.materials.length) {
+        container.innerHTML = `
+            <div class="p-6 text-center text-sm text-gray-500">
+                登録されている材料はありません。
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = group.materials
+        .slice()
+        .sort((a, b) => (a.part_number || '').localeCompare(b.part_number || '', 'ja'))
+        .map(material => {
+            const usageLabel = material.usage_type === 'dedicated' ? '専用' : '汎用';
+            const dedicatedInfo = material.dedicated_part_number ? escapeHtml(material.dedicated_part_number) : '―';
+            const displayName = material.display_name ? escapeHtml(material.display_name) : '（表示名未設定）';
+            const partNumber = material.part_number ? escapeHtml(material.part_number) : '（品番未設定）';
+            const updated = material.updated_at ? new Date(material.updated_at).toLocaleString('ja-JP') : '―';
+            const dimension = formatDimension(material.shape, material.diameter_mm);
+
+            return `
+                <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">${displayName}</p>
+                        <p class="text-xs text-gray-500 mt-1">材料名: ${escapeHtml(material.name)}</p>
+                        <p class="text-xs text-gray-500">形状・寸法: ${dimension}</p>
+                        <p class="text-xs text-gray-500">品番: ${partNumber}</p>
+                    </div>
+                    <div class="flex flex-col items-start md:items-end text-xs text-gray-500 space-y-1">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">${usageLabel}</span>
+                        <span>専用品番・追加情報: ${dedicatedInfo}</span>
+                        <span>最終更新: ${updated}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+}
+
+function renderDetailLots(group) {
+    const container = document.getElementById('detailLots');
+    if (!container) return;
+
+    if (!group.lots.length) {
+        container.innerHTML = `
+            <div class="p-6 text-center text-sm text-gray-500">
+                現在在庫があるロットはありません。
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">ロット番号</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">長さ</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">在庫数</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">在庫重量</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">保管場所</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">管理コード数</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                ${group.lots.map(lot => `
+                    <tr>
+                        <td class="px-4 py-3 text-gray-900 font-medium">${escapeHtml(lot.lot_number)}</td>
+                        <td class="px-4 py-3 text-gray-600">${formatLengthValue(lot.length_mm)}</td>
+                        <td class="px-4 py-3 text-gray-900">${lot.total_quantity.toLocaleString('ja-JP')} 本</td>
+                        <td class="px-4 py-3 text-gray-900">${formatWeight(lot.total_weight_kg)} kg</td>
+                        <td class="px-4 py-3 text-gray-600">${lot.locations.length ? lot.locations.map(loc => escapeHtml(loc)).join('<br>') : '―'}</td>
+                        <td class="px-4 py-3 text-gray-600">${lot.management_codes.length}</td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
 }
 </script>
+
 {% endblock %}

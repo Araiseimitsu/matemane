@@ -1034,10 +1034,15 @@ endblock %} {% block content %}
       const item = document.createElement("div");
       item.className =
         "px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0";
+
+      // 汎用/専用バッジを作成
+      const usageBadge = getUsageTypeBadge(material.usage_type);
+
       item.innerHTML = `
-        <div class="text-sm font-medium text-gray-900">${
-          material.part_number
-        }</div>
+        <div class="flex items-center gap-2">
+          <div class="text-sm font-medium text-gray-900">${material.part_number}</div>
+          ${usageBadge}
+        </div>
         <div class="text-xs text-gray-500">
           ${material.name} | 形状: ${getShapeText(material.shape)} | 直径: ${
         material.diameter_mm
@@ -1290,8 +1295,15 @@ endblock %} {% block content %}
       const item = document.createElement("div");
       item.className =
         "px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0";
+
+      // 汎用/専用バッジを作成
+      const usageBadge = getUsageTypeBadge(material.usage_type);
+
       item.innerHTML = `
-        <div class="text-sm font-medium text-gray-900">${material.name}</div>
+        <div class="flex items-center gap-2">
+          <div class="text-sm font-medium text-gray-900">${material.name}</div>
+          ${usageBadge}
+        </div>
         <div class="text-xs text-gray-500">
           形状: ${getShapeText(material.shape)} |
           直径: ${material.diameter_mm}mm |
@@ -1425,12 +1437,17 @@ endblock %} {% block content %}
         const resultItem = document.createElement("div");
         resultItem.className =
           "p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100";
+
+        // 汎用/専用バッジを作成
+        const usageBadge = getUsageTypeBadge(material.usage_type);
+
         resultItem.innerHTML = `
                 <div class="flex justify-between items-center">
                     <div class="flex-1">
-                        <div class="font-medium text-gray-900">${
-                          material.name
-                        }</div>
+                        <div class="flex items-center gap-2">
+                            <div class="font-medium text-gray-900">${material.name}</div>
+                            ${usageBadge}
+                        </div>
                         <div class="text-sm text-gray-600">
                             ${getShapeText(material.shape)} - ${
           material.diameter_mm
@@ -1778,9 +1795,17 @@ endblock %} {% block content %}
         }
       }
 
+      // 汎用/専用バッジを作成
+      const usageBadge = getUsageTypeBadge(item.usage_type);
+
       itemsHTML += `
             <tr class="border-b">
-                <td class="px-4 py-3 text-sm">${item.material_name}</td>
+                <td class="px-4 py-3 text-sm">
+                    <div class="flex items-center gap-2">
+                        ${item.material_name}
+                        ${usageBadge}
+                    </div>
+                </td>
                 <td class="px-4 py-3 text-sm">${getShapeText(item.shape)}</td>
                 <td class="px-4 py-3 text-sm">${item.diameter_mm}mm</td>
                 <td class="px-4 py-3 text-sm">${item.length_mm}mm</td>
@@ -1888,6 +1913,16 @@ endblock %} {% block content %}
       square: "角棒",
     };
     return shapeMap[shape] || shape;
+  }
+
+  // 汎用/専用区分のバッジを取得
+  function getUsageTypeBadge(usageType) {
+    if (!usageType || usageType === "general") {
+      return '<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">汎用</span>';
+    } else if (usageType === "dedicated") {
+      return '<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-800">専用</span>';
+    }
+    return "";
   }
 
   // 発注方式切り替え

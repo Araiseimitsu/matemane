@@ -274,6 +274,8 @@ class PurchaseOrderItem(Base):
     management_code = Column(CHAR(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()), comment="事前生成UUID管理コード")
     is_new_material = Column(Boolean, default=False, comment="新規材料フラグ")
     status = Column(Enum(PurchaseOrderItemStatus), nullable=False, default=PurchaseOrderItemStatus.PENDING, comment="アイテム状態")
+    usage_type = Column(Enum(UsageType), nullable=True, default=UsageType.GENERAL, comment="用途区分（汎用/専用）")
+    dedicated_part_number = Column(String(100), nullable=True, comment="専用品番")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

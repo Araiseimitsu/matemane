@@ -7,7 +7,7 @@ from datetime import datetime
 from src.db import get_db
 from src.db.models import (
     PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, PurchaseOrderItemStatus,
-    Material, MaterialShape, Lot, Item, Location, OrderType, User
+    Material, MaterialShape, Lot, Item, Location, OrderType, User, UsageType
 )
 from src.api.order_utils import generate_order_number
 from src.utils.auth import get_password_hash
@@ -129,6 +129,8 @@ class PurchaseOrderItemResponse(BaseModel):
     management_code: str
     is_new_material: bool
     status: PurchaseOrderItemStatus
+    usage_type: Optional[UsageType]  # 汎用/専用区分
+    dedicated_part_number: Optional[str]  # 専用品番
     purchase_order_id: int
     created_at: datetime
     updated_at: datetime
@@ -255,7 +257,9 @@ async def create_purchase_order(order: PurchaseOrderCreate, db: Session = Depend
         # 既存材料かチェック
         is_new_material = False
         final_material_id = item_data.material_id
-        
+        material_usage_type = UsageType.GENERAL  # デフォルト値
+        material_dedicated_part_number = None
+
         if item_data.material_id:
             # 既存材料IDが指定された場合、材料が存在するかチェック
             material = db.query(Material).filter(Material.id == item_data.material_id).first()
@@ -264,6 +268,9 @@ async def create_purchase_order(order: PurchaseOrderCreate, db: Session = Depend
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"材料ID {item_data.material_id} が見つかりません"
                 )
+            # 材料の用途区分と専用品番を取得
+            material_usage_type = material.usage_type or UsageType.GENERAL
+            material_dedicated_part_number = material.dedicated_part_number
         else:
             # 新規材料の場合、同じ仕様の材料が既に存在するかチェック
             existing_material = db.query(Material).filter(
@@ -276,6 +283,8 @@ async def create_purchase_order(order: PurchaseOrderCreate, db: Session = Depend
             if existing_material:
                 # 既存材料が見つかった場合は使用
                 final_material_id = existing_material.id
+                material_usage_type = existing_material.usage_type or UsageType.GENERAL
+                material_dedicated_part_number = existing_material.dedicated_part_number
             else:
                 # 新規材料フラグを設定
                 is_new_material = True
@@ -293,7 +302,9 @@ async def create_purchase_order(order: PurchaseOrderCreate, db: Session = Depend
             ordered_quantity=final_quantity,
             ordered_weight_kg=final_weight,
             unit_price=item_data.unit_price,
-            is_new_material=is_new_material
+            is_new_material=is_new_material,
+            usage_type=material_usage_type,
+            dedicated_part_number=material_dedicated_part_number
         )
 
         db.add(db_item)

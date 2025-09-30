@@ -342,11 +342,17 @@ function createItemRow(item) {
     const supplier = item.purchase_order ? item.purchase_order.supplier : '-';
     const shapeText = getShapeText(item.shape);
     const dimensions = `${shapeText} ${item.diameter_mm}mm`;
+    const usageBadge = getUsageTypeBadge(item.usage_type);
 
     row.innerHTML = `
         <td class="px-4 py-3 text-sm font-medium text-gray-900">${orderNumber}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${supplier}</td>
-        <td class="px-4 py-3 text-sm text-gray-600">${item.material_name}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">
+            <div class="flex items-center gap-2">
+                ${item.material_name}
+                ${usageBadge}
+            </div>
+        </td>
         <td class="px-4 py-3 text-sm text-gray-600">${dimensions}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${item.length_mm}mm</td>
         <td class="px-4 py-3 text-sm text-gray-600">${getOrderDisplayText(item)}</td>
@@ -370,6 +376,16 @@ function getShapeText(shape) {
         'square': '角棒'
     };
     return shapeMap[shape] || shape;
+}
+
+// 汎用/専用区分のバッジを取得
+function getUsageTypeBadge(usageType) {
+    if (!usageType || usageType === 'general') {
+        return '<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">汎用</span>';
+    } else if (usageType === 'dedicated') {
+        return '<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-800">専用</span>';
+    }
+    return '';
 }
 
 // 発注方式テキスト取得
@@ -552,6 +568,8 @@ async function showReceiveModal(itemId) {
         document.getElementById('receiveItemId').value = itemId;
 
         const itemInfo = document.getElementById('itemInfo');
+        const usageBadge = getUsageTypeBadge(item.usage_type);
+
         itemInfo.innerHTML = `
             <div>
                 <dt class="font-medium text-gray-500">発注番号</dt>
@@ -563,7 +581,12 @@ async function showReceiveModal(itemId) {
             </div>
             <div>
                 <dt class="font-medium text-gray-500">材料名</dt>
-                <dd class="text-gray-900">${item.material_name}</dd>
+                <dd class="text-gray-900">
+                    <div class="flex items-center gap-2">
+                        ${item.material_name}
+                        ${usageBadge}
+                    </div>
+                </dd>
             </div>
             <div>
                 <dt class="font-medium text-gray-500">形状・寸法</dt>

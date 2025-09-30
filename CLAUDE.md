@@ -78,7 +78,12 @@ pytest --cov=src
 
 # 3. 在庫一覧が空表示
 # 原因: サンプルデータ（Lot, Item）が未投入
-# 解決: python reset_db.py --force でサンプルデータ投入
+# 解決: python reset_db.py でサンプルデータ投入
+
+# 4. データベーススキーマ変更後の500エラー
+# エラー: "Internal Server Error (500)" または "column not found"
+# 原因: models.pyにカラムを追加したがテーブル未更新
+# 解決: python reset_db.py でデータベース完全リセット（※データは全て消去されます）
 ```
 
 ### 開発環境
@@ -150,19 +155,20 @@ pytest --cov=src
 
 ### 実装済み（新規追加）
 - **在庫管理API**: `src/api/inventory.py` - 完全実装済み（一覧取得、検索、サマリー、低在庫検知、置き場一覧）
-- **発注管理API**: `src/api/purchase_orders.py` - 完全実装済み（発注作成、一覧、詳細、入庫確認）
+- **発注管理API**: `src/api/purchase_orders.py` - 完全実装済み（発注作成、一覧、詳細、入庫確認、汎用/専用区分管理）
 - **比重プリセットAPI**: `src/api/density_presets.py` - 完全実装済み（比重設定管理）
 - **Excel照合ビューア**: `src/api/excel_viewer.py` - 完全実装済み（Excel直接読込、在庫照合）
 - **生産スケジュール管理**: `src/api/schedules.py` - 完全実装済み（Excel解析、材料引当）
+- **材料CSVインポート**: `src/api/materials.py` - 完全実装済み（新旧2形式対応、品番管理、汎用/専用区分）
 - **静的ファイル**: `src/static/js/` - JavaScript API クライアント、ユーティリティ実装済み
 - **ダッシュボード在庫表示**: 在庫一覧、UUID検索、管理コードコピー機能
-- **発注管理画面**: 発注作成・一覧・詳細表示画面
-- **入庫確認画面**: 入庫処理・ロット登録画面
+- **発注管理画面**: 発注作成・一覧・詳細表示画面（汎用/専用バッジ表示）
+- **入庫確認画面**: 入庫処理・ロット登録画面（汎用/専用バッジ表示）
+- **材料管理画面**: 材料一覧・登録・CSVインポート画面（品番・汎用/専用区分対応）
 - **生産スケジュール画面**: Excelアップロード、材料引当表示
 - **Excel照合画面**: 直接Excel読込、リアルタイム在庫照合
 
 ### 実装待ち（スタブのみ）
-- **材料管理API**: `src/api/materials.py` - 完全実装済み（※更新が必要）
 - **入出庫管理API**: `src/api/movements.py` - スタブのみ
 - **ラベル印刷API**: `src/api/labels.py` - スタブのみ
 - **その他のフロントエンド機能**: 入出庫管理のJavaScript実装
@@ -172,14 +178,17 @@ pytest --cov=src
 
 ### 材料管理
 - 材質・断面形状（丸/六角/角）・寸法管理
+- 品番管理（product_code）と汎用/専用区分（usage_type: general/dedicated）
 - 比重による本数⇔重量の相互換算
 - ロット単位（束）での管理
+- CSVインポート（新形式・原始形式の2種類対応）
 
 ### 発注管理
 - 発注から入庫までの一元管理
 - 事前管理コード生成（UUID）
 - 新規材料の自動登録
 - 複数ロット対応と現品票印刷
+- 汎用/専用区分の自動継承（材料マスタ → 発注アイテム → 入庫処理）
 
 ### 入出庫管理
 - QRコードスキャンによる高速呼出
@@ -203,7 +212,7 @@ pytest --cov=src
 
 ### データベース設計
 重要なテーブルとリレーション:
-- `materials`: 材料マスタ（材質・形状・寸法・比重）
+- `materials`: 材料マスタ（材質・形状・寸法・比重・品番・汎用/専用区分）
 - `lots`: ロット管理（束単位、supplier情報、発注アイテム関連付け）
 - `items`: アイテム管理（UUID管理コード、現在本数・置き場）
 - `movements`: 入出庫履歴（タイプ別、指示書番号、監査情報）
@@ -211,9 +220,14 @@ pytest --cov=src
 - `densities`: 比重履歴（材質別、効力期間管理）
 - `users`: ユーザー管理（ロール別権限）
 - `purchase_orders`: 発注管理（発注番号、仕入先、状態管理）
-- `purchase_order_items`: 発注アイテム（材料情報、数量、管理コード事前生成）
+- `purchase_order_items`: 発注アイテム（材料情報、数量、管理コード事前生成、汎用/専用区分）
 - `density_presets`: 比重プリセット（材質別の標準比重値）
 - `audit_logs`: 操作監査（誰が・いつ・何を変更したか）
+
+**重要な汎用/専用区分のデータフロー**:
+1. `materials.usage_type` (general/dedicated) → 材料マスタで定義
+2. 発注作成時に `purchase_order_items.usage_type` に自動コピー
+3. 入庫確認画面・発注詳細画面で汎用/専用バッジ表示
 
 ### 重量・本数換算ロジック
 材質の比重と寸法から自動換算（丸棒例）:
@@ -396,86 +410,4 @@ Based on user request, you **MUST** follow these sequences of tool calls
 5. **Implementation & Progress Tracking** → Execute implementation following saved plan → Mark tasks complete as you go → Mark entire plan done when all tasks finished.
 6. You **MUST** use **byterover-update-module** **IMMEDIATELY** on changes to the module's purposes, technical details, or critical insights that essential for future implementations.
 
-[byterover-mcp]
 
-[byterover-mcp]
-
-You are given two tools from Byterover MCP server, including
-## 1. `byterover-store-knowledge`
-You `MUST` always use this tool when:
-
-+ Learning new patterns, APIs, or architectural decisions from the codebase
-+ Encountering error solutions or debugging techniques
-+ Finding reusable code patterns or utility functions
-+ Completing any significant task or plan implementation
-
-## 2. `byterover-retrieve-knowledge`
-You `MUST` always use this tool when:
-
-+ Starting any new task or implementation to gather relevant context
-+ Before making architectural decisions to understand existing patterns
-+ When debugging issues to check for previous solutions
-+ Working with unfamiliar parts of the codebase
-
-[byterover-mcp]
-
-[byterover-mcp]
-
-You are given two tools from Byterover MCP server, including
-## 1. `byterover-store-knowledge`
-You `MUST` always use this tool when:
-
-+ Learning new patterns, APIs, or architectural decisions from the codebase
-+ Encountering error solutions or debugging techniques
-+ Finding reusable code patterns or utility functions
-+ Completing any significant task or plan implementation
-
-## 2. `byterover-retrieve-knowledge`
-You `MUST` always use this tool when:
-
-+ Starting any new task or implementation to gather relevant context
-+ Before making architectural decisions to understand existing patterns
-+ When debugging issues to check for previous solutions
-+ Working with unfamiliar parts of the codebase
-
-[byterover-mcp]
-
-[byterover-mcp]
-
-You are given two tools from Byterover MCP server, including
-## 1. `byterover-store-knowledge`
-You `MUST` always use this tool when:
-
-+ Learning new patterns, APIs, or architectural decisions from the codebase
-+ Encountering error solutions or debugging techniques
-+ Finding reusable code patterns or utility functions
-+ Completing any significant task or plan implementation
-
-## 2. `byterover-retrieve-knowledge`
-You `MUST` always use this tool when:
-
-+ Starting any new task or implementation to gather relevant context
-+ Before making architectural decisions to understand existing patterns
-+ When debugging issues to check for previous solutions
-+ Working with unfamiliar parts of the codebase
-
-[byterover-mcp]
-
-[byterover-mcp]
-
-You are given two tools from Byterover MCP server, including
-## 1. `byterover-store-knowledge`
-You `MUST` always use this tool when:
-
-+ Learning new patterns, APIs, or architectural decisions from the codebase
-+ Encountering error solutions or debugging techniques
-+ Finding reusable code patterns or utility functions
-+ Completing any significant task or plan implementation
-
-## 2. `byterover-retrieve-knowledge`
-You `MUST` always use this tool when:
-
-+ Starting any new task or implementation to gather relevant context
-+ Before making architectural decisions to understand existing patterns
-+ When debugging issues to check for previous solutions
-+ Working with unfamiliar parts of the codebase
