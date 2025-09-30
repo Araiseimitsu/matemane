@@ -1716,8 +1716,18 @@ endblock %} {% block content %}
         hideAddOrderModal();
         loadOrders();
       } else {
-        const error = await response.json();
-        showToast(error.detail || "発注作成に失敗しました", "error");
+        // エラーレスポンスの処理
+        let errorMessage = "発注作成に失敗しました";
+        const responseText = await response.text();
+        try {
+          const error = JSON.parse(responseText);
+          errorMessage = error.detail || errorMessage;
+        } catch (jsonError) {
+          // JSONパースエラーの場合
+          console.error("サーバーエラー（非JSON）:", responseText);
+          errorMessage = `サーバーエラー (HTTP ${response.status})`;
+        }
+        showToast(errorMessage, "error");
       }
     } catch (error) {
       console.error("発注作成エラー:", error);
@@ -1936,28 +1946,29 @@ endblock %} {% block content %}
       `materialName_${itemIndex}`
     );
     const materialName = materialNameInput ? materialNameInput.value : "";
-    const shape = container.querySelector('select[name*="[shape]"]').value;
-    const diameterInput = container.querySelector(
-      'input[name*="[diameter_mm]"]'
-    ).value;
-    const lengthInput = container.querySelector(
-      'input[name*="[length_mm]"]'
-    ).value;
-    const densityInput = container.querySelector(
-      'input[name*="[density]"]'
-    ).value;
+
+    // 隠しフィールドから値を取得（selectではなくinput[type="hidden"]）
+    const shapeValue = document.getElementById(`shapeValue_${itemIndex}`);
+    const diameterValue = document.getElementById(`diameterValue_${itemIndex}`);
+    const lengthInput = document.getElementById(`lengthInput_${itemIndex}`);
+    const densityValue = document.getElementById(`densityValue_${itemIndex}`);
+
+    const shape = shapeValue ? shapeValue.value : "";
+    const diameterInput = diameterValue ? diameterValue.value : "";
+    const lengthInputValue = lengthInput ? lengthInput.value : "";
+    const densityInput = densityValue ? densityValue.value : "";
 
     console.log(
-      `入力値: 材料名=${materialName}, 形状=${shape}, 直径=${diameterInput}, 長さ=${lengthInput}, 比重=${densityInput}`
+      `入力値: 材料名=${materialName}, 形状=${shape}, 直径=${diameterInput}, 長さ=${lengthInputValue}, 比重=${densityInput}`
     );
 
     // 入力値をパースして検証
     const diameter = parseFloat(diameterInput);
-    const length = parseInt(lengthInput);
+    const length = parseInt(lengthInputValue);
     const density = parseFloat(densityInput);
 
     // 必要な値が入力されているかと数値の妥当性をチェック
-    if (!shape || !diameterInput || !lengthInput || !densityInput) {
+    if (!shape || !diameterInput || !lengthInputValue || !densityInput) {
       document.getElementById(`conversionResult_${itemIndex}`).textContent =
         "材料情報を入力してください";
       return;

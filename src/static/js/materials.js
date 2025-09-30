@@ -1062,38 +1062,48 @@ class MaterialManager {
 
   // CSVインポート開始
   async startCsvImport() {
+    console.log("[DEBUG] startCsvImport() called");
     const fileInput = document.getElementById("csvFileInput");
     const file = fileInput.files[0];
 
     if (!file) {
+      console.log("[DEBUG] No file selected");
       this.showToast("CSVファイルを選択してください", "error");
       return;
     }
+
+    console.log(`[DEBUG] File selected: ${file.name}, size: ${file.size}`);
 
     const formData = new FormData();
     formData.append("file", file);
 
     try {
       // プログレス表示
+      console.log("[DEBUG] Showing progress");
       document.getElementById("importProgress").classList.remove("hidden");
       document.getElementById("startImportBtn").disabled = true;
       document.getElementById("importStatus").textContent =
         "ファイルをアップロード中...";
 
+      console.log("[DEBUG] Sending request to /api/materials/import-csv");
       const response = await fetch("/api/materials/import-csv", {
         method: "POST",
         body: formData,
       });
 
+      console.log(`[DEBUG] Response status: ${response.status}`);
+
       if (!response.ok) {
         const errorData = await response.json();
+        console.log(`[DEBUG] Error response: ${JSON.stringify(errorData)}`);
         throw new Error(errorData.detail || "インポートに失敗しました");
       }
 
       const result = await response.json();
+      console.log(`[DEBUG] Import result: ${JSON.stringify(result)}`);
       this.showImportResult(result);
     } catch (error) {
-      console.error("Import error:", error);
+      console.error("[DEBUG] Import error:", error);
       this.showToast(error.message, "error");
       document.getElementById("importProgress").classList.add("hidden");
       document.getElementById("startImportBtn").disabled = false;

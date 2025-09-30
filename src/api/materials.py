@@ -413,135 +413,332 @@ def parse_dimension_text(dimension_text: str) -> Dict:
 
     return result
 
+def parse_material_specification(spec_text: str) -> Dict[str, Optional[str]]:
+    """
+    材質＆材料径テキストを解析（convert_material_master.pyから移植）
+
+    例:
+    - SUS303 φ8.0CM → 材質名: SUS303, 寸法: φ8.0, 追加情報: CM
+    - C3604Lcd φ6.0 平目 22山 → 材質名: C3604LCD, 寸法: φ6.0, 追加情報: 平目 22山
+    - ASK2600S φ8.0CM → 材質名: ASK2600S, 寸法: φ8.0, 追加情報: CM
+    - SUS440C φ6.0G  2m → 材質名: SUS440C, 寸法: φ6.0, 追加情報: G 2m
+    - C3604Lcd Hex4.0 → 材質名: C3604LCD, 寸法: Hex4.0, 追加情報: なし
+    """
+    if not spec_text or pd.isna(spec_text):
+        return {
+            'material_name': None,
+            'dimension': None,
+            'additional_info': None
+        }
+
+    text = str(spec_text).strip()
+
+    # 材質名の抽出（先頭の英数字部分）
+    material_match = re.match(r'^([A-Z0-9\-]+(?:FS|CF|LCD|Lcd|T)?)', text, re.IGNORECASE)
+    material_name = material_match.group(1).upper().replace('Lcd', 'LCD') if material_match else None
+
+    if not material_name:
+        # 材質名が抽出できない場合は全体を材質名として扱う
+        return {
+            'material_name': text[:50],  # 最大50文字
+            'dimension': None,
+            'additional_info': None
+        }
+
+    # 材質名以降の部分
+    remaining = text[len(material_match.group(1)):].strip()
+
+    # 寸法の抽出（複数パターン）
+    dimension = None
+    dimension_patterns = [
+        r'([∅Φφ]\s*\d+\.?\d*)',           # ∅10.0, φ8.0
+        r'(Hex\s*\d+\.?\d*)',              # Hex4.0
+        r'([□]\s*\d+\.?\d*)',              # □15
+        r'(\d+\.?\d*\s*[Mm][Mm])',        # 10.0mm
+    ]
+
+    dimension_match = None
+    for pattern in dimension_patterns:
+        match = re.search(pattern, remaining, re.IGNORECASE)
+        if match:
+            dimension_match = match
+            dimension = match.group(1).strip()
+            break
+
+    # 追加情報の抽出（寸法以外の部分）
+    additional_info = None
+    if dimension_match:
+        # 寸法の前と後ろの部分を結合
+        before = remaining[:dimension_match.start()].strip()
+        after = remaining[dimension_match.end():].strip()
+
+        parts = []
+        if before:
+            parts.append(before)
+        if after:
+            parts.append(after)
+
+        if parts:
+            additional_info = ' '.join(parts)
+    else:
+        # 寸法が見つからない場合、残り全体を追加情報として扱う
+        if remaining:
+            additional_info = remaining
+
+    return {
+        'material_name': material_name,
+        'dimension': dimension,
+        'additional_info': additional_info if additional_info else None
+    }
+
 def parse_materials_csv(file_path: str) -> List[Dict]:
     """
     材料マスターCSVファイルを解析し、形状・寸法・比重を自動抽出する
 
-    CSV形式:
-    - 1列目: 材質名（例: C3604, SUS303）
-    - 2列目: 形状・寸法（例: ∅6.0, ∅8.0CM, Hex4.0）
-    - 3列目: 品番（管理用）
-    - 4列目: 用途区分（汎用 or 専用）
-    - 5列目: 専用品番（専用材料の場合のみ）
+    対応CSV形式:
+    1. 新形式（標準）:
+       - 1列目: 材質名（例: C3604, SUS303）
+       - 2列目: 形状・寸法（例: ∅6.0, ∅8.0CM, Hex4.0）
+       - 3列目: 品番（管理用）
+       - 4列目: 用途区分（汎用 or 専用）
+       - 5列目: 専用品番（専用材料の場合のみ）
+
+    2. 原始形式（製品番号,材質＆材料径）:
+       - 1列目: 製品番号
+       - 2列目: 材質＆材料径（例: SUS303 φ8.0CM）
     """
+    print(f"[DEBUG] parse_materials_csv開始: {file_path}")
+
     try:
         # エンコーディングを試行しながらCSVを読み込み
         encodings = ['utf-8', 'cp932', 'shift_jis', 'utf-8-sig']
         df = None
 
+        print(f"[DEBUG] CSV読み込み試行開始")
         for encoding in encodings:
             try:
+                print(f"[DEBUG] エンコーディング試行: {encoding}")
                 df = pd.read_csv(file_path, encoding=encoding, header=0)
+                print(f"[DEBUG] エンコーディング成功: {encoding}")
                 break
-            except UnicodeDecodeError:
+            except UnicodeDecodeError as e:
+                print(f"[DEBUG] エンコーディング失敗 {encoding}: {e}")
+                continue
+            except Exception as e:
+                print(f"[DEBUG] その他のエラー {encoding}: {e}")
                 continue
 
         if df is None:
-            raise ValueError("CSVファイルの読み込みに失敗しました")
+            error_msg = "CSVファイルの読み込みに失敗しました"
+            print(f"[ERROR] {error_msg}")
+            raise ValueError(error_msg)
 
+        print(f"[DEBUG] CSV読み込み成功: 行数={len(df)}, 列数={len(df.columns)}")
         materials = []
 
-        # 列名マッピング（柔軟に対応）
-        col_map = {}
-        print(f"CSV列名: {list(df.columns)}")
-        for i, col_name in enumerate(df.columns):
-            col_str = str(col_name).strip().lower()
-            if '材質' in col_str and '材料径' not in col_str and '寸法' not in col_str:
-                col_map['material_name'] = i
-                print(f"  材質名列: {i} ({col_name})")
-            elif '寸法' in col_str or '材料径' in col_str or '形状' in col_str:
-                col_map['dimension'] = i
-                print(f"  寸法列: {i} ({col_name})")
-            elif '品番' in col_str and '専用' not in col_str:
-                col_map['part_number'] = i
-                print(f"  品番列: {i} ({col_name})")
-            elif '用途' in col_str or '区分' in col_str:
-                col_map['usage_type'] = i
-                print(f"  用途区分列: {i} ({col_name})")
-            elif '専用品番' in col_str or ('専用' in col_str and '品番' in col_str) or '追加情報' in col_str:
-                col_map['dedicated_part_number'] = i
-                print(f"  専用品番列: {i} ({col_name})")
+        # CSV形式を判定（列名で判断）
+        columns = list(df.columns)
+        print(f"CSV列名: {columns}")
 
-        # 列インデックスが見つからない場合はデフォルト設定
-        if 'material_name' not in col_map:
-            col_map['material_name'] = 0
-            print(f"  デフォルト材質名列: 0")
-        if 'dimension' not in col_map and len(df.columns) > 1:
-            col_map['dimension'] = 1
-            print(f"  デフォルト寸法列: 1")
-        if 'part_number' not in col_map and len(df.columns) > 2:
-            col_map['part_number'] = 2
-            print(f"  デフォルト品番列: 2")
-        if 'usage_type' not in col_map and len(df.columns) > 3:
-            col_map['usage_type'] = 3
-            print(f"  デフォルト用途区分列: 3")
-        if 'dedicated_part_number' not in col_map and len(df.columns) > 4:
-            col_map['dedicated_part_number'] = 4
-            print(f"  デフォルト専用品番列: 4")
+        # 原始形式の判定（製品番号,材質＆材料径）
+        is_original_format = False
+        if len(columns) >= 2:
+            first_col = str(columns[0]).strip().lower()
+            second_col = str(columns[1]).strip().lower()
+            if ('製品番号' in first_col or '製品' in first_col) and ('材質' in second_col and '材料径' in second_col):
+                is_original_format = True
+                print("原始形式（製品番号,材質＆材料径）を検出しました")
+            else:
+                print("新形式（材質名,形状・寸法）を検出しました")
 
-        print(f"最終的な列マッピング: {col_map}")
+        print(f"[DEBUG] CSV形式判定開始: 列数={len(df.columns)}, 列名={list(df.columns)}")
 
-        for index, row in df.iterrows():
-            # 材質名を取得
-            material_name_raw = row.iloc[col_map['material_name']] if 'material_name' in col_map else None
-            if pd.isna(material_name_raw) or str(material_name_raw).strip() == '':
-                continue  # 材質名が空の行はスキップ
+        # CSV形式を判定（列名で判断）
+        columns = list(df.columns)
+        print(f"[DEBUG] CSV列名: {columns}")
 
-            material_name = parse_material_name(material_name_raw)
+        # 原始形式の判定（製品番号,材質＆材料径）
+        is_original_format = False
+        if len(columns) >= 2:
+            first_col = str(columns[0]).strip().lower()
+            second_col = str(columns[1]).strip().lower()
+            print(f"[DEBUG] 列名チェック: 1列目='{first_col}', 2列目='{second_col}'")
+            if ('製品番号' in first_col or '製品' in first_col) and ('材質' in second_col and '材料径' in second_col):
+                is_original_format = True
+                print("[DEBUG] 原始形式（製品番号,材質＆材料径）を検出しました")
+            else:
+                print("[DEBUG] 新形式（材質名,形状・寸法）を検出しました")
 
-            # 寸法を取得
-            dimension_text = row.iloc[col_map['dimension']] if 'dimension' in col_map else None
+        if is_original_format:
+            # 原始形式の処理
+            print(f"[DEBUG] 原始形式で処理開始、総行数: {len(df)}")
 
-            # 寸法が空の場合、形状・寸法列自体が空の可能性がある
-            if pd.isna(dimension_text) or str(dimension_text).strip() == '':
-                dimension_text = None
+            for index, row in df.iterrows():
+                try:
+                    print(f"[DEBUG] 処理中: 行 {index + 2}")
 
-            parsed_dim = parse_dimension_text(dimension_text)
+                    # 製品番号を取得（1列目）
+                    product_number = None
+                    if len(row) >= 1 and not pd.isna(row.iloc[0]):
+                        product_number = str(row.iloc[0]).strip()
+                        print(f"[DEBUG] 製品番号: '{product_number}'")
 
-            # 品番を取得
-            part_number = None
-            if 'part_number' in col_map:
-                part_number_raw = row.iloc[col_map['part_number']]
-                if not pd.isna(part_number_raw) and str(part_number_raw).strip() != '':
-                    part_number = str(part_number_raw).strip()
+                    # 材質＆材料径を取得（2列目）
+                    if len(row) < 2:
+                        print(f"[WARN] 行 {index + 2}: 列数不足")
+                        continue
 
-            # 用途区分を取得
-            usage_type = UsageType.GENERAL  # デフォルトは汎用
-            if 'usage_type' in col_map:
-                usage_type_raw = row.iloc[col_map['usage_type']]
-                if not pd.isna(usage_type_raw):
-                    usage_str = str(usage_type_raw).strip()
-                    if '専用' in usage_str or 'dedicated' in usage_str.lower():
-                        usage_type = UsageType.DEDICATED
+                    spec_text = row.iloc[1]
+                    print(f"[DEBUG] 材質＆材料径: '{spec_text}'")
 
-            # 専用品番を取得
-            dedicated_part_number = None
-            if 'dedicated_part_number' in col_map:
-                dedicated_pn_raw = row.iloc[col_map['dedicated_part_number']]
-                if not pd.isna(dedicated_pn_raw) and str(dedicated_pn_raw).strip() != '':
-                    dedicated_part_number = str(dedicated_pn_raw).strip()
+                    if pd.isna(spec_text) or str(spec_text).strip() == '':
+                        print(f"[WARN] 行 {index + 2}: 材質＆材料径が空")
+                        continue
 
-            # 解析できなかった場合のデフォルト値
-            diameter = parsed_dim['diameter_mm'] if parsed_dim['diameter_mm'] is not None else 1.0
+                    # 材質＆材料径を解析
+                    parsed = parse_material_specification(spec_text)
+                    print(f"[DEBUG] パース結果: {parsed}")
 
-            parsed_material = {
-                'material_name': material_name,
-                'shape': parsed_dim['shape'],
-                'diameter_mm': diameter,
-                'part_number': part_number,
-                'usage_type': usage_type,
-                'dedicated_part_number': dedicated_part_number,
-                'parsed_successfully': parsed_dim['parsed_successfully'],
-                'additional_info': '' if parsed_dim['parsed_successfully'] else '要確認：寸法未解析',
-                'row_number': int(index) + 2  # ヘッダー行を考慮
-            }
+                    if not parsed['material_name']:
+                        print(f"[WARN] 行 {index + 2}: 材質名を抽出できませんでした - '{spec_text}'")
+                        continue
 
-            materials.append(parsed_material)
+                    # 寸法テキストを解析
+                    dimension_text = parsed['dimension'] if parsed['dimension'] else None
+                    print(f"[DEBUG] 寸法テキスト: '{dimension_text}'")
+                    parsed_dim = parse_dimension_text(dimension_text)
+                    print(f"[DEBUG] 寸法パース結果: {parsed_dim}")
 
-            status = "✓ 解析成功" if parsed_dim['parsed_successfully'] else "⚠ 要確認"
-            usage_str = "専用" if usage_type == UsageType.DEDICATED else "汎用"
-            dedicated_info = f", 専用品番={dedicated_part_number}" if dedicated_part_number else ""
-            print(f"{status}: 材質名='{material_name}', 形状={parsed_dim['shape']}, 寸法={diameter}mm, 用途={usage_str}{dedicated_info}")
+                    # 解析できなかった場合のデフォルト値
+                    diameter = parsed_dim['diameter_mm'] if parsed_dim['diameter_mm'] is not None else 1.0
+
+                    parsed_material = {
+                        'material_name': parsed['material_name'],
+                        'shape': parsed_dim['shape'],
+                        'diameter_mm': diameter,
+                        'part_number': product_number,  # 製品番号を品番として使用
+                        'usage_type': UsageType.GENERAL,  # デフォルトは汎用
+                        'dedicated_part_number': parsed['additional_info'] if parsed['additional_info'] else None,
+                        'parsed_successfully': parsed_dim['parsed_successfully'],
+                        'additional_info': '' if parsed_dim['parsed_successfully'] else '要確認：寸法未解析',
+                        'row_number': int(index) + 2  # ヘッダー行を考慮
+                    }
+
+                    materials.append(parsed_material)
+                    print(f"[DEBUG] 材料データ追加: {parsed_material['material_name']} - {parsed_material['shape']} - {parsed_material['diameter_mm']}mm")
+
+                    status = "✓ 解析成功" if parsed_dim['parsed_successfully'] else "⚠ 要確認"
+                    usage_str = "専用" if parsed_material['dedicated_part_number'] else "汎用"
+                    dedicated_info = f", 専用品番={parsed_material['dedicated_part_number']}" if parsed_material['dedicated_part_number'] else ""
+                    print(f"{status}: 材質名='{parsed['material_name']}', 形状={parsed_dim['shape']}, 寸法={diameter}mm, 用途={usage_str}{dedicated_info}")
+
+                except Exception as e:
+                    print(f"[ERROR] 行 {index + 2} 処理エラー: {e}")
+                    import traceback
+                    traceback.print_exc()
+        else:
+            print("[DEBUG] 新形式処理に進みます")
+            # 新形式の処理（既存の処理）
+            # 列名マッピング（柔軟に対応）
+            col_map = {}
+            for i, col_name in enumerate(df.columns):
+                col_str = str(col_name).strip().lower()
+                if '材質' in col_str and '材料径' not in col_str and '寸法' not in col_str:
+                    col_map['material_name'] = i
+                    print(f"  材質名列: {i} ({col_name})")
+                elif '寸法' in col_str or '材料径' in col_str or '形状' in col_str:
+                    col_map['dimension'] = i
+                    print(f"  寸法列: {i} ({col_name})")
+                elif '品番' in col_str and '専用' not in col_str:
+                    col_map['part_number'] = i
+                    print(f"  品番列: {i} ({col_name})")
+                elif '用途' in col_str or '区分' in col_str:
+                    col_map['usage_type'] = i
+                    print(f"  用途区分列: {i} ({col_name})")
+                elif '専用品番' in col_str or ('専用' in col_str and '品番' in col_str) or '追加情報' in col_str:
+                    col_map['dedicated_part_number'] = i
+                    print(f"  専用品番列: {i} ({col_name})")
+
+            # 列インデックスが見つからない場合はデフォルト設定
+            if 'material_name' not in col_map:
+                col_map['material_name'] = 0
+                print(f"  デフォルト材質名列: 0")
+            if 'dimension' not in col_map and len(df.columns) > 1:
+                col_map['dimension'] = 1
+                print(f"  デフォルト寸法列: 1")
+            if 'part_number' not in col_map and len(df.columns) > 2:
+                col_map['part_number'] = 2
+                print(f"  デフォルト品番列: 2")
+            if 'usage_type' not in col_map and len(df.columns) > 3:
+                col_map['usage_type'] = 3
+                print(f"  デフォルト用途区分列: 3")
+            if 'dedicated_part_number' not in col_map and len(df.columns) > 4:
+                col_map['dedicated_part_number'] = 4
+                print(f"  デフォルト専用品番列: 4")
+
+            print(f"最終的な列マッピング: {col_map}")
+
+            for index, row in df.iterrows():
+                # 材質名を取得
+                material_name_raw = row.iloc[col_map['material_name']] if 'material_name' in col_map else None
+                if pd.isna(material_name_raw) or str(material_name_raw).strip() == '':
+                    continue  # 材質名が空の行はスキップ
+
+                material_name = parse_material_name(material_name_raw)
+
+                # 寸法を取得
+                dimension_text = row.iloc[col_map['dimension']] if 'dimension' in col_map else None
+
+                # 寸法が空の場合、形状・寸法列自体が空の可能性がある
+                if pd.isna(dimension_text) or str(dimension_text).strip() == '':
+                    dimension_text = None
+
+                parsed_dim = parse_dimension_text(dimension_text)
+
+                # 品番を取得
+                part_number = None
+                if 'part_number' in col_map:
+                    part_number_raw = row.iloc[col_map['part_number']]
+                    if not pd.isna(part_number_raw) and str(part_number_raw).strip() != '':
+                        part_number = str(part_number_raw).strip()
+
+                # 用途区分を取得
+                usage_type = UsageType.GENERAL  # デフォルトは汎用
+                if 'usage_type' in col_map:
+                    usage_type_raw = row.iloc[col_map['usage_type']]
+                    if not pd.isna(usage_type_raw):
+                        usage_str = str(usage_type_raw).strip()
+                        if '専用' in usage_str or 'dedicated' in usage_str.lower():
+                            usage_type = UsageType.DEDICATED
+
+                # 専用品番を取得
+                dedicated_part_number = None
+                if 'dedicated_part_number' in col_map:
+                    dedicated_pn_raw = row.iloc[col_map['dedicated_part_number']]
+                    if not pd.isna(dedicated_pn_raw) and str(dedicated_pn_raw).strip() != '':
+                        dedicated_part_number = str(dedicated_pn_raw).strip()
+
+                # 解析できなかった場合のデフォルト値
+                diameter = parsed_dim['diameter_mm'] if parsed_dim['diameter_mm'] is not None else 1.0
+
+                parsed_material = {
+                    'material_name': material_name,
+                    'shape': parsed_dim['shape'],
+                    'diameter_mm': diameter,
+                    'part_number': part_number,
+                    'usage_type': usage_type,
+                    'dedicated_part_number': dedicated_part_number,
+                    'parsed_successfully': parsed_dim['parsed_successfully'],
+                    'additional_info': '' if parsed_dim['parsed_successfully'] else '要確認：寸法未解析',
+                    'row_number': int(index) + 2  # ヘッダー行を考慮
+                }
+
+                materials.append(parsed_material)
+
+                status = "✓ 解析成功" if parsed_dim['parsed_successfully'] else "⚠ 要確認"
+                usage_str = "専用" if usage_type == UsageType.DEDICATED else "汎用"
+                dedicated_info = f", 専用品番={dedicated_part_number}" if dedicated_part_number else ""
+                print(f"{status}: 材質名='{material_name}', 形状={parsed_dim['shape']}, 寸法={diameter}mm, 用途={usage_str}{dedicated_info}")
 
         return materials
 
@@ -561,27 +758,60 @@ def get_unique_materials(materials: List[Dict]) -> List[Dict]:
 async def import_materials_from_csv(file: UploadFile = File(...), db: Session = Depends(get_db)):
     """
     CSVファイルから材料を一括インポート
+
+    対応するCSV形式:
+    1. 新形式（標準）:
+       - 1列目: 材質名（例: C3604, SUS303）
+       - 2列目: 形状・寸法（例: ∅6.0, ∅8.0CM, Hex4.0）
+       - 3列目: 品番（管理用）
+       - 4列目: 用途区分（汎用 or 専用）
+       - 5列目: 専用品番（専用材料の場合のみ）
+
+    2. 原始形式（製品番号,材質＆材料径）:
+       - 1列目: 製品番号
+       - 2列目: 材質＆材料径（例: SUS303 φ8.0CM）
+       ※ convert_material_master.pyによる変換をスキップして直接インポート可能
     """
+    print(f"[DEBUG] import_materials_from_csv開始: {file.filename}")
+    import sys
+    sys.stdout.flush()  # ログを強制出力
+
     if not file.filename.endswith('.csv'):
+        error_msg = "CSVファイルのみ対応しています"
+        print(f"[ERROR] {error_msg}")
+        sys.stdout.flush()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="CSVファイルのみ対応しています"
+            detail=error_msg
         )
 
     try:
         # 一時ファイルに保存
-        with tempfile.NamedTemporaryFile(mode='wb', suffix='.csv', delete=False) as tmp_file:
-            content = await file.read()
-            tmp_file.write(content)
-            tmp_file_path = tmp_file.name
+        print(f"[DEBUG] 一時ファイル保存開始")
+        sys.stdout.flush()
+        try:
+            with tempfile.NamedTemporaryFile(mode='wb', suffix='.csv', delete=False) as tmp_file:
+                content = await file.read()
+                tmp_file.write(content)
+                tmp_file_path = tmp_file.name
+            print(f"[DEBUG] 一時ファイル保存完了: {tmp_file_path}")
+            sys.stdout.flush()
+        except Exception as e:
+            print(f"[ERROR] 一時ファイル保存エラー: {e}")
+            sys.stdout.flush()
+            raise
 
         try:
             # CSVを解析
+            print(f"[DEBUG] CSV解析開始: {tmp_file_path}")
+            sys.stdout.flush()
             raw_materials = parse_materials_csv(tmp_file_path)
-            print(f"解析された材料数: {len(raw_materials)}")
+            print(f"[DEBUG] 解析完了: {len(raw_materials)} 件の材料データ")
+            sys.stdout.flush()
 
             unique_materials = get_unique_materials(raw_materials)
-            print(f"重複除去後の材料数: {len(unique_materials)}")
+            print(f"[DEBUG] 重複除去完了: {len(unique_materials)} 件の材料データ")
+            sys.stdout.flush()
 
             # 詳細な比重データベース（材質名から自動判定）
             default_densities = {
@@ -630,22 +860,29 @@ async def import_materials_from_csv(file: UploadFile = File(...), db: Session = 
             errors = []
             parse_warnings = []
 
-            for material_data in unique_materials:
+            print(f"[DEBUG] インポート処理開始: {len(unique_materials)} 件の材料データ")
+
+            for i, material_data in enumerate(unique_materials):
                 try:
+                    print(f"[DEBUG] 材料 {i+1}/{len(unique_materials)} を処理中: {material_data['material_name']}")
+
                     # 比重を自動判定（材質名から検索）
                     density = None  # まず None で初期化
                     material_text = material_data['material_name'].upper()
+                    print(f"[DEBUG] 材質テキスト: '{material_text}'")
 
                     # 各材質名がCSVテキストに含まれているかチェック（前方一致優先）
                     for material_key, material_density in default_densities.items():
                         if material_key.upper() in material_text:
                             density = material_density
+                            print(f"[DEBUG] 比重マッチ: {material_key} -> {material_density}")
                             break
 
                     # 比重が見つからない場合のデフォルト値
                     if density is None:
                         density = 7.85  # 炭素鋼のデフォルト値
                         parse_warnings.append(f"行 {material_data['row_number']}: 比重不明（デフォルト 7.85 を設定） - {material_text}")
+                        print(f"[DEBUG] 比重デフォルト値設定: 7.85")
 
                     # 寸法が解析できなかった場合の警告
                     if not material_data['parsed_successfully']:
@@ -655,6 +892,8 @@ async def import_materials_from_csv(file: UploadFile = File(...), db: Session = 
 
                     # 説明フィールドはNoneに設定（CSVインポート時は説明を空に）
                     description = None
+
+                    print(f"[DEBUG] データベースに材料を登録: {material_data['material_name']} - {material_data['shape']} - {material_data['diameter_mm']}mm")
 
                     # 新しい材料を作成
                     db_material = Material(
@@ -671,6 +910,7 @@ async def import_materials_from_csv(file: UploadFile = File(...), db: Session = 
 
                     db.add(db_material)
                     db.flush()  # IDを取得するためにflush
+                    print(f"[DEBUG] データベース登録成功: ID={db_material.id}")
 
                     # 比重履歴にも記録（created_byは一旦Noneで登録）
                     # TODO: 認証実装後に適切なユーザーIDを設定
@@ -683,11 +923,15 @@ async def import_materials_from_csv(file: UploadFile = File(...), db: Session = 
                     # db.add(density_record)
 
                     imported_count += 1
+                    print(f"[DEBUG] インポート成功: {imported_count} 件目")
 
                 except Exception as e:
+                    print(f"[ERROR] 材料処理エラー: {e}")
                     errors.append(f"行 {material_data['row_number']}: {str(e)}")
 
+            print(f"[DEBUG] データベースコミット開始")
             db.commit()
+            print(f"[DEBUG] データベースコミット完了")
 
             return {
                 "message": f"インポート完了: {imported_count} 件インポート、{skipped_count} 件スキップ",
@@ -700,10 +944,20 @@ async def import_materials_from_csv(file: UploadFile = File(...), db: Session = 
 
         finally:
             # 一時ファイルを削除
-            if os.path.exists(tmp_file_path):
-                os.unlink(tmp_file_path)
+            try:
+                if os.path.exists(tmp_file_path):
+                    os.unlink(tmp_file_path)
+                    print(f"[DEBUG] 一時ファイル削除完了: {tmp_file_path}")
+                    sys.stdout.flush()
+            except Exception as e:
+                print(f"[WARN] 一時ファイル削除エラー: {e}")
+                sys.stdout.flush()
 
     except Exception as e:
+        print(f"[ERROR] CSVインポート処理エラー: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.stdout.flush()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"CSVインポートエラー: {str(e)}"

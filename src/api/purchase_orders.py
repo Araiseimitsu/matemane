@@ -7,11 +7,31 @@ from datetime import datetime
 from src.db import get_db
 from src.db.models import (
     PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, PurchaseOrderItemStatus,
-    Material, MaterialShape, Lot, Item, Location, OrderType
+    Material, MaterialShape, Lot, Item, Location, OrderType, User
 )
 from src.api.order_utils import generate_order_number
+from src.utils.auth import get_password_hash
 
 router = APIRouter()
+
+def ensure_default_user(db: Session) -> int:
+    """デフォルトユーザーが存在しない場合は作成し、IDを返す"""
+    # デフォルトユーザーをチェック
+    default_user = db.query(User).filter(User.username == "system").first()
+
+    if not default_user:
+        # デフォルトユーザーを作成
+        default_user = User(
+            username="system",
+            email="system@example.com",
+            hashed_password=get_password_hash("system123"),
+            full_name="システムユーザー"
+        )
+        db.add(default_user)
+        db.commit()
+        db.refresh(default_user)
+
+    return default_user.id
 
 # ユーティリティ関数
 def calculate_weight_from_quantity(quantity: int, shape: MaterialShape, diameter_mm: float, length_mm: int, density: float) -> float:
@@ -211,7 +231,7 @@ async def create_purchase_order(order: PurchaseOrderCreate, db: Session = Depend
         expected_delivery_date=order.expected_delivery_date,
         purpose=order.purpose,
         notes=order.notes,
-        created_by=1  # TODO: 認証実装後にユーザーIDを設定
+        created_by=ensure_default_user(db)  # デフォルトユーザーを使用
     )
 
     db.add(db_order)
@@ -234,6 +254,8 @@ async def create_purchase_order(order: PurchaseOrderCreate, db: Session = Depend
 
         # 既存材料かチェック
         is_new_material = False
+        final_material_id = item_data.material_id
+        
         if item_data.material_id:
             # 既存材料IDが指定された場合、材料が存在するかチェック
             material = db.query(Material).filter(Material.id == item_data.material_id).first()
@@ -253,7 +275,7 @@ async def create_purchase_order(order: PurchaseOrderCreate, db: Session = Depend
 
             if existing_material:
                 # 既存材料が見つかった場合は使用
-                item_data.material_id = existing_material.id
+                final_material_id = existing_material.id
             else:
                 # 新規材料フラグを設定
                 is_new_material = True
@@ -261,7 +283,7 @@ async def create_purchase_order(order: PurchaseOrderCreate, db: Session = Depend
         # 発注アイテム作成
         db_item = PurchaseOrderItem(
             purchase_order_id=db_order.id,
-            material_id=item_data.material_id,
+            material_id=final_material_id,
             material_name=item_data.material_name,
             shape=item_data.shape,
             diameter_mm=item_data.diameter_mm,
