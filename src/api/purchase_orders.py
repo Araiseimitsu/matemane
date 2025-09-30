@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from pydantic import BaseModel, Field, ConfigDict
@@ -324,6 +325,156 @@ async def create_purchase_order(order: PurchaseOrderCreate, db: Session = Depend
         PurchaseOrder.id == db_order.id
     ).first()
 
+@router.put("/{order_id}", response_model=PurchaseOrderResponse)
+async def update_purchase_order(order_id: int, order: PurchaseOrderCreate, db: Session = Depends(get_db)):
+    """発注更新"""
+    db_order = db.query(PurchaseOrder).options(joinedload(PurchaseOrder.items)).filter(
+        PurchaseOrder.id == order_id
+    ).first()
+
+    if not db_order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="発注が見つかりません"
+        )
+
+    # 入庫済みアイテムが含まれている場合は編集不可
+    if any(i.status == PurchaseOrderItemStatus.RECEIVED for i in db_order.items):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="入庫済みアイテムが含まれるため編集できません"
+        )
+
+    # 発注番号の重複チェック（変更時のみ）
+    provided_order_number = (order.order_number or "").strip()
+    if provided_order_number and provided_order_number != db_order.order_number:
+        existing = db.query(PurchaseOrder).filter(
+            PurchaseOrder.order_number == provided_order_number
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="同じ発注番号が既に存在します"
+            )
+        db_order.order_number = provided_order_number
+
+    # 基本情報更新
+    db_order.supplier = order.supplier
+    db_order.order_date = order.order_date
+    db_order.expected_delivery_date = order.expected_delivery_date
+    db_order.purpose = order.purpose
+    db_order.notes = order.notes
+
+    # 既存アイテムを削除して再作成
+    for existing_item in list(db_order.items):
+        db.delete(existing_item)
+    db.flush()
+
+    total_amount = 0
+    for item_data in order.items:
+        # 発注データバリデーション
+        try:
+            item_data.validate_order_data()
+        except ValueError as e:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e)
+            )
+
+        # 最終的な数量と重量を計算
+        final_quantity, final_weight = item_data.get_final_quantity_and_weight()
+
+        # 既存材料かチェック
+        is_new_material = False
+        final_material_id = item_data.material_id
+        material_usage_type = UsageType.GENERAL
+        material_dedicated_part_number = None
+
+        if item_data.material_id:
+            material = db.query(Material).filter(Material.id == item_data.material_id).first()
+            if not material:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"材料ID {item_data.material_id} が見つかりません"
+                )
+            material_usage_type = material.usage_type or UsageType.GENERAL
+            material_dedicated_part_number = material.dedicated_part_number
+        else:
+            existing_material = db.query(Material).filter(
+                Material.name == item_data.material_name,
+                Material.shape == item_data.shape,
+                Material.diameter_mm == item_data.diameter_mm,
+                Material.is_active == True
+            ).first()
+
+            if existing_material:
+                final_material_id = existing_material.id
+                material_usage_type = existing_material.usage_type or UsageType.GENERAL
+                material_dedicated_part_number = existing_material.dedicated_part_number
+            else:
+                is_new_material = True
+
+        # 発注アイテム作成
+        db_item = PurchaseOrderItem(
+            purchase_order_id=db_order.id,
+            material_id=final_material_id,
+            material_name=item_data.material_name,
+            shape=item_data.shape,
+            diameter_mm=item_data.diameter_mm,
+            length_mm=item_data.length_mm,
+            density=item_data.density,
+            order_type=item_data.order_type,
+            ordered_quantity=final_quantity,
+            ordered_weight_kg=final_weight,
+            unit_price=item_data.unit_price,
+            is_new_material=is_new_material,
+            usage_type=material_usage_type,
+            dedicated_part_number=material_dedicated_part_number
+        )
+
+        db.add(db_item)
+
+        # 合計金額計算（本数ベース）
+        if item_data.unit_price:
+            total_amount += item_data.unit_price * final_quantity
+
+    # 合計金額を設定
+    db_order.total_amount = total_amount if total_amount > 0 else None
+
+    db.commit()
+
+    db.refresh(db_order)
+    return db.query(PurchaseOrder).options(joinedload(PurchaseOrder.items)).filter(
+        PurchaseOrder.id == db_order.id
+    ).first()
+
+@router.delete("/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_purchase_order(order_id: int, db: Session = Depends(get_db)):
+    """発注削除"""
+    db_order = db.query(PurchaseOrder).options(joinedload(PurchaseOrder.items)).filter(
+        PurchaseOrder.id == order_id
+    ).first()
+
+    if not db_order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="発注が見つかりません"
+        )
+
+    # 入庫済みアイテムが含まれている場合は削除不可
+    if any(i.status == PurchaseOrderItemStatus.RECEIVED for i in db_order.items):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="入庫済みアイテムが含まれるため削除できません"
+        )
+
+    # 子アイテム→親の順で削除
+    for existing_item in list(db_order.items):
+        db.delete(existing_item)
+    db.delete(db_order)
+    db.commit()
+    return None
+
 @router.get("/pending/items/", response_model=List[PurchaseOrderItemResponse])
 async def get_pending_items(db: Session = Depends(get_db)):
     """入庫待ちアイテム一覧取得"""
@@ -334,6 +485,26 @@ async def get_pending_items(db: Session = Depends(get_db)):
     ).all()
 
     return items
+
+# ==== TEMP: 外部Excel取込テストエンドポイント（後で削除しやすいよう最小限） ====
+@router.post("/external-import-test", response_model=dict)
+async def external_import_test(dry_run: bool = True, excel: Optional[str] = None, sheet: Optional[str] = None):
+    """Excelからの発注作成処理をDRY-RUN/本実行を切替で起動（テスト用・一時的）
+
+    クエリパラメータ:
+      - dry_run: true なら検証のみ、false ならDB書き込みを実行
+      - excel: 対象Excelファイル（省略時は デフォルト）
+      - sheet: シート名（省略時は デフォルト）
+    """
+    try:
+        # import を関数内に限定し、削除しやすい形にする
+        from src.scripts.excel_po_import import import_excel_to_purchase_orders
+        excel_path = excel or "材料管理.xlsx"
+        sheet_name = sheet or "材料管理表"
+        result = await run_in_threadpool(import_excel_to_purchase_orders, excel_path, sheet_name, dry_run)
+        return {"result": result}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 @router.post("/items/{item_id}/receive/", response_model=dict)
 async def receive_item(

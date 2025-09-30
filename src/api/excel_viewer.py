@@ -8,6 +8,7 @@ import pandas as pd
 import tempfile
 import os
 import re
+import unicodedata
 from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from sqlalchemy.orm import Session
@@ -40,7 +41,8 @@ def parse_material_info(material_spec: str) -> Dict[str, Any]:
     if not material_spec or pd.isna(material_spec):
         return None
 
-    material_spec = str(material_spec).strip()
+    # 文字種の正規化（全角→半角など）
+    material_spec = unicodedata.normalize('NFKC', str(material_spec).strip())
 
     # 専用品番の抽出（カッコ内）
     dedicated_part_number = None
@@ -54,8 +56,10 @@ def parse_material_info(material_spec: str) -> Dict[str, Any]:
         r'^(SUS\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)(?:CM|cm)?',
         # C3602Lcd ∅12.0 の形式
         r'^(C\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)',
-        # その他の材質
-        r'^([A-Z]+\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)',
+        # 英字+数字の一般形式（例: S45C, A6061, TC4）
+        r'^([A-Za-z]+\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)',
+        # 英字のみやハイフン含み（例: TLS, TI, SK, G23-T8）
+        r'^([A-Za-z]+(?:\d+[A-Za-z]*)?(?:-[A-Za-z0-9]+)?)\s*[∅φΦ]?(\d+(?:\.\d+)?)',
     ]
 
     for pattern in patterns:
@@ -75,6 +79,20 @@ def parse_material_info(material_spec: str) -> Dict[str, Any]:
                 'shape': MaterialShape.ROUND,  # 基本的に丸棒と仮定
                 'dedicated_part_number': dedicated_part_number
             }
+
+    # フォールバック: 先頭の材質っぽいトークン + 直径数値を抽出
+    name_match = re.match(r'([A-Za-z0-9\-]+)', material_spec)
+    diameter_match = re.search(r'[∅φΦ]?\s*(\d+(?:\.\d+)?)', material_spec)
+    if name_match and diameter_match:
+        material_name = name_match.group(1).upper()
+        # 正規化（LCDの表記揺れなど）
+        material_name = material_name.replace('LCD', 'LCD').replace('Lcd', 'LCD')
+        return {
+            'material_name': material_name,
+            'diameter': float(diameter_match.group(1)),
+            'shape': MaterialShape.ROUND,
+            'dedicated_part_number': dedicated_part_number
+        }
 
     return None
 
