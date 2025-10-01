@@ -37,6 +37,8 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 
 import pandas as pd
+import re
+import unicodedata
 
 from src.db import SessionLocal
 from src.db.models import (
@@ -45,8 +47,6 @@ from src.db.models import (
     User, UserRole
 )
 
-# 既存の解析ロジックを再利用
-from src.api.excel_viewer import parse_material_info
 from src.utils.auth import get_password_hash
 
 logger = logging.getLogger("excel_po_import")
@@ -105,6 +105,77 @@ def guess_density(material_name: str) -> float:
         if key in text:
             return value
     return 7.85  # 既定（炭素鋼）
+
+
+def parse_material_info(material_spec: str) -> Dict[str, Any]:
+    """
+    材料仕様文字列を解析
+
+    例:
+    - SUS303 ∅10.0CM → {material_name: 'SUS303', diameter: 10.0, shape: round}
+    - C3602Lcd ∅12.0 (NB5N) → {material_name: 'C3602LCD', diameter: 12.0, shape: round, dedicated_part_number: 'NB5N'}
+    """
+    if not material_spec or pd.isna(material_spec):
+        return None
+
+    # 文字種の正規化（全角→半角など）
+    material_spec = unicodedata.normalize('NFKC', str(material_spec).strip())
+    # 英数字の連続を保つため内部スペースを除去（例: 'A606 1-T6' -> 'A6061-T6'）
+    material_spec = re.sub(r'(?<=\w)\s+(?=\w)', '', material_spec)
+    # ゼロ幅スペース等の不可視文字を除去（Excel由来の隠し文字対策）
+    material_spec = re.sub(r'[\u200B-\u200D\u2060\uFEFF]', '', material_spec)
+
+    # 専用品番の抽出（カッコ内）
+    dedicated_part_number = None
+    dedicated_match = re.search(r'\(([^)]+)\)', material_spec)
+    if dedicated_match:
+        dedicated_part_number = dedicated_match.group(1).strip()
+
+    # パターンマッチング（実際のExcelデータに合わせて調整）
+    patterns = [
+        # SUS303 ∅10.0CM の形式
+        r'^(SUS\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)(?:CM|cm)?',
+        # C3602Lcd ∅12.0 の形式
+        r'^(C\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)',
+        # 英字のみやハイフン含み（例: TLS, TI, SK, G23-T8）※径の直後に記号/文字が付くケースに対応
+        r'^([A-Za-z]+(?:\d+[A-Za-z]*)?(?:-[A-Za-z0-9]+)?)\s*[∅φΦ]?(\d+(?:\.\d+)?)[A-Za-z]?',
+        # 英字+数字の一般形式（例: S45C, A6061, TC4）※ハイフン付き材質に早期マッチしないよう順序を後ろへ
+        r'^([A-Za-z]+\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)[A-Za-z]?',
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, material_spec, re.IGNORECASE)
+        if match:
+            material_name = match.group(1).upper()
+            diameter = float(match.group(2))
+
+            # 材料名の正規化
+            material_name = material_name.replace('Lcd', 'LCD')
+            if material_name.startswith('C3602LCD') or material_name.startswith('C3602Lcd'):
+                material_name = 'C3602LCD'
+
+            return {
+                'material_name': material_name,
+                'diameter': diameter,
+                'shape': MaterialShape.ROUND,  # 基本的に丸棒と仮定
+                'dedicated_part_number': dedicated_part_number
+            }
+
+    # フォールバック: 先頭の材質っぽいトークン + 直径数値を抽出
+    name_match = re.match(r'([A-Za-z0-9\-]+)', material_spec)
+    diameter_match = re.search(r'[∅φΦ]?\s*(\d+(?:\.\d+)?)', material_spec)
+    if name_match and diameter_match:
+        material_name = name_match.group(1).upper()
+        # 正規化（LCDの表記揺れなど）
+        material_name = material_name.replace('LCD', 'LCD').replace('Lcd', 'LCD')
+        return {
+            'material_name': material_name,
+            'diameter': float(diameter_match.group(1)),
+            'shape': MaterialShape.ROUND,
+            'dedicated_part_number': dedicated_part_number
+        }
+
+    return None
 
 
 def parse_excel_material(material_text: str) -> Optional[Dict[str, Any]]:

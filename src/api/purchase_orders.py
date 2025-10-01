@@ -165,7 +165,10 @@ class ReceivingConfirmation(BaseModel):
     lot_number: str = Field(..., max_length=100, description="ロット番号")
     received_quantity: Optional[int] = Field(None, gt=0, description="入庫数量（本数指定時）")
     received_weight_kg: Optional[float] = Field(None, gt=0, description="入庫重量（重量指定時、kg）")
+    # 従来の単一置き場指定（後方互換維持）
     location_id: Optional[int] = Field(None, description="置き場ID")
+    # 新規：複数置き場指定
+    location_ids: Optional[List[int]] = Field(None, description="置き場IDの配列（複数指定時）")
     notes: Optional[str] = Field(None, description="備考")
 
     def validate_receiving_data(self):
@@ -614,14 +617,46 @@ async def receive_item(
     db.add(lot)
     db.flush()
 
-    # アイテム作成（束管理）
-    inventory_item = Item(
-        lot_id=lot.id,
-        location_id=receiving.location_id,
-        current_quantity=final_received_quantity,
-        management_code=item.management_code  # 発注時に生成された管理コードを使用
-    )
-    db.add(inventory_item)
+    # 置き場の決定（複数対応）。location_ids が優先、未指定時は location_id、両方無ければ None を1件扱い。
+    target_locations: List[Optional[int]] = []
+    if receiving.location_ids and len(receiving.location_ids) > 0:
+        target_locations = list(receiving.location_ids)
+    elif receiving.location_id is not None:
+        target_locations = [receiving.location_id]
+    else:
+        target_locations = [None]
+
+    created_item_ids: List[int] = []
+    primary_management_code: Optional[str] = None
+
+    if len(target_locations) == 1:
+        # 単一置き場：従来通り1レコード作成
+        inventory_item = Item(
+            lot_id=lot.id,
+            location_id=target_locations[0],
+            current_quantity=final_received_quantity
+        )
+        db.add(inventory_item)
+        db.flush()
+        created_item_ids.append(inventory_item.id)
+        primary_management_code = inventory_item.management_code
+    else:
+        # 複数置き場：数量を自動分配して複数レコードを作成
+        k = len(target_locations)
+        base = final_received_quantity // k
+        remainder = final_received_quantity % k
+        for idx, loc in enumerate(target_locations):
+            share = base + (1 if idx < remainder else 0)
+            inventory_item = Item(
+                lot_id=lot.id,
+                location_id=loc,
+                current_quantity=share
+            )
+            db.add(inventory_item)
+            db.flush()
+            created_item_ids.append(inventory_item.id)
+            if idx == 0:
+                primary_management_code = inventory_item.management_code
 
     # 発注アイテムの状態更新
     item.received_quantity = final_received_quantity
@@ -642,11 +677,13 @@ async def receive_item(
 
     db.commit()
 
+    # 後方互換：item_id は先頭のIDを返し、複数時は item_ids も返す
     return {
         "message": "入庫処理が完了しました",
         "lot_id": lot.id,
-        "item_id": inventory_item.id,
-        "management_code": item.management_code
+        "item_id": created_item_ids[0],
+        "item_ids": created_item_ids,
+        "management_code": primary_management_code
     }
 
 @router.get("/items/{item_id}/management-code/", response_model=dict)

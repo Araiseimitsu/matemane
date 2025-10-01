@@ -8,7 +8,8 @@ import uvicorn
 import logging
 
 from src.config import settings
-from src.db import create_tables
+from src.db import create_tables, SessionLocal
+from src.db.models import Location
 from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders, order_utils, excel_viewer, production_schedule, material_management
 
 # ログ設定
@@ -72,6 +73,23 @@ async def startup_event():
     except Exception as e:
         logger.error(f"データベース初期化エラー: {e}")
         raise
+
+    # 置き場（1〜300）の初期化（存在しないIDのみ作成）
+    try:
+        with SessionLocal() as db:
+            existing_ids = {row[0] for row in db.query(Location.id).all()}
+            created = 0
+            for i in range(1, 301):
+                if i not in existing_ids:
+                    db.add(Location(id=i, name=str(i), description=None, is_active=True))
+                    created += 1
+            if created:
+                db.commit()
+                logger.info(f"置き場を初期化しました: 新規 {created} 件")
+            else:
+                logger.info("置き場は既に初期化済みです")
+    except Exception as e:
+        logger.error(f"置き場初期化エラー: {e}")
 
     logger.info("材料管理システムの起動が完了しました")
 

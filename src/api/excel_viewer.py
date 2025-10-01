@@ -43,6 +43,10 @@ def parse_material_info(material_spec: str) -> Dict[str, Any]:
 
     # 文字種の正規化（全角→半角など）
     material_spec = unicodedata.normalize('NFKC', str(material_spec).strip())
+    # 英数字の連続を保つため内部スペースを除去（例: 'A606 1-T6' -> 'A6061-T6'）
+    material_spec = re.sub(r'(?<=\w)\s+(?=\w)', '', material_spec)
+    # ゼロ幅スペース等の不可視文字を除去（Excel由来の隠し文字対策）
+    material_spec = re.sub(r'[\u200B-\u200D\u2060\uFEFF]', '', material_spec)
 
     # 専用品番の抽出（カッコ内）
     dedicated_part_number = None
@@ -56,10 +60,10 @@ def parse_material_info(material_spec: str) -> Dict[str, Any]:
         r'^(SUS\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)(?:CM|cm)?',
         # C3602Lcd ∅12.0 の形式
         r'^(C\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)',
-        # 英字+数字の一般形式（例: S45C, A6061, TC4）
-        r'^([A-Za-z]+\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)',
-        # 英字のみやハイフン含み（例: TLS, TI, SK, G23-T8）
-        r'^([A-Za-z]+(?:\d+[A-Za-z]*)?(?:-[A-Za-z0-9]+)?)\s*[∅φΦ]?(\d+(?:\.\d+)?)',
+        # 英字のみやハイフン含み（例: TLS, TI, SK, G23-T8）※径の直後に記号/文字が付くケースに対応
+        r'^([A-Za-z]+(?:\d+[A-Za-z]*)?(?:-[A-Za-z0-9]+)?)\s*[∅φΦ]?(\d+(?:\.\d+)?)[A-Za-z]?',
+        # 英字+数字の一般形式（例: S45C, A6061, TC4）※ハイフン付き材質に早期マッチしないよう順序を後ろへ
+        r'^([A-Za-z]+\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)[A-Za-z]?',
     ]
 
     for pattern in patterns:

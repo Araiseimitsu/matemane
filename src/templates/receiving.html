@@ -28,7 +28,7 @@
     <div class="px-4 py-6">
         <!-- フィルター -->
         <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">仕入先</label>
                     <input type="text" id="supplierFilter" placeholder="仕入先名で絞り込み"
@@ -37,6 +37,16 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">材料名</label>
                     <input type="text" id="materialFilter" placeholder="材料名で絞り込み"
+                           class="w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">発注番号</label>
+                    <input type="text" id="orderNumberFilter" placeholder="発注番号で絞り込み"
+                           class="w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">径 (mm)</label>
+                    <input type="number" id="diameterFilter" placeholder="例: 20" step="0.1" min="0"
                            class="w-full p-2 border border-gray-300 rounded-md">
                 </div>
                 <div class="flex items-end space-x-2">
@@ -71,7 +81,6 @@
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">形状・寸法</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">長さ</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">発注数量/重量</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">管理コード</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">操作</th>
                         </tr>
                     </thead>
@@ -184,12 +193,12 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">置き場</label>
-                        <select name="location_id"
+                        <label class="block text-sm font-medium text-gray-700 mb-2">置き場（複数選択可）</label>
+                        <select name="location_ids" multiple
                                 class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">置き場を選択（後で設定可能）</option>
                             <!-- 動的に生成 -->
                         </select>
+                        <p class="text-xs text-gray-500 mt-1">Ctrl/Shiftキーで複数選択できます。未選択でも登録可能です。</p>
                     </div>
 
                     <div>
@@ -309,25 +318,20 @@ async function loadPendingItems() {
     }
 }
 
-// 置き場一覧読み込み
+// 置き場一覧読み込み（1〜300で固定）
 async function loadLocations() {
     try {
-        const response = await fetch('/api/inventory/locations/');
-        const locations = await response.json();
-
-        const select = document.querySelector('select[name="location_id"]');
-        const defaultOption = select.querySelector('option[value=""]');
-
-        // 既存のオプションをクリア（デフォルトオプション以外）
+        const select = document.querySelector('select[name="location_ids"]');
+        if (!select) return;
+        // 既存のオプションを全てクリア
         select.innerHTML = '';
-        select.appendChild(defaultOption);
 
-        locations.forEach(location => {
+        for (let i = 1; i <= 300; i++) {
             const option = document.createElement('option');
-            option.value = location.id;
-            option.textContent = location.name;
+            option.value = String(i);
+            option.textContent = String(i);
             select.appendChild(option);
-        });
+        }
     } catch (error) {
         console.error('置き場読み込みエラー:', error);
     }
@@ -356,7 +360,6 @@ function createItemRow(item) {
         <td class="px-4 py-3 text-sm text-gray-600">${dimensions}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${item.length_mm}mm</td>
         <td class="px-4 py-3 text-sm text-gray-600">${getOrderDisplayText(item)}</td>
-        <td class="px-4 py-3 text-sm font-mono text-xs">${item.management_code}</td>
         <td class="px-4 py-3">
             <button onclick="showReceiveModal(${item.id})"
                     class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors">
@@ -525,7 +528,7 @@ function setupEventListeners() {
 
 // フィルターリスナー設定
 function setupFilterListeners() {
-    const filters = ['supplierFilter', 'materialFilter'];
+    const filters = ['supplierFilter', 'materialFilter', 'orderNumberFilter', 'diameterFilter'];
 
     filters.forEach(filterId => {
         const element = document.getElementById(filterId);
@@ -542,6 +545,8 @@ function setupFilterListeners() {
 function resetFilters() {
     document.getElementById('supplierFilter').value = '';
     document.getElementById('materialFilter').value = '';
+    document.getElementById('orderNumberFilter').value = '';
+    document.getElementById('diameterFilter').value = '';
 
     // リセット後に全件読み込み
     loadPendingItems();
@@ -689,6 +694,11 @@ function hideReceiveModal() {
     document.getElementById('displayWeight').textContent = '-';
     document.getElementById('displayUnitWeight').textContent = '-';
     document.querySelector('input[name="input_method"][value="quantity"]').checked = true;
+    // 置き場選択のリセット（複数選択）
+    const locSelect = document.querySelector('select[name="location_ids"]');
+    if (locSelect) {
+        Array.from(locSelect.options).forEach(opt => opt.selected = false);
+    }
 }
 
 // 入庫完了モーダル非表示
@@ -707,11 +717,16 @@ async function handleReceive(event) {
     const quantityInput = document.getElementById('quantityInput');
     const weightInput = document.getElementById('weightInput');
 
+    const selectedLocationOptions = Array.from(document.querySelector('select[name="location_ids"]').selectedOptions);
+    const selectedLocationIds = selectedLocationOptions.map(opt => parseInt(opt.value, 10)).filter(id => !isNaN(id));
+
     const receiveData = {
         lot_number: formData.get('lot_number'),
-        location_id: formData.get('location_id') || null,
         notes: formData.get('notes') || null
     };
+    if (selectedLocationIds.length > 0) {
+        receiveData.location_ids = selectedLocationIds;
+    }
 
     // 入力された値を取得
     if (inputMethod === 'weight' && weightInput.value) {
@@ -822,18 +837,27 @@ async function printLabel() {
 function searchItems() {
     const supplierFilter = document.getElementById('supplierFilter').value.toLowerCase();
     const materialFilter = document.getElementById('materialFilter').value.toLowerCase();
+    const orderNumberFilter = document.getElementById('orderNumberFilter').value.toLowerCase();
+    const diameterStr = document.getElementById('diameterFilter').value;
+    const diameterFilter = diameterStr ? parseFloat(diameterStr) : null;
 
     const rows = document.querySelectorAll('#itemsTableBody tr');
     let visibleCount = 0;
 
     rows.forEach(row => {
+        const orderNumber = row.cells[0].textContent.toLowerCase();
         const supplier = row.cells[1].textContent.toLowerCase();
         const material = row.cells[2].textContent.toLowerCase();
+        const dimensionsText = row.cells[3].textContent;
+        const match = dimensionsText.match(/([\d\.]+)\s*mm/i);
+        const rowDiameter = match ? parseFloat(match[1]) : null;
 
+        const matchOrder = !orderNumberFilter || orderNumber.includes(orderNumberFilter);
         const matchSupplier = !supplierFilter || supplier.includes(supplierFilter);
         const matchMaterial = !materialFilter || material.includes(materialFilter);
+        const matchDiameter = diameterFilter === null || (rowDiameter !== null && rowDiameter === diameterFilter);
 
-        if (matchSupplier && matchMaterial) {
+        if (matchOrder && matchSupplier && matchMaterial && matchDiameter) {
             row.style.display = '';
             visibleCount++;
         } else {
