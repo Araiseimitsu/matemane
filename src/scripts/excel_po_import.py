@@ -197,11 +197,12 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
     COL_ORDER_NUMBER = 13   # N列: 管理NO（発注番号）
 
     # マージセル等で上段にのみ値が入っているケースへの対応（前方埋め）
-    # 納期(Z列)と手配先(AA列)はグループ単位でマージされていることがある
-    due_series = df.iloc[:, COL_DUE].ffill()
+    # 手配先(AA列)はグループ単位でマージされていることがある
     supplier_series = df.iloc[:, COL_SUPPLIER].ffill()
     # 単位(U列)もグループで指定される可能性があるため前方埋め
     unit_series = df.iloc[:, COL_UNIT].ffill()
+    # Z列(指定納期)は前方埋めしない（空行を確実にスキップするため）
+    due_series = df.iloc[:, COL_DUE]
 
     total_rows = len(df)
     processed = 0
@@ -383,6 +384,10 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
                 )
                 db.add(item)
 
+                # 成功した行は即座にコミット（他行の失敗に巻き戻されないように）
+                if not dry_run:
+                    db.commit()
+
                 created_orders += 1
                 processed += 1
                 logger.info(
@@ -393,11 +398,8 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
                 skipped += 1
                 errors.append(f"行{idx+1}: {e}")
                 logger.exception(f"行{idx+1}処理中にエラー: {e}")
-                db.rollback()
-
-        if not dry_run:
-            db.commit()
-            logger.info("コミット完了")
+                if not dry_run:
+                    db.rollback()  # エラー行のみロールバック
 
         return {
             "total_rows": total_rows,

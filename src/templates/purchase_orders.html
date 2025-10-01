@@ -257,6 +257,24 @@ endblock %} {% block content %}
       <div id="ordersEmpty" class="text-center py-8 hidden">
         <p class="text-gray-500">発注データがありません</p>
       </div>
+      <!-- ページネーション -->
+      <div id="ordersPagination" class="flex items-center justify-between px-4 py-4 border-t hidden">
+        <div class="text-sm text-gray-600">
+          全 <span id="totalOrders">0</span> 件中
+          <span id="displayRange">0-0</span> 件を表示
+        </div>
+        <div class="flex items-center space-x-2">
+          <button id="prevPageBtn" class="px-3 py-2 text-sm border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            前へ
+          </button>
+          <div id="pageNumbers" class="flex items-center space-x-1">
+            <!-- ページ番号ボタンを動的生成 -->
+          </div>
+          <button id="nextPageBtn" class="px-3 py-2 text-sm border rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            次へ
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -701,36 +719,95 @@ endblock %} {% block content %}
     setupFilterListeners();
   });
 
+  // 現在のページ番号を保持
+  let currentPage = 1;
+  const pageSize = 50;
+
   // 発注一覧読み込み
-  async function loadOrders() {
+  async function loadOrders(page = 1) {
     const tableBody = document.getElementById("ordersTableBody");
     const loading = document.getElementById("ordersLoading");
     const empty = document.getElementById("ordersEmpty");
+    const pagination = document.getElementById("ordersPagination");
 
     loading.classList.remove("hidden");
     tableBody.innerHTML = "";
     empty.classList.add("hidden");
+    pagination.classList.add("hidden");
 
     try {
-      const response = await fetch("/api/purchase-orders/");
-      const orders = await response.json();
+      const response = await fetch(`/api/purchase-orders/?page=${page}&page_size=${pageSize}`);
+      const data = await response.json();
 
       loading.classList.add("hidden");
 
-      if (orders.length === 0) {
+      if (!data.items || data.items.length === 0) {
         empty.classList.remove("hidden");
         return;
       }
 
-      orders.forEach((order) => {
+      // テーブル行を生成
+      data.items.forEach((order) => {
         const row = createOrderRow(order);
         tableBody.appendChild(row);
       });
+
+      // ページネーション情報を更新
+      currentPage = data.page;
+      updatePaginationUI(data);
+
     } catch (error) {
       loading.classList.add("hidden");
       console.error("発注一覧の読み込みエラー:", error);
       showToast("発注一覧の読み込みに失敗しました", "error");
     }
+  }
+
+  // ページネーションUI更新
+  function updatePaginationUI(data) {
+    const pagination = document.getElementById("ordersPagination");
+    const totalOrders = document.getElementById("totalOrders");
+    const displayRange = document.getElementById("displayRange");
+    const pageNumbers = document.getElementById("pageNumbers");
+    const prevBtn = document.getElementById("prevPageBtn");
+    const nextBtn = document.getElementById("nextPageBtn");
+
+    // 表示範囲計算
+    const start = (data.page - 1) * data.page_size + 1;
+    const end = Math.min(data.page * data.page_size, data.total);
+
+    totalOrders.textContent = data.total;
+    displayRange.textContent = `${start}-${end}`;
+
+    // ページ番号ボタン生成
+    pageNumbers.innerHTML = "";
+    const maxPageButtons = 5;
+    let startPage = Math.max(1, data.page - Math.floor(maxPageButtons / 2));
+    let endPage = Math.min(data.total_pages, startPage + maxPageButtons - 1);
+
+    if (endPage - startPage < maxPageButtons - 1) {
+      startPage = Math.max(1, endPage - maxPageButtons + 1);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      const btn = document.createElement("button");
+      btn.textContent = i;
+      btn.className = `px-3 py-2 text-sm border rounded-lg ${
+        i === data.page
+          ? "bg-blue-600 text-white border-blue-600"
+          : "hover:bg-gray-50"
+      }`;
+      btn.onclick = () => loadOrders(i);
+      pageNumbers.appendChild(btn);
+    }
+
+    // 前へ/次へボタンの状態
+    prevBtn.disabled = data.page <= 1;
+    nextBtn.disabled = data.page >= data.total_pages;
+    prevBtn.onclick = () => loadOrders(data.page - 1);
+    nextBtn.onclick = () => loadOrders(data.page + 1);
+
+    pagination.classList.remove("hidden");
   }
 
   // 発注行作成
@@ -930,8 +1007,8 @@ endblock %} {% block content %}
     document.getElementById("purposeFilter").value = "";
     document.getElementById("orderNumberFilter").value = "";
 
-    // リセット後に全件読み込み
-    loadOrders();
+    // リセット後に1ページ目から全件読み込み
+    loadOrders(1);
   }
 
   // 新規発注モーダル表示
@@ -2478,16 +2555,28 @@ endblock %} {% block content %}
     }
   }
 
-  // 検索機能
-  async function searchOrders() {
+  // 検索機能（ページネーション対応）
+  async function searchOrders(page = 1) {
     // フィルター値取得
     const status = document.getElementById("statusFilter").value;
     const supplier = document.getElementById("supplierFilter").value;
     const purpose = document.getElementById("purposeFilter").value;
     const orderNumber = document.getElementById("orderNumberFilter").value;
 
+    const tableBody = document.getElementById("ordersTableBody");
+    const loading = document.getElementById("ordersLoading");
+    const empty = document.getElementById("ordersEmpty");
+    const pagination = document.getElementById("ordersPagination");
+
+    loading.classList.remove("hidden");
+    tableBody.innerHTML = "";
+    empty.classList.add("hidden");
+    pagination.classList.add("hidden");
+
     // パラメータ構築
     const params = new URLSearchParams();
+    params.append("page", page);
+    params.append("page_size", pageSize);
     if (status) params.append("status", status);
     if (supplier) params.append("supplier", supplier);
     if (purpose) params.append("purpose", purpose);
@@ -2496,21 +2585,17 @@ endblock %} {% block content %}
       const response = await fetch(
         `/api/purchase-orders/?${params.toString()}`
       );
-      const orders = await response.json();
+      const data = await response.json();
+
+      loading.classList.add("hidden");
 
       // 発注番号フィルター（クライアントサイド）
-      let filteredOrders = orders;
+      let filteredOrders = data.items || [];
       if (orderNumber) {
-        filteredOrders = orders.filter((order) =>
+        filteredOrders = filteredOrders.filter((order) =>
           order.order_number.toLowerCase().includes(orderNumber.toLowerCase())
         );
       }
-
-      // テーブル更新
-      const tableBody = document.getElementById("ordersTableBody");
-      const empty = document.getElementById("ordersEmpty");
-
-      tableBody.innerHTML = "";
 
       if (filteredOrders.length === 0) {
         empty.classList.remove("hidden");
@@ -2522,7 +2607,14 @@ endblock %} {% block content %}
         const row = createOrderRow(order);
         tableBody.appendChild(row);
       });
+
+      // ページネーション更新（発注番号フィルターがある場合は表示しない）
+      if (!orderNumber) {
+        currentPage = data.page;
+        updatePaginationUI(data);
+      }
     } catch (error) {
+      loading.classList.add("hidden");
       console.error("検索エラー:", error);
       showToast("検索に失敗しました", "error");
     }

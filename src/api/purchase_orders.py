@@ -153,6 +153,14 @@ class PurchaseOrderResponse(BaseModel):
     updated_at: datetime
     items: List[PurchaseOrderItemResponse]
 
+class PaginatedPurchaseOrderResponse(BaseModel):
+    """ページネーション対応の発注一覧レスポンス"""
+    items: List[PurchaseOrderResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+
 class ReceivingConfirmation(BaseModel):
     lot_number: str = Field(..., max_length=100, description="ロット番号")
     received_quantity: Optional[int] = Field(None, gt=0, description="入庫数量（本数指定時）")
@@ -168,16 +176,23 @@ class ReceivingConfirmation(BaseModel):
             raise ValueError("入庫数量と入庫重量は同時に指定できません")
 
 # API エンドポイント
-@router.get("/", response_model=List[PurchaseOrderResponse])
+@router.get("/", response_model=PaginatedPurchaseOrderResponse)
 async def get_purchase_orders(
-    skip: int = 0,
-    limit: int = 100,
+    page: int = 1,
+    page_size: int = 50,
     status: Optional[PurchaseOrderStatus] = None,
     supplier: Optional[str] = None,
     purpose: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
-    """発注一覧取得"""
+    """発注一覧取得（ページネーション対応）"""
+    # ページネーションパラメータのバリデーション
+    if page < 1:
+        page = 1
+    if page_size < 1 or page_size > 100:
+        page_size = 50
+
+    # クエリ構築
     query = db.query(PurchaseOrder).options(joinedload(PurchaseOrder.items))
 
     if status is not None:
@@ -189,8 +204,23 @@ async def get_purchase_orders(
     if purpose is not None:
         query = query.filter(PurchaseOrder.purpose.contains(purpose))
 
-    orders = query.order_by(PurchaseOrder.created_at.desc()).offset(skip).limit(limit).all()
-    return orders
+    # 総件数取得
+    total = query.count()
+
+    # ページネーション計算
+    skip = (page - 1) * page_size
+    total_pages = (total + page_size - 1) // page_size  # 切り上げ
+
+    # データ取得
+    orders = query.order_by(PurchaseOrder.created_at.desc()).offset(skip).limit(page_size).all()
+
+    return {
+        "items": orders,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages
+    }
 
 @router.get("/{order_id}", response_model=PurchaseOrderResponse)
 async def get_purchase_order(order_id: int, db: Session = Depends(get_db)):
