@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
-from pydantic import BaseModel, Field, ConfigDict
-from datetime import datetime
+from pydantic import BaseModel, Field, ConfigDict, field_validator
+from datetime import datetime, date
 
 from src.db import get_db
 from src.db.models import (
@@ -88,6 +88,28 @@ class PurchaseOrderCreate(BaseModel):
     purpose: Optional[str] = Field(None, description="用途・製品名")
     notes: Optional[str] = Field(None, description="備考")
     items: List[PurchaseOrderItemCreate] = Field(..., min_items=1, description="発注アイテム")
+
+    @field_validator("order_date", "expected_delivery_date", mode="before")
+    @classmethod
+    def _coerce_date_only_to_datetime(cls, v):
+        """フロントから日付文字列(YYYY-MM-DD)が来た場合は0時のdatetimeへ補完する"""
+        if v is None:
+            return v
+        if isinstance(v, datetime):
+            return v
+        if isinstance(v, date):
+            return datetime(v.year, v.month, v.day)
+        if isinstance(v, str):
+            try:
+                # 'YYYY-MM-DD' 形式を優先的に処理
+                if len(v) == 10 and v[4] == '-' and v[7] == '-':
+                    y, m, d = v.split("-")
+                    return datetime(int(y), int(m), int(d))
+                # それ以外は標準のfromisoformatに委ねる
+                return datetime.fromisoformat(v)
+            except Exception:
+                raise ValueError("日付の形式が不正です")
+        return v
 
 class PurchaseOrderItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -240,6 +262,13 @@ async def create_purchase_order(order: PurchaseOrderCreate, db: Session = Depend
     else:
         order_number_value = generate_order_number(db)
 
+    # アイテム数の制約: 1件のみ許可
+    if len(order.items) != 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="発注アイテムは1件のみ許可されます"
+        )
+
     # 発注作成
     db_order = PurchaseOrder(
         order_number=order_number_value,
@@ -338,6 +367,13 @@ async def update_purchase_order(order_id: int, order: PurchaseOrderCreate, db: S
     db_order.expected_delivery_date = order.expected_delivery_date
     db_order.purpose = order.purpose
     db_order.notes = order.notes
+
+    # アイテム数の制約: 1件のみ許可
+    if len(order.items) != 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="発注アイテムは1件のみ許可されます"
+        )
 
     # 既存アイテムを削除して再作成
     for existing_item in list(db_order.items):

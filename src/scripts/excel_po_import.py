@@ -228,23 +228,15 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
                     order_type = OrderType.QUANTITY
                     ordered_quantity = int(qty_value) if qty_value is not None else DEFAULT_ORDER_QUANTITY
 
-                # 材料仕様文字列をそのまま material_name に保存
-                # 入庫時に人の手で材料マスタと紐付け
+                # 現行DBスキーマに合わせて、アイテム情報はPurchaseOrderItemのフィールドのみ設定
+                # 材料仕様文字列は item_name に保存（詳細は入庫時に材料へ確定）
                 item = PurchaseOrderItem(
                     purchase_order_id=po.id,
-                    material_id=None,  # 入庫時に確定
-                    material_name=str(material_text).strip(),  # L列の値をそのまま保存
-                    shape=MaterialShape.ROUND,  # 仮値（入庫時に上書き）
-                    diameter_mm=0.0,  # 仮値（入庫時に上書き）
-                    length_mm=DEFAULT_LENGTH_MM,
-                    density=DEFAULT_DENSITY,  # 仮値（入庫時に上書き）
+                    item_name=str(material_text).strip(),
                     order_type=order_type,
                     ordered_quantity=ordered_quantity,
                     ordered_weight_kg=ordered_weight_kg,
                     unit_price=None,
-                    is_new_material=True,  # 入庫時に材料確定が必要
-                    usage_type=UsageType.GENERAL,  # 仮値（入庫時に確定）
-                    dedicated_part_number=None,  # 入庫時に確定
                 )
                 db.add(item)
 
@@ -255,7 +247,7 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
                 created_orders += 1
                 processed += 1
                 logger.info(
-                    f"発注作成: id={po.id}, 発注番号={po.order_number}, アイテムid={item.id}, 単位={unit}, 値={qty_value}, order_type={order_type.value}"
+                    f"発注作成: id={po.id}, 発注番号={po.order_number}, アイテムid={item.id}, 単位={unit}, 値={qty_value}, order_type={order_type.value}, item_name='{item.item_name}'"
                 )
 
             except Exception as e:
