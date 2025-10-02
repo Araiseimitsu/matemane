@@ -5,6 +5,8 @@ Excelから発注を作成する外部スクリプト
 対象シート: 材料管理表
 
 抽出条件:
+- I列(品番)が非空
+- L列(材料)が非空
 - Z列(指定納期)が入力あり
 - AC列(入荷日)が空
 
@@ -13,13 +15,13 @@ Excelから発注を作成する外部スクリプト
 - AA列(手配先) → 仕入れ先(supplier)
 - 今日 → 発注日(order_date)
 - Z列(指定納期) → 納期予定日(expected_delivery_date)
-- I列(品番) → 用途・製品名(purpose) および 材料の part_number
-- L列(材料) → 材料名解析（CSVインポートと同等のロジック）
+- I列(品番) → 用途・製品名(purpose)
+- L列(材料) → 材料仕様文字列（そのまま保存、入庫時に人の手で解析）
 
 材料登録方針:
-- 専用/汎用の判定は「マスターに既存があり、その材料が専用のときのみ専用」。
-- 既存検索は name, shape, diameter_mm で実施し、専用品番が一致する既存があればそれを優先。
-- 既存がなければ新規作成（UsageType=GENERAL、dedicated_part_number=None、part_number に I列を設定）。
+- Excel取込時は材料仕様文字列をそのまま保存（自動解析しない）
+- material_id = NULL、入庫時に人の手で材料マスタと紐付け
+- is_new_material = True で入庫時の材料確定が必要なことを示す
 
 発注作成方針:
 - 行単位で1件の発注を作成（アイテムは1点）
@@ -37,12 +39,10 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 
 import pandas as pd
-import re
-import unicodedata
 
 from src.db import SessionLocal
 from src.db.models import (
-    Material, MaterialShape, UsageType,
+    MaterialShape, UsageType,
     PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, OrderType,
     User, UserRole
 )
@@ -55,202 +55,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 DEFAULT_LENGTH_MM = 2500
 DEFAULT_ORDER_QUANTITY = 1
-
-# 材質名から比重の推定（materials APIのデータベースを要約）
-DEFAULT_DENSITIES = {
-    # ステンレス系
-    'SUS303': 7.93,
-    'SUS304': 7.93,
-    'SUS316': 7.98,
-    'SUS430': 7.70,
-    'SUS440C': 7.70,
-    'SUS440': 7.70,
-    # 炭素鋼系
-    'S45C': 7.85,
-    'S45CFS': 7.85,
-    'S45CF': 7.85,
-    'S50C': 7.85,
-    'S55C': 7.85,
-    'SK': 7.85,
-    'ASK2600S': 7.85,
-    'ASK2200R': 7.85,
-    'SF-20T': 7.85,
-    '1144': 7.85,
-    'TLS': 7.85,
-    'G23-T8': 7.85,
-    # 黄銅系
-    'C3604': 8.49,
-    'C3604LCD': 8.49,
-    'C3602': 8.49,
-    'C3602LCD': 8.49,
-    'C3601': 8.49,
-    # リン青銅系
-    'C5191': 8.80,
-    'C5212': 8.80,
-    # アルミニウム系
-    'A2024': 2.78,
-    'A2017': 2.79,
-    'A5056': 2.64,
-    'A6061': 2.70,
-    'A7075': 2.80,
-    # チタン系
-    'TI': 4.51,
-    'TC4': 4.43,
-}
-
-
-def guess_density(material_name: str) -> float:
-    text = (material_name or "").upper()
-    for key, value in DEFAULT_DENSITIES.items():
-        if key in text:
-            return value
-    return 7.85  # 既定（炭素鋼）
-
-
-def parse_material_info(material_spec: str) -> Dict[str, Any]:
-    """
-    材料仕様文字列を解析
-
-    例:
-    - SUS303 ∅10.0CM → {material_name: 'SUS303', diameter: 10.0, shape: round}
-    - C3602Lcd ∅12.0 (NB5N) → {material_name: 'C3602LCD', diameter: 12.0, shape: round, dedicated_part_number: 'NB5N'}
-    """
-    if not material_spec or pd.isna(material_spec):
-        return None
-
-    # 文字種の正規化（全角→半角など）
-    material_spec = unicodedata.normalize('NFKC', str(material_spec).strip())
-    # 英数字の連続を保つため内部スペースを除去（例: 'A606 1-T6' -> 'A6061-T6'）
-    material_spec = re.sub(r'(?<=\w)\s+(?=\w)', '', material_spec)
-    # ゼロ幅スペース等の不可視文字を除去（Excel由来の隠し文字対策）
-    material_spec = re.sub(r'[\u200B-\u200D\u2060\uFEFF]', '', material_spec)
-
-    # 専用品番の抽出（カッコ内）
-    dedicated_part_number = None
-    dedicated_match = re.search(r'\(([^)]+)\)', material_spec)
-    if dedicated_match:
-        dedicated_part_number = dedicated_match.group(1).strip()
-
-    # パターンマッチング（実際のExcelデータに合わせて調整）
-    patterns = [
-        # SUS303 ∅10.0CM の形式
-        r'^(SUS\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)(?:CM|cm)?',
-        # C3602Lcd ∅12.0 の形式
-        r'^(C\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)',
-        # 英字のみやハイフン含み（例: TLS, TI, SK, G23-T8）※径の直後に記号/文字が付くケースに対応
-        r'^([A-Za-z]+(?:\d+[A-Za-z]*)?(?:-[A-Za-z0-9]+)?)\s*[∅φΦ]?(\d+(?:\.\d+)?)[A-Za-z]?',
-        # 英字+数字の一般形式（例: S45C, A6061, TC4）※ハイフン付き材質に早期マッチしないよう順序を後ろへ
-        r'^([A-Za-z]+\d+[A-Za-z]*)\s*[∅φΦ]?(\d+(?:\.\d+)?)[A-Za-z]?',
-    ]
-
-    for pattern in patterns:
-        match = re.search(pattern, material_spec, re.IGNORECASE)
-        if match:
-            material_name = match.group(1).upper()
-            diameter = float(match.group(2))
-
-            # 材料名の正規化
-            material_name = material_name.replace('Lcd', 'LCD')
-            if material_name.startswith('C3602LCD') or material_name.startswith('C3602Lcd'):
-                material_name = 'C3602LCD'
-
-            return {
-                'material_name': material_name,
-                'diameter': diameter,
-                'shape': MaterialShape.ROUND,  # 基本的に丸棒と仮定
-                'dedicated_part_number': dedicated_part_number
-            }
-
-    # フォールバック: 先頭の材質っぽいトークン + 直径数値を抽出
-    name_match = re.match(r'([A-Za-z0-9\-]+)', material_spec)
-    diameter_match = re.search(r'[∅φΦ]?\s*(\d+(?:\.\d+)?)', material_spec)
-    if name_match and diameter_match:
-        material_name = name_match.group(1).upper()
-        # 正規化（LCDの表記揺れなど）
-        material_name = material_name.replace('LCD', 'LCD').replace('Lcd', 'LCD')
-        return {
-            'material_name': material_name,
-            'diameter': float(diameter_match.group(1)),
-            'shape': MaterialShape.ROUND,
-            'dedicated_part_number': dedicated_part_number
-        }
-
-    return None
-
-
-def parse_excel_material(material_text: str) -> Optional[Dict[str, Any]]:
-    """L列の材料仕様を解析して name/shape/diameter/専用品番 を返す"""
-    info = parse_material_info(material_text)
-    if not info:
-        return None
-    return {
-        "name": info["material_name"],
-        "shape": info["shape"],
-        "diameter_mm": info["diameter"],
-        "dedicated_part_number": info.get("dedicated_part_number"),
-    }
-
-
-def find_or_create_material(db, name: str, shape: MaterialShape, diameter_mm: float,
-                            part_number: Optional[str], dedicated_part_number: Optional[str]) -> Material:
-    """既存材料検索。なければ登録。専用判定はマスター既存のときのみ。
-
-    優先順位:
-      1) 専用品番が指定されている場合は、同一 name/shape/diameter かつ専用品番一致の既存を優先
-      2) それが無ければ、同一 name/shape/diameter の汎用既存を使用
-      3) 既存が無ければ新規作成（UsageType=GENERAL, dedicated_part_number=None）
-    """
-
-    # 1) 専用既存（専用品番一致）
-    if dedicated_part_number:
-        existing_dedicated = (
-            db.query(Material)
-            .filter(
-                Material.name == name,
-                Material.shape == shape,
-                Material.diameter_mm == diameter_mm,
-                Material.is_active == True,
-                Material.usage_type == UsageType.DEDICATED,
-                Material.dedicated_part_number == dedicated_part_number,
-            )
-            .first()
-        )
-        if existing_dedicated:
-            return existing_dedicated
-
-    # 2) 汎用既存
-    existing_general = (
-        db.query(Material)
-        .filter(
-            Material.name == name,
-            Material.shape == shape,
-            Material.diameter_mm == diameter_mm,
-            Material.is_active == True,
-            Material.usage_type == UsageType.GENERAL,
-        )
-        .first()
-    )
-    if existing_general:
-        return existing_general
-
-    # 3) 既存が無ければ新規（専用扱いはしない）
-    density = guess_density(name)
-    material = Material(
-        part_number=part_number,
-        name=name,
-        shape=shape,
-        diameter_mm=diameter_mm,
-        current_density=density,
-        usage_type=UsageType.GENERAL,
-        dedicated_part_number=None,
-        is_active=True,
-    )
-    db.add(material)
-    db.flush()
-    logger.info(
-        f"材料を新規登録: id={material.id}, {name} {shape.value} {diameter_mm}mm, part={part_number} dedicated=None"
-    )
-    return material
+DEFAULT_DENSITY = 7.85  # 既定比重（入庫時に人の手で上書き）
 
 
 def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: bool = False) -> Dict[str, Any]:
@@ -385,26 +190,12 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
                     logger.info(f"{idx+1}行: 発注番号重複のためスキップ ({order_number})")
                     continue
 
-                # 材料仕様解析
-                parsed = parse_excel_material(material_text)
-                if not parsed:
-                    skipped += 1
-                    logger.warning(f"{idx+1}行: 材料仕様を解析できないためスキップ: '{material_text}'")
-                    continue
-
-                # 材料の検索/登録
-                material = find_or_create_material(
-                    db,
-                    name=parsed["name"],
-                    shape=parsed["shape"],
-                    diameter_mm=float(parsed["diameter_mm"]),
-                    part_number=str(item_code).strip() if item_code else None,
-                    dedicated_part_number=parsed.get("dedicated_part_number"),
-                )
+                # 材料仕様文字列をそのまま保存（解析は入庫時に人の手で実施）
+                # material_id は NULL、入庫時に確定する
 
                 if dry_run:
                     processed += 1
-                    logger.info(f"DRY-RUN: 発注作成予定 - 発注番号={order_number}, 仕入先={supplier}, 用途={item_code}, 材料ID={material.id}")
+                    logger.info(f"DRY-RUN: 発注作成予定 - 発注番号={order_number}, 仕入先={supplier}, 用途={item_code}, 材料仕様={material_text}")
                     continue
 
                 # 発注作成
@@ -437,21 +228,23 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
                     order_type = OrderType.QUANTITY
                     ordered_quantity = int(qty_value) if qty_value is not None else DEFAULT_ORDER_QUANTITY
 
+                # 材料仕様文字列をそのまま material_name に保存
+                # 入庫時に人の手で材料マスタと紐付け
                 item = PurchaseOrderItem(
                     purchase_order_id=po.id,
-                    material_id=material.id,
-                    material_name=material.name,
-                    shape=material.shape,
-                    diameter_mm=material.diameter_mm,
+                    material_id=None,  # 入庫時に確定
+                    material_name=str(material_text).strip(),  # L列の値をそのまま保存
+                    shape=MaterialShape.ROUND,  # 仮値（入庫時に上書き）
+                    diameter_mm=0.0,  # 仮値（入庫時に上書き）
                     length_mm=DEFAULT_LENGTH_MM,
-                    density=material.current_density,
+                    density=DEFAULT_DENSITY,  # 仮値（入庫時に上書き）
                     order_type=order_type,
                     ordered_quantity=ordered_quantity,
                     ordered_weight_kg=ordered_weight_kg,
                     unit_price=None,
-                    is_new_material=False,
-                    usage_type=material.usage_type,
-                    dedicated_part_number=material.dedicated_part_number,
+                    is_new_material=True,  # 入庫時に材料確定が必要
+                    usage_type=UsageType.GENERAL,  # 仮値（入庫時に確定）
+                    dedicated_part_number=None,  # 入庫時に確定
                 )
                 db.add(item)
 

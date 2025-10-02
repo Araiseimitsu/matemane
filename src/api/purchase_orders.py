@@ -63,12 +63,7 @@ def calculate_quantity_from_weight(weight_kg: float, shape: MaterialShape, diame
 
 # Pydantic スキーマ
 class PurchaseOrderItemCreate(BaseModel):
-    material_id: Optional[int] = Field(None, description="既存材料ID（新規材料の場合はNULL）")
-    material_name: str = Field(..., max_length=100, description="材料名")
-    shape: MaterialShape = Field(..., description="断面形状")
-    diameter_mm: float = Field(..., gt=0, description="直径または一辺の長さ（mm）")
-    length_mm: int = Field(..., gt=0, description="長さ（mm）")
-    density: float = Field(..., gt=0, description="比重（g/cm³）")
+    item_name: str = Field(..., max_length=200, description="発注品名")
     order_type: OrderType = Field(OrderType.QUANTITY, description="発注方式")
     ordered_quantity: Optional[int] = Field(None, gt=0, description="発注数量（本数指定時）")
     ordered_weight_kg: Optional[float] = Field(None, gt=0, description="発注重量（重量指定時、kg）")
@@ -85,23 +80,6 @@ class PurchaseOrderItemCreate(BaseModel):
         else:
             raise ValueError("無効な発注方式です")
 
-    def get_final_quantity_and_weight(self):
-        """最終的な発注数量と重量を計算"""
-        if self.order_type == OrderType.QUANTITY:
-            # 本数指定：重量を計算
-            weight = calculate_weight_from_quantity(
-                self.ordered_quantity, self.shape, self.diameter_mm,
-                self.length_mm, self.density
-            )
-            return self.ordered_quantity, weight
-        else:
-            # 重量指定：本数を計算
-            quantity = calculate_quantity_from_weight(
-                self.ordered_weight_kg, self.shape, self.diameter_mm,
-                self.length_mm, self.density
-            )
-            return quantity, self.ordered_weight_kg
-
 class PurchaseOrderCreate(BaseModel):
     order_number: Optional[str] = Field(None, max_length=50, description="発注番号（未指定時は自動生成）")
     supplier: str = Field(..., max_length=200, description="仕入先")
@@ -115,23 +93,16 @@ class PurchaseOrderItemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    material_id: Optional[int]
-    material_name: str
-    shape: MaterialShape
-    diameter_mm: float
-    length_mm: int
-    density: float
+    item_name: str
     order_type: OrderType
     ordered_quantity: Optional[int]
     received_quantity: int
     ordered_weight_kg: Optional[float]
     received_weight_kg: Optional[float]
     unit_price: Optional[float]
+    amount: Optional[float]
     management_code: str
-    is_new_material: bool
     status: PurchaseOrderItemStatus
-    usage_type: Optional[UsageType]  # 汎用/専用区分
-    dedicated_part_number: Optional[str]  # 専用品番
     purchase_order_id: int
     created_at: datetime
     updated_at: datetime
@@ -163,11 +134,21 @@ class PaginatedPurchaseOrderResponse(BaseModel):
 
 class ReceivingConfirmation(BaseModel):
     lot_number: str = Field(..., max_length=100, description="ロット番号")
+    # 材料情報（入庫確認時に入力）
+    material_name: str = Field(..., max_length=100, description="材質名")
+    diameter_mm: float = Field(..., gt=0, description="直径または一辺の長さ（mm）")
+    shape: MaterialShape = Field(..., description="断面形状")
+    usage_type: UsageType = Field(UsageType.GENERAL, description="用途区分（汎用/専用）")
+    density: float = Field(..., gt=0, description="比重（g/cm³）")
+    # 入庫情報
+    length_mm: int = Field(..., gt=0, description="長さ（mm）")
+    received_date: datetime = Field(..., description="入荷日")
     received_quantity: Optional[int] = Field(None, gt=0, description="入庫数量（本数指定時）")
     received_weight_kg: Optional[float] = Field(None, gt=0, description="入庫重量（重量指定時、kg）")
-    # 従来の単一置き場指定（後方互換維持）
+    unit_price: Optional[float] = Field(None, ge=0, description="単価")
+    amount: Optional[float] = Field(None, ge=0, description="金額")
+    # 置き場
     location_id: Optional[int] = Field(None, description="置き場ID")
-    # 新規：複数置き場指定
     location_ids: Optional[List[int]] = Field(None, description="置き場IDの配列（複数指定時）")
     notes: Optional[str] = Field(None, description="備考")
 
@@ -285,67 +266,27 @@ async def create_purchase_order(order: PurchaseOrderCreate, db: Session = Depend
                 detail=str(e)
             )
 
-        # 最終的な数量と重量を計算
-        final_quantity, final_weight = item_data.get_final_quantity_and_weight()
-
-        # 既存材料かチェック
-        is_new_material = False
-        final_material_id = item_data.material_id
-        material_usage_type = UsageType.GENERAL  # デフォルト値
-        material_dedicated_part_number = None
-
-        if item_data.material_id:
-            # 既存材料IDが指定された場合、材料が存在するかチェック
-            material = db.query(Material).filter(Material.id == item_data.material_id).first()
-            if not material:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"材料ID {item_data.material_id} が見つかりません"
-                )
-            # 材料の用途区分と専用品番を取得
-            material_usage_type = material.usage_type or UsageType.GENERAL
-            material_dedicated_part_number = material.dedicated_part_number
-        else:
-            # 新規材料の場合、同じ仕様の材料が既に存在するかチェック
-            existing_material = db.query(Material).filter(
-                Material.name == item_data.material_name,
-                Material.shape == item_data.shape,
-                Material.diameter_mm == item_data.diameter_mm,
-                Material.is_active == True
-            ).first()
-
-            if existing_material:
-                # 既存材料が見つかった場合は使用
-                final_material_id = existing_material.id
-                material_usage_type = existing_material.usage_type or UsageType.GENERAL
-                material_dedicated_part_number = existing_material.dedicated_part_number
-            else:
-                # 新規材料フラグを設定
-                is_new_material = True
+        # 数量ベースで金額計算
+        item_amount = None
+        if item_data.unit_price and item_data.ordered_quantity:
+            item_amount = item_data.unit_price * item_data.ordered_quantity
 
         # 発注アイテム作成
         db_item = PurchaseOrderItem(
             purchase_order_id=db_order.id,
-            material_id=final_material_id,
-            material_name=item_data.material_name,
-            shape=item_data.shape,
-            diameter_mm=item_data.diameter_mm,
-            length_mm=item_data.length_mm,
-            density=item_data.density,
+            item_name=item_data.item_name,
             order_type=item_data.order_type,
-            ordered_quantity=final_quantity,
-            ordered_weight_kg=final_weight,
+            ordered_quantity=item_data.ordered_quantity,
+            ordered_weight_kg=item_data.ordered_weight_kg,
             unit_price=item_data.unit_price,
-            is_new_material=is_new_material,
-            usage_type=material_usage_type,
-            dedicated_part_number=material_dedicated_part_number
+            amount=item_amount
         )
 
         db.add(db_item)
 
-        # 合計金額計算（本数ベース）
-        if item_data.unit_price:
-            total_amount += item_data.unit_price * final_quantity
+        # 合計金額計算
+        if item_amount:
+            total_amount += item_amount
 
     # 合計金額を設定
     db_order.total_amount = total_amount if total_amount > 0 else None
@@ -414,62 +355,27 @@ async def update_purchase_order(order_id: int, order: PurchaseOrderCreate, db: S
                 detail=str(e)
             )
 
-        # 最終的な数量と重量を計算
-        final_quantity, final_weight = item_data.get_final_quantity_and_weight()
-
-        # 既存材料かチェック
-        is_new_material = False
-        final_material_id = item_data.material_id
-        material_usage_type = UsageType.GENERAL
-        material_dedicated_part_number = None
-
-        if item_data.material_id:
-            material = db.query(Material).filter(Material.id == item_data.material_id).first()
-            if not material:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"材料ID {item_data.material_id} が見つかりません"
-                )
-            material_usage_type = material.usage_type or UsageType.GENERAL
-            material_dedicated_part_number = material.dedicated_part_number
-        else:
-            existing_material = db.query(Material).filter(
-                Material.name == item_data.material_name,
-                Material.shape == item_data.shape,
-                Material.diameter_mm == item_data.diameter_mm,
-                Material.is_active == True
-            ).first()
-
-            if existing_material:
-                final_material_id = existing_material.id
-                material_usage_type = existing_material.usage_type or UsageType.GENERAL
-                material_dedicated_part_number = existing_material.dedicated_part_number
-            else:
-                is_new_material = True
+        # 数量ベースで金額計算
+        item_amount = None
+        if item_data.unit_price and item_data.ordered_quantity:
+            item_amount = item_data.unit_price * item_data.ordered_quantity
 
         # 発注アイテム作成
         db_item = PurchaseOrderItem(
             purchase_order_id=db_order.id,
-            material_id=final_material_id,
-            material_name=item_data.material_name,
-            shape=item_data.shape,
-            diameter_mm=item_data.diameter_mm,
-            length_mm=item_data.length_mm,
-            density=item_data.density,
+            item_name=item_data.item_name,
             order_type=item_data.order_type,
-            ordered_quantity=final_quantity,
-            ordered_weight_kg=final_weight,
+            ordered_quantity=item_data.ordered_quantity,
+            ordered_weight_kg=item_data.ordered_weight_kg,
             unit_price=item_data.unit_price,
-            is_new_material=is_new_material,
-            usage_type=material_usage_type,
-            dedicated_part_number=material_dedicated_part_number
+            amount=item_amount
         )
 
         db.add(db_item)
 
-        # 合計金額計算（本数ベース）
-        if item_data.unit_price:
-            total_amount += item_data.unit_price * final_quantity
+        # 合計金額計算
+        if item_amount:
+            total_amount += item_amount
 
     # 合計金額を設定
     db_order.total_amount = total_amount if total_amount > 0 else None
@@ -545,7 +451,7 @@ async def receive_item(
     receiving: ReceivingConfirmation,
     db: Session = Depends(get_db)
 ):
-    """入庫確認"""
+    """入庫確認（材料情報入力対応）"""
     # 発注アイテム取得
     item = db.query(PurchaseOrderItem).filter(PurchaseOrderItem.id == item_id).first()
     if not item:
@@ -573,51 +479,60 @@ async def receive_item(
     if receiving.received_weight_kg:
         # 重量入力：重量から本数を計算
         final_received_quantity = calculate_quantity_from_weight(
-            receiving.received_weight_kg, item.shape, item.diameter_mm,
-            item.length_mm, item.density
+            receiving.received_weight_kg, receiving.shape, receiving.diameter_mm,
+            receiving.length_mm, receiving.density
         )
         final_received_weight = receiving.received_weight_kg
     else:
         # 本数入力：本数から重量を計算
         final_received_quantity = receiving.received_quantity
         final_received_weight = calculate_weight_from_quantity(
-            receiving.received_quantity, item.shape, item.diameter_mm,
-            item.length_mm, item.density
+            receiving.received_quantity, receiving.shape, receiving.diameter_mm,
+            receiving.length_mm, receiving.density
         )
 
-    # 材料の自動登録（新規材料の場合）
-    material_id = item.material_id
-    if item.is_new_material and not material_id:
+    # 材料マスター登録処理
+    # 1. 既存材料を検索（材質・形状・径でマッチング）
+    existing_material = db.query(Material).filter(
+        Material.name == receiving.material_name,
+        Material.shape == receiving.shape,
+        Material.diameter_mm == receiving.diameter_mm,
+        Material.is_active == True
+    ).first()
+
+    if existing_material:
+        # 既存材料が見つかった場合は使用
+        material_id = existing_material.id
+    else:
         # 新規材料として登録
         new_material = Material(
-            name=item.material_name,
-            shape=item.shape,
-            diameter_mm=item.diameter_mm,
-            current_density=item.density
+            name=receiving.material_name,
+            shape=receiving.shape,
+            diameter_mm=receiving.diameter_mm,
+            current_density=receiving.density,
+            usage_type=receiving.usage_type
         )
         db.add(new_material)
         db.flush()
         material_id = new_material.id
-
-        # 発注アイテムの材料IDを更新
-        item.material_id = material_id
-        item.is_new_material = False
 
     # ロット作成
     lot = Lot(
         lot_number=receiving.lot_number,
         material_id=material_id,
         purchase_order_item_id=item.id,
-        length_mm=item.length_mm,
+        length_mm=receiving.length_mm,
         initial_quantity=final_received_quantity,
         supplier=item.purchase_order.supplier,
-        received_date=datetime.now(),
+        received_date=receiving.received_date,
+        received_unit_price=receiving.unit_price,
+        received_amount=receiving.amount,
         notes=receiving.notes
     )
     db.add(lot)
     db.flush()
 
-    # 置き場の決定（複数対応）。location_ids が優先、未指定時は location_id、両方無ければ None を1件扱い。
+    # 置き場の決定（複数対応）
     target_locations: List[Optional[int]] = []
     if receiving.location_ids and len(receiving.location_ids) > 0:
         target_locations = list(receiving.location_ids)
@@ -683,7 +598,8 @@ async def receive_item(
         "lot_id": lot.id,
         "item_id": created_item_ids[0],
         "item_ids": created_item_ids,
-        "management_code": primary_management_code
+        "management_code": primary_management_code,
+        "material_id": material_id
     }
 
 @router.get("/items/{item_id}/management-code/", response_model=dict)
@@ -699,10 +615,7 @@ async def get_management_code(item_id: int, db: Session = Depends(get_db)):
     return {
         "item_id": item.id,
         "management_code": item.management_code,
-        "material_name": item.material_name,
-        "shape": item.shape.value,
-        "diameter_mm": item.diameter_mm,
-        "length_mm": item.length_mm,
+        "item_name": item.item_name,
         "ordered_quantity": item.ordered_quantity
     }
 

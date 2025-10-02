@@ -77,9 +77,7 @@
                         <tr>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">発注番号</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">仕入先</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">材料名</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">形状・寸法</th>
-                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">長さ</th>
+                            <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">発注品名</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">発注数量/重量</th>
                             <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">操作</th>
                         </tr>
@@ -126,6 +124,55 @@
                     </div>
                 </div>
 
+                <!-- 材料情報入力 -->
+                <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                    <h3 class="text-lg font-medium text-blue-900 mb-3">材料情報入力</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">材質名 *</label>
+                            <input type="text" name="material_name" required
+                                   class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="例: SUS303">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">径（mm）*</label>
+                            <input type="number" name="diameter_mm" step="0.1" min="0" required
+                                   class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="例: 10.0">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">形状 *</label>
+                            <select name="shape" required
+                                    class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">選択してください</option>
+                                <option value="round">丸棒</option>
+                                <option value="hexagon">六角棒</option>
+                                <option value="square">角棒</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">区分 *</label>
+                            <select name="usage_type" required
+                                    class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="general">汎用</option>
+                                <option value="dedicated">専用</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">比重（g/cm³）*</label>
+                            <input type="number" name="density" step="0.001" min="0" required
+                                   class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="例: 7.93">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">長さ（mm）*</label>
+                            <input type="number" name="length_mm" step="1" min="1" required
+                                   class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="例: 2500">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 入庫情報入力 -->
                 <div class="space-y-6">
                     <div>
@@ -133,6 +180,12 @@
                         <input type="text" name="lot_number" required
                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                placeholder="例: L202501001">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">入荷日 *</label>
+                        <input type="datetime-local" name="received_date" required
+                               class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     <!-- 入庫数量・重量（両方対応、相互換算） -->
@@ -189,6 +242,22 @@
                                        class="mr-2 text-blue-600 focus:ring-blue-500">
                                 <span class="text-sm font-medium text-gray-700">重量で入力</span>
                             </label>
+                        </div>
+                    </div>
+
+                    <!-- 単価・金額 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">単価</label>
+                            <input type="number" id="unitPriceInput" name="unit_price" step="0.01" min="0"
+                                   class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="例: 1500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">金額</label>
+                            <input type="number" id="amountInput" name="amount" step="0.01" min="0"
+                                   class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="例: 150000">
                         </div>
                     </div>
 
@@ -344,21 +413,11 @@ function createItemRow(item) {
 
     const orderNumber = item.purchase_order ? item.purchase_order.order_number : '-';
     const supplier = item.purchase_order ? item.purchase_order.supplier : '-';
-    const shapeText = getShapeText(item.shape);
-    const dimensions = `${shapeText} ${item.diameter_mm}mm`;
-    const usageBadge = getUsageTypeBadge(item.usage_type);
 
     row.innerHTML = `
         <td class="px-4 py-3 text-sm font-medium text-gray-900">${orderNumber}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${supplier}</td>
-        <td class="px-4 py-3 text-sm text-gray-600">
-            <div class="flex items-center gap-2">
-                ${item.material_name}
-                ${usageBadge}
-            </div>
-        </td>
-        <td class="px-4 py-3 text-sm text-gray-600">${dimensions}</td>
-        <td class="px-4 py-3 text-sm text-gray-600">${item.length_mm}mm</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${item.item_name}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${getOrderDisplayText(item)}</td>
         <td class="px-4 py-3">
             <button onclick="showReceiveModal(${item.id})"
@@ -410,11 +469,22 @@ function getOrderDisplayText(item) {
 }
 
 // 本数・重量の相互換算と表示更新
-async function updateConversion(item, quantity, weight) {
+async function updateConversion(materialData, quantity, weight) {
     try {
         let calculatedQuantity = quantity;
         let calculatedWeight = weight;
         let unitWeight = 0;
+
+        // 材料情報の取得
+        const shape = materialData.shape || document.querySelector('select[name="shape"]').value;
+        const diameterMm = materialData.diameter_mm || parseFloat(document.querySelector('input[name="diameter_mm"]').value);
+        const lengthMm = materialData.length_mm || parseInt(document.querySelector('input[name="length_mm"]').value);
+        const density = materialData.density || parseFloat(document.querySelector('input[name="density"]').value);
+
+        if (!shape || !diameterMm || !lengthMm || !density) {
+            // 材料情報が不足している場合は換算をスキップ
+            return;
+        }
 
         if (quantity && !weight) {
             // 本数から重量を計算
@@ -424,10 +494,10 @@ async function updateConversion(item, quantity, weight) {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    shape: item.shape,
-                    diameter_mm: item.diameter_mm,
-                    length_mm: item.length_mm,
-                    density: item.density,
+                    shape: shape,
+                    diameter_mm: diameterMm,
+                    length_mm: lengthMm,
+                    density: density,
                     quantity: quantity
                 })
             });
@@ -444,10 +514,10 @@ async function updateConversion(item, quantity, weight) {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    shape: item.shape,
-                    diameter_mm: item.diameter_mm,
-                    length_mm: item.length_mm,
-                    density: item.density,
+                    shape: shape,
+                    diameter_mm: diameterMm,
+                    length_mm: lengthMm,
+                    density: density,
                     weight_kg: weight
                 })
             });
@@ -573,8 +643,6 @@ async function showReceiveModal(itemId) {
         document.getElementById('receiveItemId').value = itemId;
 
         const itemInfo = document.getElementById('itemInfo');
-        const usageBadge = getUsageTypeBadge(item.usage_type);
-
         itemInfo.innerHTML = `
             <div>
                 <dt class="font-medium text-gray-500">発注番号</dt>
@@ -585,21 +653,8 @@ async function showReceiveModal(itemId) {
                 <dd class="text-gray-900">${order.supplier}</dd>
             </div>
             <div>
-                <dt class="font-medium text-gray-500">材料名</dt>
-                <dd class="text-gray-900">
-                    <div class="flex items-center gap-2">
-                        ${item.material_name}
-                        ${usageBadge}
-                    </div>
-                </dd>
-            </div>
-            <div>
-                <dt class="font-medium text-gray-500">形状・寸法</dt>
-                <dd class="text-gray-900">${getShapeText(item.shape)} ${item.diameter_mm}mm</dd>
-            </div>
-            <div>
-                <dt class="font-medium text-gray-500">長さ</dt>
-                <dd class="text-gray-900">${item.length_mm}mm</dd>
+                <dt class="font-medium text-gray-500">発注品名</dt>
+                <dd class="text-gray-900">${item.item_name}</dd>
             </div>
             <div>
                 <dt class="font-medium text-gray-500">発注方式</dt>
@@ -614,6 +669,15 @@ async function showReceiveModal(itemId) {
                 <dd class="text-gray-900 font-mono text-xs">${item.management_code}</dd>
             </div>
         `;
+
+        // 入荷日のデフォルト値を現在時刻に設定
+        const now = new Date();
+        const localDateTime = now.getFullYear() + '-' +
+            String(now.getMonth() + 1).padStart(2, '0') + '-' +
+            String(now.getDate()).padStart(2, '0') + 'T' +
+            String(now.getHours()).padStart(2, '0') + ':' +
+            String(now.getMinutes()).padStart(2, '0');
+        document.querySelector('input[name="received_date"]').value = localDateTime;
 
         // 発注方式に応じてフィールドを切り替え
         const quantityField = document.getElementById('quantityField');
@@ -633,12 +697,10 @@ async function showReceiveModal(itemId) {
             // 重量指定発注の場合は重量をデフォルトに
             weightInput.value = item.ordered_weight_kg;
             document.querySelector('input[name="input_method"][value="weight"]').checked = true;
-            updateConversion(item, null, item.ordered_weight_kg);
         } else {
             // 本数指定発注の場合は本数をデフォルトに
             quantityInput.value = item.ordered_quantity;
             document.querySelector('input[name="input_method"][value="quantity"]').checked = true;
-            updateConversion(item, item.ordered_quantity, null);
         }
 
         // 本数入力時のイベントリスナー
@@ -647,7 +709,7 @@ async function showReceiveModal(itemId) {
                 // 本数入力時は重量をクリアして換算
                 weightInput.value = '';
                 document.querySelector('input[name="input_method"][value="quantity"]').checked = true;
-                updateConversion(item, parseInt(this.value), null);
+                updateConversion({}, parseInt(this.value), null);
             }
         });
 
@@ -657,7 +719,7 @@ async function showReceiveModal(itemId) {
                 // 重量入力時は本数をクリアして換算
                 quantityInput.value = '';
                 document.querySelector('input[name="input_method"][value="weight"]').checked = true;
-                updateConversion(item, null, parseFloat(this.value));
+                updateConversion({}, null, parseFloat(this.value));
             }
         });
 
@@ -671,7 +733,7 @@ async function showReceiveModal(itemId) {
                     weightInput.focus();
                     quantityInput.value = '';
                 }
-                updateConversion(item, null, null);
+                updateConversion({}, null, null);
             });
         });
 
@@ -720,10 +782,32 @@ async function handleReceive(event) {
     const selectedLocationOptions = Array.from(document.querySelector('select[name="location_ids"]').selectedOptions);
     const selectedLocationIds = selectedLocationOptions.map(opt => parseInt(opt.value, 10)).filter(id => !isNaN(id));
 
+    // 材料情報
+    const materialData = {
+        material_name: formData.get('material_name'),
+        diameter_mm: parseFloat(formData.get('diameter_mm')),
+        shape: formData.get('shape'),
+        usage_type: formData.get('usage_type'),
+        density: parseFloat(formData.get('density')),
+        length_mm: parseInt(formData.get('length_mm'))
+    };
+
+    // 入庫情報
     const receiveData = {
         lot_number: formData.get('lot_number'),
-        notes: formData.get('notes') || null
+        received_date: formData.get('received_date'),
+        notes: formData.get('notes') || null,
+        ...materialData
     };
+
+    // 単価・金額
+    if (formData.get('unit_price')) {
+        receiveData.unit_price = parseFloat(formData.get('unit_price'));
+    }
+    if (formData.get('amount')) {
+        receiveData.amount = parseFloat(formData.get('amount'));
+    }
+
     if (selectedLocationIds.length > 0) {
         receiveData.location_ids = selectedLocationIds;
     }
