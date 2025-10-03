@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Request
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Request, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict
 from pydantic import BaseModel, Field, ConfigDict
@@ -11,7 +11,7 @@ import json
 
 from src.db import get_db
 from src.db.models import (
-    Material, MaterialShape, Density, UsageType,
+    Material, MaterialShape, Density,
     MaterialStandard, MaterialGrade, MaterialProduct, MaterialAlias
 )
 
@@ -97,7 +97,6 @@ class MaterialBase(BaseModel):
     shape: MaterialShape = Field(..., description="断面形状")
     diameter_mm: float = Field(..., gt=0, description="直径または一辺の長さ（mm）")
     current_density: float = Field(..., gt=0, description="現在の比重（g/cm³）")
-    usage_type: Optional[UsageType] = Field(UsageType.GENERAL, description="用途区分（汎用/専用）")
     dedicated_part_number: Optional[str] = Field(None, max_length=100, description="専用品番")
 
 class MaterialCreate(MaterialBase):
@@ -113,7 +112,6 @@ class MaterialUpdate(BaseModel):
     shape: Optional[MaterialShape] = Field(None, description="断面形状")
     diameter_mm: Optional[float] = Field(None, gt=0, description="直径または一辺の長さ（mm）")
     current_density: Optional[float] = Field(None, gt=0, description="現在の比重（g/cm³）")
-    usage_type: Optional[UsageType] = Field(None, description="用途区分（汎用/専用）")
     dedicated_part_number: Optional[str] = Field(None, max_length=100, description="専用品番")
     is_active: Optional[bool] = Field(None, description="有効フラグ")
 
@@ -1152,21 +1150,87 @@ async def create_material_alias(
 @router.get("/search/")
 async def search_materials(
     query_text: str,
+    in_stock_only: bool = Query(False, description="在庫に存在する材料のみ返す"),
     db: Session = Depends(get_db)
 ):
     """材料横断検索（別名も含む）"""
-    # 材料名での検索
-    materials = db.query(Material).filter(
-        Material.name.contains(query_text) |
-        Material.display_name.contains(query_text) |
-        Material.detail_info.contains(query_text) |
-        Material.part_number.contains(query_text)
-    ).limit(50).all()
+    q = (query_text or "").strip()
+    q_upper = q.upper()
 
-    # 別名での検索
+    # 材料名・表示名・詳細情報・品番での検索
+    base_query = db.query(Material)
+
+    # 在庫あり材料のみに絞る場合のサブクエリ
+    if in_stock_only:
+        from src.db.models import Item, Lot
+        stock_mat_ids = db.query(Lot.material_id).join(Item, Item.lot_id == Lot.id).filter(
+            Item.is_active == True,
+            Item.current_quantity > 0
+        ).distinct()
+        base_query = base_query.filter(Material.id.in_(stock_mat_ids))
+
+    materials = base_query.filter(
+        (Material.name.ilike(f"%{q_upper}%")) |
+        (Material.display_name.ilike(f"%{q}%")) |
+        (Material.detail_info.ilike(f"%{q}%")) |
+        (Material.part_number.ilike(f"%{q}%"))
+    ).limit(100).all()
+
+    # 径・形状キーワードからの検索も対応（例: "φ10", "10mm", "六角 8"）
+    try:
+        # 径の抽出（半角/全角mm・記号対応）
+        q_norm = q.replace("㎜", "mm").replace("ｍｍ", "mm").replace("ＭＭ", "mm")
+        diameter_matches = re.findall(r"([0-9]+(?:\.[0-9]+)?)", q_norm)
+        shape_hint = None
+        if re.search(r"丸|round|φ|∅", q_norm, re.IGNORECASE):
+            shape_hint = MaterialShape.ROUND
+        elif re.search(r"六角|hex", q_norm, re.IGNORECASE):
+            shape_hint = MaterialShape.HEXAGON
+        elif re.search(r"四角|square|□", q_norm, re.IGNORECASE):
+            shape_hint = MaterialShape.SQUARE
+
+        if diameter_matches:
+            d_val = float(diameter_matches[0])
+            mats_by_diameter = db.query(Material).filter(Material.diameter_mm == d_val)
+            if shape_hint is not None:
+                mats_by_diameter = mats_by_diameter.filter(Material.shape == shape_hint)
+            mats_by_diameter = mats_by_diameter.limit(100).all()
+
+            existing_ids = {m.id for m in materials}
+            for m in mats_by_diameter:
+                if m.id not in existing_ids:
+                    materials.append(m)
+                    existing_ids.add(m.id)
+    except Exception:
+        # 直径解析に失敗しても通常検索結果は返す
+        pass
+
+    # 数値キーワードからJIS候補（例: "3604" -> "C3604", "C3604LCD"）も拾う
+    try:
+        tokens = set()
+        if re.fullmatch(r"\d{3,4}", q_upper):
+            tokens.update({q_upper, f"C{q_upper}", f"C{q_upper}LCD"})
+        elif re.fullmatch(r"C\d{3,4}", q_upper):
+            tokens.update({q_upper, f"{q_upper}LCD"})
+
+        existing_ids = {m.id for m in materials}
+        for t in tokens:
+            extra = db.query(Material).filter(
+                (Material.name.ilike(f"%{t}%")) |
+                (Material.display_name.ilike(f"%{t}%")) |
+                (Material.part_number.ilike(f"%{t}%"))
+            ).limit(100).all()
+            for m in extra:
+                if m.id not in existing_ids:
+                    materials.append(m)
+                    existing_ids.add(m.id)
+    except Exception:
+        pass
+
+    # 別名での検索も統合
     aliases = db.query(MaterialAlias).filter(
-        MaterialAlias.alias_name.contains(query_text)
-    ).limit(50).all()
+        MaterialAlias.alias_name.ilike(f"%{q}%")
+    ).limit(100).all()
 
     # 結果を統合
     material_ids = {m.id for m in materials}
@@ -1187,7 +1251,7 @@ async def search_materials(
             "part_number": material.part_number,
             "shape": material.shape.value,
             "diameter_mm": material.diameter_mm,
-            "usage_type": material.usage_type.value if material.usage_type else None,
+            # usage_typeは廃止。グループ運用へ統一
             "hierarchy": None
         }
 
@@ -1221,10 +1285,8 @@ async def search_materials(
 
         results.append(result)
 
-    return {
-        "query": query_text,
-        "total": len(results),
-        "results": results
-    }
+    # 既存フロントエンドは配列レスポンスを期待しているため、
+    # 結果配列のみを返却（total等は不要）
+    return results
 
 

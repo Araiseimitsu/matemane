@@ -76,6 +76,16 @@ class APIClient {
   }
 
   /**
+   * PATCHリクエスト
+   */
+  static async patch(endpoint, data = {}) {
+    return this.request(`${this.baseURL}${endpoint}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
+  /**
    * DELETEリクエスト
    */
   static async delete(endpoint) {
@@ -135,6 +145,57 @@ class APIClient {
    */
   static async deleteMaterial(id) {
     return this.delete(`/materials/${id}`);
+  }
+
+  // ===== 材料グループ =====
+
+  /**
+   * グループ一覧取得
+   */
+  static async getMaterialGroups(params = {}) {
+    return this.get("/material-groups/", params);
+  }
+
+  /**
+   * グループ作成
+   */
+  static async createMaterialGroup(data) {
+    return this.post("/material-groups/", data);
+  }
+
+  /**
+   * グループ更新
+   */
+  static async updateMaterialGroup(id, data) {
+    return this.patch(`/material-groups/${id}`, data);
+  }
+
+  /**
+   * グループ削除
+   */
+  static async deleteMaterialGroup(id) {
+    return this.delete(`/material-groups/${id}`);
+  }
+
+  /**
+   * グループメンバー一覧
+   */
+  static async getGroupMembers(groupId) {
+    return this.get(`/material-groups/${groupId}/members`);
+  }
+
+  /**
+   * グループメンバー追加
+   */
+  static async addGroupMember(groupId, materialId) {
+    return this.post(`/material-groups/${groupId}/members`, { material_id: materialId });
+  }
+
+  /**
+   * グループメンバー削除
+   */
+  static async removeGroupMember(groupId, memberId) {
+    return this.delete(`/material-groups/${groupId}/members/${memberId}`);
   }
 
   // ===== 在庫管理 =====
@@ -257,6 +318,13 @@ class APIClient {
    */
   static async getPendingItems() {
     return this.get("/purchase-orders/pending/items/");
+  }
+
+  /**
+   * 材料検索（名称・品番など）
+   */
+  static async searchMaterials(queryText) {
+    return this.get("/materials/search/", { query_text: queryText });
   }
 }
 

@@ -476,18 +476,7 @@ endblock %} {% block content %}
                 class="w-full p-2 border border-gray-300 rounded-md"
               />
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1"
-                >用途区分</label
-              >
-              <select
-                id="newMaterialUsageType"
-                class="w-full p-2 border border-gray-300 rounded-md"
-              >
-                <option value="general">汎用</option>
-                <option value="dedicated">専用</option>
-              </select>
-            </div>
+            <!-- 用途区分セレクトは廃止 -->
           </div>
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"
@@ -1027,13 +1016,11 @@ endblock %} {% block content %}
       item.className =
         "px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0";
 
-      // 汎用/専用バッジを作成
-      const usageBadge = getUsageTypeBadge(material.usage_type);
+      // 区分バッジは廃止
 
       item.innerHTML = `
         <div class="flex items-center gap-2">
           <div class="text-sm font-medium text-gray-900">${material.part_number}</div>
-          ${usageBadge}
         </div>
         <div class="text-xs text-gray-500">
           ${material.name} | 形状: ${getShapeText(material.shape)} | 直径: ${
@@ -1304,16 +1291,7 @@ endblock %} {% block content %}
     densityDisplay.value = material.current_density;
     densityValue.value = material.current_density;
 
-    // 常時表示の入力枠へ反映
-    const usageText = material.usage_type === "dedicated" ? "専用" : "汎用";
-    const usageDisplay = document.getElementById(`usageTypeDisplay_${itemIndex}`);
-    if (usageDisplay) {
-      usageDisplay.value = usageText;
-    }
-    const usageValue = document.getElementById(`usageTypeValue_${itemIndex}`);
-    if (usageValue) {
-      usageValue.value = material.usage_type || "";
-    }
+    // 区分値の反映は廃止
 
     const dedicatedDisplay = document.getElementById(`dedicatedPartDisplay_${itemIndex}`);
     if (dedicatedDisplay) {
@@ -1399,15 +1377,13 @@ endblock %} {% block content %}
         resultItem.className =
           "p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100";
 
-        // 汎用/専用バッジを作成
-        const usageBadge = getUsageTypeBadge(material.usage_type);
+        // 区分バッジは廃止
 
         resultItem.innerHTML = `
                 <div class="flex justify-between items-center">
                     <div class="flex-1">
                         <div class="flex items-center gap-2">
                             <div class="font-medium text-gray-900">${material.name}</div>
-                            ${usageBadge}
                         </div>
                         <div class="text-sm text-gray-600">
                             ${getShapeText(material.shape)} - ${
@@ -1486,7 +1462,7 @@ endblock %} {% block content %}
       shape: shapeInput.value,
       diameter_mm: parseFloat(diameterInput.value),
       current_density: parseFloat(densityInput.value),
-      usage_type: usageTypeInput.value,
+      // usage_typeは廃止
       description: descriptionInput.value || null,
     };
 
@@ -1890,15 +1866,7 @@ endblock %} {% block content %}
     return shapeMap[shape] || shape;
   }
 
-  // 汎用/専用区分のバッジを取得
-  function getUsageTypeBadge(usageType) {
-    if (!usageType || usageType === "general") {
-      return '<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">汎用</span>';
-    } else if (usageType === "dedicated") {
-      return '<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-800">専用</span>';
-    }
-    return "";
-  }
+  // 区分バッジ機能は廃止
 
   // 発注方式切り替え
   function toggleOrderType(itemIndex, orderType) {

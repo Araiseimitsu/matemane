@@ -5,10 +5,17 @@ class InventoryManager {
         this.inventoryItems = [];
         this.selectedItem = null;
         this.viewMode = 'list'; // 'list', 'summary'
+        this.summaryMode = 'name'; // 既定はExcel完全同名での集計
         this.init();
     }
 
     init() {
+        // URLクエリでサマリーモードを切り替え（例: ?summary_mode=length）
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('summary_mode');
+        if (mode === 'length') {
+            this.summaryMode = 'length';
+        }
         this.loadInventory();
         this.bindEvents();
         this.setupSearch();
@@ -100,7 +107,10 @@ class InventoryManager {
                 }
             });
 
-            const endpoint = this.viewMode === 'summary' ? '/api/inventory/summary' : '/api/inventory';
+            let endpoint = '/api/inventory';
+            if (this.viewMode === 'summary') {
+                endpoint = this.summaryMode === 'name' ? '/api/inventory/summary-by-name' : '/api/inventory/summary';
+            }
             const response = await fetch(`${endpoint}?${params}`);
 
             if (!response.ok) {
@@ -178,7 +188,7 @@ class InventoryManager {
             <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 ${stockStatus.borderColor}">
                 <div class="flex justify-between items-start mb-4">
                     <div class="flex-1">
-                        <h3 class="text-lg font-semibold text-gray-800">${item.material.name}</h3>
+                        <h3 class="text-lg font-semibold text-gray-800">${item.material.display_name || item.material.name}</h3>
                         <p class="text-sm text-gray-600">ロット: ${item.lot.lot_number}</p>
                         <p class="text-sm text-gray-600">管理コード: ${item.management_code}</p>
                     </div>
@@ -257,6 +267,50 @@ class InventoryManager {
             'hexagon': '六角棒',
             'square': '角棒'
         };
+
+        // name-onlyモードのレスポンスには寸法・長さが含まれないため表示を分岐
+        const isNameOnly = (this.summaryMode === 'name') || (item.length_mm === undefined);
+
+        if (isNameOnly) {
+            return `
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">${item.material_name}</h3>
+                    <p class="text-sm text-gray-600">材質名のみで集計（長さ・寸法無視）</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-center">
+                    <div class="bg-blue-50 p-4 rounded">
+                        <div class="text-2xl font-bold text-blue-600">${item.total_quantity}</div>
+                        <div class="text-sm text-gray-600">総本数</div>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded">
+                        <div class="text-2xl font-bold text-green-600">${item.total_weight_kg}</div>
+                        <div class="text-sm text-gray-600">総重量(kg)</div>
+                    </div>
+                </div>
+
+                <div class="mt-4 text-sm text-gray-600">
+                    <div class="flex justify-between">
+                        <span>ロット数:</span>
+                        <span class="font-medium">${item.lot_count}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>置き場数:</span>
+                        <span class="font-medium">${item.location_count}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>寸法バリエーション:</span>
+                        <span class="font-medium">${item.diameter_variations ?? '-'}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>長さバリエーション:</span>
+                        <span class="font-medium">${item.length_variations ?? '-'}</span>
+                    </div>
+                </div>
+            </div>
+            `;
+        }
 
         return `
             <div class="bg-white rounded-lg shadow-md p-6">
@@ -400,7 +454,7 @@ class InventoryManager {
             'square': '角棒'
         };
 
-        document.getElementById('detailMaterialName').textContent = item.material.name;
+        document.getElementById('detailMaterialName').textContent = item.material.display_name || item.material.name;
         document.getElementById('detailManagementCode').textContent = item.item.management_code;
         document.getElementById('detailShape').textContent = shapeNames[item.material.shape] || item.material.shape;
         document.getElementById('detailDiameter').textContent = `${item.material.diameter_mm}mm`;

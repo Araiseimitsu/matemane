@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import or_
+from src.db.models import MaterialAlias
 from typing import List, Optional
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from datetime import datetime, date
@@ -8,7 +10,8 @@ from datetime import datetime, date
 from src.db import get_db
 from src.db.models import (
     PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, PurchaseOrderItemStatus,
-    Material, MaterialShape, Lot, Item, Location, OrderType, User, UsageType
+    Material, MaterialShape, Lot, Item, Location, OrderType, User,
+    MaterialGroup, MaterialGroupMember
 )
 from src.api.order_utils import generate_order_number
 from src.utils.auth import get_password_hash
@@ -161,7 +164,7 @@ class ReceivingConfirmation(BaseModel):
     detail_info: Optional[str] = Field(None, max_length=200, description="詳細情報")
     diameter_mm: float = Field(..., gt=0, description="直径または一辺の長さ（mm）")
     shape: MaterialShape = Field(..., description="断面形状")
-    usage_type: UsageType = Field(UsageType.GENERAL, description="用途区分（汎用/専用）")
+    # 区分（汎用/専用）は廃止。グループ運用で統一するため削除。
     density: float = Field(..., gt=0, description="比重（g/cm³）")
     # 入庫情報
     length_mm: int = Field(..., gt=0, description="長さ（mm）")
@@ -174,6 +177,7 @@ class ReceivingConfirmation(BaseModel):
     location_id: Optional[int] = Field(None, description="置き場ID")
     location_ids: Optional[List[int]] = Field(None, description="置き場IDの配列（複数指定時）")
     notes: Optional[str] = Field(None, description="備考")
+    group_id: Optional[int] = Field(None, description="材料グループID（任意）")
 
     def validate_receiving_data(self):
         """入庫データのバリデーション"""
@@ -181,6 +185,15 @@ class ReceivingConfirmation(BaseModel):
             raise ValueError("入庫数量または入庫重量のいずれかが必要です")
         if self.received_quantity and self.received_weight_kg:
             raise ValueError("入庫数量と入庫重量は同時に指定できません")
+
+class MaterialSuggestionResponse(BaseModel):
+    material_id: int
+    display_name: str
+    name: Optional[str]
+    shape: Optional[MaterialShape]
+    diameter_mm: Optional[float]
+    detail_info: Optional[str]
+    density: Optional[float]
 
 # API エンドポイント
 @router.get("/", response_model=PaginatedPurchaseOrderResponse)
@@ -462,6 +475,38 @@ async def get_pending_items(db: Session = Depends(get_db)):
 
     return items
 
+@router.get("/items/{item_id}/suggest-material", response_model=Optional[MaterialSuggestionResponse])
+async def suggest_material_for_item(item_id: int, db: Session = Depends(get_db)):
+    """発注アイテムの全文（item_name）に一致する材料マスター候補を返す"""
+    item = db.query(PurchaseOrderItem).filter(PurchaseOrderItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="発注アイテムが見つかりません")
+
+    # 1) display_name = item_name
+    material = db.query(Material).filter(
+        Material.display_name == item.item_name,
+        Material.is_active == True
+    ).first()
+
+    # 2) alias = item_name
+    if not material:
+        alias = db.query(MaterialAlias).filter(MaterialAlias.alias_name == item.item_name).first()
+        if alias:
+            material = db.query(Material).filter(Material.id == alias.material_id, Material.is_active == True).first()
+
+    if not material:
+        return None
+
+    return MaterialSuggestionResponse(
+        material_id=material.id,
+        display_name=material.display_name,
+        name=material.name,
+        shape=material.shape,
+        diameter_mm=material.diameter_mm,
+        detail_info=material.detail_info,
+        density=material.current_density,
+    )
+
 # ==== TEMP: 外部Excel取込テストエンドポイント（後で削除しやすいよう最小限） ====
 @router.post("/external-import-test", response_model=dict)
 async def external_import_test(dry_run: bool = True, excel: Optional[str] = None, sheet: Optional[str] = None):
@@ -512,49 +557,97 @@ async def receive_item(
             detail=str(e)
         )
 
+    # 材料候補の特定（発注品名の全文で一致を優先。径・詳細は判定に使わない）
+    detail_info = receiving.detail_info.strip() if receiving.detail_info else None
+
+    # 1) 発注アイテムの全文（item_name）で材料マスターに一致するか
+    existing_material = db.query(Material).filter(
+        Material.display_name == item.item_name,
+        Material.is_active == True
+    ).first()
+
+    # 2) 別名でも一致させる（表示揺れ対応）
+    if not existing_material:
+        alias = db.query(MaterialAlias).filter(
+            MaterialAlias.alias_name == item.item_name
+        ).first()
+        if alias:
+            existing_material = db.query(Material).filter(
+                Material.id == alias.material_id,
+                Material.is_active == True
+            ).first()
+
+    # 3) 上記で見つからない場合は、ユーザー入力の材質名でもマッチを試みる（後方互換）
+    if not existing_material:
+        existing_material = db.query(Material).filter(
+            or_(
+                Material.display_name == receiving.material_name,
+                Material.name == receiving.material_name
+            ),
+            Material.is_active == True
+        ).first()
+        if not existing_material:
+            alias2 = db.query(MaterialAlias).filter(
+                MaterialAlias.alias_name == receiving.material_name
+            ).first()
+            if alias2:
+                existing_material = db.query(Material).filter(
+                    Material.id == alias2.material_id,
+                    Material.is_active == True
+                ).first()
+
+    # 計算用属性（既存があればマスター値を優先）
+    effective_shape = existing_material.shape if existing_material else receiving.shape
+    effective_diameter = existing_material.diameter_mm if existing_material else receiving.diameter_mm
+    effective_density = existing_material.current_density if existing_material else receiving.density
+
     # ユーザーの入力に応じて最終的な入庫数量と重量を計算
     if receiving.received_weight_kg:
         # 重量入力：重量から本数を計算
         final_received_quantity = calculate_quantity_from_weight(
-            receiving.received_weight_kg, receiving.shape, receiving.diameter_mm,
-            receiving.length_mm, receiving.density
+            receiving.received_weight_kg, effective_shape, effective_diameter,
+            receiving.length_mm, effective_density
         )
         final_received_weight = receiving.received_weight_kg
     else:
         # 本数入力：本数から重量を計算
         final_received_quantity = receiving.received_quantity
         final_received_weight = calculate_weight_from_quantity(
-            receiving.received_quantity, receiving.shape, receiving.diameter_mm,
-            receiving.length_mm, receiving.density
+            receiving.received_quantity, effective_shape, effective_diameter,
+            receiving.length_mm, effective_density
         )
 
-    # 材料マスター登録処理
-    # 1. 既存材料を検索（材質・形状・径でマッチング）
-    detail_info = receiving.detail_info.strip() if receiving.detail_info else None
-    existing_material = db.query(Material).filter(
-        Material.name == receiving.material_name,
-        Material.shape == receiving.shape,
-        Material.diameter_mm == receiving.diameter_mm,
-        Material.detail_info == detail_info,
-        Material.is_active == True
-    ).first()
-
     if existing_material:
-        # 既存材料が見つかった場合は使用
         material_id = existing_material.id
     else:
-        # 新規材料として登録
+        # 新規材料として登録（マスターは発注品名の全文を基準にdisplay_nameへ保存）
         new_material = Material(
             name=receiving.material_name,
+            display_name=item.item_name,  # 発注品名の全文
             detail_info=detail_info,
             shape=receiving.shape,
             diameter_mm=receiving.diameter_mm,
             current_density=receiving.density,
-            usage_type=receiving.usage_type
         )
         db.add(new_material)
         db.flush()
         material_id = new_material.id
+
+    # 材料グループ指定がある場合は所属を登録（重複はスキップ）
+    if receiving.group_id is not None:
+        group = db.query(MaterialGroup).filter(
+            MaterialGroup.id == receiving.group_id,
+            MaterialGroup.is_active == True
+        ).first()
+        if not group:
+            raise HTTPException(status_code=404, detail="指定された材料グループが見つかりません")
+        exists_member = db.query(MaterialGroupMember).filter(
+            MaterialGroupMember.group_id == receiving.group_id,
+            MaterialGroupMember.material_id == material_id
+        ).first()
+        if not exists_member:
+            db.add(MaterialGroupMember(group_id=receiving.group_id, material_id=material_id))
+            db.flush()
 
     # ロット作成
     lot = Lot(
@@ -572,7 +665,7 @@ async def receive_item(
     db.add(lot)
     db.flush()
 
-    # 置き場の決定（複数対応）
+    # 置き場の決定（複数指定でも数量は分けない）
     target_locations: List[Optional[int]] = []
     if receiving.location_ids and len(receiving.location_ids) > 0:
         target_locations = list(receiving.location_ids)
@@ -584,34 +677,26 @@ async def receive_item(
     created_item_ids: List[int] = []
     primary_management_code: Optional[str] = None
 
-    if len(target_locations) == 1:
-        # 単一置き場：従来通り1レコード作成
-        inventory_item = Item(
-            lot_id=lot.id,
-            location_id=target_locations[0],
-            current_quantity=final_received_quantity
-        )
-        db.add(inventory_item)
-        db.flush()
-        created_item_ids.append(inventory_item.id)
-        primary_management_code = inventory_item.management_code
-    else:
-        # 複数置き場：数量を自動分配して複数レコードを作成
-        k = len(target_locations)
-        base = final_received_quantity // k
-        remainder = final_received_quantity % k
-        for idx, loc in enumerate(target_locations):
-            share = base + (1 if idx < remainder else 0)
-            inventory_item = Item(
-                lot_id=lot.id,
-                location_id=loc,
-                current_quantity=share
-            )
-            db.add(inventory_item)
-            db.flush()
-            created_item_ids.append(inventory_item.id)
-            if idx == 0:
-                primary_management_code = inventory_item.management_code
+    # 第一置き場へまとめて登録（数量を分けない）
+    primary_location = target_locations[0] if len(target_locations) > 0 else None
+    inventory_item = Item(
+        lot_id=lot.id,
+        location_id=primary_location,
+        current_quantity=final_received_quantity
+    )
+    db.add(inventory_item)
+    db.flush()
+    created_item_ids.append(inventory_item.id)
+    primary_management_code = inventory_item.management_code
+
+    # 追加の置き場情報は備考へ追記（構造化テーブルなしのため）
+    if len(target_locations) > 1:
+        others = ", ".join(str(loc) for loc in target_locations[1:] if loc is not None)
+        if others:
+            if lot.notes:
+                lot.notes = f"{lot.notes}\n追加置き場: {others}"
+            else:
+                lot.notes = f"追加置き場: {others}"
 
     # 発注アイテムの状態更新
     item.received_quantity = final_received_quantity

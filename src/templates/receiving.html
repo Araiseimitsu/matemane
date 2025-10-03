@@ -148,6 +148,8 @@
                                    placeholder="例: 研磨 / 端面R付 / 面取りなど">
                             <p class="text-xs text-gray-500 mt-1">材質・寸法以降の仕上げや特記事項を入力してください。</p>
                         </div>
+                        <!-- 区分選択は廃止 -->
+                        <!--
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">区分 *</label>
                             <select name="usage_type" required
@@ -155,6 +157,15 @@
                                 <option value="general">汎用</option>
                                 <option value="dedicated">専用</option>
                             </select>
+                        </div>
+                        -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">材料グループ（任意）</label>
+                            <select id="groupSelect" name="group_id"
+                                    class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">未指定</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">同等材料の在庫集計用グループを選択できます。</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">比重（g/cm³）*</label>
@@ -168,13 +179,7 @@
                                    class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                    placeholder="例: 2500">
                         </div>
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">使用材料情報（任意）</label>
-                            <textarea name="material_usage_info" rows="3"
-                                      class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                      placeholder="例: 切断後3m→2m使用、端材利用、用途の補足など"></textarea>
-                            <p class="text-xs text-gray-500 mt-1">ここに記入した内容は備考に統合されます。</p>
-                        </div>
+                        
                     </div>
                 </div>
 
@@ -189,7 +194,7 @@
 
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">入荷日 *</label>
-                        <input type="datetime-local" name="received_date" required
+                        <input type="date" name="received_date" required
                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
@@ -267,12 +272,11 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">置き場（複数選択可）</label>
-                        <select name="location_ids" multiple
-                                class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <!-- 動的に生成 -->
-                        </select>
-                        <p class="text-xs text-gray-500 mt-1">Ctrl/Shiftキーで複数選択できます。未選択でも登録可能です。</p>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">置き場（複数可）</label>
+                        <input type="text" name="location_ids"
+                               class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="例: 12, 23, 45">
+                        <p class="text-xs text-gray-500 mt-1">カンマ区切りで複数指定可能です。未入力でも登録可能です。複数指定時でも数量は分けず、第一置き場に登録します。</p>
                     </div>
 
                     <div>
@@ -434,7 +438,6 @@ function clearConversionDisplays() {
 document.addEventListener('DOMContentLoaded', function() {
     // 初期化
     loadPendingItems();
-    loadLocations();
     setupEventListeners();
 
     // フィルターのリアルタイム更新設定
@@ -491,24 +494,7 @@ async function loadPendingItems() {
     }
 }
 
-// 置き場一覧読み込み（1〜300で固定）
-async function loadLocations() {
-    try {
-        const select = document.querySelector('select[name="location_ids"]');
-        if (!select) return;
-        // 既存のオプションを全てクリア
-        select.innerHTML = '';
-
-        for (let i = 1; i <= 300; i++) {
-            const option = document.createElement('option');
-            option.value = String(i);
-            option.textContent = String(i);
-            select.appendChild(option);
-        }
-    } catch (error) {
-        console.error('置き場読み込みエラー:', error);
-    }
-}
+// 置き場入力は数値入力に変更済みのため、一覧読み込みは不要です
 
 // アイテム行作成
 function createItemRow(item) {
@@ -545,14 +531,7 @@ function getShapeText(shape) {
 }
 
 // 汎用/専用区分のバッジを取得
-function getUsageTypeBadge(usageType) {
-    if (!usageType || usageType === 'general') {
-        return '<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">汎用</span>';
-    } else if (usageType === 'dedicated') {
-        return '<span class="px-2 py-0.5 text-xs font-medium rounded-full bg-purple-100 text-purple-800">専用</span>';
-    }
-    return '';
-}
+// 区分バッジ機能は廃止
 
 // 発注方式テキスト取得
 function getOrderTypeText(orderType) {
@@ -802,20 +781,14 @@ async function showReceiveModal(itemId) {
                 <dt class="font-medium text-gray-500">${item.order_type === 'quantity' ? '発注数量' : '発注重量'}</dt>
                 <dd class="text-gray-900">${item.order_type === 'quantity' ? item.ordered_quantity + '本' : item.ordered_weight_kg + 'kg'}</dd>
             </div>
-            <div>
-                <dt class="font-medium text-gray-500">管理コード</dt>
-                <dd class="text-gray-900 font-mono text-xs">${item.management_code}</dd>
-            </div>
         `;
 
-        // 入荷日のデフォルト値を現在時刻に設定
+        // 入荷日のデフォルト値を本日の日付に設定
         const now = new Date();
-        const localDateTime = now.getFullYear() + '-' +
+        const localDate = now.getFullYear() + '-' +
             String(now.getMonth() + 1).padStart(2, '0') + '-' +
-            String(now.getDate()).padStart(2, '0') + 'T' +
-            String(now.getHours()).padStart(2, '0') + ':' +
-            String(now.getMinutes()).padStart(2, '0');
-        document.querySelector('input[name="received_date"]').value = localDateTime;
+            String(now.getDate()).padStart(2, '0');
+        document.querySelector('input[name="received_date"]').value = localDate;
 
         // 長さ（mm）のデフォルト値を設定
         const lengthInput = document.querySelector('input[name="length_mm"]');
@@ -855,6 +828,33 @@ async function showReceiveModal(itemId) {
             updateConversion();
         };
 
+        // 材料マスター照合（発注品名の全文）
+        try {
+            const sugRes = await fetch(`/api/purchase-orders/items/${item.id}/suggest-material`);
+            if (sugRes.ok) {
+                const sug = await sugRes.json();
+                if (sug) {
+                    const matNameEl = document.querySelector('input[name="material_name"]');
+                    const diaEl = document.querySelector('input[name="diameter_input"]');
+                    const detailEl = document.querySelector('input[name="detail_info"]');
+                    const densityEl = document.querySelector('input[name="density"]');
+
+                    const shapeVal = (sug.shape || '').toString().toLowerCase();
+                    const symbol = shapeVal === 'round' ? 'φ' : (shapeVal === 'hexagon' ? 'H' : (shapeVal === 'square' ? '□' : ''));
+                    // 解析項目を事前入力
+                    if (matNameEl && (sug.name || matNameEl.value === '')) matNameEl.value = sug.name || matNameEl.value || '';
+                    if (diaEl && sug.diameter_mm && symbol) diaEl.value = `${symbol}${sug.diameter_mm}`;
+                    if (detailEl && sug.detail_info) detailEl.value = sug.detail_info;
+                    if (densityEl && typeof sug.density === 'number') densityEl.value = sug.density;
+
+                    showToast(`材料マスターに一致: ${sug.display_name}`, 'success');
+                    updateConversion();
+                }
+            }
+        } catch (e) {
+            console.warn('材料マスター照合エラー:', e);
+        }
+
         inputMethodRadios.forEach(radio => {
             radio.onchange = function() {
                 if (this.value === 'quantity') {
@@ -867,6 +867,9 @@ async function showReceiveModal(itemId) {
                 updateConversion();
             };
         });
+
+        // グループ一覧を読み込み
+        await loadMaterialGroups();
 
         updateConversion();
         document.getElementById('receiveModal').classList.remove('hidden');
@@ -886,10 +889,14 @@ function hideReceiveModal() {
     document.getElementById('weightInput').value = '';
     document.querySelector('input[name="input_method"][value="quantity"]').checked = true;
     clearConversionDisplays();
-    // 置き場選択のリセット（複数選択）
-    const locSelect = document.querySelector('select[name="location_ids"]');
-    if (locSelect) {
-        Array.from(locSelect.options).forEach(opt => opt.selected = false);
+    // 置き場入力のリセット（複数対応）
+    const locInput = document.querySelector('input[name="location_ids"]');
+    if (locInput) {
+        locInput.value = '';
+    }
+    const groupSelect = document.getElementById('groupSelect');
+    if (groupSelect) {
+        groupSelect.value = '';
     }
 }
 
@@ -909,8 +916,27 @@ async function handleReceive(event) {
     const quantityInput = document.getElementById('quantityInput');
     const weightInput = document.getElementById('weightInput');
 
-    const selectedLocationOptions = Array.from(document.querySelector('select[name="location_ids"]').selectedOptions);
-    const selectedLocationIds = selectedLocationOptions.map(opt => parseInt(opt.value, 10)).filter(id => !isNaN(id));
+    // 置き場（複数）入力の処理
+    const locInputEl = document.querySelector('input[name="location_ids"]');
+    let parsedLocationIds = [];
+    if (locInputEl && locInputEl.value) {
+        const tokens = locInputEl.value.split(/[，,\s]+/).map(t => t.trim()).filter(Boolean);
+        const invalid = [];
+        const nums = [];
+        tokens.forEach(t => {
+            const n = parseInt(t, 10);
+            if (isNaN(n) || n <= 0) {
+                invalid.push(t);
+            } else {
+                nums.push(n);
+            }
+        });
+        if (invalid.length > 0) {
+            showToast(`置き場は正の整数で入力してください: ${invalid.join(', ')}`, 'error');
+            return;
+        }
+        parsedLocationIds = [...new Set(nums)];
+    }
 
     const diameterInputField = document.querySelector('input[name="diameter_input"]');
     const rawDiameterInput = formData.get('diameter_input') || '';
@@ -951,14 +977,17 @@ async function handleReceive(event) {
         detail_info: (formData.get('detail_info') || '').trim() || null,
         diameter_mm: parsedDiameter.diameter_mm,
         shape: parsedDiameter.shape,
-        usage_type: formData.get('usage_type'),
+        // usage_typeは廃止
         density: densityValue,
         length_mm: lengthValue
     };
 
+    const dateOnly = formData.get('received_date');
+    const receivedDateIso = dateOnly ? `${dateOnly}T00:00:00` : null;
+
     const receiveData = {
         lot_number: formData.get('lot_number'),
-        received_date: formData.get('received_date'),
+        received_date: receivedDateIso,
         notes: formData.get('notes') || null,
         ...materialData
     };
@@ -971,8 +1000,10 @@ async function handleReceive(event) {
         receiveData.amount = parseFloat(formData.get('amount'));
     }
 
-    if (selectedLocationIds.length > 0) {
-        receiveData.location_ids = selectedLocationIds;
+    if (parsedLocationIds.length === 1) {
+        receiveData.location_id = parsedLocationIds[0];
+    } else if (parsedLocationIds.length > 1) {
+        receiveData.location_ids = parsedLocationIds;
     }
 
     // 使用材料情報は備考に統合して送信（API互換のため）
@@ -991,6 +1022,15 @@ async function handleReceive(event) {
     } else {
         showToast('入庫数量または重量を入力してください', 'error');
         return;
+    }
+
+    // 材料グループ選択の反映
+    const groupSelectEl = document.getElementById('groupSelect');
+    if (groupSelectEl && groupSelectEl.value) {
+        const gid = parseInt(groupSelectEl.value, 10);
+        if (!isNaN(gid)) {
+            receiveData.group_id = gid;
+        }
     }
 
     try {
@@ -1019,6 +1059,29 @@ async function handleReceive(event) {
     } catch (error) {
         console.error('入庫確認エラー:', error);
         showToast('入庫確認に失敗しました', 'error');
+    }
+}
+
+// 材料グループ一覧の読み込み
+async function loadMaterialGroups() {
+    try {
+        const res = await fetch('/api/material-groups/?is_active=true&limit=1000');
+        if (!res.ok) return;
+        const groups = await res.json();
+        const select = document.getElementById('groupSelect');
+        if (!select) return;
+        // 初期化
+        select.innerHTML = '<option value="">未指定</option>';
+        const list = Array.isArray(groups) ? groups : (Array.isArray(groups?.items) ? groups.items : []);
+        list.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.id;
+            opt.textContent = g.group_name;
+            select.appendChild(opt);
+        });
+    } catch (e) {
+        console.error('グループ一覧の取得に失敗:', e);
+        showToast('グループ一覧の取得に失敗しました', 'error');
     }
 }
 

@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
 
 from src.db import get_db
-from src.db.models import Item, Lot, Material, Location, MaterialShape, UsageType
+from src.db.models import Item, Lot, Material, Location, MaterialShape, MaterialGroup, MaterialGroupMember
 
 router = APIRouter()
 
@@ -25,8 +25,8 @@ def match_material_for_allocation(
     """
     在庫引当用の材料マッチング
 
-    汎用材料: 材質名・形状・寸法が一致すれば使用可能
-    専用材料: 上記に加えて専用品番も一致する場合のみ使用可能
+    仕様変更により、形状・専用品番は同一性判定に用いません。
+    材質名と径が一致する材料を返します。
 
     Args:
         db: データベースセッション
@@ -43,24 +43,12 @@ def match_material_for_allocation(
     normalized_name = material_name.strip().upper()
     normalized_name = normalized_name.replace('Lcd', 'LCD')
 
-    # 基本条件（材質名・形状・寸法）
+    # 基本条件（材質名・径）※形状・専用品番は非使用
     query = db.query(Material).filter(
         Material.name == normalized_name,
-        Material.shape == shape,
         Material.diameter_mm == diameter_mm,
         Material.is_active == True
     )
-
-    # 専用品番が指定されている場合
-    if dedicated_part_number:
-        # 専用材料で専用品番が一致するもの、または汎用材料を検索
-        query = query.filter(
-            (Material.usage_type == UsageType.DEDICATED) & (Material.dedicated_part_number == dedicated_part_number) |
-            (Material.usage_type == UsageType.GENERAL)
-        )
-    else:
-        # 汎用材料のみを検索
-        query = query.filter(Material.usage_type == UsageType.GENERAL)
 
     return query.all()
 
@@ -87,10 +75,7 @@ def get_available_stock_for_material(
     if not material:
         return 0
 
-    # 専用材料の場合、専用品番が一致するかチェック
-    if material.usage_type == UsageType.DEDICATED:
-        if not dedicated_part_number or material.dedicated_part_number != dedicated_part_number:
-            return 0  # 専用品番が一致しない場合は使用不可
+    # 仕様変更: 専用品番のチェックは行わない
 
     # 在庫数を合計
     total_stock = db.query(func.sum(Item.current_quantity)).join(
@@ -116,6 +101,7 @@ class MaterialInfo(BaseModel):
 
     id: int
     name: str
+    display_name: Optional[str] = None
     shape: MaterialShape
     diameter_mm: float
     current_density: float
@@ -159,6 +145,15 @@ class InventorySummary(BaseModel):
     total_weight_kg: float
     lot_count: int
     location_count: int
+
+class InventorySummaryByName(BaseModel):
+    material_name: str
+    total_quantity: int
+    total_weight_kg: float
+    lot_count: int
+    location_count: int
+    diameter_variations: int
+    length_variations: int
 
 # API エンドポイント
 @router.get("/", response_model=List[InventoryItem])
@@ -246,6 +241,7 @@ async def get_inventory(
             "material": {
                 "id": material.id,
                 "name": material.name,
+                "display_name": material.display_name,
                 "shape": material.shape,
                 "diameter_mm": material.diameter_mm,
                 "current_density": material.current_density
@@ -331,6 +327,85 @@ async def get_inventory_summary(
 
     return summary_list
 
+
+@router.get("/summary-by-name", response_model=List[InventorySummaryByName])
+async def get_inventory_summary_by_name(
+    name: Optional[str] = Query(None, description="材料名でフィルタ（完全一致）"),
+    include_zero_stock: Optional[bool] = Query(False, description="在庫数=0のアイテムも含める"),
+    db: Session = Depends(get_db)
+):
+    """在庫サマリー取得（材料名のみで集計、長さや寸法は無視）
+
+    Excelの材料名（全文）が一致するものを同一として扱う要件に対応します。
+    総重量はロットごとの寸法・長さに基づいて各アイテム重量を合計して算出します。
+    """
+    base_filter = [Item.is_active == True]
+    if not include_zero_stock:
+        base_filter.append(Item.current_quantity > 0)
+
+    group_query = db.query(
+        Material.name.label("material_name"),
+        func.sum(Item.current_quantity).label("total_quantity"),
+        func.count(func.distinct(Lot.id)).label("lot_count"),
+        func.count(func.distinct(Item.location_id)).label("location_count"),
+        func.count(func.distinct(Material.diameter_mm)).label("diameter_variations"),
+        func.count(func.distinct(Lot.length_mm)).label("length_variations")
+    ).select_from(Item).join(Lot).join(Material).filter(*base_filter)
+
+    if name is not None:
+        group_query = group_query.filter(Material.name == name)
+
+    group_query = group_query.group_by(Material.name)
+    grouped = group_query.all()
+
+    summaries: List[InventorySummaryByName] = []
+
+    # 総重量はPython側で各アイテムの重量を合算
+    for g in grouped:
+        items = (
+            db.query(Item)
+            .options(joinedload(Item.lot).joinedload(Lot.material))
+            .join(Lot)
+            .join(Material)
+            .filter(*base_filter)
+            .filter(Material.name == g.material_name)
+            .all()
+        )
+
+        total_weight_kg = 0.0
+        for item in items:
+            material = item.lot.material
+            # 体積計算（cm³）
+            if material.shape == MaterialShape.ROUND:
+                radius_cm = (material.diameter_mm / 2) / 10
+                length_cm = item.lot.length_mm / 10
+                volume_cm3 = 3.14159 * (radius_cm ** 2) * length_cm
+            elif material.shape == MaterialShape.HEXAGON:
+                side_cm = (material.diameter_mm / 2) / 10
+                length_cm = item.lot.length_mm / 10
+                volume_cm3 = (3 * (3 ** 0.5) / 2) * (side_cm ** 2) * length_cm
+            elif material.shape == MaterialShape.SQUARE:
+                side_cm = material.diameter_mm / 10
+                length_cm = item.lot.length_mm / 10
+                volume_cm3 = (side_cm ** 2) * length_cm
+            else:
+                volume_cm3 = 0
+
+            weight_per_piece_kg = (volume_cm3 * material.current_density) / 1000
+            total_weight_kg += weight_per_piece_kg * (item.current_quantity or 0)
+
+        summaries.append(InventorySummaryByName(
+            material_name=g.material_name,
+            total_quantity=int(g.total_quantity or 0),
+            total_weight_kg=round(total_weight_kg, 3),
+            lot_count=int(g.lot_count or 0),
+            location_count=int(g.location_count or 0),
+            diameter_variations=int(g.diameter_variations or 0),
+            length_variations=int(g.length_variations or 0)
+        ))
+
+    return summaries
+
 @router.get("/search/{management_code}", response_model=InventoryItem)
 async def search_by_management_code(management_code: str, db: Session = Depends(get_db)):
     """管理コード（UUID）による検索"""
@@ -385,6 +460,7 @@ async def search_by_management_code(management_code: str, db: Session = Depends(
         "material": {
             "id": material.id,
             "name": material.name,
+            "display_name": material.display_name,
             "shape": material.shape,
             "diameter_mm": material.diameter_mm,
             "current_density": material.current_density
@@ -474,6 +550,7 @@ async def search_inventory_items(
             "material": {
                 "id": material.id,
                 "name": material.name,
+                "display_name": material.display_name,
                 "shape": material.shape,
                 "diameter_mm": material.diameter_mm,
                 "current_density": material.current_density
@@ -553,3 +630,80 @@ async def get_locations(
 
     locations = query.order_by(Location.name).all()
     return locations
+
+# ========================================
+# グループ集計（ユーザー定義の同等品グループ単位）
+# ========================================
+
+class GroupMaterialBrief(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+    diameter_mm: float
+
+
+class InventoryGroupSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    group_id: int
+    group_name: str
+    is_active: bool
+    total_stock: int
+    lot_count: int
+    materials: List[GroupMaterialBrief]
+
+
+@router.get("/groups", response_model=List[InventoryGroupSummary])
+async def get_inventory_groups(
+    include_inactive_groups: Optional[bool] = Query(False, description="無効グループも含める"),
+    db: Session = Depends(get_db)
+):
+    """材料グループ単位の在庫集計（本数合計とロット数）"""
+
+    group_query = db.query(MaterialGroup)
+    if not include_inactive_groups:
+        group_query = group_query.filter(MaterialGroup.is_active == True)
+    groups = group_query.all()
+
+    summaries: List[InventoryGroupSummary] = []
+
+    for group in groups:
+        member_materials = (
+            db.query(Material)
+            .join(MaterialGroupMember, MaterialGroupMember.material_id == Material.id)
+            .filter(MaterialGroupMember.group_id == group.id)
+            .all()
+        )
+
+        if member_materials:
+            material_ids = [m.id for m in member_materials]
+            total_stock = (
+                db.query(func.coalesce(func.sum(Item.current_quantity), 0))
+                .join(Lot, Item.lot_id == Lot.id)
+                .filter(Item.is_active == True)
+                .filter(Item.current_quantity > 0)
+                .filter(Lot.material_id.in_(material_ids))
+                .scalar()
+            )
+
+            lot_count = (
+                db.query(func.count(func.distinct(Lot.id)))
+                .join(Item, Item.lot_id == Lot.id)
+                .filter(Item.is_active == True)
+                .filter(Item.current_quantity > 0)
+                .filter(Lot.material_id.in_(material_ids))
+                .scalar()
+            )
+        else:
+            total_stock = 0
+            lot_count = 0
+
+        summaries.append(InventoryGroupSummary(
+            group_id=group.id,
+            group_name=group.group_name,
+            is_active=group.is_active,
+            total_stock=int(total_stock or 0),
+            lot_count=int(lot_count or 0),
+            materials=[GroupMaterialBrief(id=m.id, name=m.name, diameter_mm=m.diameter_mm) for m in member_materials]
+        ))
+
+    return summaries

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Text, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Text, ForeignKey, Enum, UniqueConstraint
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -142,6 +142,44 @@ class Material(Base):
     density_history = relationship("Density", back_populates="material")
     lots = relationship("Lot", back_populates="material")
     aliases = relationship("MaterialAlias", back_populates="material")
+
+
+# ========================================
+# 材料グループ管理（ユーザー定義の同等品グループ）
+# ========================================
+
+class MaterialGroup(Base):
+    """材料グループ（同等品を在庫上まとめるための論理グループ）"""
+    __tablename__ = "material_groups"
+
+    id = Column(Integer, primary_key=True, index=True)
+    group_name = Column(String(200), nullable=False, index=True, comment="グループ名")
+    description = Column(Text, comment="説明")
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    # リレーション
+    members = relationship("MaterialGroupMember", back_populates="group", cascade="all, delete-orphan")
+
+
+class MaterialGroupMember(Base):
+    """材料グループ所属（材料とグループの多対多を管理）"""
+    __tablename__ = "material_group_members"
+
+    id = Column(Integer, primary_key=True, index=True)
+    group_id = Column(Integer, ForeignKey("material_groups.id"), nullable=False)
+    material_id = Column(Integer, ForeignKey("materials.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # ユニーク制約（同じ材料の重複所属を禁止）
+    __table_args__ = (
+        UniqueConstraint('group_id', 'material_id', name='uq_group_material'),
+    )
+
+    # リレーション
+    group = relationship("MaterialGroup", back_populates="members")
+    material = relationship("Material", backref="group_memberships")
 
 class Density(Base):
     __tablename__ = "densities"

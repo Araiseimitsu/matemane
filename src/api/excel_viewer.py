@@ -16,7 +16,7 @@ from sqlalchemy import func
 from pydantic import BaseModel
 
 from src.db import get_db
-from src.db.models import Material, Item, Lot, MaterialShape, UsageType
+from src.db.models import Material, Item, Lot, MaterialShape
 
 router = APIRouter(prefix="/api/excel-viewer", tags=["excel-viewer"])
 
@@ -104,33 +104,19 @@ def get_current_stock(db: Session, material_info: Dict[str, Any]) -> int:
     """
     指定された材料の現在在庫数を取得
 
-    汎用材料: 材質名・形状・寸法が一致すれば在庫を集計
-    専用材料: 上記に加えて専用品番も一致する場合のみ在庫を集計
+    仕様変更により、形状・専用品番は同一性判定に用いません。
+    材質名と径が一致する材料の在庫を集計します。
     """
     if not material_info:
         return 0
 
     try:
-        dedicated_part_number = material_info.get('dedicated_part_number')
-
-        # 基本条件で材料を検索
+        # 基本条件で材料を検索（材質名・径のみ）
         query = db.query(Material).filter(
             Material.name == material_info['material_name'],
             Material.diameter_mm == material_info['diameter'],
-            Material.shape == material_info['shape'],
             Material.is_active == True
         )
-
-        # 専用品番が指定されている場合
-        if dedicated_part_number:
-            # 専用材料で専用品番が一致するもの、または汎用材料
-            query = query.filter(
-                (Material.usage_type == UsageType.DEDICATED) & (Material.dedicated_part_number == dedicated_part_number) |
-                (Material.usage_type == UsageType.GENERAL)
-            )
-        else:
-            # 汎用材料のみ
-            query = query.filter(Material.usage_type == UsageType.GENERAL)
 
         materials = query.all()
 

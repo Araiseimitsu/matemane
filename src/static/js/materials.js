@@ -357,15 +357,7 @@ class MaterialManager {
       ? `<div class="text-xs text-blue-600 font-medium">${material.display_name}</div>`
       : "";
 
-    // 用途区分
-    const usageTypeNames = { general: "汎用", dedicated: "専用" };
-    const usageTypeName =
-      usageTypeNames[material.usage_type] || material.usage_type || "汎用";
-    const badgeColor =
-      material.usage_type === "dedicated"
-        ? "bg-purple-100 text-purple-800"
-        : "bg-gray-100 text-gray-800";
-    const usageTypeHtml = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${badgeColor}">${usageTypeName}</span>`;
+    
 
     // 専用品番・追加情報（CSVインポート時の追加情報がここに表示されます）
     const dedicatedPartNumberHtml = material.dedicated_part_number
@@ -400,9 +392,7 @@ class MaterialManager {
                       material.current_density
                     }</div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    ${usageTypeHtml}
-                </td>
+                
                 <td class="px-6 py-4 whitespace-nowrap">
                     ${dedicatedPartNumberHtml}
                 </td>
@@ -491,8 +481,7 @@ class MaterialManager {
     document.getElementById("shape").value = material.shape;
     document.getElementById("diameter_mm").value = material.diameter_mm;
     document.getElementById("current_density").value = material.current_density;
-    document.getElementById("usage_type").value =
-      material.usage_type || "general";
+    
     document.getElementById("dedicated_part_number").value =
       material.dedicated_part_number || "";
 

@@ -10,7 +10,7 @@ import logging
 from src.config import settings
 from src.db import create_tables, SessionLocal
 from src.db.models import Location
-from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders, order_utils, excel_viewer, production_schedule, material_management
+from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders, order_utils, excel_viewer, production_schedule, material_management, material_groups
 
 # ログ設定
 logging.basicConfig(
@@ -60,6 +60,7 @@ app.include_router(order_utils.router, prefix="/api/order-utils", tags=["発注�
 app.include_router(excel_viewer.router, tags=["Excelビューア"])
 app.include_router(production_schedule.router, tags=["生産中一覧"])
 app.include_router(material_management.router, tags=["材料管理"])
+app.include_router(material_groups.router, tags=["材料グループ"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -155,6 +156,11 @@ async def excel_viewer_page(request: Request):
 async def settings_page(request: Request):
     """設定ページ"""
     return templates.TemplateResponse("settings.html", {"request": request})
+
+@app.get("/material-groups")
+async def material_groups_page(request: Request):
+    """材料グループ管理画面"""
+    return templates.TemplateResponse("material_groups.html", {"request": request})
 
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):

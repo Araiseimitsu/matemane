@@ -13,6 +13,9 @@
             <div class="flex items-center space-x-3">
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">材料マスター連携</span>
                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-700">ロット在庫追跡</span>
+                <button id="openGroupManager" class="inline-flex items-center px-3 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                    <i class="fas fa-object-group mr-2"></i>グループ管理
+                </button>
             </div>
         </div>
     </div>
@@ -28,14 +31,6 @@
             <div>
                 <label for="filterName" class="block text-sm font-medium text-gray-700 mb-2">材料名</label>
                 <input type="text" id="filterName" placeholder="例: SUS303" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
-            </div>
-            <div>
-                <label for="filterUsage" class="block text-sm font-medium text-gray-700 mb-2">用途区分</label>
-                <select id="filterUsage" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
-                    <option value="">すべて</option>
-                    <option value="general">汎用</option>
-                    <option value="dedicated">専用</option>
-                </select>
             </div>
             <div>
                 <label for="filterShape" class="block text-sm font-medium text-gray-700 mb-2">形状</label>
@@ -54,22 +49,22 @@
                 <label for="filterDedicated" class="block text-sm font-medium text-gray-700 mb-2">専用品番・追加情報</label>
                 <input type="text" id="filterDedicated" placeholder="例: CM-001" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
             </div>
+            <div>
+                <label for="filterGroupName" class="block text-sm font-medium text-gray-700 mb-2">グループ名</label>
+                <input type="text" id="filterGroupName" placeholder="例: SUS303 汎用グループ" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+            </div>
         </div>
     </div>
 
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
                 <p class="text-sm text-gray-500">対象材料（ユニーク）</p>
                 <p id="summaryMaterialCount" class="mt-1 text-2xl font-semibold text-gray-900">-</p>
             </div>
             <div>
-                <p class="text-sm text-gray-500">汎用同等品グループ</p>
-                <p id="summaryGeneralGroupCount" class="mt-1 text-2xl font-semibold text-gray-900">-</p>
-            </div>
-            <div>
-                <p class="text-sm text-gray-500">専用同等品グループ</p>
-                <p id="summaryDedicatedGroupCount" class="mt-1 text-2xl font-semibold text-gray-900">-</p>
+                <p class="text-sm text-gray-500">同等品グループ数</p>
+                <p id="summaryGroupCount" class="mt-1 text-2xl font-semibold text-gray-900">-</p>
             </div>
             <div>
                 <p class="text-sm text-gray-500">在庫ありロット</p>
@@ -111,8 +106,8 @@
             <table id="groupTable" class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                        <th scope="col" class="px-4 py-3 text-left">用途区分</th>
                         <th scope="col" class="px-4 py-3 text-left">材料情報</th>
+                        <th scope="col" class="px-4 py-3 text-left">グループ名</th>
                         <th scope="col" class="px-4 py-3 text-left">長さバリエーション</th>
                         <th scope="col" class="px-4 py-3 text-left">専用品番・追加情報</th>
                         <th scope="col" class="px-4 py-3 text-right">登録材料数</th>
@@ -182,6 +177,10 @@
                             <dd id="detailDedicatedInfo" class="text-gray-900 font-medium">-</dd>
                         </div>
                         <div>
+                            <dt class="text-gray-500">材料グループ</dt>
+                            <dd id="detailGroupNames" class="text-gray-900 font-medium">-</dd>
+                        </div>
+                        <div>
                             <dt class="text-gray-500">詳細情報</dt>
                             <dd id="detailInfo" class="text-gray-900 font-medium">-</dd>
                         </div>
@@ -199,9 +198,70 @@
                     <div id="detailLots" class="border border-gray-200 rounded-lg overflow-hidden">
                     </div>
                 </section>
+                
             </div>
             <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
                 <button class="bg-white hover:bg-gray-100 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-colors" onclick="Utils.modal.close('groupDetailModal')">閉じる</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- グループ管理モーダル -->
+<div id="groupManagerModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-900">グループ管理</h3>
+                    <p class="text-sm text-gray-500 mt-1">材料グループの作成・名称変更・削除を在庫ページから行えます。</p>
+                </div>
+                <button id="closeGroupManager" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fas fa-times text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-6">
+                <section class="space-y-3">
+                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">新規グループ作成</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input type="text" id="groupManagerName" placeholder="グループ名" class="md:col-span-1 w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        <input type="text" id="groupManagerDescription" placeholder="説明（任意）" class="md:col-span-2 w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                    </div>
+                    <div class="flex justify-end">
+                        <button id="createGroupBtn" class="inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                            <i class="fas fa-plus mr-2"></i>作成
+                        </button>
+                    </div>
+                </section>
+
+                <section class="space-y-3">
+                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">グループ一覧</h4>
+                    <div id="groupManagerList" class="border border-gray-200 rounded-lg divide-y divide-gray-200"></div>
+                </section>
+
+                <!-- 所属材料管理（選択したグループ） -->
+                <section id="groupMembershipSection" class="space-y-3 hidden">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">所属材料管理</h4>
+                        <div class="text-xs text-gray-500">対象グループ: <span id="groupMembershipTargetName" class="font-medium text-gray-800">-</span></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input type="text" id="groupMemberSearchInput" placeholder="材料名・品番・詳細などで検索" class="md:col-span-2 w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+                        <button id="groupMemberSearchBtn" class="px-4 py-2.5 text-sm font-medium bg-gray-800 hover:bg-gray-900 text-white rounded-lg transition-colors">検索</button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-600 mb-2">検索結果</p>
+                            <div id="groupMemberSearchResults" class="border border-gray-200 rounded-lg divide-y divide-gray-200"></div>
+                        </div>
+                        <div>
+                            <p class="text-xs font-semibold text-gray-600 mb-2">現在の所属</p>
+                            <div id="groupMemberList" class="border border-gray-200 rounded-lg divide-y divide-gray-200"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+                <button class="bg-white hover:bg-gray-100 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-colors" onclick="Utils.modal.close('groupManagerModal')">閉じる</button>
             </div>
         </div>
     </div>
@@ -222,10 +282,7 @@ const shapeDimensionPrefixes = {
     square: '□'
 };
 
-const usageLabels = {
-    general: '汎用同等品',
-    dedicated: '専用同等品'
-};
+// 用途区分は廃止（汎用／専用バッジを表示しない）
 
 const ROWS_PER_PAGE = 100;
 const PAGINATION_CONFIGS = [
@@ -250,6 +307,7 @@ let inventoryItems = [];
 let groupStore = new Map();
 let filteredGroupsCache = [];
 let currentPage = 1;
+let materialGroupMap = new Map(); // material_id -> Set(group_name)
 
 document.addEventListener('DOMContentLoaded', () => {
     initializeEquivalenceView();
@@ -259,6 +317,7 @@ async function initializeEquivalenceView() {
     try {
         toggleLoading(true);
         await loadMasterAndInventory();
+        await loadMaterialGroupRelations();
         buildGroupStore();
         registerFilterHandlers();
         registerPaginationHandlers();
@@ -269,6 +328,29 @@ async function initializeEquivalenceView() {
         showEmptyState();
     } finally {
         toggleLoading(false);
+    }
+}
+
+async function loadMaterialGroupRelations() {
+    try {
+        const groups = await APIClient.getMaterialGroups({ limit: 1000 });
+        const map = new Map();
+        for (const g of groups) {
+            try {
+                const members = await APIClient.getGroupMembers(g.id);
+                for (const m of members) {
+                    const set = map.get(m.material_id) || new Set();
+                    set.add(g.group_name);
+                    map.set(m.material_id, set);
+                }
+            } catch (e) {
+                console.warn('グループ所属取得失敗:', g.id, e);
+            }
+        }
+        materialGroupMap = map;
+    } catch (e) {
+        console.warn('材料グループ一覧取得失敗:', e);
+        materialGroupMap = new Map();
     }
 }
 
@@ -395,13 +477,13 @@ function buildGroupStore() {
     const materialById = new Map(materialMaster.map(material => [material.id, material]));
 
     const getGroupKey = (material) => {
-        const usageType = material.usage_type === 'dedicated' ? 'dedicated' : 'general';
+        const isDedicated = Boolean((material.dedicated_part_number || '').trim());
         const detailKey = normalizeDetail(material.detail_info);
-        if (usageType === 'dedicated') {
+        if (isDedicated) {
             const dedicated = (material.dedicated_part_number || '').trim().toUpperCase();
-            return `${usageType}|${material.name.toUpperCase()}|${normalizeNumber(material.diameter_mm)}|${dedicated}|${detailKey}`;
+            return `dedicated|${material.name.toUpperCase()}|${normalizeNumber(material.diameter_mm)}|${dedicated}|${detailKey}`;
         }
-        return `${usageType}|${material.name.toUpperCase()}|${material.shape}|${normalizeNumber(material.diameter_mm)}|${detailKey}`;
+        return `general|${material.name.toUpperCase()}|${material.shape}|${normalizeNumber(material.diameter_mm)}|${detailKey}`;
     };
 
     materialMaster.forEach(material => {
@@ -467,11 +549,9 @@ function buildGroupStore() {
 }
 
 function createEmptyGroup(key, material) {
-    const usageType = material.usage_type === 'dedicated' ? 'dedicated' : 'general';
     const originalLabel = selectOriginalLabel(material);
     return {
         key,
-        usage_type: usageType,
         material_name: material.name,
         base_label: originalLabel,
         display_label: originalLabel,
@@ -522,6 +602,18 @@ function finalizeGroup(group) {
         .sort((a, b) => Number(a) - Number(b));
     group.material_count = group._materialIdSet.size || group.materials.length;
 
+    // 材料グループ名の集約（material_id -> Set(group_name) から集計）
+    const namesSet = new Set();
+    if (typeof materialGroupMap !== 'undefined' && materialGroupMap && group._materialIdSet && group._materialIdSet.size > 0) {
+        group._materialIdSet.forEach(id => {
+            const s = materialGroupMap.get(id);
+            if (s) {
+                s.forEach(n => namesSet.add(n));
+            }
+        });
+    }
+    group.material_group_names = Array.from(namesSet).sort((a, b) => a.localeCompare(b, 'ja'));
+
     delete group._lotsMap;
     delete group._lengthSet;
     delete group._materialIdSet;
@@ -533,67 +625,22 @@ function finalizeGroup(group) {
 
 function buildGroupSubtitle(group) {
     const dimension = formatDimension(group.shape, group.diameter_mm);
-    const detailSuffix = group.detail_info ? ` / ${group.detail_info}` : '';
-    if (group.usage_type === 'dedicated') {
-        const dedicated = group.dedicated_part_number ? `専用品番 ${group.dedicated_part_number}` : '専用品目未設定';
-        return `専用 ${dimension} / ${dedicated}${detailSuffix}`;
-    }
     const shapeLabel = shapeLabels[group.shape] || group.shape;
-    return `${shapeLabel} / 径 ${dimension}${detailSuffix}`;
+    const detailSuffix = group.detail_info ? ` / ${group.detail_info}` : '';
+    const dedicatedText = group.dedicated_part_number ? ` / 専用品番 ${group.dedicated_part_number}` : '';
+    return `${shapeLabel} / 径 ${dimension}${dedicatedText}${detailSuffix}`;
 }
 
 function buildGroupDisplayLabel(group) {
     const baseLabel = group.base_label || group.material_name;
-    const dimension = formatDimensionCompact(group.shape, group.diameter_mm);
-
-    const details = [];
-    const detailInfo = sanitizeDetail(group.detail_info);
-    if (group.usage_type === 'dedicated' && group.dedicated_part_number) {
-        details.push(group.dedicated_part_number);
-    }
-    if (detailInfo) {
-        details.push(detailInfo);
-    }
-
-    let detailText = '';
-    if (details.length) {
-        const joined = details.join(' / ');
-        detailText = /^\(.*\)$/.test(joined) ? joined : `(${joined})`;
-    }
-
-    const mainParts = [baseLabel];
-    if (dimension) {
-        mainParts.push(dimension);
-    }
-
-    return `${mainParts.filter(Boolean).join(' ')}${detailText ? ` ${detailText}` : ''}`.trim();
+    // original（display_name）を純粋に表示するため、寸法や詳細の付加は行わない
+    return String(baseLabel || '').trim();
 }
 
 function buildMaterialDisplayLabel(material) {
     const baseLabel = selectOriginalLabel(material);
-    const dimension = formatDimensionCompact(material.shape, material.diameter_mm);
-
-    const details = [];
-    const detailInfo = sanitizeDetail(material.detail_info);
-    if (material.usage_type === 'dedicated' && material.dedicated_part_number) {
-        details.push(material.dedicated_part_number);
-    }
-    if (detailInfo) {
-        details.push(detailInfo);
-    }
-
-    let detailText = '';
-    if (details.length) {
-        const joined = details.join(' / ');
-        detailText = /^\(.*\)$/.test(joined) ? joined : `(${joined})`;
-    }
-
-    const mainParts = [baseLabel];
-    if (dimension) {
-        mainParts.push(dimension);
-    }
-
-    return `${mainParts.filter(Boolean).join(' ')}${detailText ? ` ${detailText}` : ''}`.trim();
+    // original（display_name）を純粋に表示するため、寸法や詳細の付加は行わない
+    return String(baseLabel || '').trim();
 }
 
 function normalizeNumber(value) {
@@ -649,7 +696,7 @@ function formatDimensionCompact(shape, diameter) {
 }
 
 function registerFilterHandlers() {
-    const filterIds = ['filterName', 'filterUsage', 'filterShape', 'filterDiameter', 'filterDedicated'];
+    const filterIds = ['filterName', 'filterShape', 'filterDiameter', 'filterDedicated', 'filterGroupName'];
     filterIds.forEach(id => {
         const element = document.getElementById(id);
         if (!element) return;
@@ -677,16 +724,13 @@ function registerFilterHandlers() {
 function applyFiltersAndRender() {
     const filters = {
         name: document.getElementById('filterName')?.value.trim().toLowerCase() || '',
-        usage: document.getElementById('filterUsage')?.value || '',
         shape: document.getElementById('filterShape')?.value || '',
         diameter: document.getElementById('filterDiameter')?.value.trim().toLowerCase() || '',
-        dedicated: document.getElementById('filterDedicated')?.value.trim().toLowerCase() || ''
+        dedicated: document.getElementById('filterDedicated')?.value.trim().toLowerCase() || '',
+        groupName: document.getElementById('filterGroupName')?.value.trim().toLowerCase() || ''
     };
 
     const groups = Array.from(groupStore.values()).filter(group => {
-        if (filters.usage && group.usage_type !== filters.usage) {
-            return false;
-        }
 
         if (filters.shape && (group.shape || '').toLowerCase() !== filters.shape) {
             return false;
@@ -721,14 +765,19 @@ function applyFiltersAndRender() {
             }
         }
 
+        if (filters.groupName) {
+            const names = (group.material_group_names || []).map(n => (n || '').toLowerCase());
+            const match = names.some(n => n.includes(filters.groupName));
+            if (!match) {
+                return false;
+            }
+        }
+
         return true;
     });
 
     filteredGroupsCache = groups.sort((a, b) => {
-        if (a.usage_type === b.usage_type) {
-            return a.material_name.localeCompare(b.material_name, 'ja');
-        }
-        return a.usage_type === 'general' ? -1 : 1;
+        return a.material_name.localeCompare(b.material_name, 'ja');
     });
 
     currentPage = 1;
@@ -773,32 +822,22 @@ function renderGroupTable(groups) {
 }
 
 function createGroupRow(group) {
-    const badgeClasses = group.usage_type === 'general'
-        ? 'bg-blue-50 text-blue-700'
-        : 'bg-purple-50 text-purple-700';
-
-    const usageLabel = usageLabels[group.usage_type] || group.usage_type;
     const lengthText = formatLengthList(group.length_variations);
-    const dedicatedDisplay = group.usage_type === 'dedicated'
-        ? (group.dedicated_part_number ? escapeHtml(group.dedicated_part_number) : '未設定')
-        : '汎用品（共通使用）';
+    const dedicatedDisplay = group.dedicated_part_number ? escapeHtml(group.dedicated_part_number) : '汎用品（共通使用）';
 
     const materialCount = group.material_count.toLocaleString('ja-JP');
     const lotCount = group.lot_count.toLocaleString('ja-JP');
     const totalQuantity = group.total_quantity.toLocaleString('ja-JP');
     const totalWeight = formatWeight(group.total_weight_kg);
     const managementCount = group.management_code_count.toLocaleString('ja-JP');
+    const groupNamesText = formatGroupNamesList(group.material_group_names);
 
     return `
         <tr>
             <td class="px-4 py-3">
-                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${badgeClasses}">
-                    ${usageLabel}
-                </span>
-            </td>
-            <td class="px-4 py-3">
                 <p class="text-sm font-medium text-gray-900">${escapeHtml(group.display_label)}</p>
             </td>
+            <td class="px-4 py-3 text-sm text-gray-600">${groupNamesText}</td>
             <td class="px-4 py-3 text-sm text-gray-600">${escapeHtml(lengthText)}</td>
             <td class="px-4 py-3 text-sm text-gray-600">${dedicatedDisplay}</td>
             <td class="px-4 py-3 text-sm text-right text-gray-900">${materialCount}</td>
@@ -845,25 +884,27 @@ function formatWeight(value) {
     return numeric.toLocaleString('ja-JP', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function formatGroupNamesList(names) {
+    const arr = Array.isArray(names) ? names.filter(Boolean) : [];
+    if (arr.length === 0) return '―';
+    const display = arr.slice(0, 3).join(' / ');
+    return arr.length > 3 ? `${display} ほか${arr.length - 3}件` : display;
+}
+
 function updateSummaryTiles(groups) {
     const materialIds = new Set();
-    let generalCount = 0;
-    let dedicatedCount = 0;
     let totalLots = 0;
 
     groups.forEach(group => {
         group.materials.forEach(material => materialIds.add(material.id));
         totalLots += group.lot_count;
-        if (group.usage_type === 'general') {
-            generalCount += 1;
-        } else if (group.usage_type === 'dedicated') {
-            dedicatedCount += 1;
-        }
     });
 
     document.getElementById('summaryMaterialCount').textContent = materialIds.size.toLocaleString('ja-JP');
-    document.getElementById('summaryGeneralGroupCount').textContent = generalCount.toLocaleString('ja-JP');
-    document.getElementById('summaryDedicatedGroupCount').textContent = dedicatedCount.toLocaleString('ja-JP');
+    const groupCountEl = document.getElementById('summaryGroupCount');
+    if (groupCountEl) {
+        groupCountEl.textContent = groups.length.toLocaleString('ja-JP');
+    }
     document.getElementById('summaryLotCount').textContent = totalLots.toLocaleString('ja-JP');
 }
 
@@ -976,16 +1017,19 @@ function openGroupDetailModal(group) {
     document.getElementById('detailTotalQuantity').textContent = `${group.total_quantity.toLocaleString('ja-JP')} 本`;
     document.getElementById('detailTotalWeight').textContent = `${formatWeight(group.total_weight_kg)} kg`;
     document.getElementById('detailLengthVariations').textContent = formatLengthList(group.length_variations);
-    document.getElementById('detailDedicatedInfo').textContent = group.usage_type === 'dedicated'
-        ? (group.dedicated_part_number || '未設定')
-        : '汎用品（共通使用）';
+    document.getElementById('detailDedicatedInfo').textContent = group.dedicated_part_number || '汎用品（共通使用）';
     document.getElementById('detailInfo').textContent = group.detail_info || '詳細情報なし';
+    const groupNamesEl = document.getElementById('detailGroupNames');
+    if (groupNamesEl) {
+        const names = Array.isArray(group.material_group_names) ? group.material_group_names : [];
+        groupNamesEl.textContent = names.length ? names.join(' / ') : '―';
+    }
 
     const badge = document.getElementById('groupDetailTag');
-    badge.textContent = usageLabels[group.usage_type] || group.usage_type;
-    badge.className = `inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${
-        group.usage_type === 'general' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
-    }`;
+    if (badge) {
+        badge.textContent = '';
+        badge.className = 'hidden';
+    }
 
     renderDetailMaterials(group);
     renderDetailLots(group);
@@ -1010,7 +1054,6 @@ function renderDetailMaterials(group) {
         .slice()
         .sort((a, b) => (a.part_number || '').localeCompare(b.part_number || '', 'ja'))
         .map(material => {
-            const usageLabel = material.usage_type === 'dedicated' ? '専用' : '汎用';
             const dedicatedInfo = material.dedicated_part_number ? escapeHtml(material.dedicated_part_number) : '―';
             const displayLabel = escapeHtml(buildMaterialDisplayLabel(material));
             const updated = material.updated_at ? new Date(material.updated_at).toLocaleString('ja-JP') : '―';
@@ -1023,7 +1066,6 @@ function renderDetailMaterials(group) {
                         ${detailText}
                     </div>
                     <div class="flex flex-col items-start md:items-end text-xs text-gray-500 space-y-1">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">${usageLabel}</span>
                         <span>専用品番・追加情報: ${dedicatedInfo}</span>
                         <span>最終更新: ${updated}</span>
                     </div>
@@ -1072,6 +1114,244 @@ function renderDetailLots(group) {
         </table>
     `;
 }
+
+function renderDetailGroupRelations(group) {
+    const container = document.getElementById('detailGroupRelations');
+    if (!container) return;
+
+    const names = Array.isArray(group.material_group_names) ? group.material_group_names : [];
+    if (names.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-sm text-gray-500">この同等品に紐づく材料グループはありません。</div>`;
+        return;
+    }
+
+    container.innerHTML = names.map(name => `
+        <div class="p-4 flex items-center justify-between">
+            <span class="text-sm font-medium text-gray-900">${escapeHtml(name)}</span>
+        </div>
+    `).join('');
+}
+
+// =============================
+// グループ管理モーダル用ロジック
+// =============================
+
+document.getElementById('openGroupManager')?.addEventListener('click', () => {
+    Utils.modal.open('groupManagerModal');
+    loadGroupsForManager();
+});
+
+document.getElementById('closeGroupManager')?.addEventListener('click', () => {
+    Utils.modal.close('groupManagerModal');
+});
+
+document.getElementById('createGroupBtn')?.addEventListener('click', async () => {
+    const nameInput = document.getElementById('groupManagerName');
+    const descInput = document.getElementById('groupManagerDescription');
+    const group_name = nameInput?.value?.trim();
+    const description = descInput?.value?.trim() || null;
+
+    if (!group_name) {
+        alert('グループ名を入力してください');
+        return;
+    }
+    try {
+        await APIClient.createMaterialGroup({ group_name, description, is_active: true });
+        nameInput.value = '';
+        descInput.value = '';
+        await loadGroupsForManager();
+    } catch (e) {
+        alert(`作成に失敗しました: ${e.message}`);
+    }
+});
+
+async function loadGroupsForManager() {
+    try {
+        const groups = await APIClient.getMaterialGroups({ limit: 1000 });
+        window._groupIdToName = new Map(groups.map(g => [g.id, g.group_name]));
+        renderGroupManagerList(groups);
+    } catch (e) {
+        const container = document.getElementById('groupManagerList');
+        if (container) {
+            container.innerHTML = `<div class="p-6 text-sm text-red-600">グループ一覧の取得に失敗しました: ${escapeHtml(e.message)}</div>`;
+        }
+    }
+}
+
+function renderGroupManagerList(groups) {
+    const container = document.getElementById('groupManagerList');
+    if (!container) return;
+
+    if (!groups || groups.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-sm text-gray-500">登録済みのグループはありません。</div>`;
+        return;
+    }
+
+    container.innerHTML = groups
+        .slice()
+        .sort((a, b) => (a.group_name || '').localeCompare(b.group_name || '', 'ja'))
+        .map(group => `
+            <div class="p-4 flex items-center justify-between gap-4">
+                <div>
+                    <p class="text-sm font-medium text-gray-900">${escapeHtml(group.group_name)}</p>
+                    ${group.description ? `<p class="text-xs text-gray-500">${escapeHtml(group.description)}</p>` : ''}
+                    <p class="text-xs text-gray-500 mt-1">状態: ${group.is_active ? '有効' : '無効'}</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button class="px-3 py-1.5 text-sm rounded-md border border-gray-300 bg-white hover:bg-gray-50" onclick="renameGroup(${group.id}, '${escapeHtml(group.group_name)}')">
+                        <i class="fas fa-pen mr-1"></i>名称変更
+                    </button>
+                    <button class="px-3 py-1.5 text-sm rounded-md border border-indigo-300 bg-white hover:bg-indigo-50 text-indigo-700" onclick="openMembershipManager(${group.id})">
+                        <i class="fas fa-users mr-1"></i>所属管理
+                    </button>
+                    <button class="px-3 py-1.5 text-sm rounded-md border border-red-300 bg-white hover:bg-red-50 text-red-700" onclick="deleteGroup(${group.id})">
+                        <i class="fas fa-trash mr-1"></i>削除
+                    </button>
+                </div>
+            </div>
+        `).join('');
+}
+
+async function renameGroup(groupId, currentName) {
+    const newName = prompt('新しいグループ名を入力してください', currentName || '');
+    if (newName === null) return;
+    const trimmed = newName.trim();
+    if (!trimmed) {
+        alert('グループ名は空にできません');
+        return;
+    }
+    try {
+        await APIClient.updateMaterialGroup(groupId, { group_name: trimmed });
+        await loadGroupsForManager();
+    } catch (e) {
+        alert(`名称変更に失敗しました: ${e.message}`);
+    }
+}
+
+async function deleteGroup(groupId) {
+    if (!confirm('このグループを削除します。よろしいですか？')) return;
+    try {
+        await APIClient.deleteMaterialGroup(groupId);
+        await loadGroupsForManager();
+    } catch (e) {
+        alert(`削除に失敗しました: ${e.message}`);
+    }
+}
+
+// =============================
+// 所属材料管理
+// =============================
+
+let selectedGroupForMembers = null;
+
+function openMembershipManager(groupId) {
+    selectedGroupForMembers = groupId;
+    const section = document.getElementById('groupMembershipSection');
+    const targetNameEl = document.getElementById('groupMembershipTargetName');
+    if (section) section.classList.remove('hidden');
+    if (targetNameEl) targetNameEl.textContent = window._groupIdToName?.get(groupId) || `#${groupId}`;
+    // 初期化
+    const results = document.getElementById('groupMemberSearchResults');
+    if (results) results.innerHTML = '<div class="p-4 text-sm text-gray-500">検索キーワードを入力して「検索」を押してください。</div>';
+    loadGroupMembersForManager(groupId);
+}
+
+async function loadGroupMembersForManager(groupId) {
+    const container = document.getElementById('groupMemberList');
+    if (!container) return;
+    container.innerHTML = '<div class="p-4 text-sm text-gray-500">読み込み中...</div>';
+    try {
+        const members = await APIClient.getGroupMembers(groupId);
+        renderGroupMemberList(members);
+    } catch (e) {
+        container.innerHTML = `<div class="p-4 text-sm text-red-600">所属の取得に失敗しました: ${escapeHtml(e.message)}</div>`;
+    }
+}
+
+function renderGroupMemberList(members) {
+    const container = document.getElementById('groupMemberList');
+    if (!container) return;
+    if (!members || members.length === 0) {
+        container.innerHTML = '<div class="p-4 text-center text-sm text-gray-500">現在、このグループに所属している材料はありません。</div>';
+        return;
+    }
+    container.innerHTML = members.map(m => `
+        <div class="p-3 flex items-center justify-between">
+            <span class="text-sm text-gray-800">材料ID: ${m.material_id}</span>
+            <button class="px-3 py-1.5 text-xs rounded-md border border-red-300 bg-white hover:bg-red-50 text-red-700" onclick="removeMaterialFromGroup(${m.group_id}, ${m.id})">
+                <i class="fas fa-times mr-1"></i>所属解除
+            </button>
+        </div>
+    `).join('');
+}
+
+document.getElementById('groupMemberSearchBtn')?.addEventListener('click', async () => {
+    const q = document.getElementById('groupMemberSearchInput')?.value?.trim();
+    const groupId = selectedGroupForMembers;
+    if (!groupId) {
+        alert('先に所属管理したいグループを選択してください');
+        return;
+    }
+    if (!q) return;
+    const container = document.getElementById('groupMemberSearchResults');
+    if (!container) return;
+    container.innerHTML = '<div class="p-4 text-sm text-gray-500">検索中...</div>';
+    try {
+        const results = await APIClient.searchMaterials(q);
+        if (!Array.isArray(results) || results.length === 0) {
+            container.innerHTML = '<div class="p-4 text-center text-sm text-gray-500">該当する材料が見つかりませんでした。</div>';
+            return;
+        }
+        container.innerHTML = results.map(r => `
+            <div class="p-3 flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-900">${escapeHtml(r.display_name || r.name || '（名称未設定）')}</p>
+                    <p class="text-xs text-gray-500">ID: ${r.material_id} / 径: ${r.diameter_mm ?? '―'}</p>
+                </div>
+                <button class="px-3 py-1.5 text-xs rounded-md border border-blue-300 bg-white hover:bg-blue-50 text-blue-700" onclick="addMaterialToGroup(${groupId}, ${r.material_id})">
+                    <i class="fas fa-plus mr-1"></i>追加
+                </button>
+            </div>
+        `).join('');
+    } catch (e) {
+        container.innerHTML = `<div class="p-4 text-sm text-red-600">検索に失敗しました: ${escapeHtml(e.message)}</div>`;
+    }
+});
+
+async function addMaterialToGroup(groupId, materialId) {
+    try {
+        await APIClient.addGroupMember(groupId, materialId);
+        // materialGroupMap を更新（安全のため再取得）
+        await loadMaterialGroupRelations();
+        applyFiltersAndRender();
+        // 所属一覧を更新
+        await loadGroupMembersForManager(groupId);
+    } catch (e) {
+        alert(`追加に失敗しました: ${e.message}`);
+    }
+}
+
+async function removeMaterialFromGroup(groupId, memberId) {
+    try {
+        await APIClient.removeGroupMember(groupId, memberId);
+        await loadMaterialGroupRelations();
+        applyFiltersAndRender();
+        await loadGroupMembersForManager(groupId);
+    } catch (e) {
+        alert(`所属解除に失敗しました: ${e.message}`);
+    }
+}
 </script>
 
 {% endblock %}
+    // 材料グループ名の集約
+    const namesSet = new Set();
+    if (materialGroupMap && group._materialIdSet && group._materialIdSet.size > 0) {
+        group._materialIdSet.forEach(id => {
+            const s = materialGroupMap.get(id);
+            if (s) {
+                for (const n of s) namesSet.add(n);
+            }
+        });
+    }
+    group.material_group_names = Array.from(namesSet).sort((a, b) => a.localeCompare(b, 'ja'));
