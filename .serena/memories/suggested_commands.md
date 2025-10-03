@@ -1,0 +1,19 @@
+# Suggested Commands
+- **Setup**
+  - `python -m venv .venv` (create venv)
+  - `.venv\Scripts\activate` (Windows) or `source .venv/bin/activate`
+  - `pip install -r requirements.txt`
+  - `cp .env.example .env`
+- **Database Reset & Sample Data**
+  - `python reset_db.py`
+- **Run App**
+  - `python run.py`
+  - `uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload`
+  - `python -m src.main`
+- **Testing**
+  - `pytest`
+  - `pytest --cov=src`
+  - (Future) `pytest tests/test_specific.py`
+- **CSV/Utility Scripts**
+  - `python convert_material_master.py`
+  - `python csv_importer.py`
