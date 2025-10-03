@@ -170,6 +170,13 @@
                                    class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                    placeholder="例: 2500">
                         </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">使用材料情報（任意）</label>
+                            <textarea name="material_usage_info" rows="3"
+                                      class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                      placeholder="例: 切断後3m→2m使用、端材利用、用途の補足など"></textarea>
+                            <p class="text-xs text-gray-500 mt-1">ここに記入した内容は備考に統合されます。</p>
+                        </div>
                     </div>
                 </div>
 
@@ -622,6 +629,28 @@ function resetFilters() {
     loadPendingItems();
 }
 
+// 発注品名などのテキストをコピー
+function copyFromElement(elementId) {
+    try {
+        const el = document.getElementById(elementId);
+        if (!el) {
+            showToast('コピー対象が見つかりません', 'error');
+            return;
+        }
+        const text = el.textContent.trim();
+        navigator.clipboard.writeText(text).then(() => {
+            showToast('発注品名をコピーしました', 'success');
+        }).catch((err) => {
+            console.error('コピー失敗:', err);
+            showToast('コピーに失敗しました', 'error');
+        });
+    } catch (error) {
+        console.error('コピー処理エラー:', error);
+        showToast('コピー処理でエラーが発生しました', 'error');
+    }
+}
+
+
 // 入庫確認モーダル表示
 async function showReceiveModal(itemId) {
     try {
@@ -654,7 +683,17 @@ async function showReceiveModal(itemId) {
             </div>
             <div>
                 <dt class="font-medium text-gray-500">発注品名</dt>
-                <dd class="text-gray-900">${item.item_name}</dd>
+                <dd class="text-gray-900">
+                    <div class="mt-2">
+                        <textarea id="purchaseItemNameTextarea" class="w-full mt-1 p-2 text-sm border rounded bg-white" rows="2" readonly>${item.item_name}</textarea>
+                        <div class="mt-1">
+                            <button type="button" class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
+                                onclick="copySelectionFromTextarea('purchaseItemNameTextarea')">
+                                選択範囲をコピー
+                            </button>
+                        </div>
+                    </div>
+                </dd>
             </div>
             <div>
                 <dt class="font-medium text-gray-500">発注方式</dt>
@@ -678,6 +717,12 @@ async function showReceiveModal(itemId) {
             String(now.getHours()).padStart(2, '0') + ':' +
             String(now.getMinutes()).padStart(2, '0');
         document.querySelector('input[name="received_date"]').value = localDateTime;
+
+        // 長さ（mm）のデフォルト値を設定
+        const lengthInput = document.querySelector('input[name="length_mm"]');
+        if (lengthInput) {
+            lengthInput.value = 2500;
+        }
 
         // 発注方式に応じてフィールドを切り替え
         const quantityField = document.getElementById('quantityField');
@@ -810,6 +855,14 @@ async function handleReceive(event) {
 
     if (selectedLocationIds.length > 0) {
         receiveData.location_ids = selectedLocationIds;
+    }
+
+    // 使用材料情報は備考に統合して送信（API互換のため）
+    const usageInfo = formData.get('material_usage_info');
+    if (usageInfo && usageInfo.trim().length > 0) {
+        const baseNotes = receiveData.notes ? String(receiveData.notes) : '';
+        const prefix = baseNotes ? baseNotes + '\n' : '';
+        receiveData.notes = (prefix + '使用材料情報: ' + usageInfo.trim());
     }
 
     // 入力された値を取得
@@ -960,6 +1013,29 @@ function updateFilterStatus(visibleCount, totalCount) {
         headerElement.textContent = `入庫待ちアイテム（${totalCount}件）`;
     } else {
         headerElement.textContent = `入庫待ちアイテム（${visibleCount}/${totalCount}件表示）`;
+    }
+}
+
+// テキストエリアの選択範囲をクリップボードへコピー
+function copySelectionFromTextarea(textareaId) {
+    const ta = document.getElementById(textareaId);
+    if (!ta) return;
+    const start = ta.selectionStart ?? 0;
+    const end = ta.selectionEnd ?? start;
+    const s = Math.min(start, end);
+    const e = Math.max(start, end);
+    const text = ta.value.substring(s, e);
+    if (!text) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text);
+    } else {
+        const tmp = document.createElement('textarea');
+        tmp.value = text;
+        document.body.appendChild(tmp);
+        tmp.focus();
+        tmp.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(tmp);
     }
 }
 </script>
