@@ -92,6 +92,7 @@ class MaterialBase(BaseModel):
     part_number: Optional[str] = Field(None, max_length=100, description="品番")
     name: str = Field(..., max_length=100, description="材質名（例：S45C）")
     display_name: Optional[str] = Field(None, max_length=200, description="表示名（表記揺れ対応: φ10.0D等）")
+    detail_info: Optional[str] = Field(None, max_length=200, description="詳細情報（寸法以降の補足）")
     description: Optional[str] = Field(None, description="説明")
     shape: MaterialShape = Field(..., description="断面形状")
     diameter_mm: float = Field(..., gt=0, description="直径または一辺の長さ（mm）")
@@ -107,6 +108,7 @@ class MaterialUpdate(BaseModel):
     part_number: Optional[str] = Field(None, max_length=100, description="品番")
     name: Optional[str] = Field(None, max_length=100, description="材質名")
     display_name: Optional[str] = Field(None, max_length=200, description="表示名（表記揺れ対応）")
+    detail_info: Optional[str] = Field(None, max_length=200, description="詳細情報（寸法以降の補足）")
     description: Optional[str] = Field(None, description="説明")
     shape: Optional[MaterialShape] = Field(None, description="断面形状")
     diameter_mm: Optional[float] = Field(None, gt=0, description="直径または一辺の長さ（mm）")
@@ -212,6 +214,8 @@ async def create_material(material: MaterialCreate, db: Session = Depends(get_db
     material_data = material.model_dump()
     if material_data.get('description') == "":
         material_data['description'] = None
+    if material_data.get('detail_info') == "":
+        material_data['detail_info'] = None
 
     db_material = Material(**material_data)
     db.add(db_material)
@@ -253,6 +257,8 @@ async def update_material(
     # 説明フィールドが空文字列の場合は適切に処理
     if 'description' in update_data and update_data['description'] == "":
         update_data['description'] = None
+    if 'detail_info' in update_data and update_data['detail_info'] == "":
+        update_data['detail_info'] = None
 
     for field, value in update_data.items():
         setattr(db_material, field, value)
@@ -1153,6 +1159,7 @@ async def search_materials(
     materials = db.query(Material).filter(
         Material.name.contains(query_text) |
         Material.display_name.contains(query_text) |
+        Material.detail_info.contains(query_text) |
         Material.part_number.contains(query_text)
     ).limit(50).all()
 
@@ -1219,3 +1226,5 @@ async def search_materials(
         "total": len(results),
         "results": results
     }
+
+

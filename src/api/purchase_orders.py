@@ -158,6 +158,7 @@ class ReceivingConfirmation(BaseModel):
     lot_number: str = Field(..., max_length=100, description="ロット番号")
     # 材料情報（入庫確認時に入力）
     material_name: str = Field(..., max_length=100, description="材質名")
+    detail_info: Optional[str] = Field(None, max_length=200, description="詳細情報")
     diameter_mm: float = Field(..., gt=0, description="直径または一辺の長さ（mm）")
     shape: MaterialShape = Field(..., description="断面形状")
     usage_type: UsageType = Field(UsageType.GENERAL, description="用途区分（汎用/専用）")
@@ -529,10 +530,12 @@ async def receive_item(
 
     # 材料マスター登録処理
     # 1. 既存材料を検索（材質・形状・径でマッチング）
+    detail_info = receiving.detail_info.strip() if receiving.detail_info else None
     existing_material = db.query(Material).filter(
         Material.name == receiving.material_name,
         Material.shape == receiving.shape,
         Material.diameter_mm == receiving.diameter_mm,
+        Material.detail_info == detail_info,
         Material.is_active == True
     ).first()
 
@@ -543,6 +546,7 @@ async def receive_item(
         # 新規材料として登録
         new_material = Material(
             name=receiving.material_name,
+            detail_info=detail_info,
             shape=receiving.shape,
             diameter_mm=receiving.diameter_mm,
             current_density=receiving.density,

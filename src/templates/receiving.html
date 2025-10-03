@@ -135,20 +135,18 @@
                                    placeholder="例: SUS303">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">径（mm）*</label>
-                            <input type="number" name="diameter_mm" step="0.1" min="0" required
+                            <label class="block text-sm font-medium text-gray-700 mb-2">径入力 *</label>
+                            <input type="text" name="diameter_input" required
                                    class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                   placeholder="例: 10.0">
+                                   placeholder="例: φ10.0 / H12 / □20">
+                            <p class="text-xs text-gray-500 mt-1">先頭にφ・H・□などの記号を付けて入力してください。</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">形状 *</label>
-                            <select name="shape" required
-                                    class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                <option value="">選択してください</option>
-                                <option value="round">丸棒</option>
-                                <option value="hexagon">六角棒</option>
-                                <option value="square">角棒</option>
-                            </select>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">詳細情報</label>
+                            <input type="text" name="detail_info"
+                                   class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   placeholder="例: 研磨 / 端面R付 / 面取りなど">
+                            <p class="text-xs text-gray-500 mt-1">材質・寸法以降の仕上げや特記事項を入力してください。</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">区分 *</label>
@@ -335,6 +333,104 @@
 
 <script>
 // 入庫確認の主要機能
+const SHAPE_SYMBOL_MAP = {
+    round: ['φ', 'Φ', '⌀', 'Ø', 'ø', 'ϕ', '￠'],
+    hexagon: ['H', 'h', 'Ｈ', 'ｈ'],
+    square: ['□', '■', '口', '▢']
+};
+
+const SHAPE_WORD_PREFIXES = [
+    { prefix: 'hex', shape: 'hexagon' },
+    { prefix: '六角', shape: 'hexagon' },
+    { prefix: 'square', shape: 'square' },
+    { prefix: '角', shape: 'square' },
+    { prefix: 'round', shape: 'round' }
+];
+
+function normalizeDiameterDigits(value) {
+    if (typeof value !== 'string') return '';
+    return value
+        .replace(/[０-９]/g, char => String.fromCharCode(char.charCodeAt(0) - 0xFEE0))
+        .replace(/．/g, '.')
+        .replace(/，/g, ',');
+}
+
+function parseDiameterInputValue(raw) {
+    if (!raw || !raw.trim()) {
+        return { error: '径を入力してください' };
+    }
+    let text = raw.normalize('NFKC').trim();
+    let shape = null;
+
+    const lower = text.toLowerCase();
+    const wordPrefix = SHAPE_WORD_PREFIXES.find(entry => lower.startsWith(entry.prefix));
+    if (wordPrefix) {
+        shape = wordPrefix.shape;
+        text = text.slice(wordPrefix.prefix.length).trim();
+    } else {
+        const firstChar = text.charAt(0);
+        for (const [key, symbols] of Object.entries(SHAPE_SYMBOL_MAP)) {
+            if (symbols.includes(firstChar)) {
+                shape = key;
+                text = text.slice(1).trimStart();
+                break;
+            }
+        }
+    }
+
+    if (!shape) {
+        return { error: '先頭に形状記号（φ・H・□など）を付けてください' };
+    }
+
+    text = text.replace(/(mm|㎜)/gi, ' ');
+    const numberMatch = text.match(/(\d+(?:[.,]\d+)?)/);
+    if (!numberMatch) {
+        return { error: '径の数値が確認できません' };
+    }
+
+    const diameter = parseFloat(numberMatch[1].replace(',', '.'));
+    if (!(diameter > 0)) {
+        return { error: '径は正の数で入力してください' };
+    }
+
+    return { shape, diameter_mm: diameter };
+}
+
+function roundTo3(value) {
+    return Math.round(value * 1000) / 1000;
+}
+
+function calculateUnitWeightKg(shape, diameterMm, lengthMm, density) {
+    const lengthCm = lengthMm / 10;
+    const base = diameterMm / 10;
+    let volumeCm3;
+    if (shape === 'round') {
+        const radiusCm = base / 2;
+        volumeCm3 = Math.PI * radiusCm * radiusCm * lengthCm;
+    } else if (shape === 'hexagon') {
+        volumeCm3 = (3 * Math.sqrt(3) / 2) * Math.pow(base, 2) * lengthCm;
+    } else if (shape === 'square') {
+        volumeCm3 = Math.pow(base, 2) * lengthCm;
+    } else {
+        throw new Error('未対応の形状です');
+    }
+    return volumeCm3 * density / 1000;
+}
+
+function updateConversionDisplays(quantity, weight, unitWeight) {
+    const quantityEl = document.getElementById('displayQuantity');
+    const weightEl = document.getElementById('displayWeight');
+    const unitWeightEl = document.getElementById('displayUnitWeight');
+
+    quantityEl.textContent = Number.isFinite(quantity) && quantity > 0 ? String(quantity) : '-';
+    weightEl.textContent = typeof weight === 'number' && Number.isFinite(weight) ? weight.toFixed(3) : '-';
+    unitWeightEl.textContent = typeof unitWeight === 'number' && Number.isFinite(unitWeight) ? unitWeight.toFixed(3) : '-';
+}
+
+function clearConversionDisplays() {
+    updateConversionDisplays(null, null, null);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // 初期化
     loadPendingItems();
@@ -343,6 +439,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // フィルターのリアルタイム更新設定
     setupFilterListeners();
+    updateConversion();
 });
 
 // 入庫待ちアイテム読み込み
@@ -476,83 +573,70 @@ function getOrderDisplayText(item) {
 }
 
 // 本数・重量の相互換算と表示更新
-async function updateConversion(materialData, quantity, weight) {
+function updateConversion() {
     try {
-        let calculatedQuantity = quantity;
-        let calculatedWeight = weight;
-        let unitWeight = 0;
+        const quantityInput = document.getElementById('quantityInput');
+        const weightInput = document.getElementById('weightInput');
+        const diameterInput = document.querySelector('input[name="diameter_input"]');
+        const densityInput = document.querySelector('input[name="density"]');
+        const lengthInput = document.querySelector('input[name="length_mm"]');
 
-        // 材料情報の取得
-        const shape = materialData.shape || document.querySelector('select[name="shape"]').value;
-        const diameterMm = materialData.diameter_mm || parseFloat(document.querySelector('input[name="diameter_mm"]').value);
-        const lengthMm = materialData.length_mm || parseInt(document.querySelector('input[name="length_mm"]').value);
-        const density = materialData.density || parseFloat(document.querySelector('input[name="density"]').value);
-
-        if (!shape || !diameterMm || !lengthMm || !density) {
-            // 材料情報が不足している場合は換算をスキップ
+        if (!diameterInput || !densityInput || !lengthInput) {
+            clearConversionDisplays();
             return;
         }
 
-        if (quantity && !weight) {
-            // 本数から重量を計算
-            const response = await fetch('/api/purchase-orders/calculate-conversion/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    shape: shape,
-                    diameter_mm: diameterMm,
-                    length_mm: lengthMm,
-                    density: density,
-                    quantity: quantity
-                })
-            });
+        const parsedDiameter = parseDiameterInputValue(normalizeDiameterDigits(diameterInput.value || ''));
+        if (parsedDiameter.error) {
+            diameterInput.setCustomValidity(parsedDiameter.error);
+            clearConversionDisplays();
+            return;
+        }
+        diameterInput.setCustomValidity('');
 
-            if (response.ok) {
-                const result = await response.json();
-                calculatedWeight = result.calculated_weight_kg;
-            }
-        } else if (weight && !quantity) {
-            // 重量から本数を計算
-            const response = await fetch('/api/purchase-orders/calculate-conversion/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    shape: shape,
-                    diameter_mm: diameterMm,
-                    length_mm: lengthMm,
-                    density: density,
-                    weight_kg: weight
-                })
-            });
+        const density = parseFloat(densityInput.value);
+        const lengthMm = parseInt(lengthInput.value, 10);
 
-            if (response.ok) {
-                const result = await response.json();
-                calculatedQuantity = result.calculated_quantity;
-            }
+        if (!(density > 0) || !(lengthMm > 0)) {
+            clearConversionDisplays();
+            return;
         }
 
-        // 1本あたりの重量を計算
-        if (calculatedQuantity && calculatedWeight) {
-            unitWeight = calculatedWeight / calculatedQuantity;
+        const unitWeight = roundTo3(calculateUnitWeightKg(parsedDiameter.shape, parsedDiameter.diameter_mm, lengthMm, density));
+
+        const selectedMethod = document.querySelector('input[name="input_method"]:checked');
+        const method = selectedMethod ? selectedMethod.value : 'quantity';
+
+        const quantity = parseInt(quantityInput.value, 10);
+        const weight = parseFloat(weightInput.value);
+
+        let displayQuantity = null;
+        let displayWeight = null;
+
+        if (method === 'quantity' && Number.isFinite(quantity) && quantity > 0) {
+            displayQuantity = quantity;
+            displayWeight = roundTo3(unitWeight * quantity);
+        } else if (method === 'weight' && Number.isFinite(weight) && weight > 0) {
+            displayWeight = roundTo3(weight);
+            const computedQuantity = Math.max(1, Math.round(weight / unitWeight));
+            displayQuantity = computedQuantity;
+        } else if (Number.isFinite(quantity) && quantity > 0) {
+            displayQuantity = quantity;
+            displayWeight = roundTo3(unitWeight * quantity);
+        } else if (Number.isFinite(weight) && weight > 0) {
+            displayWeight = roundTo3(weight);
+            const computedQuantity = Math.max(1, Math.round(weight / unitWeight));
+            displayQuantity = computedQuantity;
         }
 
-        // 表示を更新
-        document.getElementById('displayQuantity').textContent =
-            calculatedQuantity ? calculatedQuantity.toString() : '-';
-        document.getElementById('displayWeight').textContent =
-            calculatedWeight ? calculatedWeight.toFixed(3) : '-';
-        document.getElementById('displayUnitWeight').textContent =
-            unitWeight ? unitWeight.toFixed(3) : '-';
-
+        updateConversionDisplays(displayQuantity, displayWeight, unitWeight);
     } catch (error) {
         console.error('換算計算エラー:', error);
-        document.getElementById('displayQuantity').textContent = 'エラー';
-        document.getElementById('displayWeight').textContent = 'エラー';
-        document.getElementById('displayUnitWeight').textContent = 'エラー';
+        const diameterInput = document.querySelector('input[name="diameter_input"]');
+        if (diameterInput) {
+            diameterInput.setCustomValidity('径の換算に失敗しました');
+        }
+        clearConversionDisplays();
     }
 }
 
@@ -601,6 +685,21 @@ function setupEventListeners() {
 
     // 現品票印刷
     document.getElementById('printLabelBtn').addEventListener('click', printLabel);
+
+    const diameterInput = document.querySelector('input[name="diameter_input"]');
+    if (diameterInput) {
+        diameterInput.addEventListener('input', updateConversion);
+    }
+
+    const densityInput = document.querySelector('input[name="density"]');
+    if (densityInput) {
+        densityInput.addEventListener('input', updateConversion);
+    }
+
+    const lengthInput = document.querySelector('input[name="length_mm"]');
+    if (lengthInput) {
+        lengthInput.addEventListener('input', updateConversion);
+    }
 }
 
 // フィルターリスナー設定
@@ -724,17 +823,9 @@ async function showReceiveModal(itemId) {
             lengthInput.value = 2500;
         }
 
-        // 発注方式に応じてフィールドを切り替え
-        const quantityField = document.getElementById('quantityField');
-        const weightField = document.getElementById('weightField');
-        const conversionInfo = document.getElementById('conversionInfo');
-
         // 入力フィールドの参照を取得
         const quantityInput = document.getElementById('quantityInput');
         const weightInput = document.getElementById('weightInput');
-        const displayQuantity = document.getElementById('displayQuantity');
-        const displayWeight = document.getElementById('displayWeight');
-        const displayUnitWeight = document.getElementById('displayUnitWeight');
         const inputMethodRadios = document.querySelectorAll('input[name="input_method"]');
 
         // 発注方式に応じてデフォルト値を設定
@@ -748,29 +839,24 @@ async function showReceiveModal(itemId) {
             document.querySelector('input[name="input_method"][value="quantity"]').checked = true;
         }
 
-        // 本数入力時のイベントリスナー
-        quantityInput.addEventListener('input', function() {
+        quantityInput.oninput = function() {
             if (this.value) {
-                // 本数入力時は重量をクリアして換算
                 weightInput.value = '';
                 document.querySelector('input[name="input_method"][value="quantity"]').checked = true;
-                updateConversion({}, parseInt(this.value), null);
             }
-        });
+            updateConversion();
+        };
 
-        // 重量入力時のイベントリスナー
-        weightInput.addEventListener('input', function() {
+        weightInput.oninput = function() {
             if (this.value) {
-                // 重量入力時は本数をクリアして換算
                 quantityInput.value = '';
                 document.querySelector('input[name="input_method"][value="weight"]').checked = true;
-                updateConversion({}, null, parseFloat(this.value));
             }
-        });
+            updateConversion();
+        };
 
-        // 入力方式選択時のイベントリスナー
         inputMethodRadios.forEach(radio => {
-            radio.addEventListener('change', function() {
+            radio.onchange = function() {
                 if (this.value === 'quantity') {
                     quantityInput.focus();
                     weightInput.value = '';
@@ -778,10 +864,11 @@ async function showReceiveModal(itemId) {
                     weightInput.focus();
                     quantityInput.value = '';
                 }
-                updateConversion({}, null, null);
-            });
+                updateConversion();
+            };
         });
 
+        updateConversion();
         document.getElementById('receiveModal').classList.remove('hidden');
     } catch (error) {
         console.error('入庫確認モーダル表示エラー:', error);
@@ -797,10 +884,8 @@ function hideReceiveModal() {
     // 新しいフィールドもリセット
     document.getElementById('quantityInput').value = '';
     document.getElementById('weightInput').value = '';
-    document.getElementById('displayQuantity').textContent = '-';
-    document.getElementById('displayWeight').textContent = '-';
-    document.getElementById('displayUnitWeight').textContent = '-';
     document.querySelector('input[name="input_method"][value="quantity"]').checked = true;
+    clearConversionDisplays();
     // 置き場選択のリセット（複数選択）
     const locSelect = document.querySelector('select[name="location_ids"]');
     if (locSelect) {
@@ -827,17 +912,50 @@ async function handleReceive(event) {
     const selectedLocationOptions = Array.from(document.querySelector('select[name="location_ids"]').selectedOptions);
     const selectedLocationIds = selectedLocationOptions.map(opt => parseInt(opt.value, 10)).filter(id => !isNaN(id));
 
-    // 材料情報
+    const diameterInputField = document.querySelector('input[name="diameter_input"]');
+    const rawDiameterInput = formData.get('diameter_input') || '';
+    const normalizedDiameterInput = normalizeDiameterDigits(rawDiameterInput);
+    if (diameterInputField && normalizedDiameterInput !== rawDiameterInput) {
+        diameterInputField.value = normalizedDiameterInput;
+        updateConversion();
+    }
+    formData.set('diameter_input', normalizedDiameterInput);
+
+    const parsedDiameter = parseDiameterInputValue(normalizedDiameterInput);
+    if (parsedDiameter.error) {
+        if (diameterInputField) {
+            diameterInputField.setCustomValidity(parsedDiameter.error);
+            diameterInputField.reportValidity();
+        }
+        showToast(parsedDiameter.error, 'error');
+        return;
+    }
+    if (diameterInputField) {
+        diameterInputField.setCustomValidity('');
+    }
+
+    const densityValue = parseFloat(formData.get('density'));
+    if (!(densityValue > 0)) {
+        showToast('比重を正しく入力してください', 'error');
+        return;
+    }
+
+    const lengthValue = parseInt(formData.get('length_mm'), 10);
+    if (!(lengthValue > 0)) {
+        showToast('長さを正しく入力してください', 'error');
+        return;
+    }
+
     const materialData = {
-        material_name: formData.get('material_name'),
-        diameter_mm: parseFloat(formData.get('diameter_mm')),
-        shape: formData.get('shape'),
+        material_name: (formData.get('material_name') || '').trim(),
+        detail_info: (formData.get('detail_info') || '').trim() || null,
+        diameter_mm: parsedDiameter.diameter_mm,
+        shape: parsedDiameter.shape,
         usage_type: formData.get('usage_type'),
-        density: parseFloat(formData.get('density')),
-        length_mm: parseInt(formData.get('length_mm'))
+        density: densityValue,
+        length_mm: lengthValue
     };
 
-    // 入庫情報
     const receiveData = {
         lot_number: formData.get('lot_number'),
         received_date: formData.get('received_date'),

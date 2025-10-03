@@ -126,6 +126,7 @@ class Material(Base):
     part_number = Column(String(100), nullable=True, comment="品番")
     name = Column(String(100), nullable=False, comment="材質名（例：S45C）")
     display_name = Column(String(200), nullable=True, comment="表示名（表記揺れ対応: φ10.0D等）")
+    detail_info = Column(String(200), nullable=True, comment="詳細情報")
     description = Column(Text, comment="説明")
     shape = Column(Enum(MaterialShape), nullable=False, comment="断面形状")
     diameter_mm = Column(Float, nullable=False, comment="直径または一辺の長さ（mm）")
@@ -294,5 +295,6 @@ class AuditLog(Base):
 
     # リレーション
     user = relationship("User")
+
 
 

@@ -181,6 +181,10 @@
                             <dt class="text-gray-500">専用品番・追加情報</dt>
                             <dd id="detailDedicatedInfo" class="text-gray-900 font-medium">-</dd>
                         </div>
+                        <div>
+                            <dt class="text-gray-500">詳細情報</dt>
+                            <dd id="detailInfo" class="text-gray-900 font-medium">-</dd>
+                        </div>
                     </dl>
                 </section>
 
@@ -323,8 +327,21 @@ async function loadMasterAndInventory() {
         fetchAllInventory()
     ]);
 
-    materialMaster = materials;
-    inventoryItems = inventory;
+    materialMaster = materials.map(material => ({
+        ...material,
+        detail_info: sanitizeDetail(material.detail_info),
+        display_name: sanitizeDetail(material.display_name),
+        dedicated_part_number: sanitizeDetail(material.dedicated_part_number)
+    }));
+    inventoryItems = inventory.map(item => ({
+        ...item,
+        material: item.material ? {
+            ...item.material,
+            detail_info: sanitizeDetail(item.material.detail_info),
+            display_name: sanitizeDetail(item.material.display_name),
+            dedicated_part_number: sanitizeDetail(item.material.dedicated_part_number)
+        } : item.material
+    }));
 }
 
 async function fetchAllMaterials() {
@@ -379,11 +396,12 @@ function buildGroupStore() {
 
     const getGroupKey = (material) => {
         const usageType = material.usage_type === 'dedicated' ? 'dedicated' : 'general';
+        const detailKey = normalizeDetail(material.detail_info);
         if (usageType === 'dedicated') {
             const dedicated = (material.dedicated_part_number || '').trim().toUpperCase();
-            return `${usageType}|${material.name.toUpperCase()}|${normalizeNumber(material.diameter_mm)}|${dedicated}`;
+            return `${usageType}|${material.name.toUpperCase()}|${normalizeNumber(material.diameter_mm)}|${dedicated}|${detailKey}`;
         }
-        return `${usageType}|${material.name.toUpperCase()}|${material.shape}|${normalizeNumber(material.diameter_mm)}`;
+        return `${usageType}|${material.name.toUpperCase()}|${material.shape}|${normalizeNumber(material.diameter_mm)}|${detailKey}`;
     };
 
     materialMaster.forEach(material => {
@@ -394,6 +412,11 @@ function buildGroupStore() {
         const group = groupStore.get(key);
         group.materials.push(material);
         group._materialIdSet.add(material.id);
+        const candidateLabel = selectOriginalLabel(material);
+        const baseName = sanitizeDetail(material.name);
+        if (!group.base_label || group.base_label === '―' || group.base_label === baseName) {
+            group.base_label = candidateLabel;
+        }
     });
 
     inventoryItems.forEach(item => {
@@ -445,13 +468,17 @@ function buildGroupStore() {
 
 function createEmptyGroup(key, material) {
     const usageType = material.usage_type === 'dedicated' ? 'dedicated' : 'general';
+    const originalLabel = selectOriginalLabel(material);
     return {
         key,
         usage_type: usageType,
         material_name: material.name,
+        base_label: originalLabel,
+        display_label: originalLabel,
         shape: material.shape,
         diameter_mm: material.diameter_mm,
-        dedicated_part_number: material.dedicated_part_number || '',
+        detail_info: sanitizeDetail(material.detail_info),
+        dedicated_part_number: sanitizeDetail(material.dedicated_part_number),
         materials: [],
         lots: [],
         total_quantity: 0,
@@ -499,18 +526,74 @@ function finalizeGroup(group) {
     delete group._lengthSet;
     delete group._materialIdSet;
 
-    group.label = group.material_name;
     group.subtitle = buildGroupSubtitle(group);
+    group.display_label = buildGroupDisplayLabel(group);
+    group.label = group.display_label;
 }
 
 function buildGroupSubtitle(group) {
     const dimension = formatDimension(group.shape, group.diameter_mm);
+    const detailSuffix = group.detail_info ? ` / ${group.detail_info}` : '';
     if (group.usage_type === 'dedicated') {
-        const dedicated = group.dedicated_part_number ? `専用品番 ${group.dedicated_part_number}` : '専用品番未設定';
-        return `寸法 ${dimension} / ${dedicated}`;
+        const dedicated = group.dedicated_part_number ? `専用品番 ${group.dedicated_part_number}` : '専用品目未設定';
+        return `専用 ${dimension} / ${dedicated}${detailSuffix}`;
     }
     const shapeLabel = shapeLabels[group.shape] || group.shape;
-    return `${shapeLabel} / 寸法 ${dimension}`;
+    return `${shapeLabel} / 径 ${dimension}${detailSuffix}`;
+}
+
+function buildGroupDisplayLabel(group) {
+    const baseLabel = group.base_label || group.material_name;
+    const dimension = formatDimensionCompact(group.shape, group.diameter_mm);
+
+    const details = [];
+    const detailInfo = sanitizeDetail(group.detail_info);
+    if (group.usage_type === 'dedicated' && group.dedicated_part_number) {
+        details.push(group.dedicated_part_number);
+    }
+    if (detailInfo) {
+        details.push(detailInfo);
+    }
+
+    let detailText = '';
+    if (details.length) {
+        const joined = details.join(' / ');
+        detailText = /^\(.*\)$/.test(joined) ? joined : `(${joined})`;
+    }
+
+    const mainParts = [baseLabel];
+    if (dimension) {
+        mainParts.push(dimension);
+    }
+
+    return `${mainParts.filter(Boolean).join(' ')}${detailText ? ` ${detailText}` : ''}`.trim();
+}
+
+function buildMaterialDisplayLabel(material) {
+    const baseLabel = selectOriginalLabel(material);
+    const dimension = formatDimensionCompact(material.shape, material.diameter_mm);
+
+    const details = [];
+    const detailInfo = sanitizeDetail(material.detail_info);
+    if (material.usage_type === 'dedicated' && material.dedicated_part_number) {
+        details.push(material.dedicated_part_number);
+    }
+    if (detailInfo) {
+        details.push(detailInfo);
+    }
+
+    let detailText = '';
+    if (details.length) {
+        const joined = details.join(' / ');
+        detailText = /^\(.*\)$/.test(joined) ? joined : `(${joined})`;
+    }
+
+    const mainParts = [baseLabel];
+    if (dimension) {
+        mainParts.push(dimension);
+    }
+
+    return `${mainParts.filter(Boolean).join(' ')}${detailText ? ` ${detailText}` : ''}`.trim();
 }
 
 function normalizeNumber(value) {
@@ -518,6 +601,25 @@ function normalizeNumber(value) {
         return '';
     }
     return Number(value).toFixed(4);
+}
+
+function sanitizeDetail(value) {
+    if (value === null || value === undefined) {
+        return '';
+    }
+    return String(value).trim();
+}
+
+function normalizeDetail(value) {
+    return sanitizeDetail(value).toUpperCase();
+}
+
+function selectOriginalLabel(material) {
+    const displayName = sanitizeDetail(material.display_name);
+    if (displayName) {
+        return displayName;
+    }
+    return sanitizeDetail(material.name) || '―';
 }
 
 function formatDimension(shape, diameter) {
@@ -531,6 +633,19 @@ function formatDimension(shape, diameter) {
     const formatted = Number.isInteger(numeric) ? numeric.toString() : numeric.toFixed(2);
     const prefix = shapeDimensionPrefixes[shape] || '';
     return `${prefix}${formatted}mm`;
+}
+
+function formatDimensionCompact(shape, diameter) {
+    if (diameter === null || diameter === undefined || diameter === '') {
+        return '';
+    }
+    const numeric = Number(diameter);
+    if (Number.isNaN(numeric)) {
+        return String(diameter);
+    }
+    const normalized = Number.isInteger(numeric) ? numeric : Number(numeric.toFixed(3));
+    const prefix = shapeDimensionPrefixes[shape] || '';
+    return `${prefix}${normalized}`;
 }
 
 function registerFilterHandlers() {
@@ -579,12 +694,14 @@ function applyFiltersAndRender() {
 
         if (filters.name) {
             const matchName = group.material_name.toLowerCase().includes(filters.name);
+            const detailMatch = (group.detail_info || '').toLowerCase().includes(filters.name);
             const matchMaterials = group.materials.some(material =>
                 (material.display_name || '').toLowerCase().includes(filters.name) ||
                 material.name.toLowerCase().includes(filters.name) ||
-                (material.part_number || '').toLowerCase().includes(filters.name)
+                (material.part_number || '').toLowerCase().includes(filters.name) ||
+                (material.detail_info || '').toLowerCase().includes(filters.name)
             );
-            if (!matchName && !matchMaterials) {
+            if (!matchName && !detailMatch && !matchMaterials) {
                 return false;
             }
         }
@@ -680,8 +797,7 @@ function createGroupRow(group) {
                 </span>
             </td>
             <td class="px-4 py-3">
-                <p class="text-sm font-medium text-gray-900">${escapeHtml(group.material_name)}</p>
-                <p class="text-xs text-gray-500 mt-1">${escapeHtml(group.subtitle)}</p>
+                <p class="text-sm font-medium text-gray-900">${escapeHtml(group.display_label)}</p>
             </td>
             <td class="px-4 py-3 text-sm text-gray-600">${escapeHtml(lengthText)}</td>
             <td class="px-4 py-3 text-sm text-gray-600">${dedicatedDisplay}</td>
@@ -854,7 +970,7 @@ document.addEventListener('keydown', (event) => {
 
 function openGroupDetailModal(group) {
     document.getElementById('groupDetailTitle').textContent = group.label;
-    document.getElementById('groupDetailSubtitle').textContent = group.subtitle;
+    document.getElementById('groupDetailSubtitle').textContent = '';
     document.getElementById('detailMaterialCount').textContent = `${group.materials.length} 件`;
     document.getElementById('detailLotCount').textContent = `${group.lot_count} 件`;
     document.getElementById('detailTotalQuantity').textContent = `${group.total_quantity.toLocaleString('ja-JP')} 本`;
@@ -863,6 +979,7 @@ function openGroupDetailModal(group) {
     document.getElementById('detailDedicatedInfo').textContent = group.usage_type === 'dedicated'
         ? (group.dedicated_part_number || '未設定')
         : '汎用品（共通使用）';
+    document.getElementById('detailInfo').textContent = group.detail_info || '詳細情報なし';
 
     const badge = document.getElementById('groupDetailTag');
     badge.textContent = usageLabels[group.usage_type] || group.usage_type;
@@ -895,18 +1012,15 @@ function renderDetailMaterials(group) {
         .map(material => {
             const usageLabel = material.usage_type === 'dedicated' ? '専用' : '汎用';
             const dedicatedInfo = material.dedicated_part_number ? escapeHtml(material.dedicated_part_number) : '―';
-            const displayName = material.display_name ? escapeHtml(material.display_name) : '（表示名未設定）';
-            const partNumber = material.part_number ? escapeHtml(material.part_number) : '（品番未設定）';
+            const displayLabel = escapeHtml(buildMaterialDisplayLabel(material));
             const updated = material.updated_at ? new Date(material.updated_at).toLocaleString('ja-JP') : '―';
-            const dimension = formatDimension(material.shape, material.diameter_mm);
+            const detailText = material.detail_info ? `<p class="text-xs text-gray-500">詳細: ${escapeHtml(material.detail_info)}</p>` : '';
 
             return `
                 <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
-                        <p class="text-sm font-medium text-gray-900">${displayName}</p>
-                        <p class="text-xs text-gray-500 mt-1">材料名: ${escapeHtml(material.name)}</p>
-                        <p class="text-xs text-gray-500">形状・寸法: ${dimension}</p>
-                        <p class="text-xs text-gray-500">品番: ${partNumber}</p>
+                        <p class="text-sm font-medium text-gray-900">${displayLabel}</p>
+                        ${detailText}
                     </div>
                     <div class="flex flex-col items-start md:items-end text-xs text-gray-500 space-y-1">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">${usageLabel}</span>
