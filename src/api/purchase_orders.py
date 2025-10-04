@@ -475,6 +475,32 @@ async def get_pending_items(db: Session = Depends(get_db)):
 
     return items
 
+@router.get("/pending-or-inspection/items/", response_model=List[PurchaseOrderItemResponse])
+async def get_pending_or_inspection_items(db: Session = Depends(get_db)):
+    """入庫待ち、または検品未完了アイテム一覧取得
+
+    - 発注アイテムが未入庫（PENDING）のもの
+    - 入庫済み（RECEIVED）だが、紐づくロットの検品が未完了（PENDING/FAILED）のもの
+    """
+    from sqlalchemy.sql import exists
+    from src.db.models import Lot, InspectionStatus
+
+    lot_has_unpassed_inspection = exists().where(
+        (Lot.purchase_order_item_id == PurchaseOrderItem.id) &
+        (Lot.inspection_status != InspectionStatus.PASSED)
+    )
+
+    items = db.query(PurchaseOrderItem).options(
+        joinedload(PurchaseOrderItem.purchase_order)
+    ).filter(
+        or_(
+            PurchaseOrderItem.status == PurchaseOrderItemStatus.PENDING,
+            lot_has_unpassed_inspection
+        )
+    ).all()
+
+    return items
+
 @router.get("/items/{item_id}/suggest-material", response_model=Optional[MaterialSuggestionResponse])
 async def suggest_material_for_item(item_id: int, db: Session = Depends(get_db)):
     """発注アイテムの全文（item_name）に一致する材料マスター候補を返す"""
@@ -649,6 +675,21 @@ async def receive_item(
             db.add(MaterialGroupMember(group_id=receiving.group_id, material_id=material_id))
             db.flush()
 
+    # 置き場の存在チェック（不正なIDによる外部キー制約違反を防ぐ）
+    invalid_locations: List[int] = []
+    if receiving.location_ids and len(receiving.location_ids) > 0:
+        for loc_id in receiving.location_ids:
+            loc = db.query(Location).filter(Location.id == loc_id, Location.is_active == True).first()
+            if not loc:
+                invalid_locations.append(loc_id)
+    elif receiving.location_id is not None:
+        loc = db.query(Location).filter(Location.id == receiving.location_id, Location.is_active == True).first()
+        if not loc:
+            invalid_locations.append(receiving.location_id)
+
+    if invalid_locations:
+        raise HTTPException(status_code=404, detail=f"指定された置き場が見つかりません: {', '.join(str(x) for x in invalid_locations)}")
+
     # ロット作成
     lot = Lot(
         lot_number=receiving.lot_number,
@@ -742,6 +783,34 @@ async def get_management_code(item_id: int, db: Session = Depends(get_db)):
         "management_code": item.management_code,
         "item_name": item.item_name,
         "ordered_quantity": item.ordered_quantity
+    }
+
+@router.get("/items/{item_id}/inspection-target/", response_model=dict)
+async def get_inspection_target(item_id: int, db: Session = Depends(get_db)):
+    """検品対象取得（ロットIDと在庫管理コード）
+
+    - 指定の発注アイテムに紐づく最新ロットを特定
+    - ロットに紐づく在庫アイテムから管理コードを返す
+    """
+    # 発注アイテム確認
+    po_item = db.query(PurchaseOrderItem).filter(PurchaseOrderItem.id == item_id).first()
+    if not po_item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="発注アイテムが見つかりません")
+
+    # 紐づくロットを取得（受入日降順→ID降順）
+    lot = db.query(Lot).filter(Lot.purchase_order_item_id == item_id).order_by(Lot.received_date.desc(), Lot.id.desc()).first()
+    if not lot:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="検品対象ロットが見つかりません")
+
+    # ロットに紐づく在庫アイテムを取得（最初の1件）
+    inv_item = db.query(Item).filter(Item.lot_id == lot.id).order_by(Item.id.asc()).first()
+    if not inv_item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ロットに紐づく在庫アイテムが見つかりません")
+
+    return {
+        "lot_id": lot.id,
+        "inventory_item_id": inv_item.id,
+        "management_code": inv_item.management_code
     }
 
 class ConversionRequest(BaseModel):

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,7 +11,7 @@ import logging
 from src.config import settings
 from src.db import create_tables, SessionLocal
 from src.db.models import Location
-from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders, order_utils, excel_viewer, production_schedule, material_management, material_groups
+from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders, order_utils, excel_viewer, production_schedule, material_management, material_groups, inspections
 
 # ログ設定
 logging.basicConfig(
@@ -61,6 +62,7 @@ app.include_router(excel_viewer.router, tags=["Excelビューア"])
 app.include_router(production_schedule.router, tags=["生産中一覧"])
 app.include_router(material_management.router, tags=["材料管理"])
 app.include_router(material_groups.router, tags=["材料グループ"])
+app.include_router(inspections.router, tags=["検品"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -157,10 +159,7 @@ async def settings_page(request: Request):
     """設定ページ"""
     return templates.TemplateResponse("settings.html", {"request": request})
 
-@app.get("/material-groups")
-async def material_groups_page(request: Request):
-    """材料グループ管理画面"""
-    return templates.TemplateResponse("material_groups.html", {"request": request})
+# 削除: 旧材料グループ管理画面ルート（在庫ページへ統合済み）
 
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):

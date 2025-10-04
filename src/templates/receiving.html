@@ -19,6 +19,12 @@
                         </svg>
                         更新
                     </button>
+                    <button id="openInspectionBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5"/>
+                        </svg>
+                        検品
+                    </button>
                 </div>
             </div>
         </div>
@@ -322,6 +328,9 @@
                     </div>
 
                     <div class="flex space-x-3">
+                        <button id="goToInspectionBtn" class="flex-1 bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                            検品へ
+                        </button>
                         <button id="printLabelBtn" class="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
                             現品票印刷
                         </button>
@@ -331,6 +340,79 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- 検品モーダル -->
+<div id="inspectionModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4 modal-overlay">
+        <div class="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-gray-900">検品</h2>
+                    <button id="closeInspectionModal" class="text-gray-500 hover:text-gray-700">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <form id="inspectionForm" class="p-6 space-y-4">
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h3 class="text-sm font-medium text-gray-900 mb-2">対象選択</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-end">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-medium text-gray-700">管理コード（UUID）</label>
+                            <input type="text" id="inspectionCodeInput" class="mt-1 w-full rounded-md border-gray-300 shadow-sm" placeholder="例: 123e4567-e89b-12d3-a456-426614174000">
+                        </div>
+                        <div>
+                            <button type="button" id="loadInspectionTargetBtn" class="w-full px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">読み込み</button>
+                        </div>
+                    </div>
+                    <p id="inspectionTargetInfo" class="text-xs text-gray-600 mt-2">管理コードを入力して読み込んでください。</p>
+                </div>
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">確認日時</label>
+                        <input type="datetime-local" id="inspectedAtInput" name="inspected_at"
+                               class="mt-1 w-full rounded-md border-gray-300 shadow-sm" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">実測値</label>
+                        <input type="number" step="0.001" id="measuredValueInput" name="measured_value"
+                               class="mt-1 w-full rounded-md border-gray-300 shadow-sm" placeholder="例: 7.985">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="appearanceOkInput" name="appearance_ok" class="rounded">
+                            <label for="appearanceOkInput" class="text-sm text-gray-700">外観OK</label>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <input type="checkbox" id="bendingOkInput" name="bending_ok" class="rounded">
+                            <label for="bendingOkInput" class="text-sm text-gray-700">曲がりOK</label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">作業者</label>
+                        <input type="text" id="inspectedByInput" name="inspected_by_name" list="inspectorNameList"
+                               class="mt-1 w-full rounded-md border-gray-300 shadow-sm" placeholder="氏名を入力">
+                        <datalist id="inspectorNameList"></datalist>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">備考</label>
+                        <textarea id="inspectionNotesInput" name="inspection_notes" rows="3"
+                                  class="mt-1 w-full rounded-md border-gray-300 shadow-sm"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 pt-2">
+                    <button type="button" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                            onclick="hideInspectionModal()">キャンセル</button>
+                    <button type="submit" id="submitInspectionBtn" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                        検品登録
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -456,7 +538,7 @@ async function loadPendingItems() {
     empty.classList.add('hidden');
 
     try {
-        const response = await fetch('/api/purchase-orders/pending/items/');
+        const response = await fetch('/api/purchase-orders/pending-or-inspection/items/');
         const items = await response.json();
 
         loading.classList.add('hidden');
@@ -504,17 +586,35 @@ function createItemRow(item) {
     const orderNumber = item.purchase_order ? item.purchase_order.order_number : '-';
     const supplier = item.purchase_order ? item.purchase_order.supplier : '-';
 
+    // 操作ボタン（入庫確認 + 検品）
+    const isReceived = String(item.status).toUpperCase() === 'RECEIVED';
+    const receivingDisabledAttr = isReceived ? 'disabled' : '';
+    const receivingBtnClasses = isReceived
+        ? 'bg-gray-300 text-gray-500 px-3 py-1 rounded text-sm cursor-not-allowed'
+        : 'bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors';
+    const receivingBtnLabel = isReceived ? '入庫済み' : '入庫確認';
+    const inspectionDisabledAttr = isReceived ? '' : 'disabled';
+    const inspectionBtnClasses = isReceived
+        ? 'ml-2 bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700 transition-colors'
+        : 'ml-2 bg-gray-300 text-gray-500 px-3 py-1 rounded text-sm cursor-not-allowed';
+
+    const actionButtonsHtml = `
+            <button onclick="showReceiveModal(${item.id})" ${receivingDisabledAttr}
+                    class="${receivingBtnClasses}" title="${isReceived ? '既に入庫済みです' : '入庫確認'}">
+                ${receivingBtnLabel}
+            </button>
+            <button onclick="openInspectionFromRowByItemId(${item.id})" ${inspectionDisabledAttr}
+                    class="${inspectionBtnClasses}" title="${isReceived ? '検品を開始' : '入庫後に検品可能'}">
+                検品
+            </button>
+    `;
+
     row.innerHTML = `
         <td class="px-4 py-3 text-sm font-medium text-gray-900">${orderNumber}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${supplier}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${item.item_name}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${getOrderDisplayText(item)}</td>
-        <td class="px-4 py-3">
-            <button onclick="showReceiveModal(${item.id})"
-                    class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-colors">
-                入庫確認
-            </button>
-        </td>
+        <td class="px-4 py-3">${actionButtonsHtml}</td>
     `;
 
     return row;
@@ -540,6 +640,36 @@ function getOrderTypeText(orderType) {
         'weight': '重量指定'
     };
     return typeMap[orderType] || orderType;
+}
+
+// テーブル行から検品モーダルを開く（item_idを基に検品対象取得）
+async function openInspectionFromRowByItemId(itemId) {
+    try {
+        // モーダルを開く（lotIdは後で設定）
+        showInspectionModal();
+
+        const res = await fetch(`/api/purchase-orders/items/${itemId}/inspection-target/`);
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            showToast(err.detail || '検品対象の取得に失敗しました', 'error');
+            return;
+        }
+        const data = await res.json();
+
+        // ロットIDと管理コードを設定
+        currentInspectionLotId = data.lot_id || null;
+        const codeInput = document.getElementById('inspectionCodeInput');
+        const infoEl = document.getElementById('inspectionTargetInfo');
+        if (codeInput) codeInput.value = data.management_code || '';
+        if (infoEl) {
+            infoEl.textContent = `管理コード ${data.management_code} / ロットID ${data.lot_id}`;
+        }
+
+        showToast('検品対象を読み込みました', 'success');
+    } catch (e) {
+        console.error('検品対象取得エラー:', e);
+        showToast('検品対象の取得に失敗しました', 'error');
+    }
 }
 
 // 発注表示テキスト取得
@@ -628,6 +758,7 @@ function setupEventListeners() {
     document.getElementById('closeReceiveModal').addEventListener('click', hideReceiveModal);
     document.getElementById('cancelReceive').addEventListener('click', hideReceiveModal);
     document.getElementById('closeCompleteModal').addEventListener('click', hideCompleteModal);
+    document.getElementById('closeInspectionModal').addEventListener('click', hideInspectionModal);
 
     // モーダル外クリック閉じ
     document.getElementById('receiveModal').addEventListener('click', function(e) {
@@ -638,6 +769,11 @@ function setupEventListeners() {
     document.getElementById('receiveCompleteModal').addEventListener('click', function(e) {
         if (e.target === this || e.target.classList.contains('modal-overlay')) {
             hideCompleteModal();
+        }
+    });
+    document.getElementById('inspectionModal').addEventListener('click', function(e) {
+        if (e.target === this || e.target.classList.contains('modal-overlay')) {
+            hideInspectionModal();
         }
     });
 
@@ -651,6 +787,11 @@ function setupEventListeners() {
                 hideReceiveModal();
             } else if (!completeModal.classList.contains('hidden')) {
                 hideCompleteModal();
+            } else {
+                const inspectionModal = document.getElementById('inspectionModal');
+                if (inspectionModal && !inspectionModal.classList.contains('hidden')) {
+                    hideInspectionModal();
+                }
             }
         }
     });
@@ -664,6 +805,29 @@ function setupEventListeners() {
 
     // 現品票印刷
     document.getElementById('printLabelBtn').addEventListener('click', printLabel);
+
+    // 検品モーダル（独立ボタン）
+    const openInspectionBtn = document.getElementById('openInspectionBtn');
+    if (openInspectionBtn) {
+        openInspectionBtn.addEventListener('click', () => showInspectionModal());
+    }
+    const loadInspectionTargetBtn = document.getElementById('loadInspectionTargetBtn');
+    if (loadInspectionTargetBtn) {
+        loadInspectionTargetBtn.addEventListener('click', loadInspectionTargetByCode);
+    }
+    // 既存の「検品へ」ボタン（入庫完了モーダル内）も継続対応
+    const goInspectBtn = document.getElementById('goToInspectionBtn');
+    if (goInspectBtn) {
+        goInspectBtn.addEventListener('click', () => showInspectionModal(window.currentReceiveResult?.lot_id));
+    }
+    const closeInspectionBtn = document.getElementById('closeInspectionModal');
+    if (closeInspectionBtn) {
+        closeInspectionBtn.addEventListener('click', hideInspectionModal);
+    }
+    const inspectionForm = document.getElementById('inspectionForm');
+    if (inspectionForm) {
+        inspectionForm.addEventListener('submit', submitInspection);
+    }
 
     const diameterInput = document.querySelector('input[name="diameter_input"]');
     if (diameterInput) {
@@ -1053,8 +1217,32 @@ async function handleReceive(event) {
             loadPendingItems();
 
         } else {
-            const error = await response.json();
-            showToast(error.detail || '入庫確認に失敗しました', 'error');
+            // サーバーがJSON以外（例: Tracebackテキスト）を返す場合でも安全に扱う
+            let message = '入庫確認に失敗しました';
+            try {
+                const contentType = (response.headers.get('content-type') || '').toLowerCase();
+                if (contentType.includes('application/json')) {
+                    const errorJson = await response.json();
+                    message = errorJson.detail || message;
+                } else {
+                    const text = await response.text();
+                    try {
+                        const maybeJson = JSON.parse(text);
+                        message = maybeJson.detail || message;
+                    } catch {
+                        // テキストの先頭をそのままメッセージとして表示（Traceback抑止）
+                        const trimmed = (text || '').trim();
+                        if (trimmed) {
+                            // 長すぎる場合は先頭200文字に切り詰め
+                            message = trimmed.length > 200 ? trimmed.slice(0, 200) + '…' : trimmed;
+                        }
+                    }
+                }
+            } catch (e) {
+                // レスポンス本文の取得自体に失敗した場合はHTTPステータスを表示
+                message = `HTTP ${response.status}: ${response.statusText}`;
+            }
+            showToast(message, 'error');
         }
     } catch (error) {
         console.error('入庫確認エラー:', error);
@@ -1109,6 +1297,131 @@ function showCompleteModal(result) {
     window.currentReceiveResult = result;
 
     document.getElementById('receiveCompleteModal').classList.remove('hidden');
+}
+
+// 検品モーダル表示
+let currentInspectionLotId = null;
+async function showInspectionModal(lotId) {
+    currentInspectionLotId = lotId || null;
+
+    // 検品者履歴を読み込み
+    try {
+        const res = await fetch('/api/inspections/inspectors/');
+        if (res.ok) {
+            const names = await res.json();
+            const listEl = document.getElementById('inspectorNameList');
+            if (listEl) {
+                listEl.innerHTML = '';
+                names.forEach(n => {
+                    const opt = document.createElement('option');
+                    opt.value = n;
+                    listEl.appendChild(opt);
+                });
+            }
+        }
+    } catch (e) {
+        console.error('検品者履歴取得エラー:', e);
+    }
+
+    // デフォルト日時は現在
+    const now = new Date();
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+        .toISOString().slice(0,16); // YYYY-MM-DDTHH:mm
+    const dtEl = document.getElementById('inspectedAtInput');
+    if (dtEl) dtEl.value = local;
+
+    // 対象表示
+    const infoEl = document.getElementById('inspectionTargetInfo');
+    if (currentInspectionLotId && infoEl) {
+        infoEl.textContent = `ロットID ${currentInspectionLotId} が選択されています。管理コードを変更する場合は再読み込みしてください。`;
+    } else if (infoEl) {
+        infoEl.textContent = '管理コードを入力して読み込んでください。';
+    }
+
+    document.getElementById('inspectionModal').classList.remove('hidden');
+}
+
+function hideInspectionModal() {
+    document.getElementById('inspectionModal').classList.add('hidden');
+}
+
+// 検品登録
+async function submitInspection(event) {
+    event.preventDefault();
+    const lotId = currentInspectionLotId || (window.currentReceiveResult ? window.currentReceiveResult.lot_id : null);
+    if (!lotId) {
+        showToast('検品対象の管理コードを読み込んでください', 'error');
+        return;
+    }
+    const inspectedAtStr = document.getElementById('inspectedAtInput').value;
+    const measuredValStr = document.getElementById('measuredValueInput').value;
+    const appearanceOk = document.getElementById('appearanceOkInput').checked;
+    const bendingOk = document.getElementById('bendingOkInput').checked;
+    const inspectedBy = document.getElementById('inspectedByInput').value.trim();
+    const notes = document.getElementById('inspectionNotesInput').value.trim();
+
+    const payload = {
+        inspection_date: inspectedAtStr ? new Date(inspectedAtStr).toISOString() : new Date().toISOString(),
+        measured_value: measuredValStr ? parseFloat(measuredValStr) : null,
+        appearance_ok: appearanceOk,
+        bending_ok: bendingOk,
+        inspector_name: inspectedBy || "",
+        notes: notes || null
+    };
+
+    try {
+        const res = await fetch(`/api/inspections/lots/${lotId}/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            showToast('検品結果を登録しました', 'success');
+            hideInspectionModal();
+        } else {
+            const err = await res.json().catch(() => ({}));
+            showToast(err.detail || '検品登録に失敗しました', 'error');
+        }
+    } catch (e) {
+        console.error('検品登録エラー:', e);
+        showToast('検品登録に失敗しました', 'error');
+    }
+}
+
+// 管理コードから検品対象読み込み
+async function loadInspectionTargetByCode() {
+    const codeInput = document.getElementById('inspectionCodeInput');
+    const infoEl = document.getElementById('inspectionTargetInfo');
+    const code = (codeInput?.value || '').trim();
+    if (!code) {
+        showToast('管理コードを入力してください', 'error');
+        return;
+    }
+    try {
+        const res = await fetch(`/api/inventory/search/${encodeURIComponent(code)}`);
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || '管理コードの読み込みに失敗しました');
+        }
+        const item = await res.json();
+        currentInspectionLotId = item?.lot?.id || null;
+        if (!currentInspectionLotId) {
+            showToast('該当ロットが見つかりません', 'error');
+            return;
+        }
+        if (infoEl) {
+            const lotNum = item?.lot?.lot_number || '-';
+            const qty = item?.current_quantity ?? '-';
+            infoEl.textContent = `管理コード ${item.management_code} / ロット番号 ${lotNum} / 現在本数 ${qty}本`;
+        }
+        showToast('検品対象を読み込みました', 'success');
+    } catch (e) {
+        console.error('管理コード読み込みエラー:', e);
+        showToast(e.message || '管理コードの読み込みに失敗しました', 'error');
+        if (infoEl) {
+            infoEl.textContent = '管理コードを入力して読み込んでください。';
+        }
+    }
 }
 
 // 現品票印刷

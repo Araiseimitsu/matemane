@@ -39,6 +39,11 @@ class UsageType(enum.Enum):
     GENERAL = "general"      # 汎用品
     DEDICATED = "dedicated"  # 専用品
 
+class InspectionStatus(enum.Enum):
+    PENDING = "pending"
+    PASSED = "passed"
+    FAILED = "failed"
+
 
 
 class User(Base):
@@ -230,6 +235,15 @@ class Lot(Base):
     material = relationship("Material", back_populates="lots")
     purchase_order_item = relationship("PurchaseOrderItem", back_populates="lots")
     items = relationship("Item", back_populates="lot")
+
+    # 検品関連（追加）
+    inspection_status = Column(Enum(InspectionStatus), nullable=False, default=InspectionStatus.PENDING, comment="検品ステータス")
+    inspected_at = Column(DateTime(timezone=True), comment="検品日時")
+    measured_value = Column(Float, comment="実測値")
+    appearance_ok = Column(Boolean, comment="外観問題なし")
+    bending_ok = Column(Boolean, comment="曲がり問題なし")
+    inspected_by_name = Column(String(100), comment="検品作業者名")
+    inspection_notes = Column(Text, comment="検品備考")
 
 class Item(Base):
     __tablename__ = "items"
