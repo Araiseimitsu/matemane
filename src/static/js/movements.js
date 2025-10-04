@@ -92,7 +92,11 @@ class MovementManager {
         const outBtn = document.getElementById('startOutBtn');
 
         if (inBtn) {
-            inBtn.addEventListener('click', () => this.showMovementTypeSelection('in'));
+            // 変更: 入庫は受入れページへ誘導
+            inBtn.addEventListener('click', () => {
+                this.showToast('入庫は「入庫確認」ページで実施します', 'info');
+                window.location.href = '/receiving';
+            });
         }
 
         if (outBtn) {
@@ -283,6 +287,13 @@ class MovementManager {
 
     // 入出庫タイプ選択表示
     showMovementTypeSelection(type) {
+        // 変更: 入庫は受入れページへ誘導（Movementsでは出庫のみ）
+        if (type === 'in') {
+            this.showToast('入庫は「入庫確認」ページで実施します', 'info');
+            window.location.href = '/receiving';
+            return;
+        }
+
         if (!this.selectedItem) {
             this.showToast('先に材料を選択してください', 'error');
             return;

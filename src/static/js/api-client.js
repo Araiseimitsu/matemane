@@ -25,9 +25,18 @@ class APIClient {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.detail || `HTTP ${response.status}: ${response.statusText}`
-        );
+        let message = `HTTP ${response.status}: ${response.statusText}`;
+        if (errorData && errorData.detail) {
+          if (Array.isArray(errorData.detail)) {
+            // FastAPIの422(Unprocessable Entity)などで返る詳細配列に対応
+            message = errorData.detail
+              .map((d) => d.msg || d?.message || JSON.stringify(d))
+              .join(" | ");
+          } else {
+            message = errorData.detail;
+          }
+        }
+        throw new Error(message);
       }
 
       return await response.json();
