@@ -31,6 +31,8 @@ class MaterialUsageDetail(BaseModel):
     product_name: Optional[str]
     quantity: Optional[float]
     take_count: Optional[float]
+    daily_output: Optional[float]
+    bars_per_day: Optional[float]
     bars_needed: Optional[int]
     required_bars: Optional[float]
     remarks: Optional[str]
@@ -45,19 +47,24 @@ class MaterialUsageSummary(BaseModel):
     machines: List[MaterialUsageDetail]
 
 
-COLUMN_MAP: Dict[str, str] = {
-    "schedule_date": "セット予定日",
-    "machine_no": "機械NO",
-    "item_code": "品番",
-    "product_name": "製品名",
-    "quantity": "数量",
-    "material_spec": "材質＆材料径",
-    "take_count": "取り数",
-    "required_bars": "必要　　　本数",
-    "remarks": "備　　　　考",
+COLUMN_MAP: Dict[str, Tuple[str, ...]] = {
+    "schedule_date": ("セット予定日",),
+    "machine_no": ("機械NO",),
+    "item_code": ("品番",),
+    "product_name": ("製品名",),
+    "quantity": ("数量",),
+    "material_spec": ("材質＆材料径",),
+    "take_count": ("取り数",),
+    "daily_output": ("前回日産", "前回   日産"),
+    "required_bars": ("必要　　　本数",),
+    "remarks": ("備　　　　考",),
 }
 
-USE_COLUMNS = list(dict.fromkeys(COLUMN_MAP.values()))
+USE_COLUMNS: List[str] = []
+for aliases in COLUMN_MAP.values():
+    for alias in aliases:
+        if alias not in USE_COLUMNS:
+            USE_COLUMNS.append(alias)
 
 
 def _format_date(value) -> Optional[str]:
@@ -104,17 +111,26 @@ def natural_sort_key(value: Optional[str]) -> Tuple:
     )
 
 
+def _get_row_value(row: pd.Series, field: str):
+    aliases = COLUMN_MAP[field]
+    for alias in aliases:
+        if alias in row.index:
+            return row.get(alias)
+    return None
+
+
 def _load_material_plan() -> List[MaterialUsageSummary]:
     excel_path = Path(settings.production_schedule_path)
     if not excel_path.exists():
         raise FileNotFoundError(f"指定のExcelファイルが存在しません: {excel_path}")
 
     try:
+        # 一部列がExcelに存在しない場合でも読み込めるよう、usecolsは関数指定で存在列のみ選択
         dataframe = pd.read_excel(
             excel_path,
             sheet_name="生産中",
             dtype=object,
-            usecols=USE_COLUMNS,
+            usecols=lambda col: col in USE_COLUMNS,
         )
     except Exception as exc:  # pragma: no cover
         logger.exception("生産中シートの読み込みに失敗しました")
@@ -123,17 +139,29 @@ def _load_material_plan() -> List[MaterialUsageSummary]:
     per_material_dates: Dict[str, Dict[Optional[str], List[MaterialUsageDetail]]] = defaultdict(lambda: defaultdict(list))
 
     for index, row in dataframe.iterrows():
-        material_spec_raw = row.get(COLUMN_MAP["material_spec"])
+        material_spec_raw = _get_row_value(row, "material_spec")
         material_spec = _sanitize_str(material_spec_raw, max_len=120)
         if material_spec is None:
             continue
 
-        schedule_date_raw = row.get(COLUMN_MAP["schedule_date"])
+        schedule_date_raw = _get_row_value(row, "schedule_date")
         schedule_date = _format_date(schedule_date_raw)
 
-        quantity = _to_float(row.get(COLUMN_MAP["quantity"]))
-        take_count = _to_float(row.get(COLUMN_MAP["take_count"]))
-        required_bars_raw = _to_float(row.get(COLUMN_MAP["required_bars"]))
+        quantity = _to_float(_get_row_value(row, "quantity"))
+        take_count = _to_float(_get_row_value(row, "take_count"))
+        raw_daily_output = _get_row_value(row, "daily_output")
+
+        daily_output = _to_float(raw_daily_output)
+        if daily_output is None and isinstance(raw_daily_output, str):
+            cleaned = raw_daily_output.replace("前回日産", "").replace("前回   日産", "").strip()
+            daily_output = _to_float(cleaned)
+
+        required_bars_raw = _to_float(_get_row_value(row, "required_bars"))
+
+        bars_per_day: Optional[float] = None
+        if daily_output and daily_output > 0 and take_count and take_count > 0:
+            # U列(前回日産) / W列(取り数) をそのまま使用（小数対応）
+            bars_per_day = float(daily_output) / float(take_count)
 
         bars_needed: Optional[int] = None
         if take_count and take_count > 0 and quantity and quantity > 0:
@@ -144,14 +172,16 @@ def _load_material_plan() -> List[MaterialUsageSummary]:
         detail = MaterialUsageDetail(
             row_number=index + 1,
             schedule_date=schedule_date,
-            machine_no=_sanitize_str(row.get(COLUMN_MAP["machine_no"])),
-            item_code=_sanitize_str(row.get(COLUMN_MAP["item_code"])),
-            product_name=_sanitize_str(row.get(COLUMN_MAP["product_name"]), max_len=80),
+            machine_no=_sanitize_str(_get_row_value(row, "machine_no")),
+            item_code=_sanitize_str(_get_row_value(row, "item_code")),
+            product_name=_sanitize_str(_get_row_value(row, "product_name"), max_len=80),
             quantity=quantity,
             take_count=take_count,
+            daily_output=daily_output,
+            bars_per_day=bars_per_day,
             bars_needed=bars_needed,
             required_bars=required_bars_raw,
-            remarks=_sanitize_str(row.get(COLUMN_MAP["remarks"]), max_len=120),
+            remarks=_sanitize_str(_get_row_value(row, "remarks"), max_len=120),
         )
 
         per_material_dates[material_spec][schedule_date].append(detail)
@@ -177,7 +207,10 @@ def _load_material_plan() -> List[MaterialUsageSummary]:
                 ),
             )
 
-            total_bars = sum(d.bars_needed or 0 for d in details)
+            # 1日の使用本数（U列:前回日産 / W列:取り数）を優先し、
+            # 取得できない場合は従来の bars_needed を使用する
+            total_bars_float = sum((d.bars_per_day if d.bars_per_day is not None else (d.bars_needed or 0)) for d in details)
+            total_bars = int(math.ceil(total_bars_float))
             total_quantity = sum(d.quantity or 0 for d in details)
             cumulative += total_bars
 

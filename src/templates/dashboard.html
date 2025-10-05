@@ -5,109 +5,101 @@
 {% block content %}
 <div class="min-h-screen bg-gray-50">
     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <!-- ページヘッダー -->
         <div class="mb-8">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">
-                        ダッシュボード
-                    </h1>
-                    <p class="mt-2 text-gray-600">在庫状況と最新の活動を確認</p>
+                    <h1 class="text-3xl font-bold text-gray-900">ダッシュボード</h1>
+                    <p class="mt-2 text-gray-600">生産状況と在庫の全体像を把握</p>
                 </div>
                 <div class="hidden md:flex items-center space-x-3">
                     <div class="flex items-center px-3 py-2 bg-white rounded-lg border border-gray-200 shadow-sm">
                         <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                        <span class="text-sm text-gray-700">更新済み</span>
+                        <span class="text-sm text-gray-700" id="refresh-status">更新済み</span>
                     </div>
-                    <button class="p-2 bg-white rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200">
+                    <button id="refreshDashboard"
+                        class="p-2 bg-white rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50 transition-colors duration-200"
+                        title="ダッシュボードを再取得">
                         <i class="fas fa-sync-alt text-gray-600"></i>
                     </button>
                 </div>
             </div>
         </div>
 
-        <!-- 統計カード -->
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-            <!-- 総在庫数 -->
-            <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-8" id="kpiCards">
+            <div
+                class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
                 <div class="flex items-center justify-between mb-4">
                     <div class="p-2 bg-blue-50 rounded-lg">
                         <i class="fas fa-boxes text-xl text-blue-600"></i>
                     </div>
                     <div class="text-right">
-                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">総在庫数</div>
-                        <div class="text-2xl font-bold text-gray-900 mt-1" id="total-inventory">0</div>
+                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">同等品グループ本数</div>
+                        <div class="text-2xl font-bold text-gray-900 mt-1" id="total-inventory">-</div>
                         <div class="text-sm text-gray-500">本</div>
                     </div>
                 </div>
-                <div class="flex items-center text-sm">
-                    <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
-                        前月比 +12%
-                    </span>
+                <div class="flex items-center justify-between text-xs text-gray-500">
+                    <span>在庫ありグループ</span>
+                    <span id="group-count">- グループ</span>
                 </div>
             </div>
 
-            <!-- 材料種類数 -->
-            <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div
+                class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
                 <div class="flex items-center justify-between mb-4">
                     <div class="p-2 bg-green-50 rounded-lg">
-                        <i class="fas fa-cogs text-xl text-green-600"></i>
+                        <i class="fas fa-cubes text-xl text-green-600"></i>
                     </div>
                     <div class="text-right">
-                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">材料種類数</div>
-                        <div class="text-2xl font-bold text-gray-900 mt-1" id="material-types">0</div>
+                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">アクティブ材料件数</div>
+                        <div class="text-2xl font-bold text-gray-900 mt-1" id="material-types">-</div>
                         <div class="text-sm text-gray-500">種類</div>
                     </div>
                 </div>
-                <div class="flex items-center text-sm">
-                    <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
-                        管理中
-                    </span>
+                <div class="flex items-center justify-between text-xs text-gray-500">
+                    <span>最終在庫更新</span>
+                    <span id="last-inventory-refresh">-</span>
                 </div>
             </div>
 
-            <!-- 今日の入庫 -->
-            <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div
+                class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
                 <div class="flex items-center justify-between mb-4">
-                    <div class="p-2 bg-yellow-50 rounded-lg">
-                        <i class="fas fa-arrow-down text-xl text-yellow-600"></i>
+                    <div class="p-2 bg-amber-50 rounded-lg">
+                        <i class="fas fa-clipboard-list text-xl text-amber-600"></i>
                     </div>
                     <div class="text-right">
-                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">今日の入庫</div>
-                        <div class="text-2xl font-bold text-gray-900 mt-1" id="today-in">0</div>
-                        <div class="text-sm text-gray-500">本</div>
+                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">入庫待ち・検品待ち</div>
+                        <div class="text-2xl font-bold text-gray-900 mt-1" id="pending-po-count">-</div>
+                        <div class="text-sm text-gray-500">アイテム</div>
                     </div>
                 </div>
-                <div class="flex items-center text-sm">
-                    <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
-                        入庫済み
-                    </span>
+                <div class="flex items-center justify-between text-xs text-gray-500">
+                    <span>見込み総重量</span>
+                    <span id="pending-po-weight">- kg</span>
                 </div>
             </div>
 
-            <!-- 今日の出庫 -->
-            <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div
+                class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
                 <div class="flex items-center justify-between mb-4">
                     <div class="p-2 bg-red-50 rounded-lg">
-                        <i class="fas fa-arrow-up text-xl text-red-600"></i>
+                        <i class="fas fa-exclamation-triangle text-xl text-red-600"></i>
                     </div>
                     <div class="text-right">
-                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">今日の出庫</div>
-                        <div class="text-2xl font-bold text-gray-900 mt-1" id="today-out">0</div>
-                        <div class="text-sm text-gray-500">本</div>
+                        <div class="text-xs font-medium text-gray-500 uppercase tracking-wide">在庫切れ予測</div>
+                        <div class="text-2xl font-bold text-gray-900 mt-1" id="forecast-risk-count">-</div>
+                        <div class="text-sm text-gray-500">材料</div>
                     </div>
                 </div>
-                <div class="flex items-center text-sm">
-                    <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
-                        出庫完了
-                    </span>
+                <div class="flex items-center justify-between text-xs text-gray-500">
+                    <span>最短枯渇予定</span>
+                    <span id="nearest-stockout">-</span>
                 </div>
             </div>
         </div>
 
-        <!-- メインアクション -->
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
-            <!-- クイックアクション -->
             <div class="xl:col-span-2">
                 <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                     <div class="flex items-center mb-6">
@@ -116,36 +108,50 @@
                         </div>
                         <h3 class="text-lg font-semibold text-gray-900">クイックアクション</h3>
                     </div>
-
-                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <!-- 新規入庫 -->
-                        <a href="/movements" class="flex flex-col items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors duration-200 text-center border border-green-200">
-                            <i class="fas fa-plus text-2xl text-green-600 mb-2"></i>
-                            <div class="text-sm font-medium text-green-800">新規入庫</div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4" id="quickActions">
+                        <a href="/receiving"
+                            class="flex flex-col items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors duration-200 text-center border border-green-200">
+                            <i class="fas fa-truck-loading text-2xl text-green-600 mb-2"></i>
+                            <div class="text-sm font-medium text-green-800">入庫確認</div>
                         </a>
-
-                        <!-- 在庫検索 -->
-                        <a href="/inventory" class="flex flex-col items-center p-4 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors duration-200 text-center border border-yellow-200">
-                            <i class="fas fa-search text-2xl text-yellow-600 mb-2"></i>
-                            <div class="text-sm font-medium text-yellow-800">在庫検索</div>
+                        <a href="/inventory"
+                            class="flex flex-col items-center p-4 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors duration-200 text-center border border-yellow-200">
+                            <i class="fas fa-box-open text-2xl text-yellow-600 mb-2"></i>
+                            <div class="text-sm font-medium text-yellow-800">同等品ビュー</div>
                         </a>
-
-                        <!-- 材料登録 -->
-                        <a href="/materials" class="flex flex-col items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200 text-center border border-gray-200">
-                            <i class="fas fa-cog text-2xl text-gray-600 mb-2"></i>
-                            <div class="text-sm font-medium text-gray-800">材料登録</div>
+                        <a href="/production-schedule"
+                            class="flex flex-col items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200 text-center border border-blue-200">
+                            <i class="fas fa-chart-line text-2xl text-blue-600 mb-2"></i>
+                            <div class="text-sm font-medium text-blue-800">生産中一覧</div>
                         </a>
-
-                        <!-- 設定 -->
-                        <a href="/settings" class="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors duration-200 text-center border border-purple-200">
-                            <i class="fas fa-cog text-2xl text-purple-600 mb-2"></i>
+                        <a href="/movements"
+                            class="flex flex-col items-center p-4 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200 text-center border border-red-200">
+                            <i class="fas fa-exchange-alt text-2xl text-red-600 mb-2"></i>
+                            <div class="text-sm font-medium text-red-800">持ち出し・戻し</div>
+                        </a>
+                        <a href="/materials"
+                            class="flex flex-col items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200 text-center border border-gray-200">
+                            <i class="fas fa-layer-group text-2xl text-gray-600 mb-2"></i>
+                            <div class="text-sm font-medium text-gray-800">材料マスター</div>
+                        </a>
+                        <a href="/purchase-orders"
+                            class="flex flex-col items-center p-4 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors duration-200 text-center border border-indigo-200">
+                            <i class="fas fa-file-invoice text-2xl text-indigo-600 mb-2"></i>
+                            <div class="text-sm font-medium text-indigo-800">発注管理</div>
+                        </a>
+                        <a href="/excel-viewer"
+                            class="flex flex-col items-center p-4 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors duration-200 text-center border border-teal-200">
+                            <i class="fas fa-file-excel text-2xl text-teal-600 mb-2"></i>
+                            <div class="text-sm font-medium text-teal-800">Excel 照合</div>
+                        </a>
+                        <a href="/settings"
+                            class="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors duration-200 text-center border border-purple-200">
+                            <i class="fas fa-sliders-h text-2xl text-purple-600 mb-2"></i>
                             <div class="text-sm font-medium text-purple-800">設定</div>
                         </a>
                     </div>
                 </div>
             </div>
-
-            <!-- 在庫アラート -->
             <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                 <div class="flex items-center mb-6">
                     <div class="p-2 bg-yellow-50 rounded-lg mr-3">
@@ -153,22 +159,19 @@
                     </div>
                     <h3 class="text-lg font-semibold text-gray-900">在庫アラート</h3>
                 </div>
-
                 <div id="stock-alerts" class="space-y-3">
                     <div class="text-center py-8">
                         <div class="inline-flex items-center justify-center w-12 h-12 bg-green-50 rounded-full mb-4">
                             <i class="fas fa-check-circle text-2xl text-green-600"></i>
                         </div>
-                        <p class="text-gray-700 font-medium">すべて正常です</p>
-                        <p class="text-sm text-gray-500 mt-1">アラートはありません</p>
+                        <p class="text-gray-700 font-medium">現在アラートはありません</p>
+                        <p class="text-sm text-gray-500 mt-1">在庫状況は正常です</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 最近の活動とチャート -->
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <!-- 最近の活動 -->
             <div class="xl:col-span-2">
                 <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                     <div class="flex items-center justify-between mb-6">
@@ -176,11 +179,10 @@
                             <div class="p-2 bg-blue-50 rounded-lg mr-3">
                                 <i class="fas fa-history text-lg text-blue-600"></i>
                             </div>
-                            <h3 class="text-lg font-semibold text-gray-900">最近の活動</h3>
+                            <h3 class="text-lg font-semibold text-gray-900">最近の入出庫</h3>
                         </div>
-                        <button class="text-sm text-blue-600 hover:text-blue-700 font-medium">すべて表示</button>
+                        <a href="/movements" class="text-sm text-blue-600 hover:text-blue-700 font-medium">入出庫一覧へ</a>
                     </div>
-
                     <div id="recent-activities" class="space-y-4">
                         <div class="text-center py-12">
                             <div class="inline-flex items-center justify-center w-16 h-16 bg-gray-50 rounded-full mb-4">
@@ -192,124 +194,55 @@
                     </div>
                 </div>
             </div>
-
-            <!-- サマリーチャート -->
             <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                 <div class="flex items-center mb-6">
                     <div class="p-2 bg-purple-50 rounded-lg mr-3">
-                        <i class="fas fa-chart-pie text-lg text-purple-600"></i>
+                        <i class="fas fa-bolt text-lg text-purple-600"></i>
                     </div>
-                    <h3 class="text-lg font-semibold text-gray-900">在庫分析</h3>
+                    <h3 class="text-lg font-semibold text-gray-900">生産・在庫リスク</h3>
                 </div>
-
-                <div class="space-y-4">
-                    <!-- 材質別分布 -->
-                    <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm font-medium text-blue-800">SS400</span>
-                            <span class="text-sm font-bold text-blue-900">45%</span>
-                        </div>
-                        <div class="w-full bg-blue-200 rounded-full h-2">
-                            <div class="bg-blue-500 h-2 rounded-full" style="width: 45%"></div>
-                        </div>
-                    </div>
-
-                    <div class="p-3 bg-green-50 rounded-lg border border-green-200">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm font-medium text-green-800">S45C</span>
-                            <span class="text-sm font-bold text-green-900">30%</span>
-                        </div>
-                        <div class="w-full bg-green-200 rounded-full h-2">
-                            <div class="bg-green-500 h-2 rounded-full" style="width: 30%"></div>
-                        </div>
-                    </div>
-
-                    <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-sm font-medium text-yellow-800">SUS304</span>
-                            <span class="text-sm font-bold text-yellow-900">25%</span>
-                        </div>
-                        <div class="w-full bg-yellow-200 rounded-full h-2">
-                            <div class="bg-yellow-500 h-2 rounded-full" style="width: 25%"></div>
-                        </div>
+                <div id="stockout-forecast" class="space-y-4">
+                    <div class="text-center py-10 text-gray-500">
+                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mx-auto mb-3"></div>
+                        <p class="text-sm">在庫切れ予測を集計中...</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 在庫一覧セクション -->
-        <div class="mt-8">
+        <div class="mt-8 grid grid-cols-1 xl:grid-cols-2 gap-6">
             <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                 <div class="flex items-center justify-between mb-6">
                     <div class="flex items-center">
                         <div class="p-2 bg-indigo-50 rounded-lg mr-3">
                             <i class="fas fa-boxes text-lg text-indigo-600"></i>
                         </div>
-                        <h3 class="text-lg font-semibold text-gray-900">最近の在庫一覧</h3>
+                        <h3 class="text-lg font-semibold text-gray-900">同等品グループ スナップショット</h3>
                     </div>
-                    <a href="/inventory" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium">すべて表示</a>
+                    <a href="/inventory" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium">在庫管理へ</a>
                 </div>
-
-                <!-- 検索バー -->
-                <div class="mb-4">
-                    <div class="relative">
-                        <input type="text" id="inventorySearch" placeholder="管理コード（UUID）で検索..."
-                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-search text-gray-400"></i>
+                <div class="space-y-4" id="groupSnapshot">
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mx-auto mb-3"></div>
+                        <p class="text-sm">グループ在庫を読み込んでいます...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-amber-50 rounded-lg mr-3">
+                            <i class="fas fa-clipboard-check text-lg text-amber-600"></i>
                         </div>
+                        <h3 class="text-lg font-semibold text-gray-900">入庫待ち / 検品待ち</h3>
                     </div>
+                    <a href="/purchase-orders" class="text-sm text-amber-600 hover:text-amber-700 font-medium">発注管理へ</a>
                 </div>
-
-                <!-- 在庫テーブル -->
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    管理コード
-                                </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    材料
-                                </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    ロット
-                                </th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    在庫数
-                                </th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    重量(kg)
-                                </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    置き場
-                                </th>
-                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    操作
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody id="inventoryTableBody" class="bg-white divide-y divide-gray-200">
-                            <!-- データはJavaScriptで動的に生成 -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- ローディング表示 -->
-                <div id="inventoryLoading" class="text-center py-8">
-                    <div class="inline-flex items-center">
-                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600 mr-3"></div>
-                        <span class="text-gray-600">在庫データを読み込んでいます...</span>
+                <div class="space-y-4" id="pendingPOList">
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-600 mx-auto mb-3"></div>
+                        <p class="text-sm">入庫待ち一覧を取得中...</p>
                     </div>
-                </div>
-
-                <!-- データなし表示 -->
-                <div id="inventoryEmpty" class="hidden text-center py-8">
-                    <div class="text-gray-400 mb-4">
-                        <i class="fas fa-box-open text-4xl"></i>
-                    </div>
-                    <p class="text-gray-600 font-medium">在庫データがありません</p>
-                    <p class="text-sm text-gray-500 mt-1">入出庫管理から在庫を追加してください</p>
                 </div>
             </div>
         </div>
@@ -318,388 +251,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>
-    // アニメーション用の値を管理
-    let animationValues = {
-        totalInventory: { current: 0, target: 250 },
-        materialTypes: { current: 0, target: 12 },
-        todayIn: { current: 0, target: 18 },
-        todayOut: { current: 0, target: 15 }
-    };
-
-    // 在庫一覧の更新
-    function updateInventoryList(inventoryData) {
-        const loading = document.getElementById('inventoryLoading');
-        const empty = document.getElementById('inventoryEmpty');
-        const tbody = document.getElementById('inventoryTableBody');
-
-        loading.classList.add('hidden');
-
-        if (!inventoryData || inventoryData.length === 0) {
-            empty.classList.remove('hidden');
-            tbody.innerHTML = '';
-            return;
-        }
-
-        empty.classList.add('hidden');
-
-        const shapeNames = {
-            'round': '丸棒',
-            'hexagon': '六角棒',
-            'square': '角棒'
-        };
-
-        tbody.innerHTML = inventoryData.map(item => {
-            const alertClass = item.current_quantity === 0 ? 'text-red-600' :
-                              item.current_quantity <= 5 ? 'text-yellow-600' : 'text-gray-900';
-
-            return `
-                <tr class="hover:bg-gray-50 transition-colors duration-200">
-                    <td class="px-4 py-3">
-                        <div class="font-mono text-xs text-gray-900">
-                            ${item.management_code.substring(0, 8)}...
-                        </div>
-                        <button onclick="copyToClipboard('${item.management_code}')"
-                                class="text-xs text-indigo-600 hover:text-indigo-800 mt-1">
-                            <i class="fas fa-copy mr-1"></i>コピー
-                        </button>
-                    </td>
-                    <td class="px-4 py-3">
-                        <div class="font-medium text-gray-900">${item.material.name}</div>
-                        <div class="text-xs text-gray-500">
-                            ${shapeNames[item.material.shape]} φ${item.material.diameter_mm}mm
-                        </div>
-                    </td>
-                    <td class="px-4 py-3">
-                        <div class="text-sm text-gray-900">${item.lot.lot_number}</div>
-                        ${item.lot.supplier ? `<div class="text-xs text-gray-500">${item.lot.supplier}</div>` : ''}
-                    </td>
-                    <td class="px-4 py-3 text-right ${alertClass} font-medium">
-                        ${item.current_quantity}本
-                    </td>
-                    <td class="px-4 py-3 text-right text-sm text-gray-900">
-                        ${item.total_weight_kg}
-                    </td>
-                    <td class="px-4 py-3 text-sm text-gray-900">
-                        ${item.location?.name || '未配置'}
-                    </td>
-                    <td class="px-4 py-3 text-center">
-                        <div class="flex justify-center space-x-2">
-                            <button onclick="showInventoryDetail('${item.management_code}')"
-                                    class="text-indigo-600 hover:text-indigo-800" title="詳細">
-                                <i class="fas fa-info-circle"></i>
-                            </button>
-                            <button onclick="window.open('/inventory?search=${item.management_code}', '_blank')"
-                                    class="text-green-600 hover:text-green-800" title="在庫管理で開く">
-                                <i class="fas fa-external-link-alt"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-    }
-
-    // 在庫検索機能
-    async function searchInventory() {
-        const searchTerm = document.getElementById('inventorySearch').value.trim();
-
-        if (!searchTerm) {
-            // 検索語が空の場合は最新10件を表示
-            loadDashboardData();
-            return;
-        }
-
-        try {
-            document.getElementById('inventoryLoading').classList.remove('hidden');
-
-            // 管理コードで検索
-            const result = await APIClient.searchByManagementCode(searchTerm);
-            updateInventoryList([result.item]);
-
-            Utils.showToast('検索が完了しました', 'success');
-        } catch (error) {
-            console.error('検索エラー:', error);
-            updateInventoryList([]);
-            Utils.showToast('該当するアイテムが見つかりませんでした', 'info');
-        }
-    }
-
-    // 在庫詳細表示
-    async function showInventoryDetail(managementCode) {
-        try {
-            const result = await APIClient.searchByManagementCode(managementCode);
-
-            // 詳細表示用のモーダルまたは新しいタブで開く
-            window.open(`/inventory?search=${managementCode}`, '_blank');
-        } catch (error) {
-            Utils.showToast('詳細の取得に失敗しました', 'error');
-        }
-    }
-
-    // クリップボードにコピー
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            Utils.showToast('管理コードをコピーしました', 'success');
-        }).catch(() => {
-            Utils.showToast('コピーに失敗しました', 'error');
-        });
-    }
-
-    // ダッシュボードデータの読み込み
-    async function loadDashboardData() {
-        try {
-            // 並列でデータを取得
-            const [inventoryData, materialsData, movementsData, alertsData] = await Promise.all([
-                APIClient.getInventory(),
-                APIClient.getMaterials(),
-                fetch('/api/movements?limit=10').then(r => r.json()),
-                APIClient.getLowStockItems(5)
-            ]);
-
-            // 統計値の計算
-            const totalInventory = inventoryData.reduce((sum, item) => sum + item.current_quantity, 0);
-            const materialTypes = materialsData.length;
-
-            const today = new Date().toISOString().split('T')[0];
-            const todayMovements = movementsData.filter(m =>
-                m.processed_at.split('T')[0] === today
-            );
-            const todayIn = todayMovements
-                .filter(m => m.movement_type === 'in')
-                .reduce((sum, m) => sum + m.quantity, 0);
-            const todayOut = todayMovements
-                .filter(m => m.movement_type === 'out')
-                .reduce((sum, m) => sum + m.quantity, 0);
-
-            // アニメーション用の値を更新
-            animationValues.totalInventory.target = totalInventory;
-            animationValues.materialTypes.target = materialTypes;
-            animationValues.todayIn.target = todayIn;
-            animationValues.todayOut.target = todayOut;
-            animateStats();
-
-            // 最近の活動を表示
-            const recentActivities = movementsData.slice(0, 5).map(movement => ({
-                icon: movement.movement_type === 'in' ? 'fa-arrow-down' : 'fa-arrow-up',
-                color: movement.movement_type === 'in' ? 'green' : 'red',
-                title: `${movement.material_name} ${movement.movement_type === 'in' ? '入庫' : '出庫'}`,
-                description: `${movement.lot_number} (${movement.quantity}本)${movement.instruction_number ? ' - ' + movement.instruction_number : ''}`,
-                time: formatTimeAgo(movement.processed_at)
-            }));
-            updateRecentActivities(recentActivities);
-
-            // アラートを表示
-            const stockAlerts = alertsData.items?.map(item => ({
-                icon: item.current_quantity === 0 ? 'fa-times-circle' : 'fa-exclamation-triangle',
-                color: item.current_quantity === 0 ? 'red' : 'yellow',
-                title: `${item.material_name} 在庫${item.current_quantity === 0 ? '切れ' : '不足'}`,
-                description: `現在庫: ${item.current_quantity}本 - ${item.location_name}`
-            })) || [];
-            updateStockAlerts(stockAlerts);
-
-            // 在庫一覧を表示（最新10件）
-            updateInventoryList(inventoryData.slice(0, 10));
-
-        } catch (error) {
-            console.error('ダッシュボードデータの読み込みエラー:', error);
-            Utils.showToast('データの読み込みに失敗しました', 'error');
-        }
-    }
-
-    // 時間をフォーマットする関数
-    function formatTimeAgo(dateString) {
-        const now = new Date();
-        const date = new Date(dateString);
-        const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / (1000 * 60));
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-        if (diffMins < 1) return '今';
-        if (diffMins < 60) return `${diffMins}分前`;
-        if (diffHours < 24) return `${diffHours}時間前`;
-        if (diffDays < 7) return `${diffDays}日前`;
-        return date.toLocaleDateString('ja-JP');
-    }
-
-    // 統計値のアニメーション
-    function animateStats() {
-        const duration = 2000; // 2秒
-        const startTime = Date.now();
-
-        function animate() {
-            const elapsed = Date.now() - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-
-            // イージング関数（ease-out）
-            const easeOut = 1 - Math.pow(1 - progress, 3);
-
-            for (const [key, value] of Object.entries(animationValues)) {
-                const current = Math.floor(value.target * easeOut);
-                animationValues[key].current = current;
-
-                const element = document.getElementById(key.replace(/([A-Z])/g, '-$1').toLowerCase());
-                if (element) {
-                    element.textContent = current;
-                }
-            }
-
-            if (progress < 1) {
-                requestAnimationFrame(animate);
-            }
-        }
-
-        animate();
-    }
-
-    // 統計データの更新（レガシー関数、新しいアニメーションで置き換え）
-    function updateStats(stats) {
-        // この関数は後方互換性のために残す
-        animationValues.totalInventory.target = stats.totalInventory || 0;
-        animationValues.materialTypes.target = stats.materialTypes || 0;
-        animationValues.todayIn.target = stats.todayIn || 0;
-        animationValues.todayOut.target = stats.todayOut || 0;
-        animateStats();
-    }
-
-    // 最近の活動の更新（改良版）
-    function updateRecentActivities(activities) {
-        const container = document.getElementById('recent-activities');
-
-        if (activities.length === 0) {
-            container.innerHTML = `
-                <div class="text-center py-12">
-                    <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full mb-4">
-                        <i class="fas fa-clock text-3xl text-slate-400"></i>
-                    </div>
-                    <p class="text-slate-600 font-medium">活動履歴を取得中...</p>
-                    <p class="text-sm text-slate-500 mt-1">データが読み込まれるまでお待ちください</p>
-                </div>
-            `;
-            return;
-        }
-
-        container.innerHTML = activities.map((activity, index) => `
-            <div class="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 animate-fade-in-up" style="animation-delay: ${index * 0.1}s">
-                <div class="flex-shrink-0">
-                    <div class="p-2 ${activity.color === 'green' ? 'bg-green-50' : 'bg-red-50'} rounded-lg">
-                        <i class="fas ${activity.icon} ${activity.color === 'green' ? 'text-green-600' : 'text-red-600'}"></i>
-                    </div>
-                </div>
-                <div class="ml-3 flex-1">
-                    <p class="text-sm font-medium text-gray-900">${activity.title}</p>
-                    <p class="text-sm text-gray-500">${activity.description}</p>
-                </div>
-                <div class="text-xs text-gray-400">
-                    ${activity.time}
-                </div>
-            </div>
-        `).join('');
-    }
-
-    // 在庫アラートの更新（改良版）
-    function updateStockAlerts(alerts) {
-        const container = document.getElementById('stock-alerts');
-
-        if (alerts.length === 0) {
-            // 既存の「すべて正常」表示をそのまま使用
-            return;
-        }
-
-        container.innerHTML = alerts.map((alert, index) => `
-            <div class="p-4 border ${alert.color === 'red' ? 'border-red-200 bg-red-50' : 'border-yellow-200 bg-yellow-50'} rounded-xl shadow-sm animate-slide-in-right" style="animation-delay: ${index * 0.1}s">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <div class="p-2 ${alert.color === 'red' ? 'bg-red-100' : 'bg-yellow-100'} rounded-lg">
-                            <i class="fas ${alert.icon} ${alert.color === 'red' ? 'text-red-600' : 'text-yellow-600'}"></i>
-                        </div>
-                    </div>
-                    <div class="ml-3 flex-1">
-                        <p class="text-sm font-semibold ${alert.color === 'red' ? 'text-red-900' : 'text-yellow-900'}">${alert.title}</p>
-                        <p class="text-sm ${alert.color === 'red' ? 'text-red-700' : 'text-yellow-700'} mt-1">${alert.description}</p>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    // カードのスタガードアニメーション
-    function initializeCardAnimations() {
-        const cards = document.querySelectorAll('.group');
-        cards.forEach((card, index) => {
-            card.style.animationDelay = `${index * 0.1}s`;
-            card.classList.add('animate-fade-in-up');
-        });
-    }
-
-    // ページ読み込み時の処理
-    document.addEventListener('DOMContentLoaded', function() {
-        // カードアニメーションを初期化
-        initializeCardAnimations();
-
-        // データ読み込み（少し遅延を入れてアニメーション効果を確認）
-        setTimeout(() => {
-            loadDashboardData();
-        }, 500);
-
-        // 定期的にデータを更新（5分間隔）
-        setInterval(loadDashboardData, 5 * 60 * 1000);
-
-        // リフレッシュボタンのクリックイベント
-        const refreshButton = document.querySelector('button[title="更新"]');
-        if (refreshButton) {
-            refreshButton.addEventListener('click', () => {
-                loadDashboardData();
-                Utils.showToast('データを更新しました', 'success');
-            });
-        }
-
-        // 在庫検索イベントリスナー
-        const inventorySearch = document.getElementById('inventorySearch');
-        if (inventorySearch) {
-            // Enter キーで検索
-            inventorySearch.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    searchInventory();
-                }
-            });
-
-            // リアルタイム検索（3文字以上入力で500ms後に検索）
-            let searchTimeout;
-            inventorySearch.addEventListener('input', (e) => {
-                clearTimeout(searchTimeout);
-                const searchTerm = e.target.value.trim();
-
-                if (searchTerm.length === 0) {
-                    // 空の場合は最新10件を表示
-                    loadDashboardData();
-                } else if (searchTerm.length >= 3) {
-                    // 3文字以上の場合は500ms後に検索
-                    searchTimeout = setTimeout(() => {
-                        searchInventory();
-                    }, 500);
-                }
-            });
-        }
-    });
-</script>
-
-<!-- アニメーション用のTailwind設定を一時的にページ内で定義 -->
-<style>
-    @keyframes slideInRight {
-        from {
-            opacity: 0;
-            transform: translateX(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
-
-    .animate-slide-in-right {
-        animation: slideInRight 0.5s ease-out;
-    }
-</style>
+<script src="{{ url_for('static', path='/js/dashboard.js') }}"></script>
 {% endblock %}

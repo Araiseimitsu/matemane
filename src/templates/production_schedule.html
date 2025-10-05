@@ -12,9 +12,11 @@
           <p class="text-gray-600 mt-1">セット予定表.xlsx の「生産中」シートを参照し、最新の加工状況を表示します。</p>
         </div>
         <div class="flex items-center gap-3">
-          <button id="refreshBtn" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 transition">
+          <button id="refreshBtn"
+            class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg shadow-sm hover:bg-blue-700 transition">
             <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v6h6M20 20v-6h-6M5 19a9 9 0 0014-7V5M19 5a9 9 0 00-14 7v7" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 4v6h6M20 20v-6h-6M5 19a9 9 0 0014-7V5M19 5a9 9 0 00-14 7v7" />
             </svg>
             再読み込み
           </button>
@@ -24,6 +26,8 @@
   </div>
 
   <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
+
+
     <div class="bg-white shadow rounded-lg overflow-hidden">
       <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
         <div class="text-sm text-gray-600">総件数: <span id="totalRows" class="font-semibold text-gray-900">0</span></div>
@@ -34,14 +38,12 @@
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">行</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">セット予定日</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">機械NO</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">品番</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">製品名</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">数量</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">材質＆材料径</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">次工程</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">在庫切れ予測</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">加工予定日</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">加工終了日</th>
               <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">最新納期</th>
@@ -50,9 +52,10 @@
           </thead>
           <tbody id="resultsTableBody" class="bg-white divide-y divide-gray-100">
             <tr id="loadingRow">
-              <td colspan="12" class="px-4 py-10 text-center">
+              <td colspan="10" class="px-4 py-10 text-center">
                 <div class="flex flex-col items-center space-y-2 text-gray-500">
-                  <svg class="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <svg class="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none"
+                    viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
                   </svg>
@@ -61,7 +64,7 @@
               </td>
             </tr>
             <tr id="emptyRow" class="hidden">
-              <td colspan="12" class="px-4 py-10 text-center text-gray-500">データが見つかりません。</td>
+              <td colspan="10" class="px-4 py-10 text-center text-gray-500">データが見つかりません。</td>
             </tr>
           </tbody>
         </table>
@@ -82,12 +85,27 @@
       this.lastUpdated = document.getElementById('lastUpdated');
       this.refreshBtn = document.getElementById('refreshBtn');
 
+      // テーブル内予測用のマップ
+      this.forecastMap = {};
+      this.forecastMapNormalized = {};
+      this.usagePerRow = {};
+      this.usagePerKey = {};
+      this.usagePerKey2 = {};
+
       this.bindEvents();
-      this.load();
+      this.refreshAll();
     }
 
     bindEvents() {
-      this.refreshBtn.addEventListener('click', () => this.load());
+      this.refreshBtn.addEventListener('click', () => {
+        this.refreshAll();
+      });
+    }
+
+    async refreshAll() {
+      await this.loadForecast();
+      await this.loadUsageDetails();
+      await this.load();
     }
 
     async load() {
@@ -112,6 +130,81 @@
       }
     }
 
+    async loadForecast() {
+      try {
+        const res = await fetch('/api/production-schedule/stockout-forecast');
+        if (!res.ok) throw new Error('在庫切れ予測の取得に失敗しました');
+        const forecasts = await res.json();
+        this.forecastMap = {};
+        this.forecastMapNormalized = {};
+        forecasts.forEach(f => {
+          if (f && f.material_spec) {
+            const spec = this.normalizeSpec(f.material_spec);
+            this.forecastMap[f.material_spec] = f;
+            this.forecastMapNormalized[spec] = f;
+          }
+        });
+      } catch (err) {
+        console.error('forecast error:', err);
+        Utils.showToast(err.message || '予測の取得に失敗しました', 'error');
+      }
+    }
+
+    async loadUsageDetails() {
+      try {
+        const res = await fetch('/api/material-management/usage');
+        if (!res.ok) throw new Error('使用計画の取得に失敗しました');
+        const summaries = await res.json();
+        this.usagePerRow = {};
+        this.usagePerKey = {};
+        this.usagePerKey2 = {};
+        summaries.forEach(s => {
+          if (!s || !Array.isArray(s.machines)) return;
+          s.machines.forEach(d => {
+            if (d && typeof d.row_number === 'number' && d.bars_per_day != null) {
+              const perDay = Number(d.bars_per_day);
+              this.usagePerRow[d.row_number] = perDay;
+              const spec = this.normalizeSpec(s.material_spec);
+              const machine = this.normalizeKeyValue(d.machine_no);
+              const item = this.normalizeKeyValue(d.item_code);
+              const qty = this.normalizeNumber(d.quantity);
+              const key = `${machine}|${item}|${spec}|${qty}`;
+              const key2 = `${machine}|${item}|${spec}`;
+              this.usagePerKey[key] = perDay;
+              this.usagePerKey2[key2] = perDay;
+            }
+          });
+        });
+      } catch (err) {
+        console.error('usage error:', err);
+        Utils.showToast(err.message || '使用計画の取得に失敗しました', 'error');
+      }
+    }
+
+    // 上部予測一覧は廃止（テーブル内に表示）
+
+    buildMasterStatus(f) {
+      // 未登録材料の表示と登録リンク
+      if (f.material_master_found) {
+        const dim = (f.diameter_mm != null && !Number.isNaN(Number(f.diameter_mm)))
+          ? `φ${Number(f.diameter_mm).toFixed(1)}`
+          : '';
+        return `<span class="inline-flex items-center px-2 py-1 text-xs rounded bg-gray-100 text-gray-700">マスター: 登録済 ${this.escape(dim)}</span>`;
+      }
+      const name = encodeURIComponent(f.material_name || '');
+      const dia = f.diameter_mm != null ? encodeURIComponent(f.diameter_mm) : '';
+      const href = `/materials?name=${name}&diameter_mm=${dia}`;
+      return `
+        <a href="${href}" class="inline-flex items-center px-2 py-1 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200">
+          未マスター → 登録する
+        </a>
+      `;
+    }
+
+    // 廃止: 上部予測バッジ
+
+    // 廃止: 上部予測ローディング
+
     renderRows(items) {
       this.tableBody.querySelectorAll('tr.data-row').forEach((row) => row.remove());
 
@@ -135,19 +228,86 @@
 
     buildRowHtml(item) {
       return `
-        <td class="px-4 py-3 text-sm text-gray-600">${item.row_number}</td>
-        <td class="px-4 py-3 text-sm text-gray-900">${this.formatCell(item.set_plan_date)}</td>
         <td class="px-4 py-3 text-sm text-gray-900">${this.formatCell(item.machine_no)}</td>
         <td class="px-4 py-3 text-sm font-semibold text-gray-900">${this.formatCell(item.item_code)}</td>
         <td class="px-4 py-3 text-sm text-gray-700">${this.formatCell(item.product_name)}</td>
         <td class="px-4 py-3 text-sm text-gray-700">${this.formatNumber(item.quantity)}</td>
         <td class="px-4 py-3 text-sm text-gray-700">${this.formatCell(item.material)}</td>
-        <td class="px-4 py-3 text-sm text-gray-700">${this.formatCell(item.next_process)}</td>
+        <td class="px-4 py-3 text-sm">${this.buildInlineForecastCell(item)}</td>
         <td class="px-4 py-3 text-sm text-gray-700">${this.formatCell(item.process_plan_date)}</td>
         <td class="px-4 py-3 text-sm text-gray-700">${this.formatCell(item.process_end_date)}</td>
         <td class="px-4 py-3 text-sm text-gray-700">${this.formatCell(item.latest_due_date)}</td>
         <td class="px-4 py-3 text-sm text-gray-700">${this.formatCell(item.remarks)}</td>
       `;
+    }
+
+    buildInlineForecastCell(item) {
+      const spec = item.material;
+      const specNorm = this.normalizeSpec(spec);
+      const f = this.forecastMap[spec] || this.forecastMapNormalized[specNorm];
+      if (!f) {
+        return '<span class="inline-flex items-center px-2 py-1 text-xs rounded bg-gray-100 text-gray-600">予測なし</span>';
+      }
+      // 行別(U/W)から1日使用本数を取得
+      const perDay = this.usagePerRow[item.row_number] ?? this.usagePerKey[this.buildUsageKeyFromItem(item)] ?? this.usagePerKey2[this.buildUsageKey2FromItem(item)];
+      let val = f.days_until_stockout;
+      if (typeof perDay === 'number' && isFinite(perDay) && perDay > 0) {
+        // 現在在庫本数 / 1日使用本数 で日数を算出（切り上げ）
+        val = Math.ceil(Number(f.current_stock_bars) / perDay);
+      }
+      let badgeHtml = '<span class="inline-flex items-center px-2 py-1 text-xs rounded bg-gray-100 text-gray-700">不明</span>';
+      if (typeof val === 'number' && isFinite(val)) {
+        if (val < 0) {
+          badgeHtml = '<span class="inline-flex items-center px-2 py-1 text-xs rounded bg-red-100 text-red-700">在庫切れ済</span>';
+        } else if (val === 0) {
+          badgeHtml = '<span class="inline-flex items-center px-2 py-1 text-xs rounded bg-amber-100 text-amber-700">本日切れ</span>';
+        } else {
+          let cls = 'bg-green-100 text-green-700';
+          if (val <= 3) cls = 'bg-red-100 text-red-700';
+          else if (val <= 7) cls = 'bg-amber-100 text-amber-700';
+          badgeHtml = `<span class="inline-flex items-center px-2 py-1 text-xs rounded ${cls}">残り ${this.escape(val)} 日</span>`;
+        }
+      }
+      const stock = this.formatNumber(f.current_stock_bars);
+      return `
+        <div class="flex items-center gap-2">
+          ${badgeHtml}
+          <span class="text-xs text-gray-600">在庫:${stock}</span>
+        </div>
+      `;
+    }
+
+    buildUsageKeyFromItem(item) {
+      const machine = this.normalizeKeyValue(item.machine_no);
+      const code = this.normalizeKeyValue(item.item_code);
+      const spec = this.normalizeSpec(item.material);
+      const qty = this.normalizeNumber(item.quantity);
+      return `${machine}|${code}|${spec}|${qty}`;
+    }
+
+    buildUsageKey2FromItem(item) {
+      const machine = this.normalizeKeyValue(item.machine_no);
+      const code = this.normalizeKeyValue(item.item_code);
+      const spec = this.normalizeSpec(item.material);
+      return `${machine}|${code}|${spec}`;
+    }
+
+    normalizeSpec(value) {
+      const t = (value ?? '').toString().trim();
+      // 連続スペースを1個に、全角スペースも半角に
+      return t.replace(/\u3000/g, ' ').replace(/\s+/g, ' ');
+    }
+
+    normalizeKeyValue(value) {
+      const t = (value ?? '').toString().trim();
+      return t.replace(/\u3000/g, ' ').replace(/\s+/g, ' ');
+    }
+
+    normalizeNumber(value) {
+      if (value == null || value === '') return '';
+      const num = Number(value);
+      if (!isFinite(num)) return this.normalizeKeyValue(value);
+      return String(num);
     }
 
     updateMeta(items) {

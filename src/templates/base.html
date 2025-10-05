@@ -1,296 +1,294 @@
 <!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{% block title %}材料管理システム{% endblock %}</title>
 
-    <!-- Tailwind CSS CDN (Development only) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- TODO: For production, install Tailwind locally -->
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}材料管理システム{% endblock %}</title>
 
-    <!-- Font Awesome for icons -->
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
+  <!-- Tailwind CSS CDN (Development only) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- TODO: For production, install Tailwind locally -->
 
-    <!-- Favicon (SVG data URL to avoid /favicon.ico 404) -->
-    <link
-      rel="icon"
-      type="image/svg+xml"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231e40af'/%3E%3Ctext x='8' y='12' text-anchor='middle' font-size='12' font-family='Arial' fill='white'%3EM%3C/text%3E%3C/svg%3E"
-    />
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-    <!-- Custom CSS -->
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', path='/css/mobile.css') }}"
-    />
+  <!-- Favicon (SVG data URL to avoid /favicon.ico 404) -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231e40af'/%3E%3Ctext x='8' y='12' text-anchor='middle' font-size='12' font-family='Arial' fill='white'%3EM%3C/text%3E%3C/svg%3E" />
 
-    <!-- 必要最小限のカスタムCSS -->
-    <style>
-      /* アニメーション */
-      .animate-fade-in-up {
-        animation: fadeInUp 0.6s ease-out both;
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/mobile.css') }}" />
+
+  <!-- 必要最小限のカスタムCSS -->
+  <style>
+    /* アニメーション */
+    .animate-fade-in-up {
+      animation: fadeInUp 0.6s ease-out both;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
       }
 
-      @keyframes fadeInUp {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
+    }
 
-      /* スクロールバー */
-      ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-      }
+    /* スクロールバー */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
 
-      ::-webkit-scrollbar-track {
-        background: #f1f5f9;
-        border-radius: 9999px;
-      }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 9999px;
+    }
 
-      ::-webkit-scrollbar-thumb {
-        background: #9ca3af;
-        border-radius: 9999px;
-      }
+    ::-webkit-scrollbar-thumb {
+      background: #9ca3af;
+      border-radius: 9999px;
+    }
 
-      ::-webkit-scrollbar-thumb:hover {
-        background: #6b7280;
-      }
-    </style>
+    ::-webkit-scrollbar-thumb:hover {
+      background: #6b7280;
+    }
+  </style>
 
-    {% block extra_head %}{% endblock %}
-  </head>
-  <body class="bg-gray-50 font-sans">
-    <!-- ナビゲーションヘッダー -->
-    <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-          <div class="flex items-center">
-            <!-- ロゴ -->
-            <a href="/" class="flex items-center">
-              <div class="p-2 bg-blue-600 rounded-lg mr-3">
-                <i class="fas fa-industry text-white text-lg"></i>
-              </div>
-              <span class="text-xl font-bold text-gray-800">
-                材料管理システム
-              </span>
-            </a>
-          </div>
+  {% block extra_head %}{% endblock %}
+</head>
 
-          <!-- メインナビゲーション -->
-          <div class="hidden md:flex items-center space-x-8">
-            <a
-              href="/"
-              class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              <i class="fas fa-tachometer-alt mr-2"></i>ダッシュボード
-            </a>
-            <a
-              href="/inventory"
-              class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              <i class="fas fa-boxes mr-2"></i>在庫管理
-            </a>
-            <a
-              href="/purchase-orders"
-              class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              <i class="fas fa-shopping-cart mr-2"></i>発注管理
-            </a>
-            <a
-              href="/receiving"
-              class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              <i class="fas fa-truck mr-2"></i>入庫確認
-            </a>
-            <a
-              href="/movements"
-              class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              <i class="fas fa-exchange-alt mr-2"></i>入出庫
-            </a>
-            <a
-              href="/excel-viewer"
-              class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              <i class="fas fa-file-excel mr-2"></i>Excel照合
-            </a>
-            <a
-              href="/production-schedule"
-              class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              <i class="fas fa-list-check mr-2"></i>生産中一覧
-            </a>
-            <a
-              href="/material-management"
-              class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              <i class="fas fa-box mr-2"></i>材料管理
-            </a>
-            <a
-              
-            
-          </div>
+<body class="bg-gray-50 font-sans">
+  <!-- ナビゲーションヘッダー -->
+  <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-16">
+        <div class="flex items-center">
+          <!-- ロゴ -->
+          <a href="/" class="flex items-center">
+            <div class="p-2 bg-blue-600 rounded-lg mr-3">
+              <i class="fas fa-industry text-white text-lg"></i>
+            </div>
+            <span class="text-xl font-bold text-gray-800">
+              材料管理システム
+            </span>
+          </a>
+        </div>
 
-          <!-- ユーザーメニュー -->
-          <div class="flex items-center">
-            <div class="relative">
-              <button
-                id="user-menu-button"
-                class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <i class="fas fa-user-circle text-2xl text-gray-600"></i>
-              </button>
-              <div
-                id="user-menu"
-                class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50"
-              >
-                <a
-                  href="#"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >プロフィール</a
-                >
-                <a
-                  href="/settings"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  <i class="fas fa-cog mr-2"></i>設定
-                </a>
-                <hr class="my-1" />
-                <a
-                  href="#"
-                  onclick="logout()"
-                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >ログアウト</a
-                >
-              </div>
+        <!-- メインナビゲーション -->
+        <div class="hidden md:flex items-center space-x-8">
+          <a href="/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+            <i class="fas fa-tachometer-alt mr-2"></i>ダッシュボード
+          </a>
+          <a href="/inventory" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+            <i class="fas fa-boxes mr-2"></i>在庫管理
+          </a>
+          <a href="/purchase-orders" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+            <i class="fas fa-shopping-cart mr-2"></i>発注管理
+          </a>
+          <a href="/receiving" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+            <i class="fas fa-truck mr-2"></i>入庫確認
+          </a>
+          <a href="/movements" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+            <i class="fas fa-exchange-alt mr-2"></i>入出庫
+          </a>
+          <a href="/excel-viewer" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+            <i class="fas fa-file-excel mr-2"></i>Excel照合
+          </a>
+          <a href="/production-schedule"
+            class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+            <i class="fas fa-list-check mr-2"></i>生産中一覧
+          </a>
+        </div>
+
+        <!-- ユーザーメニュー -->
+        <div class="flex items-center">
+          <!-- モバイル：ハンバーガー -->
+          <button id="mobile-menu-button" aria-label="メニュー" aria-expanded="false"
+            class="md:hidden p-2 mr-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <i id="mobile-menu-icon" class="fas fa-bars text-gray-700 text-xl"></i>
+          </button>
+          <div class="relative">
+            <button id="user-menu-button"
+              class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <i class="fas fa-user-circle text-2xl text-gray-600"></i>
+            </button>
+            <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+              <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">プロフィール</a>
+              <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                <i class="fas fa-cog mr-2"></i>設定
+              </a>
+              <hr class="my-1" />
+              <a href="#" onclick="logout()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">ログアウト</a>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- モバイルメニュー -->
-      <div id="mobile-menu" class="md:hidden hidden">
-        <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          <a
-            href="/"
-            class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
-          >
-            <i class="fas fa-tachometer-alt mr-2"></i>ダッシュボード
-          </a>
-          <a
-            href="/inventory"
-            class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
-          >
-            <i class="fas fa-boxes mr-2"></i>在庫管理
-          </a>
-          <a
-            href="/purchase-orders"
-            class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
-          >
-            <i class="fas fa-shopping-cart mr-2"></i>発注管理
-          </a>
-          <a
-            href="/receiving"
-            class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
-          >
-            <i class="fas fa-truck mr-2"></i>入庫確認
-          </a>
-          <a
-            href="/movements"
-            class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
-          >
-            <i class="fas fa-exchange-alt mr-2"></i>入出庫
-          </a>
-          <a
-            href="/excel-viewer"
-            class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
-          >
-            <i class="fas fa-file-excel mr-2"></i>Excel照合
-          </a>
-          <a
-            href="/production-schedule"
-            class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium"
-          >
-            <i class="fas fa-list-check mr-2"></i>生産中一覧
-          </a>
-          <a
-            
-          
-        </div>
+    <!-- モバイルメニュー -->
+    <div id="mobile-menu"
+      class="md:hidden hidden absolute top-16 left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50">
+      <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+        <a href="/" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+          <i class="fas fa-tachometer-alt mr-2"></i>ダッシュボード
+        </a>
+        <a href="/inventory" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+          <i class="fas fa-boxes mr-2"></i>在庫管理
+        </a>
+        <a href="/purchase-orders"
+          class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+          <i class="fas fa-shopping-cart mr-2"></i>発注管理
+        </a>
+        <a href="/receiving" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+          <i class="fas fa-truck mr-2"></i>入庫確認
+        </a>
+        <a href="/movements" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+          <i class="fas fa-exchange-alt mr-2"></i>入出庫
+        </a>
+        <a href="/excel-viewer"
+          class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+          <i class="fas fa-file-excel mr-2"></i>Excel照合
+        </a>
+        <a href="/production-schedule"
+          class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
+          <i class="fas fa-list-check mr-2"></i>生産中一覧
+        </a>
       </div>
-    </nav>
+    </div>
+  </nav>
 
-    <!-- メインコンテンツ -->
-    <main class="flex-1">{% block content %}{% endblock %}</main>
+  <!-- モバイルメニューの背景（クリックで閉じる） -->
+  <div id="mobile-menu-backdrop" class="fixed inset-0 bg-black bg-opacity-40 hidden z-40"></div>
 
-    <!-- フッター -->
-    <footer class="bg-white border-t border-gray-200 mt-auto">
-      <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-        <div class="text-center text-gray-500 text-sm">
-          © 2025 材料管理システム (matemane)
-        </div>
+  <!-- メインコンテンツ -->
+  <main class="flex-1">{% block content %}{% endblock %}</main>
+
+  <!-- フッター -->
+  <footer class="bg-white border-t border-gray-200 mt-auto">
+    <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+      <div class="text-center text-gray-500 text-sm">
+        © 2025 材料管理システム (matemane)
       </div>
-    </footer>
+    </div>
+  </footer>
 
-    <!-- トースト通知 -->
-    <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+  <!-- トースト通知 -->
+  <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
 
-    <!-- QRスキャナーライブラリ -->
-    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <!-- QRスキャナーライブラリ -->
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 
-    <!-- 共通JavaScript -->
-    <script src="{{ url_for('static', path='/js/utils.js') }}"></script>
-    <script src="{{ url_for('static', path='/js/api-client.js') }}"></script>
-    <script src="{{ url_for('static', path='/js/qr-scanner.js') }}"></script>
-    <script>
-      // ユーザーメニュートグル
-      document
-        .getElementById("user-menu-button")
-        .addEventListener("click", function () {
-          const menu = document.getElementById("user-menu");
-          menu.classList.toggle("hidden");
-        });
-
-      // メニュー外クリックで閉じる
-      document.addEventListener("click", function (e) {
-        const button = document.getElementById("user-menu-button");
+  <!-- 共通JavaScript -->
+  <script src="{{ url_for('static', path='/js/utils.js') }}"></script>
+  <script src="{{ url_for('static', path='/js/api-client.js') }}"></script>
+  <script src="{{ url_for('static', path='/js/qr-scanner.js') }}"></script>
+  <script>
+    // ユーザーメニュートグル
+    document
+      .getElementById("user-menu-button")
+      .addEventListener("click", function () {
         const menu = document.getElementById("user-menu");
-        if (!button.contains(e.target) && !menu.contains(e.target)) {
-          menu.classList.add("hidden");
+        menu.classList.toggle("hidden");
+      });
+
+    // メニュー外クリックで閉じる
+    document.addEventListener("click", function (e) {
+      const button = document.getElementById("user-menu-button");
+      const menu = document.getElementById("user-menu");
+      if (!button.contains(e.target) && !menu.contains(e.target)) {
+        menu.classList.add("hidden");
+      }
+    });
+
+    // ログアウト処理
+    function logout() {
+      localStorage.removeItem("access_token");
+      window.location.href = "/login";
+    }
+
+    // ハンバーガーメニュー（モバイル）
+    (function () {
+      const btn = document.getElementById("mobile-menu-button");
+      const icon = document.getElementById("mobile-menu-icon");
+      const menu = document.getElementById("mobile-menu");
+      const backdrop = document.getElementById("mobile-menu-backdrop");
+
+      function openMenu() {
+        menu.classList.remove("hidden");
+        backdrop.classList.remove("hidden");
+        document.body.classList.add("overflow-hidden");
+        btn?.setAttribute("aria-expanded", "true");
+        icon?.classList.remove("fa-bars");
+        icon?.classList.add("fa-times");
+      }
+
+      function closeMenu() {
+        menu.classList.add("hidden");
+        backdrop.classList.add("hidden");
+        document.body.classList.remove("overflow-hidden");
+        btn?.setAttribute("aria-expanded", "false");
+        icon?.classList.remove("fa-times");
+        icon?.classList.add("fa-bars");
+      }
+
+      function toggleMenu() {
+        if (menu.classList.contains("hidden")) {
+          openMenu();
+        } else {
+          closeMenu();
+        }
+      }
+
+      // ボタンクリックで開閉
+      btn?.addEventListener("click", function (e) {
+        e.stopPropagation();
+        toggleMenu();
+      });
+
+      // 背景クリックで閉じる
+      backdrop?.addEventListener("click", closeMenu);
+
+      // メニュー内リンククリックで閉じる
+      menu?.querySelectorAll("a").forEach((a) => {
+        a.addEventListener("click", closeMenu);
+      });
+
+      // ESCで閉じる
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          closeMenu();
         }
       });
 
-      // ログアウト処理
-      function logout() {
-        localStorage.removeItem("access_token");
-        window.location.href = "/login";
-      }
+      // ウィンドウ幅が広がった時に閉じる（保険）
+      window.addEventListener("resize", function () {
+        if (window.innerWidth >= 768) {
+          closeMenu();
+        }
+      });
+    })();
 
-      // トースト通知
-      function showToast(message, type = "info") {
-        const container = document.getElementById("toast-container");
-        const toast = document.createElement("div");
+    // トースト通知
+    function showToast(message, type = "info") {
+      const container = document.getElementById("toast-container");
+      const toast = document.createElement("div");
 
-        const bgColor =
-          {
-            success: "bg-green-500",
-            error: "bg-red-500",
-            warning: "bg-yellow-500",
-            info: "bg-blue-500",
-          }[type] || "bg-blue-500";
+      const bgColor =
+        {
+          success: "bg-green-500",
+          error: "bg-red-500",
+          warning: "bg-yellow-500",
+          info: "bg-blue-500",
+        }[type] || "bg-blue-500";
 
-        toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
-        toast.innerHTML = `
+      toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+      toast.innerHTML = `
                 <div class="flex items-center">
                     <span>${message}</span>
                     <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
@@ -299,42 +297,43 @@
                 </div>
             `;
 
-        container.appendChild(toast);
+      container.appendChild(toast);
 
-        // アニメーション
+      // アニメーション
+      setTimeout(() => {
+        toast.classList.remove("translate-x-full");
+      }, 100);
+
+      // 自動削除
+      setTimeout(() => {
+        toast.classList.add("translate-x-full");
         setTimeout(() => {
-          toast.classList.remove("translate-x-full");
-        }, 100);
+          if (toast.parentElement) {
+            toast.remove();
+          }
+        }, 300);
+      }, 5000);
+    }
 
-        // 自動削除
-        setTimeout(() => {
-          toast.classList.add("translate-x-full");
-          setTimeout(() => {
-            if (toast.parentElement) {
-              toast.remove();
-            }
-          }, 300);
-        }, 5000);
-      }
+    // 認証チェック（現在無効化中）
+    // function checkAuth() {
+    //     const token = localStorage.getItem('access_token');
+    //     if (!token && window.location.pathname !== '/login') {
+    //         window.location.href = '/login';
+    //         return false;
+    //     }
+    //     return true;
+    // }
 
-      // 認証チェック（現在無効化中）
-      // function checkAuth() {
-      //     const token = localStorage.getItem('access_token');
-      //     if (!token && window.location.pathname !== '/login') {
-      //         window.location.href = '/login';
-      //         return false;
-      //     }
-      //     return true;
-      // }
+    // ページ読み込み時の認証チェック（現在無効化中）
+    // document.addEventListener('DOMContentLoaded', function() {
+    //     if (window.location.pathname !== '/login') {
+    //         checkAuth();
+    //     }
+    // });
+  </script>
 
-      // ページ読み込み時の認証チェック（現在無効化中）
-      // document.addEventListener('DOMContentLoaded', function() {
-      //     if (window.location.pathname !== '/login') {
-      //         checkAuth();
-      //     }
-      // });
-    </script>
+  {% block extra_scripts %}{% endblock %}
+</body>
 
-    {% block extra_scripts %}{% endblock %}
-  </body>
 </html>

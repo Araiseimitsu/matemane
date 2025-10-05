@@ -136,6 +136,13 @@ class APIClient {
   }
 
   /**
+   * 材料総件数取得
+   */
+  static async getMaterialsCount(params = {}) {
+    return this.get("/materials/count", params);
+  }
+
+  /**
    * 材料作成
    */
   static async createMaterial(data) {
@@ -221,6 +228,13 @@ class APIClient {
    */
   static async getInventorySummary(params = {}) {
     return this.get("/inventory/summary/", params);
+  }
+
+  /**
+   * 在庫グループ集計取得
+   */
+  static async getInventoryGroups(params = {}) {
+    return this.get("/inventory/groups", params);
   }
 
   /**
@@ -330,10 +344,28 @@ class APIClient {
   }
 
   /**
+   * 入庫待ち・検品待ちアイテム取得
+   */
+  static async getPendingPurchaseItems(includeInspected = false) {
+    return this.get("/purchase-orders/pending-or-inspection/items/", {
+      include_inspected: includeInspected,
+    });
+  }
+
+  /**
    * 材料検索（名称・品番など）
    */
   static async searchMaterials(queryText) {
     return this.get("/materials/search/", { query_text: queryText });
+  }
+
+  // ===== 生産スケジュール =====
+
+  /**
+   * 在庫切れ予測取得
+   */
+  static async getStockoutForecast() {
+    return this.get("/production-schedule/stockout-forecast");
   }
 }
 

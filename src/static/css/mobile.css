@@ -119,6 +119,15 @@ input[type="checkbox"], input[type="radio"] {
     margin-bottom: 4px;
 }
 
+/* ハンバーガーメニューの補助スタイル */
+#mobile-menu {
+    will-change: transform, opacity;
+}
+
+#mobile-menu-backdrop {
+    transition: opacity 0.2s ease;
+}
+
 /* QRスキャンボタン（フローティングアクション） */
 .fab-qr-scan {
     position: fixed;

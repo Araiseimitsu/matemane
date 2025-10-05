@@ -137,12 +137,6 @@ async def receiving_page(request: Request):
     return templates.TemplateResponse("receiving.html", {"request": request})
 
 
-@app.get("/material-management")
-async def material_management_page(request: Request):
-    """材料管理ページ"""
-    return templates.TemplateResponse("material_management.html", {"request": request})
-
-
 @app.get("/production-schedule")
 async def production_schedule_page(request: Request):
     """生産中一覧ページ"""
