@@ -11,7 +11,7 @@ from src.db import get_db
 from src.db.models import (
     PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, PurchaseOrderItemStatus,
     Material, MaterialShape, Lot, Item, Location, OrderType, User,
-    MaterialGroup, MaterialGroupMember
+    MaterialGroup, MaterialGroupMember, InspectionStatus
 )
 from src.api.order_utils import generate_order_number
 from src.utils.auth import get_password_hash
@@ -476,27 +476,42 @@ async def get_pending_items(db: Session = Depends(get_db)):
     return items
 
 @router.get("/pending-or-inspection/items/", response_model=List[PurchaseOrderItemResponse])
-async def get_pending_or_inspection_items(db: Session = Depends(get_db)):
-    """入庫待ち、または検品未完了アイテム一覧取得
+async def get_pending_or_inspection_items(
+    include_inspected: bool = False,
+    db: Session = Depends(get_db)
+):
+    """入庫待ち、または検品未完了アイテム一覧取得（オプションで検品完了も含める）
 
     - 発注アイテムが未入庫（PENDING）のもの
-    - 入庫済み（RECEIVED）だが、紐づくロットの検品が未完了（PENDING/FAILED）のもの
+    - 入庫済み（RECEIVED）だが、紐づく最新ロットの検品が未完了（PENDING/FAILED）のもの
+    - include_inspected=true の場合、検品完了（PASSED）のものも含める
     """
     from sqlalchemy.sql import exists
-    from src.db.models import Lot, InspectionStatus
+    from src.db.models import Lot
 
     lot_has_unpassed_inspection = exists().where(
         (Lot.purchase_order_item_id == PurchaseOrderItem.id) &
         (Lot.inspection_status != InspectionStatus.PASSED)
     )
 
+    # 検品完了も含める条件
+    lot_has_passed_inspection = exists().where(
+        (Lot.purchase_order_item_id == PurchaseOrderItem.id) &
+        (Lot.inspection_status == InspectionStatus.PASSED)
+    )
+
+    conditions = [
+        (PurchaseOrderItem.status == PurchaseOrderItemStatus.PENDING),
+        lot_has_unpassed_inspection
+    ]
+
+    if include_inspected:
+        conditions.append(lot_has_passed_inspection)
+
     items = db.query(PurchaseOrderItem).options(
         joinedload(PurchaseOrderItem.purchase_order)
     ).filter(
-        or_(
-            PurchaseOrderItem.status == PurchaseOrderItemStatus.PENDING,
-            lot_has_unpassed_inspection
-        )
+        or_(*conditions)
     ).all()
 
     return items
@@ -768,6 +783,126 @@ async def receive_item(
         "material_id": material_id
     }
 
+@router.put("/items/{item_id}/receive/", response_model=dict)
+async def update_received_item(
+    item_id: int,
+    receiving: ReceivingConfirmation,
+    db: Session = Depends(get_db)
+):
+    """入庫内容の再編集（入庫済みアイテムの受入情報を更新）"""
+    # 発注アイテム取得
+    item = db.query(PurchaseOrderItem).filter(PurchaseOrderItem.id == item_id).first()
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="発注アイテムが見つかりません")
+
+    if item.status != PurchaseOrderItemStatus.RECEIVED:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="未入庫アイテムは更新ではなく入庫処理を行ってください")
+
+    # 紐づく最新ロット取得
+    lot = db.query(Lot).filter(Lot.purchase_order_item_id == item.id).order_by(Lot.received_date.desc(), Lot.id.desc()).first()
+    if not lot:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="紐づくロットが見つかりません")
+
+    # 入庫データのバリデーション
+    try:
+        receiving.validate_receiving_data()
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    # 材料を取得（ロットの材料）
+    material = db.query(Material).filter(Material.id == lot.material_id, Material.is_active == True).first()
+    if not material:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ロットに紐づく材料が見つかりません")
+
+    # 材料属性の更新（display_nameは維持。name/detail/shape/径/密度を更新）
+    material.name = receiving.material_name
+    material.detail_info = (receiving.detail_info or None)
+    material.shape = receiving.shape
+    material.diameter_mm = receiving.diameter_mm
+    material.current_density = receiving.density
+    db.flush()
+
+    # 計算用属性（更新後の材料値を使用）
+    effective_shape = material.shape
+    effective_diameter = material.diameter_mm
+    effective_density = material.current_density
+
+    # ユーザー入力に応じて数量・重量を再計算
+    if receiving.received_weight_kg:
+        final_received_quantity = calculate_quantity_from_weight(
+            receiving.received_weight_kg, effective_shape, effective_diameter,
+            receiving.length_mm, effective_density
+        )
+        final_received_weight = receiving.received_weight_kg
+    else:
+        final_received_quantity = receiving.received_quantity
+        final_received_weight = calculate_weight_from_quantity(
+            receiving.received_quantity, effective_shape, effective_diameter,
+            receiving.length_mm, effective_density
+        )
+
+    # 置き場の存在チェック
+    invalid_locations: List[int] = []
+    if receiving.location_ids and len(receiving.location_ids) > 0:
+        for loc_id in receiving.location_ids:
+            loc = db.query(Location).filter(Location.id == loc_id, Location.is_active == True).first()
+            if not loc:
+                invalid_locations.append(loc_id)
+    elif receiving.location_id is not None:
+        loc = db.query(Location).filter(Location.id == receiving.location_id, Location.is_active == True).first()
+        if not loc:
+            invalid_locations.append(receiving.location_id)
+
+    if invalid_locations:
+        raise HTTPException(status_code=404, detail=f"指定された置き場が見つかりません: {', '.join(str(x) for x in invalid_locations)}")
+
+    # ロット情報更新
+    lot.lot_number = receiving.lot_number
+    lot.length_mm = receiving.length_mm
+    lot.initial_quantity = final_received_quantity
+    lot.received_date = receiving.received_date
+    lot.received_unit_price = receiving.unit_price
+    lot.received_amount = receiving.amount
+    lot.notes = receiving.notes
+    db.flush()
+
+    # 在庫アイテム（第一置き場）の更新
+    inv_item = db.query(Item).filter(Item.lot_id == lot.id).order_by(Item.id.asc()).first()
+    if not inv_item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ロットに紐づく在庫アイテムが見つかりません")
+
+    primary_location = None
+    if receiving.location_ids and len(receiving.location_ids) > 0:
+        primary_location = receiving.location_ids[0]
+    elif receiving.location_id is not None:
+        primary_location = receiving.location_id
+    inv_item.location_id = primary_location
+    inv_item.current_quantity = final_received_quantity
+    db.flush()
+
+    # 追加置き場の表記（備考へ追記）
+    if receiving.location_ids and len(receiving.location_ids) > 1:
+        others = ", ".join(str(loc) for loc in receiving.location_ids[1:] if loc is not None)
+        if others:
+            if lot.notes:
+                lot.notes = f"{lot.notes}\n追加置き場: {others}"
+            else:
+                lot.notes = f"追加置き場: {others}"
+
+    # 発注アイテムの数量・重量更新
+    item.received_quantity = final_received_quantity
+    item.received_weight_kg = final_received_weight
+
+    db.commit()
+
+    return {
+        "message": "入庫内容を更新しました",
+        "lot_id": lot.id,
+        "item_id": inv_item.id,
+        "management_code": inv_item.management_code,
+        "material_id": material.id
+    }
+
 @router.get("/items/{item_id}/management-code/", response_model=dict)
 async def get_management_code(item_id: int, db: Session = Depends(get_db)):
     """管理コード取得"""
@@ -810,7 +945,8 @@ async def get_inspection_target(item_id: int, db: Session = Depends(get_db)):
     return {
         "lot_id": lot.id,
         "inventory_item_id": inv_item.id,
-        "management_code": inv_item.management_code
+        "management_code": inv_item.management_code,
+        "inspection_status": lot.inspection_status.value if lot.inspection_status else None
     }
 
 class ConversionRequest(BaseModel):
