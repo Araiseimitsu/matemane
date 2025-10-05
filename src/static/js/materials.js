@@ -22,11 +22,6 @@ class MaterialManager {
 
   // イベントバインディング
   bindEvents() {
-    // CSVインポートボタン
-    const importBtn = document.getElementById("importCsvBtn");
-    if (importBtn) {
-      importBtn.addEventListener("click", () => this.showCsvImportModal());
-    }
 
     // 新規登録ボタン
     const addBtn = document.getElementById("addMaterialBtn");
@@ -167,7 +162,6 @@ class MaterialManager {
     Utils.modal.setupEventListeners([
       "materialModal",
       "weightCalculatorModal",
-      "csvImportModal",
     ]);
   }
 
@@ -242,7 +236,7 @@ class MaterialManager {
     if (this.materials.length === 0) {
       tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
                         <p class="text-lg mb-4">登録された材料がありません</p>
                         <button onclick="materialManager.showCreateForm()"
                                 class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
@@ -352,10 +346,8 @@ class MaterialManager {
       square: "角棒",
     };
 
-    // 表示名の処理
-    const displayNameHtml = material.display_name
-      ? `<div class="text-xs text-blue-600 font-medium">${material.display_name}</div>`
-      : "";
+    // 表示名を優先して表示（なければnameを表示）
+    const materialNameText = material.display_name || material.name;
 
     
 
@@ -367,69 +359,37 @@ class MaterialManager {
     return `
             <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">${
-                      material.part_number || "-"
-                    }</div>
+                    <div class="text-sm font-medium text-gray-900">${materialNameText}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">${
-                      material.name
-                    }</div>
-                    ${displayNameHtml}
+                    <div class="text-sm text-gray-900">${material.name || "（未設定）"}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">${
-                      shapeNames[material.shape] || material.shape
-                    }</div>
+                    <div class="text-sm text-gray-900">${material.diameter_mm}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">${
-                      material.diameter_mm
-                    }</div>
+                    <div class="text-sm text-gray-900">${material.current_density}</div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">${
-                      material.current_density
-                    }</div>
-                </td>
-                
                 <td class="px-6 py-4 whitespace-nowrap">
                     ${dedicatedPartNumberHtml}
                 </td>
-                <td class="px-6 py-4">
-                    <div class="text-sm text-gray-500 max-w-xs truncate" title="${
-                      material.description || "説明なし"
-                    }">
-                        ${
-                          !material.description || material.description === ""
-                            ? '<span class="text-xs text-gray-400">説明なし</span>'
-                            : material.description
-                        }
-                    </div>
-                </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div class="flex justify-end space-x-2">
-                        <button onclick="materialManager.editMaterial(${
-                          material.id
-                        })"
+                        <button onclick="materialManager.editMaterial(${material.id})"
                                 class="text-blue-600 hover:text-blue-900 p-1" title="編集">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                       d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                             </svg>
                         </button>
-                        <button onclick="materialManager.deleteMaterial(${
-                          material.id
-                        })"
+                        <button onclick="materialManager.deleteMaterial(${material.id})"
                                 class="text-red-600 hover:text-red-900 p-1" title="削除">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                       d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                             </svg>
                         </button>
-                        <button onclick="materialManager.showWeightCalculator(${
-                          material.id
-                        })"
+                        <button onclick="materialManager.showWeightCalculator(${material.id})"
                                 class="text-gray-600 hover:text-gray-900 p-1" title="重量計算">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -997,148 +957,6 @@ class MaterialManager {
     if (pageNumbersTop) pageNumbersTop.innerHTML = html;
   }
 
-  // CSVインポートモーダル表示
-  showCsvImportModal() {
-    this.resetCsvImportForm();
-    Utils.modal.open("csvImportModal");
-    this.setupCsvFileInput();
-  }
-
-  // CSVインポートフォームリセット
-  resetCsvImportForm() {
-    document.getElementById("csvFileInput").value = "";
-    document.getElementById("fileInfo").classList.add("hidden");
-    document.getElementById("importProgress").classList.add("hidden");
-    document.getElementById("importResult").classList.add("hidden");
-    document.getElementById("startImportBtn").disabled = true;
-  }
-
-  // CSVファイル入力設定
-  setupCsvFileInput() {
-    const fileInput = document.getElementById("csvFileInput");
-    const fileInfo = document.getElementById("fileInfo");
-    const fileName = document.getElementById("fileName");
-    const fileSize = document.getElementById("fileSize");
-    const startBtn = document.getElementById("startImportBtn");
-
-    fileInput.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        fileName.textContent = file.name;
-        fileSize.textContent = file.size.toLocaleString();
-        fileInfo.classList.remove("hidden");
-        startBtn.disabled = false;
-      } else {
-        fileInfo.classList.add("hidden");
-        startBtn.disabled = true;
-      }
-    });
-
-    // 閉じるボタン
-    const closeBtn = document.getElementById("closeImportModal");
-    if (closeBtn) {
-      closeBtn.addEventListener("click", () => {
-        Utils.modal.close("csvImportModal");
-        this.resetCsvImportForm();
-      });
-    }
-
-    // インポート開始ボタン
-    if (startBtn) {
-      startBtn.addEventListener("click", () => this.startCsvImport());
-    }
-  }
-
-  // CSVインポート開始
-  async startCsvImport() {
-    console.log("[DEBUG] startCsvImport() called");
-    const fileInput = document.getElementById("csvFileInput");
-    const file = fileInput.files[0];
-
-    if (!file) {
-      console.log("[DEBUG] No file selected");
-      this.showToast("CSVファイルを選択してください", "error");
-      return;
-    }
-
-    console.log(`[DEBUG] File selected: ${file.name}, size: ${file.size}`);
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      // プログレス表示
-      console.log("[DEBUG] Showing progress");
-      document.getElementById("importProgress").classList.remove("hidden");
-      document.getElementById("startImportBtn").disabled = true;
-      document.getElementById("importStatus").textContent =
-        "ファイルをアップロード中...";
-
-      console.log("[DEBUG] Sending request to /api/materials/import-csv");
-      const response = await fetch("/api/materials/import-csv", {
-        method: "POST",
-        body: formData,
-      });
-
-      console.log(`[DEBUG] Response status: ${response.status}`);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.log(`[DEBUG] Error response: ${JSON.stringify(errorData)}`);
-        throw new Error(errorData.detail || "インポートに失敗しました");
-      }
-
-      const result = await response.json();
-      console.log(`[DEBUG] Import result: ${JSON.stringify(result)}`);
-      this.showImportResult(result);
-    } catch (error) {
-      console.error("[DEBUG] Import error:", error);
-      this.showToast(error.message, "error");
-      document.getElementById("importProgress").classList.add("hidden");
-      document.getElementById("startImportBtn").disabled = false;
-    }
-  }
-
-  // インポート結果表示
-  showImportResult(result) {
-    document.getElementById("importProgress").classList.add("hidden");
-    document.getElementById("importResult").classList.remove("hidden");
-
-    const successDiv = document.getElementById("importSuccess");
-    const errorsDiv = document.getElementById("importErrors");
-    const successDetails = document.getElementById("successDetails");
-    const errorDetails = document.getElementById("errorDetails");
-
-    // 成功情報
-    if (result.imported_count > 0) {
-      successDiv.classList.remove("hidden");
-      successDetails.innerHTML = `
-                <p>インポート成功: ${result.imported_count} 件</p>
-                <p>スキップ: ${result.skipped_count} 件</p>
-                <p>処理済み: ${result.total_processed} 件</p>
-            `;
-    }
-
-    // エラー情報
-    if (result.errors && result.errors.length > 0) {
-      errorsDiv.classList.remove("hidden");
-      errorDetails.innerHTML = result.errors
-        .map((error) => `<div>${error}</div>`)
-        .join("");
-    }
-
-    // 全体のメッセージ
-    if (result.imported_count > 0) {
-      this.showToast(
-        `インポート完了: ${result.imported_count} 件の材料を登録しました`,
-        "success"
-      );
-      // 材料一覧を更新
-      setTimeout(() => {
-        this.loadMaterials();
-      }, 1000);
-    }
-  }
 }
 
 // グローバル変数として初期化

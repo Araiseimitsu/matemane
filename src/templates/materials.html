@@ -2,65 +2,36 @@
 endblock %} {% block content %}
 <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
   <!-- ページヘッダー -->
-  <div class="mb-8">
-    <div class="flex items-center justify-between">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900">材料マスタ</h1>
-        <p class="mt-2 text-gray-600">材料マスタの管理を行います</p>
+      <div class="mb-8">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">材料マスタ</h1>
+            <p class="mt-2 text-gray-600">材料マスタの管理を行います</p>
+          </div>
+          <div class="flex space-x-3">
+            <button
+              id="addMaterialBtn"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+            >
+              <i class="fas fa-plus mr-2"></i>新規材料登録
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="flex space-x-3">
-        <button
-          id="importCsvBtn"
-          class="bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
-        >
-          <i class="fas fa-file-upload mr-2"></i>CSVインポート
-        </button>
-        <button
-          id="addMaterialBtn"
-          class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-        >
-          <i class="fas fa-plus mr-2"></i>新規材料登録
-        </button>
-      </div>
-    </div>
-  </div>
 
   <!-- フィルタ・検索バー -->
   <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-    <form id="searchForm" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2"
-          >品番検索</label
-        >
-        <input
-          type="text"
-          name="part_number"
-          placeholder="品番で検索..."
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400"
-        />
-      </div>
+    <form id="searchForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2"
           >材料名検索</label
         >
         <input
           type="text"
-          name="name"
+          name="display_name"
           placeholder="材料名で検索..."
           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400"
         />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">形状</label>
-        <select
-          name="shape"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400"
-        >
-          <option value="">すべて</option>
-          <option value="round">丸棒</option>
-          <option value="hexagon">六角棒</option>
-          <option value="square">角棒</option>
-        </select>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-2"
@@ -173,17 +144,12 @@ endblock %} {% block content %}
             <th
               class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
-              品番
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
               材料名
             </th>
             <th
               class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
-              形状
+              ユーザー設定名 (name)
             </th>
             <th
               class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -199,11 +165,6 @@ endblock %} {% block content %}
               class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
               専用品番・追加情報
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              説明
             </th>
             <th
               class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -572,161 +533,6 @@ endblock %} {% block content %}
   </div>
 </div>
 
-<!-- CSVインポートモーダル -->
-<div
-  id="csvImportModal"
-  class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50"
->
-  <div class="flex items-center justify-center min-h-screen p-4">
-    <div
-      class="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
-    >
-      <div class="px-6 py-4 border-b border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900">
-          CSVファイルインポート
-        </h3>
-        <p class="text-sm text-gray-600 mt-1">
-          材料マスタCSVファイルから材料を一括登録します
-        </p>
-      </div>
-
-      <div class="p-6">
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2"
-              >CSVファイル選択</label
-            >
-            <div
-              class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors"
-            >
-              <input
-                type="file"
-                id="csvFileInput"
-                accept=".csv"
-                class="hidden"
-              />
-              <label for="csvFileInput" class="cursor-pointer">
-                <i
-                  class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"
-                ></i>
-                <p class="text-gray-600">
-                  クリックしてCSVファイルを選択するか、ドラッグ&ドロップしてください
-                </p>
-                <p class="text-sm text-gray-500 mt-1">
-                  対応形式: UTF-8エンコードのCSVファイル
-                </p>
-              </label>
-            </div>
-            <div
-              id="fileInfo"
-              class="hidden mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg"
-            >
-              <p class="text-sm text-blue-800">
-                <span id="fileName"></span>
-                (<span id="fileSize"></span> bytes)
-              </p>
-            </div>
-          </div>
-
-          <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div class="flex">
-              <i class="fas fa-info-circle text-yellow-400 mt-0.5 mr-2"></i>
-              <div class="text-sm text-yellow-800">
-                <p class="font-medium mb-1">インポート時の注意事項:</p>
-                <ul class="list-disc list-inside space-y-1">
-                  <li>
-                    同じ材質・形状・寸法の材料が既に存在する場合はスキップされます
-                  </li>
-                  <li>材質に応じて自動的に適切な比重が設定されます</li>
-                  <li>処理には数分かかる場合があります</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <div id="importProgress" class="hidden">
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div class="flex items-center mb-2">
-                <svg
-                  class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                  ></circle>
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                <span class="text-blue-800 font-medium"
-                  >インポート処理中...</span
-                >
-              </div>
-              <div id="importStatus" class="text-sm text-blue-600"></div>
-            </div>
-          </div>
-
-          <div id="importResult" class="hidden">
-            <div
-              id="importSuccess"
-              class="bg-green-50 border border-green-200 rounded-lg p-4 hidden"
-            >
-              <div class="flex items-center mb-2">
-                <i class="fas fa-check-circle text-green-400 mr-2"></i>
-                <span class="text-green-800 font-medium">インポート成功</span>
-              </div>
-              <div
-                id="successDetails"
-                class="text-sm text-green-700 space-y-1"
-              ></div>
-            </div>
-
-            <div
-              id="importErrors"
-              class="bg-red-50 border border-red-200 rounded-lg p-4 hidden"
-            >
-              <div class="flex items-center mb-2">
-                <i class="fas fa-exclamation-triangle text-red-400 mr-2"></i>
-                <span class="text-red-800 font-medium">インポートエラー</span>
-              </div>
-              <div
-                id="errorDetails"
-                class="text-sm text-red-700 max-h-32 overflow-y-auto"
-              ></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex justify-end space-x-3 mt-6">
-          <button
-            type="button"
-            id="closeImportModal"
-            class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
-          >
-            閉じる
-          </button>
-          <button
-            type="button"
-            id="startImportBtn"
-            class="bg-green-600 hover:bg-green-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled
-          >
-            インポート開始
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
 {% endblock %} {% block extra_scripts %}
 <script src="/static/js/materials.js"></script>
 {% endblock %}
