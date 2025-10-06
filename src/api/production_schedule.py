@@ -20,7 +20,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from src.db import get_db
 from src.db.models import Item, Lot, Material
-from src.api.materials import parse_material_specification, parse_dimension_text
 
 from src.api.material_management import _load_material_plan, MaterialUsageSummary
 
@@ -168,7 +167,7 @@ class StockoutForecast(BaseModel):
     diameter_mm: Optional[float]
 
 
-def _get_current_stock_bars_by_display_name(db: Session, display_name: Optional[str]) -> int:
+def _get_current_stock_bars(db: Session, display_name: Optional[str]) -> int:
     """Material.display_name（Excel仕様文字列）一致で在庫本数合計を返す"""
     if not display_name:
         return 0
@@ -176,36 +175,6 @@ def _get_current_stock_bars_by_display_name(db: Session, display_name: Optional[
     materials = (
         db.query(Material)
         .filter(Material.display_name == display_name, Material.is_active == True)
-        .all()
-    )
-
-    if not materials:
-        return 0
-
-    total_stock = 0
-    for m in materials:
-        stock = (
-            db.query(func.coalesce(func.sum(Item.current_quantity), 0))
-            .join(Lot, Item.lot_id == Lot.id)
-            .filter(Lot.material_id == m.id, Item.is_active == True)
-            .scalar()
-        )
-        total_stock += int(stock or 0)
-
-    return total_stock
-
-def _get_current_stock_bars(db: Session, material_name: Optional[str], diameter_mm: Optional[float]) -> int:
-    """同一の材質名と径(mm)に一致する材料の在庫本数合計を返す"""
-    if not material_name or diameter_mm is None:
-        return 0
-
-    materials = (
-        db.query(Material)
-        .filter(
-            Material.name == material_name,
-            Material.diameter_mm == diameter_mm,
-            Material.is_active == True,
-        )
         .all()
     )
 
@@ -249,7 +218,7 @@ def _calculate_stockout_forecast(db: Session) -> List[StockoutForecast]:
 
     for m in materials:
         spec = m.display_name
-        current_stock = _get_current_stock_bars_by_display_name(db, spec)
+        current_stock = _get_current_stock_bars(db, spec)
         if current_stock <= 0:
             # 在庫ゼロは予測対象外（インベントリページ準拠）
             continue

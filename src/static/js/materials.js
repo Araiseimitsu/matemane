@@ -75,8 +75,6 @@ class MaterialManager {
       shapeSelect.addEventListener("change", () => this.updateShapeLabel());
     }
 
-    // 用途区分変更時の処理は不要（専用品番フィールドは常に表示）
-
     // モーダル閉じる処理
     const closeButtons = document.querySelectorAll('[data-dismiss="modal"]');
     closeButtons.forEach((btn) => {
@@ -349,11 +347,9 @@ class MaterialManager {
     // 表示名を優先して表示（なければnameを表示）
     const materialNameText = material.display_name || material.name;
 
-    
-
-    // 専用品番・追加情報（CSVインポート時の追加情報がここに表示されます）
-    const dedicatedPartNumberHtml = material.dedicated_part_number
-      ? `<div class="text-sm text-gray-900">${material.dedicated_part_number}</div>`
+    // 追加情報（detail_info）
+    const detailInfoHtml = material.detail_info
+      ? `<div class="text-sm text-gray-900">${material.detail_info}</div>`
       : '<span class="text-xs text-gray-400">なし</span>';
 
     return `
@@ -371,7 +367,7 @@ class MaterialManager {
                     <div class="text-sm text-gray-900">${material.current_density}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    ${dedicatedPartNumberHtml}
+                    ${detailInfoHtml}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div class="flex justify-end space-x-2">
@@ -441,11 +437,8 @@ class MaterialManager {
     document.getElementById("shape").value = material.shape;
     document.getElementById("diameter_mm").value = material.diameter_mm;
     document.getElementById("current_density").value = material.current_density;
-    
-    document.getElementById("dedicated_part_number").value =
-      material.dedicated_part_number || "";
+    document.getElementById("detail_info").value = material.detail_info || "";
 
-    // 専用品番フィールドは常に表示されるため、表示切り替えは不要
     this.updateShapeLabel();
   }
 
@@ -755,12 +748,6 @@ class MaterialManager {
       }
       select.appendChild(option);
     });
-  }
-
-  // 専用品番フィールドは常に表示されるため、この関数は不要
-  // （後方互換性のため空関数として残す）
-  toggleDedicatedPartNumberField() {
-    // 何もしない
   }
 
   // 比重プリセット選択時の処理

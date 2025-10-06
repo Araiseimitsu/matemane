@@ -412,16 +412,14 @@ async function loadMasterAndInventory() {
     materialMaster = materials.map(material => ({
         ...material,
         detail_info: sanitizeDetail(material.detail_info),
-        display_name: sanitizeDetail(material.display_name),
-        dedicated_part_number: sanitizeDetail(material.dedicated_part_number)
+        display_name: sanitizeDetail(material.display_name)
     }));
     inventoryItems = inventory.map(item => ({
         ...item,
         material: item.material ? {
             ...item.material,
             detail_info: sanitizeDetail(item.material.detail_info),
-            display_name: sanitizeDetail(item.material.display_name),
-            dedicated_part_number: sanitizeDetail(item.material.dedicated_part_number)
+            display_name: sanitizeDetail(item.material.display_name)
         } : item.material
     }));
 }
@@ -477,13 +475,13 @@ function buildGroupStore() {
     const materialById = new Map(materialMaster.map(material => [material.id, material]));
 
     const getGroupKey = (material) => {
-        const isDedicated = Boolean((material.dedicated_part_number || '').trim());
         const detailKey = normalizeDetail(material.detail_info);
+        // 詳細情報がある場合は専用品、ない場合は汎用品として扱う
+        const isDedicated = Boolean(detailKey);
         if (isDedicated) {
-            const dedicated = (material.dedicated_part_number || '').trim().toUpperCase();
-            return `dedicated|${material.name.toUpperCase()}|${normalizeNumber(material.diameter_mm)}|${dedicated}|${detailKey}`;
+            return `dedicated|${material.name.toUpperCase()}|${normalizeNumber(material.diameter_mm)}|${detailKey}`;
         }
-        return `general|${material.name.toUpperCase()}|${material.shape}|${normalizeNumber(material.diameter_mm)}|${detailKey}`;
+        return `general|${material.name.toUpperCase()}|${material.shape}|${normalizeNumber(material.diameter_mm)}`;
     };
 
     materialMaster.forEach(material => {
@@ -558,7 +556,6 @@ function createEmptyGroup(key, material) {
         shape: material.shape,
         diameter_mm: material.diameter_mm,
         detail_info: sanitizeDetail(material.detail_info),
-        dedicated_part_number: sanitizeDetail(material.dedicated_part_number),
         materials: [],
         lots: [],
         total_quantity: 0,
@@ -627,8 +624,7 @@ function buildGroupSubtitle(group) {
     const dimension = formatDimension(group.shape, group.diameter_mm);
     const shapeLabel = shapeLabels[group.shape] || group.shape;
     const detailSuffix = group.detail_info ? ` / ${group.detail_info}` : '';
-    const dedicatedText = group.dedicated_part_number ? ` / 専用品番 ${group.dedicated_part_number}` : '';
-    return `${shapeLabel} / 径 ${dimension}${dedicatedText}${detailSuffix}`;
+    return `${shapeLabel} / 径 ${dimension}${detailSuffix}`;
 }
 
 function buildGroupDisplayLabel(group) {
@@ -758,9 +754,9 @@ function applyFiltersAndRender() {
         }
 
         if (filters.dedicated) {
-            const dedicatedText = (group.dedicated_part_number || '').toLowerCase();
-            const materialsDedicated = group.materials.some(material => (material.dedicated_part_number || '').toLowerCase().includes(filters.dedicated));
-            if (!dedicatedText.includes(filters.dedicated) && !materialsDedicated) {
+            const detailText = (group.detail_info || '').toLowerCase();
+            const materialsDetail = group.materials.some(material => (material.detail_info || '').toLowerCase().includes(filters.dedicated));
+            if (!detailText.includes(filters.dedicated) && !materialsDetail) {
                 return false;
             }
         }
@@ -823,7 +819,7 @@ function renderGroupTable(groups) {
 
 function createGroupRow(group) {
     const lengthText = formatLengthList(group.length_variations);
-    const dedicatedDisplay = group.dedicated_part_number ? escapeHtml(group.dedicated_part_number) : '汎用品（共通使用）';
+    const detailDisplay = group.detail_info ? escapeHtml(group.detail_info) : '汎用品（共通使用）';
 
     const materialCount = group.material_count.toLocaleString('ja-JP');
     const lotCount = group.lot_count.toLocaleString('ja-JP');
@@ -839,7 +835,7 @@ function createGroupRow(group) {
             </td>
             <td class="px-4 py-3 text-sm text-gray-600">${groupNamesText}</td>
             <td class="px-4 py-3 text-sm text-gray-600">${escapeHtml(lengthText)}</td>
-            <td class="px-4 py-3 text-sm text-gray-600">${dedicatedDisplay}</td>
+            <td class="px-4 py-3 text-sm text-gray-600">${detailDisplay}</td>
             <td class="px-4 py-3 text-sm text-right text-gray-900">${materialCount}</td>
             <td class="px-4 py-3 text-sm text-right text-gray-900">${lotCount}</td>
             <td class="px-4 py-3 text-sm text-right text-gray-900">${totalQuantity}</td>
@@ -1017,7 +1013,7 @@ function openGroupDetailModal(group) {
     document.getElementById('detailTotalQuantity').textContent = `${group.total_quantity.toLocaleString('ja-JP')} 本`;
     document.getElementById('detailTotalWeight').textContent = `${formatWeight(group.total_weight_kg)} kg`;
     document.getElementById('detailLengthVariations').textContent = formatLengthList(group.length_variations);
-    document.getElementById('detailDedicatedInfo').textContent = group.dedicated_part_number || '汎用品（共通使用）';
+    document.getElementById('detailDedicatedInfo').textContent = group.detail_info || '汎用品（共通使用）';
     document.getElementById('detailInfo').textContent = group.detail_info || '詳細情報なし';
     const groupNamesEl = document.getElementById('detailGroupNames');
     if (groupNamesEl) {
@@ -1054,10 +1050,9 @@ function renderDetailMaterials(group) {
         .slice()
         .sort((a, b) => (a.part_number || '').localeCompare(b.part_number || '', 'ja'))
         .map(material => {
-            const dedicatedInfo = material.dedicated_part_number ? escapeHtml(material.dedicated_part_number) : '―';
             const displayLabel = escapeHtml(buildMaterialDisplayLabel(material));
             const updated = material.updated_at ? new Date(material.updated_at).toLocaleString('ja-JP') : '―';
-            const detailText = material.detail_info ? `<p class="text-xs text-gray-500">詳細: ${escapeHtml(material.detail_info)}</p>` : '';
+            const detailText = material.detail_info ? `<p class="text-xs text-gray-500">追加情報: ${escapeHtml(material.detail_info)}</p>` : '';
 
             return `
                 <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -1066,7 +1061,6 @@ function renderDetailMaterials(group) {
                         ${detailText}
                     </div>
                     <div class="flex flex-col items-start md:items-end text-xs text-gray-500 space-y-1">
-                        <span>専用品番・追加情報: ${dedicatedInfo}</span>
                         <span>最終更新: ${updated}</span>
                     </div>
                 </div>
@@ -1344,14 +1338,3 @@ async function removeMaterialFromGroup(groupId, memberId) {
 </script>
 
 {% endblock %}
-    // 材料グループ名の集約
-    const namesSet = new Set();
-    if (materialGroupMap && group._materialIdSet && group._materialIdSet.size > 0) {
-        group._materialIdSet.forEach(id => {
-            const s = materialGroupMap.get(id);
-            if (s) {
-                for (const n of s) namesSet.add(n);
-            }
-        });
-    }
-    group.material_group_names = Array.from(namesSet).sort((a, b) => a.localeCompare(b, 'ja'));

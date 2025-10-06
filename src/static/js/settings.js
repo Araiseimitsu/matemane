@@ -8,25 +8,7 @@ class SettingsManager {
 
     init() {
         this.loadDensityPresets();
-        this.bindEvents();
         this.updateLastUpdated();
-    }
-
-    bindEvents() {
-        // 比重プリセット保存
-        document.getElementById('saveDensityPreset').addEventListener('click', () => {
-            this.saveDensityPreset();
-        });
-
-        // 削除確認
-        document.getElementById('confirmDelete').addEventListener('click', () => {
-            this.deleteDensityPreset();
-        });
-
-        // モーダルリセット
-        document.getElementById('densityPresetModal').addEventListener('hidden.bs.modal', () => {
-            this.resetForm();
-        });
     }
 
     async loadDensityPresets() {
@@ -138,9 +120,7 @@ class SettingsManager {
 
     confirmDeletePreset(presetId, presetName) {
         this.currentPresetId = presetId;
-        document.querySelector('#deleteConfirmModal .modal-body p').textContent = 
-            `比重プリセット「${presetName}」を削除してもよろしいですか？`;
-        
+
         const modal = document.getElementById('deleteConfirmModal');
         modal.classList.remove('hidden');
         modal.classList.add('flex');

@@ -164,7 +164,7 @@ endblock %} {% block content %}
             <th
               class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
-              専用品番・追加情報
+              追加情報
             </th>
             <th
               class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -348,22 +348,18 @@ endblock %} {% block content %}
           </div>
 
           <div>
-            <!-- 用途区分は廃止（グループ運用へ統一） -->
-          </div>
-
-          <div id="dedicatedPartNumberField">
             <label class="block text-sm font-medium text-gray-700 mb-2"
-              >専用品番・追加情報</label
+              >追加情報</label
             >
             <input
               type="text"
-              id="dedicated_part_number"
-              name="dedicated_part_number"
+              id="detail_info"
+              name="detail_info"
               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400"
               placeholder="例: CM, 平目 22山, G 2m"
             />
             <p class="mt-1 text-xs text-gray-500">
-              追加情報（例: CM, 平目 22山, G 2m）。必要に応じて専用品番などを記載。
+              追加情報（例: CM, 平目 22山, G 2m）
             </p>
           </div>
 

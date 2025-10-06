@@ -113,8 +113,8 @@
 </div>
 
 <!-- 比重プリセット登録・編集モーダル -->
-<div id="densityPresetModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+<div id="densityPresetModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50" onclick="handleModalBackgroundClick(event, 'densityPresetModal')">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" onclick="event.stopPropagation()">
         <div class="mt-3">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-medium text-gray-900" id="densityPresetModalTitle">比重プリセット登録</h3>
@@ -160,8 +160,8 @@
 </div>
 
 <!-- 削除確認モーダル -->
-<div id="deleteConfirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+<div id="deleteConfirmModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50" onclick="handleModalBackgroundClick(event, 'deleteConfirmModal')">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white" onclick="event.stopPropagation()">
         <div class="mt-3">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-medium text-gray-900">削除確認</h3>
@@ -231,26 +231,48 @@ function closeDeleteConfirmModal() {
     modal.classList.remove('flex');
 }
 
-// APIClientが読み込まれるまで待機
-document.addEventListener('DOMContentLoaded', function() {
-    // APIClientが利用可能になるまで少し待機
-    setTimeout(() => {
-        if (typeof window.APIClient !== 'undefined') {
-            // SettingsManagerを初期化
-            window.settingsManager = new SettingsManager();
-            
-            // イベントリスナーを設定
-            document.getElementById('saveDensityPreset').addEventListener('click', function() {
-                window.settingsManager.saveDensityPreset();
-            });
-            
-            document.getElementById('confirmDelete').addEventListener('click', function() {
-                window.settingsManager.deleteDensityPreset();
-            });
-        } else {
-            console.error('APIClient is not available');
+// モーダル背景クリックで閉じる
+function handleModalBackgroundClick(event, modalId) {
+    if (event.target.id === modalId) {
+        if (modalId === 'densityPresetModal') {
+            closeDensityPresetModal();
+        } else if (modalId === 'deleteConfirmModal') {
+            closeDeleteConfirmModal();
         }
-    }, 100);
+    }
+}
+
+// ESCキーでモーダルを閉じる
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const densityModal = document.getElementById('densityPresetModal');
+        const deleteModal = document.getElementById('deleteConfirmModal');
+
+        if (!densityModal.classList.contains('hidden')) {
+            closeDensityPresetModal();
+        } else if (!deleteModal.classList.contains('hidden')) {
+            closeDeleteConfirmModal();
+        }
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (typeof window.APIClient === 'undefined') {
+        console.error('APIClient is not available');
+        return;
+    }
+
+    // SettingsManagerを初期化
+    window.settingsManager = new SettingsManager();
+
+    // イベントリスナーを設定
+    document.getElementById('saveDensityPreset').addEventListener('click', function() {
+        window.settingsManager.saveDensityPreset();
+    });
+
+    document.getElementById('confirmDelete').addEventListener('click', function() {
+        window.settingsManager.deleteDensityPreset();
+    });
 });
 </script>
 

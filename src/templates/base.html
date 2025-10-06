@@ -91,7 +91,7 @@
           <a href="/materials" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
             <i class="fas fa-cubes mr-2"></i>材料マスター
           </a>
-          <a href="/order-flow" class="text-blue-700 hover:text-blue-900 px-3 py-2 rounded-md text-sm font-bold border border-blue-300 bg-blue-50 hover:bg-blue-100">
+          <a href="/order-flow" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
             <i class="fas fa-stream mr-2"></i>発注フロー
           </a>
           <a href="/movements" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
@@ -144,8 +144,7 @@
         <a href="/materials" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
           <i class="fas fa-cubes mr-2"></i>材料マスター
         </a>
-        <a href="/order-flow"
-          class="text-blue-700 hover:text-blue-900 block px-3 py-2 rounded-md text-base font-bold border border-blue-300 bg-blue-50 hover:bg-blue-100">
+        <a href="/order-flow" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
           <i class="fas fa-stream mr-2"></i>発注フロー
         </a>
         <a href="/movements" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
@@ -331,6 +330,26 @@
     //         checkAuth();
     //     }
     // });
+
+    // ナビゲーションのアクティブ状態を設定
+    document.addEventListener('DOMContentLoaded', function() {
+      const currentPath = window.location.pathname;
+      const navLinks = document.querySelectorAll('nav a[href]');
+
+      navLinks.forEach(link => {
+        const href = link.getAttribute('href');
+
+        // デフォルトスタイルに戻す
+        link.classList.remove('text-blue-700', 'hover:text-blue-900', 'font-bold', 'border', 'border-blue-300', 'bg-blue-50', 'hover:bg-blue-100');
+        link.classList.add('text-gray-600', 'hover:text-gray-900', 'font-medium');
+
+        // 現在のページと一致する場合はアクティブスタイルを適用
+        if (href === currentPath || (href !== '/' && currentPath.startsWith(href))) {
+          link.classList.remove('text-gray-600', 'hover:text-gray-900', 'font-medium');
+          link.classList.add('text-blue-700', 'hover:text-blue-900', 'font-bold', 'border', 'border-blue-300', 'bg-blue-50', 'hover:bg-blue-100');
+        }
+      });
+    });
   </script>
 
   {% block extra_scripts %}{% endblock %}

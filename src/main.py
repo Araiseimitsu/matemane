@@ -11,7 +11,7 @@ import logging
 from src.config import settings
 from src.db import create_tables, SessionLocal
 from src.db.models import Location
-from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders, order_utils, excel_viewer, production_schedule, material_management, material_groups, inspections
+from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders, excel_viewer, production_schedule, material_management, material_groups, inspections
 
 # ログ設定
 logging.basicConfig(
@@ -57,7 +57,6 @@ app.include_router(movements.router, prefix="/api/movements", tags=["入出庫�
 app.include_router(labels.router, prefix="/api/labels", tags=["ラベル印刷"])
 app.include_router(density_presets.router, prefix="/api/density-presets", tags=["比重プリセット管理"])
 app.include_router(purchase_orders.router, prefix="/api/purchase-orders", tags=["発注管理"])
-app.include_router(order_utils.router, prefix="/api/order-utils", tags=["発注ユーティリティ"])
 app.include_router(excel_viewer.router, tags=["Excelビューア"])
 app.include_router(production_schedule.router, tags=["生産中一覧"])
 app.include_router(material_management.router, tags=["材料管理"])

@@ -19,13 +19,11 @@ def match_material_for_allocation(
     material_name: str,
     diameter_mm: float,
     shape: MaterialShape,
-    dedicated_part_number: Optional[str] = None,
     length_mm: Optional[int] = None
 ) -> List[Material]:
     """
     在庫引当用の材料マッチング
 
-    仕様変更により、形状・専用品番は同一性判定に用いません。
     材質名と径が一致する材料を返します。
 
     Args:
@@ -33,7 +31,6 @@ def match_material_for_allocation(
         material_name: 材質名（例: SUS303, C3604LCD）
         diameter_mm: 直径（mm）
         shape: 形状（round/hexagon/square）
-        dedicated_part_number: 専用品番（専用材料の場合）
         length_mm: 長さ（mm）※オプション
 
     Returns:
@@ -43,7 +40,7 @@ def match_material_for_allocation(
     normalized_name = material_name.strip().upper()
     normalized_name = normalized_name.replace('Lcd', 'LCD')
 
-    # 基本条件（材質名・径）※形状・専用品番は非使用
+    # 基本条件（材質名・径）
     query = db.query(Material).filter(
         Material.name == normalized_name,
         Material.diameter_mm == diameter_mm,
@@ -55,8 +52,7 @@ def match_material_for_allocation(
 def get_available_stock_for_material(
     db: Session,
     material_id: int,
-    required_quantity: int,
-    dedicated_part_number: Optional[str] = None
+    required_quantity: int
 ) -> int:
     """
     指定材料の利用可能在庫数を取得
@@ -65,7 +61,6 @@ def get_available_stock_for_material(
         db: データベースセッション
         material_id: 材料ID
         required_quantity: 必要数量
-        dedicated_part_number: 専用品番（専用材料の場合）
 
     Returns:
         利用可能な在庫数
@@ -74,8 +69,6 @@ def get_available_stock_for_material(
     material = db.query(Material).filter(Material.id == material_id).first()
     if not material:
         return 0
-
-    # 仕様変更: 専用品番のチェックは行わない
 
     # 在庫数を合計
     total_stock = db.query(func.sum(Item.current_quantity)).join(
@@ -102,6 +95,7 @@ class MaterialInfo(BaseModel):
     id: int
     name: str
     display_name: Optional[str] = None
+    detail_info: Optional[str] = None
     shape: MaterialShape
     diameter_mm: float
     current_density: float

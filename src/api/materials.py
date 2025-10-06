@@ -68,6 +68,40 @@ class MaterialResponse(MaterialBase):
     updated_at: datetime
 
 # API エンドポイント
+@router.get("/count")
+async def get_materials_count(
+    is_active: Optional[bool] = None,
+    shape: Optional[MaterialShape] = None,
+    name: Optional[str] = None,
+    display_name: Optional[str] = None,
+    part_number: Optional[str] = None,
+    diameter_mm: Optional[float] = None,
+    db: Session = Depends(get_db)
+):
+    """材料総件数取得（フィルタ対応）"""
+    query = db.query(Material)
+
+    if is_active is not None:
+        query = query.filter(Material.is_active == is_active)
+
+    if shape is not None:
+        query = query.filter(Material.shape == shape)
+
+    if name is not None:
+        query = query.filter(Material.name.contains(name))
+
+    if display_name is not None:
+        query = query.filter(Material.display_name.contains(display_name))
+
+    if part_number is not None:
+        query = query.filter(Material.part_number == part_number)
+
+    if diameter_mm is not None:
+        query = query.filter(Material.diameter_mm == diameter_mm)
+
+    total = query.count()
+    return {"total": total}
+
 @router.get("/", response_model=List[MaterialResponse])
 async def get_materials(
     request: Request,
@@ -99,6 +133,52 @@ async def get_materials(
     if part_number is not None:
         query = query.filter(Material.part_number == part_number)
 
+    if diameter_mm is not None:
+        query = query.filter(Material.diameter_mm == diameter_mm)
+
+    materials = query.offset(skip).limit(limit).all()
+    return materials
+
+@router.post("/", response_model=MaterialResponse, status_code=status.HTTP_201_CREATED)
+async def create_material(material: MaterialCreate, db: Session = Depends(get_db)):
+    """材料作成"""
+    db_material = Material(**material.model_dump())
+    db.add(db_material)
+    db.commit()
+    db.refresh(db_material)
+    return db_material
+
+@router.get("/{material_id}", response_model=MaterialResponse)
+async def get_material(material_id: int, db: Session = Depends(get_db)):
+    """材料詳細取得"""
+    db_material = db.query(Material).filter(Material.id == material_id).first()
+    if not db_material:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="材料が見つかりません"
+        )
+    return db_material
+
+@router.put("/{material_id}", response_model=MaterialResponse)
+async def update_material(
+    material_id: int,
+    material: MaterialUpdate,
+    db: Session = Depends(get_db)
+):
+    """材料更新"""
+    db_material = db.query(Material).filter(Material.id == material_id).first()
+    if not db_material:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="材料が見つかりません"
+        )
+
+    update_data = material.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_material, key, value)
+
+    db.commit()
+    db.refresh(db_material)
     return db_material
 
 @router.delete("/{material_id}")
@@ -170,157 +250,9 @@ async def calculate_weight(
         "total_weight_kg": round(total_weight_kg, 3)
     }
 
-def parse_material_name(material_name: str) -> str:
-    """
-    材質名を正規化する
-
-    例: C3604Lcd → C3604LCD, SUS303 → SUS303
-    """
-    if not material_name or pd.isna(material_name):
-        return ''
-
-    name = str(material_name).strip().upper()
-
-    # LCDの正規化
-    name = name.replace('Lcd', 'LCD')
-
-    return name
-
-def parse_dimension_text(dimension_text: str) -> Dict:
-    """
-    寸法・形状テキストから形状と寸法を解析する
-
-    解析パターン:
-    - ∅10.0CM → 形状: round, 直径: 10.0mm
-    - ∅12.0 → 形状: round, 直径: 12.0mm
-    - Hex4.0 → 形状: hexagon, 対辺距離: 4.0mm
-    - □15 → 形状: square, 一辺: 15mm
-    """
-    result = {
-        'shape': 'round',  # デフォルト
-        'diameter_mm': None,
-        'parsed_successfully': False
-    }
-
-    if not dimension_text or pd.isna(dimension_text):
-        return result
-
-    # テキストをクリーニング
-    text = str(dimension_text).strip().upper()
-
-    # 形状の判定
-    if '□' in text or 'SQUARE' in text or '角' in text:
-        result['shape'] = 'square'
-    elif '六角' in text or 'HEX' in text or 'HEXAGON' in text:
-        result['shape'] = 'hexagon'
-    else:
-        result['shape'] = 'round'  # デフォルトは丸棒
-
-    # 寸法の抽出（複数パターン対応）
-    diameter_patterns = [
-        r'[∅Φφ]\s*(\d+\.?\d*)',  # ∅10.0, Φ12 等
-        r'[□]\s*(\d+\.?\d*)',     # □15 等
-        r'HEX\s*(\d+\.?\d*)',     # Hex4.0 等
-        r'(\d+\.?\d*)\s*[Mm][Mm]',  # 10.0mm, 12MM 等
-        r'(\d+\.?\d*)\s*CM',      # 10.0CM 等（mmとして扱う）
-        r'(\d+\.?\d*)',           # 数字のみ
-    ]
-
-    for pattern in diameter_patterns:
-        match = re.search(pattern, text)
-        if match:
-            try:
-                diameter = float(match.group(1))
-                if 0.1 <= diameter <= 500:  # 妥当な範囲の寸法のみ
-                    result['diameter_mm'] = diameter
-                    result['parsed_successfully'] = True
-                    break
-            except (ValueError, IndexError):
-                continue
-
-    return result
-
-def parse_material_specification(spec_text: str) -> Dict[str, Optional[str]]:
-    """
-    材質＆材料径テキストを解析（convert_material_master.pyから移植）
-
-    例:
-    - SUS303 φ8.0CM → 材質名: SUS303, 寸法: φ8.0, 追加情報: CM
-    - C3604Lcd φ6.0 平目 22山 → 材質名: C3604LCD, 寸法: φ6.0, 追加情報: 平目 22山
-    - ASK2600S φ8.0CM → 材質名: ASK2600S, 寸法: φ8.0, 追加情報: CM
-    - SUS440C φ6.0G  2m → 材質名: SUS440C, 寸法: φ6.0, 追加情報: G 2m
-    - C3604Lcd Hex4.0 → 材質名: C3604LCD, 寸法: Hex4.0, 追加情報: なし
-    """
-    if not spec_text or pd.isna(spec_text):
-        return {
-            'material_name': None,
-            'dimension': None,
-            'additional_info': None
-        }
-
-    text = str(spec_text).strip()
-
-    # 材質名の抽出（先頭の英数字部分）
-    material_match = re.match(r'^([A-Z0-9\-]+(?:FS|CF|LCD|Lcd|T)?)', text, re.IGNORECASE)
-    material_name = material_match.group(1).upper().replace('Lcd', 'LCD') if material_match else None
-
-    if not material_name:
-        # 材質名が抽出できない場合は全体を材質名として扱う
-        return {
-            'material_name': text[:50],  # 最大50文字
-            'dimension': None,
-            'additional_info': None
-        }
-
-    # 材質名以降の部分
-    remaining = text[len(material_match.group(1)):].strip()
-
-    # 寸法の抽出（複数パターン）
-    dimension = None
-    dimension_patterns = [
-        r'([∅Φφ]\s*\d+\.?\d*)',           # ∅10.0, φ8.0
-        r'(Hex\s*\d+\.?\d*)',              # Hex4.0
-        r'([□]\s*\d+\.?\d*)',              # □15
-        r'(\d+\.?\d*\s*[Mm][Mm])',        # 10.0mm
-    ]
-
-    dimension_match = None
-    for pattern in dimension_patterns:
-        match = re.search(pattern, remaining, re.IGNORECASE)
-        if match:
-            dimension_match = match
-            dimension = match.group(1).strip()
-            break
-
-    # 追加情報の抽出（寸法以外の部分）
-    additional_info = None
-    if dimension_match:
-        # 寸法の前と後ろの部分を結合
-        before = remaining[:dimension_match.start()].strip()
-        after = remaining[dimension_match.end():].strip()
-
-        parts = []
-        if before:
-            parts.append(before)
-        if after:
-            parts.append(after)
-
-        if parts:
-            additional_info = ' '.join(parts)
-    else:
-        # 寸法が見つからない場合、残り全体を追加情報として扱う
-        if remaining:
-            additional_info = remaining
-
-    return {
-        'material_name': material_name,
-        'dimension': dimension,
-        'additional_info': additional_info if additional_info else None
-    }
-
-    # ========================================
-    # 材料別名管理用 API エンドポイント
-    # ========================================
+# ========================================
+# 材料別名管理用 API エンドポイント
+# ========================================
 
 @router.get("/aliases/", response_model=List[MaterialAliasResponse])
 async def get_material_aliases(
@@ -466,42 +398,10 @@ async def search_materials(
             "part_number": material.part_number,
             "shape": material.shape.value,
             "diameter_mm": material.diameter_mm,
-            # usage_typeは廃止。グループ運用へ統一
-            "hierarchy": None
+            "detail_info": material.detail_info
         }
-
-        # 標準規格情報の取得
-        if material.product_id:
-            product = db.query(MaterialProduct).filter(MaterialProduct.id == material.product_id).first()
-            if product:
-                grade = db.query(MaterialGrade).filter(MaterialGrade.id == product.grade_id).first()
-                if grade:
-                    standard = db.query(MaterialStandard).filter(MaterialStandard.id == grade.standard_id).first()
-                    if standard:
-                        result["hierarchy"] = {
-                            "standard": {
-                                "id": standard.id,
-                                "jis_code": standard.jis_code,
-                                "jis_name": standard.jis_name,
-                                "category": standard.category
-                            },
-                            "grade": {
-                                "id": grade.id,
-                                "grade_code": grade.grade_code,
-                                "characteristics": grade.characteristics
-                            },
-                            "product": {
-                                "id": product.id,
-                                "product_code": product.product_code,
-                                "manufacturer": product.manufacturer,
-                                "is_equivalent": product.is_equivalent
-                            }
-                        }
-
         results.append(result)
 
-    # 既存フロントエンドは配列レスポンスを期待しているため、
-    # 結果配列のみを返却（total等は不要）
     return results
 
 

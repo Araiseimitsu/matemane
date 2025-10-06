@@ -13,7 +13,6 @@ from src.db.models import (
     Material, MaterialShape, Lot, Item, Location, OrderType, User,
     MaterialGroup, MaterialGroupMember, InspectionStatus
 )
-from src.api.order_utils import generate_order_number
 from src.utils.auth import get_password_hash
 
 router = APIRouter()

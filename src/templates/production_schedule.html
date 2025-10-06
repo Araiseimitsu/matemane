@@ -183,28 +183,6 @@
 
     // 上部予測一覧は廃止（テーブル内に表示）
 
-    buildMasterStatus(f) {
-      // 未登録材料の表示と登録リンク
-      if (f.material_master_found) {
-        const dim = (f.diameter_mm != null && !Number.isNaN(Number(f.diameter_mm)))
-          ? `φ${Number(f.diameter_mm).toFixed(1)}`
-          : '';
-        return `<span class="inline-flex items-center px-2 py-1 text-xs rounded bg-gray-100 text-gray-700">マスター: 登録済 ${this.escape(dim)}</span>`;
-      }
-      const name = encodeURIComponent(f.material_name || '');
-      const dia = f.diameter_mm != null ? encodeURIComponent(f.diameter_mm) : '';
-      const href = `/materials?name=${name}&diameter_mm=${dia}`;
-      return `
-        <a href="${href}" class="inline-flex items-center px-2 py-1 text-xs rounded bg-red-100 text-red-700 hover:bg-red-200">
-          未マスター → 登録する
-        </a>
-      `;
-    }
-
-    // 廃止: 上部予測バッジ
-
-    // 廃止: 上部予測ローディング
-
     renderRows(items) {
       this.tableBody.querySelectorAll('tr.data-row').forEach((row) => row.remove());
 
