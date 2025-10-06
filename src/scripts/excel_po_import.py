@@ -42,7 +42,7 @@ import pandas as pd
 
 from src.db import SessionLocal
 from src.db.models import (
-    MaterialShape, UsageType,
+    MaterialShape,
     PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, OrderType,
     User, UserRole
 )

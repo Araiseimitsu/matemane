@@ -295,6 +295,7 @@ async def preview_label(management_code: str, db: Session = Depends(get_db)):
             "density": material.current_density
         },
         "lot": {
+            "id": item.lot.id,
             "lot_number": item.lot.lot_number,
             "length_mm": item.lot.length_mm,
             "supplier": item.lot.supplier,

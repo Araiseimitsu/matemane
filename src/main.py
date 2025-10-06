@@ -126,16 +126,10 @@ async def movements_page(request: Request):
     """入出庫管理画面"""
     return templates.TemplateResponse("movements.html", {"request": request})
 
-@app.get("/purchase-orders")
-async def purchase_orders_page(request: Request):
-    """発注管理画面"""
-    return templates.TemplateResponse("purchase_orders.html", {"request": request})
-
-@app.get("/receiving")
-async def receiving_page(request: Request):
-    """入庫確認画面"""
-    return templates.TemplateResponse("receiving.html", {"request": request})
-
+@app.get("/order-flow")
+async def order_flow_page(request: Request):
+    """発注フロー統合画面（Excel取込→入庫確認→検品→印刷）"""
+    return templates.TemplateResponse("order_flow.html", {"request": request})
 
 @app.get("/production-schedule")
 async def production_schedule_page(request: Request):

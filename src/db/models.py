@@ -35,10 +35,6 @@ class OrderType(enum.Enum):
     QUANTITY = "quantity"    # 本数指定
     WEIGHT = "weight"        # 重量指定
 
-class UsageType(enum.Enum):
-    GENERAL = "general"      # 汎用品
-    DEDICATED = "dedicated"  # 専用品
-
 class InspectionStatus(enum.Enum):
     PENDING = "pending"
     PASSED = "passed"
@@ -59,57 +55,6 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
-class MaterialStandard(Base):
-    """材料標準規格マスタ（第1層: JIS標準材質）"""
-    __tablename__ = "material_standards"
-
-    id = Column(Integer, primary_key=True, index=True)
-    jis_code = Column(String(50), unique=True, nullable=False, index=True, comment="JIS規格コード（例: SUS303, C3604）")
-    jis_name = Column(String(100), nullable=False, comment="JIS規格名称")
-    category = Column(String(50), comment="カテゴリ（ステンレス/黄銅/炭素鋼等）")
-    description = Column(Text, comment="説明")
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
-    # リレーション
-    grades = relationship("MaterialGrade", back_populates="standard")
-
-class MaterialGrade(Base):
-    """材料グレード/特性マスタ（第2層）"""
-    __tablename__ = "material_grades"
-
-    id = Column(Integer, primary_key=True, index=True)
-    standard_id = Column(Integer, ForeignKey("material_standards.id"), nullable=False)
-    grade_code = Column(String(50), nullable=False, index=True, comment="グレードコード（例: LCD, 標準）")
-    characteristics = Column(String(200), comment="特性（快削性、耐食性等）")
-    description = Column(Text, comment="説明")
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
-    # リレーション
-    standard = relationship("MaterialStandard", back_populates="grades")
-    products = relationship("MaterialProduct", back_populates="grade")
-
-class MaterialProduct(Base):
-    """材料実製品/ブランドマスタ（第3層）"""
-    __tablename__ = "material_products"
-
-    id = Column(Integer, primary_key=True, index=True)
-    grade_id = Column(Integer, ForeignKey("material_grades.id"), nullable=False)
-    product_code = Column(String(100), nullable=False, index=True, comment="製品コード（例: ASK3000, C3604LCD）")
-    manufacturer = Column(String(200), comment="メーカー名")
-    is_equivalent = Column(Boolean, default=False, comment="同等品フラグ")
-    description = Column(Text, comment="説明")
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-
-    # リレーション
-    grade = relationship("MaterialGrade", back_populates="products")
-    materials = relationship("Material", back_populates="product")
-
 class MaterialAlias(Base):
     """材料別名管理テーブル（表記揺れ対応）"""
     __tablename__ = "material_aliases"
@@ -127,7 +72,6 @@ class Material(Base):
     __tablename__ = "materials"
 
     id = Column(Integer, primary_key=True, index=True)
-    product_id = Column(Integer, ForeignKey("material_products.id"), nullable=True, comment="製品ID（第3層との紐付け）")
     part_number = Column(String(100), nullable=True, comment="品番")
     name = Column(String(100), nullable=False, comment="材質名（例：S45C）")
     display_name = Column(String(200), nullable=True, comment="表示名（表記揺れ対応: φ10.0D等）")
@@ -136,15 +80,11 @@ class Material(Base):
     shape = Column(Enum(MaterialShape), nullable=False, comment="断面形状")
     diameter_mm = Column(Float, nullable=False, comment="直径または一辺の長さ（mm）")
     current_density = Column(Float, nullable=False, comment="現在の比重（g/cm³）")
-    usage_type = Column(Enum(UsageType), nullable=True, default=UsageType.GENERAL, comment="用途区分（汎用/専用）")
-    dedicated_part_number = Column(String(100), nullable=True, comment="専用品番")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     # リレーション
-    product = relationship("MaterialProduct", back_populates="materials")
-    density_history = relationship("Density", back_populates="material")
     lots = relationship("Lot", back_populates="material")
     aliases = relationship("MaterialAlias", back_populates="material")
 
@@ -186,21 +126,6 @@ class MaterialGroupMember(Base):
     group = relationship("MaterialGroup", back_populates="members")
     material = relationship("Material", backref="group_memberships")
 
-class Density(Base):
-    __tablename__ = "densities"
-
-    id = Column(Integer, primary_key=True, index=True)
-    material_id = Column(Integer, ForeignKey("materials.id"), nullable=False)
-    density = Column(Float, nullable=False, comment="比重（g/cm³）")
-    effective_from = Column(DateTime(timezone=True), nullable=False, comment="適用開始日")
-    notes = Column(Text, comment="変更理由など")
-    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-
-    # リレーション
-    material = relationship("Material", back_populates="density_history")
-    creator = relationship("User")
-
 class Location(Base):
     __tablename__ = "locations"
 
@@ -227,7 +152,6 @@ class Lot(Base):
     received_unit_price = Column(Float, comment="入庫時単価")
     received_amount = Column(Float, comment="入庫時金額")
     notes = Column(Text, comment="備考")
-    is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -300,7 +224,6 @@ class PurchaseOrder(Base):
     status = Column(Enum(PurchaseOrderStatus), nullable=False, default=PurchaseOrderStatus.PENDING, comment="発注状態")
     purpose = Column(Text, comment="用途・製品名（例：○○製品用材料）")
     notes = Column(Text, comment="備考")
-    total_amount = Column(Float, comment="合計金額")
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -322,7 +245,6 @@ class PurchaseOrderItem(Base):
     received_weight_kg = Column(Float, comment="入庫重量（kg）")
     unit_price = Column(Float, comment="単価")
     amount = Column(Float, comment="金額（単価 × 数量）")
-    management_code = Column(CHAR(36), unique=True, nullable=False, default=lambda: str(uuid.uuid4()), comment="事前生成UUID管理コード")
     status = Column(Enum(PurchaseOrderItemStatus), nullable=False, default=PurchaseOrderItemStatus.PENDING, comment="アイテム状態")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

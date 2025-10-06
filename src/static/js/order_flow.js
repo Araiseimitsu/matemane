@@ -1,0 +1,1909 @@
+// 発注フロー統合ページの主要機能
+
+// ==== タブ切り替え機能 ====
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTabs();
+    initializeImportTab();
+    initializeOrdersTab();
+    initializeReceivingTab();
+    initializeInspectionTab();
+    initializePrintTab();
+});
+
+function initializeTabs() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetId = button.getAttribute('aria-controls');
+
+            // すべてのタブとパネルを非アクティブ化
+            tabButtons.forEach(btn => {
+                btn.classList.remove('active');
+                btn.setAttribute('aria-selected', 'false');
+            });
+            tabPanels.forEach(panel => {
+                panel.classList.add('hidden');
+            });
+
+            // 選択されたタブとパネルをアクティブ化
+            button.classList.add('active');
+            button.setAttribute('aria-selected', 'true');
+            document.getElementById(targetId).classList.remove('hidden');
+
+            // タブ切り替え時のデータ再読込
+            if (targetId === 'panel-orders') {
+                loadOrders(1);
+            } else if (targetId === 'panel-receiving') {
+                loadReceivingItems();
+            } else if (targetId === 'panel-inspection') {
+                loadInspectionItemsList();
+            } else if (targetId === 'panel-print') {
+                loadPrintableItems();
+            }
+        });
+    });
+}
+
+// ==== Excel取込タブ ====
+function initializeImportTab() {
+    const btn = document.getElementById('runExternalScriptBtn');
+    if (!btn) return;
+
+    btn.addEventListener('click', async function() {
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.classList.add('opacity-50');
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 実行中...';
+
+        try {
+            const dryRunToggle = document.getElementById('externalDryRunToggle');
+            const isDryRun = dryRunToggle ? !!dryRunToggle.checked : true;
+
+            if (!isDryRun) {
+                const ok = confirm('DBに書き込みを行います。よろしいですか？');
+                if (!ok) {
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50');
+                    btn.innerHTML = originalText;
+                    return;
+                }
+            }
+
+            const res = await fetch(
+                `/api/purchase-orders/external-import-test?dry_run=${isDryRun ? 'true' : 'false'}`,
+                { method: 'POST' }
+            );
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.detail || 'APIエラー');
+
+            const r = data?.result || {};
+            const modeLabel = isDryRun ? 'DRY-RUN完了' : '実行完了';
+            const msg = `${modeLabel}: 対象=${r.total_rows ?? '?'}, 処理=${r.processed ?? '?'}, 作成=${r.created_orders ?? '?'}, スキップ=${r.skipped ?? '?'}`;
+
+            // 結果表示エリアに表示
+            const resultArea = document.getElementById('importResultArea');
+            const resultContent = document.getElementById('importResultContent');
+            if (resultArea && resultContent) {
+                resultArea.classList.remove('hidden');
+                resultContent.innerHTML = `
+                    <p class="font-medium">${modeLabel}</p>
+                    <ul class="mt-2 space-y-1">
+                        <li>対象行数: ${r.total_rows ?? '?'}</li>
+                        <li>処理件数: ${r.processed ?? '?'}</li>
+                        <li>作成発注数: ${r.created_orders ?? '?'}</li>
+                        <li>スキップ: ${r.skipped ?? '?'}</li>
+                    </ul>
+                `;
+            }
+
+            if (typeof showToast === 'function') {
+                showToast(msg, 'success');
+                if (!isDryRun) {
+                    // 実行時は発注一覧タブに切り替え
+                    document.getElementById('tab-orders').click();
+                }
+            } else {
+                alert(msg);
+            }
+            console.log('Excel取込結果', r);
+        } catch (e) {
+            const msg = `Excel取込に失敗: ${e?.message || e}`;
+            if (typeof showToast === 'function') {
+                showToast(msg, 'error');
+            } else {
+                alert(msg);
+            }
+            console.error(e);
+        } finally {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50');
+            btn.innerHTML = originalText;
+        }
+    });
+}
+
+// ==== 発注一覧タブ ====
+let currentOrdersPage = 1;
+const ordersPageSize = 50;
+
+function initializeOrdersTab() {
+    document.getElementById('refreshOrdersBtn')?.addEventListener('click', () => loadOrders(1));
+    document.getElementById('searchOrdersBtn')?.addEventListener('click', () => searchOrders());
+    document.getElementById('resetOrderFiltersBtn')?.addEventListener('click', resetOrderFilters);
+
+    // フィルター変更時の自動検索
+    document.getElementById('orderStatusFilter')?.addEventListener('change', () => searchOrders());
+    document.getElementById('orderSupplierFilter')?.addEventListener('input', debounce(() => searchOrders(), 500));
+}
+
+async function loadOrders(page = 1) {
+    const tableBody = document.getElementById('ordersTableBody');
+    const loading = document.getElementById('ordersLoading');
+    const empty = document.getElementById('ordersEmpty');
+
+    loading.classList.remove('hidden');
+    tableBody.innerHTML = '';
+    empty.classList.add('hidden');
+
+    try {
+        const response = await fetch(`/api/purchase-orders/?page=${page}&page_size=${ordersPageSize}`);
+        const data = await response.json();
+
+        loading.classList.add('hidden');
+
+        if (!data.items || data.items.length === 0) {
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        data.items.forEach(order => {
+            const row = createOrderRow(order);
+            tableBody.appendChild(row);
+        });
+
+        currentOrdersPage = data.page;
+        // ページネーションは簡易版（必要に応じて拡張可能）
+
+    } catch (error) {
+        loading.classList.add('hidden');
+        console.error('発注一覧の読み込みエラー:', error);
+        if (typeof showToast === 'function') {
+            showToast('発注一覧の読み込みに失敗しました', 'error');
+        }
+    }
+}
+
+function createOrderRow(order) {
+    const row = document.createElement('tr');
+    row.className = 'hover:bg-gray-50';
+
+    const statusBadge = getStatusBadge(order.status);
+    const orderDate = new Date(order.order_date).toLocaleDateString('ja-JP');
+    const deliveryDate = order.expected_delivery_date
+        ? new Date(order.expected_delivery_date).toLocaleDateString('ja-JP')
+        : '-';
+    const firstItem = Array.isArray(order.items) && order.items.length > 0 ? order.items[0] : null;
+    const materialSpecDisplay = firstItem
+        ? `${firstItem.item_name}${order.items.length > 1 ? ` 他${order.items.length - 1}件` : ''}`
+        : '-';
+
+    row.innerHTML = `
+        <td class="px-4 py-3 text-sm font-medium text-gray-900">${order.order_number}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${order.supplier}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${orderDate}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${deliveryDate}</td>
+        <td class="px-4 py-3">${statusBadge}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${materialSpecDisplay}</td>
+        <td class="px-4 py-3">
+            <button onclick="viewOrderDetail(${order.id})"
+                    class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                詳細
+            </button>
+        </td>
+    `;
+
+    return row;
+}
+
+function getStatusBadge(status) {
+    const statusMap = {
+        pending: { text: '発注済み', class: 'bg-yellow-100 text-yellow-800' },
+        partial: { text: '一部入庫', class: 'bg-blue-100 text-blue-800' },
+        completed: { text: '完了', class: 'bg-green-100 text-green-800' },
+        cancelled: { text: 'キャンセル', class: 'bg-red-100 text-red-800' },
+    };
+
+    const statusInfo = statusMap[status] || { text: status, class: 'bg-gray-100 text-gray-800' };
+
+    return `<span class="px-2 py-1 text-xs font-medium rounded-full ${statusInfo.class}">
+                ${statusInfo.text}
+            </span>`;
+}
+
+function searchOrders() {
+    const status = document.getElementById('orderStatusFilter')?.value;
+    const supplier = document.getElementById('orderSupplierFilter')?.value;
+
+    const rows = document.querySelectorAll('#ordersTableBody tr');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const rowSupplier = row.cells[1].textContent.toLowerCase();
+        const rowStatus = row.cells[4].textContent.trim();
+
+        const matchSupplier = !supplier || rowSupplier.includes(supplier.toLowerCase());
+        const matchStatus = !status || rowStatus.includes(getStatusText(status));
+
+        if (matchSupplier && matchStatus) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function getStatusText(status) {
+    const statusMap = {
+        pending: '発注済み',
+        partial: '一部入庫',
+        completed: '完了',
+        cancelled: 'キャンセル'
+    };
+    return statusMap[status] || status;
+}
+
+function resetOrderFilters() {
+    document.getElementById('orderStatusFilter').value = '';
+    document.getElementById('orderSupplierFilter').value = '';
+    loadOrders(1);
+}
+
+async function viewOrderDetail(orderId) {
+    try {
+        const response = await fetch(`/api/purchase-orders/${orderId}`);
+        const order = await response.json();
+
+        // 簡易モーダルで詳細表示
+        const orderDate = new Date(order.order_date).toLocaleDateString('ja-JP');
+        const deliveryDate = order.expected_delivery_date
+            ? new Date(order.expected_delivery_date).toLocaleDateString('ja-JP')
+            : '-';
+        const firstItem = Array.isArray(order.items) && order.items.length > 0 ? order.items[0] : null;
+        
+        let orderDisplay = '';
+        if (firstItem) {
+            if (firstItem.order_type === 'weight') {
+                orderDisplay = `${firstItem.ordered_weight_kg ?? '-'}kg`;
+            } else {
+                orderDisplay = `${firstItem.ordered_quantity ?? '-'}本`;
+            }
+        }
+
+        const detailHtml = `
+            <div class="space-y-4">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-4">発注概要</h3>
+                    <dl class="grid grid-cols-2 gap-4">
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">発注番号</dt>
+                            <dd class="text-sm text-gray-900 mt-1">${order.order_number}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">仕入先</dt>
+                            <dd class="text-sm text-gray-900 mt-1">${order.supplier}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">発注日</dt>
+                            <dd class="text-sm text-gray-900 mt-1">${orderDate}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">納期予定日</dt>
+                            <dd class="text-sm text-gray-900 mt-1">${deliveryDate}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-gray-500">状態</dt>
+                            <dd class="text-sm mt-1">${getStatusBadge(order.status)}</dd>
+                        </div>
+                    </dl>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">発注内容</h3>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <div class="text-sm text-gray-900 font-medium mb-1">${firstItem?.item_name || '-'}</div>
+                        <div class="text-sm text-gray-700">
+                            ${orderDisplay}
+                            <span class="text-xs text-gray-500 ml-2">
+                                ${firstItem?.order_type === 'weight' ? '重量指定' : '本数指定'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // アラートまたはカスタムモーダルで表示
+        if (typeof showToast === 'function') {
+            // カスタムモーダルがあれば使用
+            showDetailModal('発注詳細', detailHtml);
+        } else {
+            // フォールバック: シンプルなアラート
+            alert(`発注番号: ${order.order_number}\n仕入先: ${order.supplier}\n発注日: ${orderDate}`);
+        }
+    } catch (error) {
+        console.error('発注詳細取得エラー:', error);
+        if (typeof showToast === 'function') {
+            showToast('発注詳細の取得に失敗しました', 'error');
+        }
+    }
+}
+
+function showDetailModal(title, content) {
+    // 簡易モーダルを動的に作成
+    const modalId = 'orderDetailModal';
+    let modal = document.getElementById(modalId);
+    
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+        modal.innerHTML = `
+            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-gray-900">${title}</h2>
+                    <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-6" id="orderDetailContent"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // ESCキーで閉じる
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeDetailModal();
+            }
+        });
+        
+        // 背景クリックで閉じる
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeDetailModal();
+            }
+        });
+    }
+    
+    document.getElementById('orderDetailContent').innerHTML = content;
+    modal.classList.remove('hidden');
+}
+
+function closeDetailModal() {
+    const modal = document.getElementById('orderDetailModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+// ==== 入庫確認タブ ====
+function initializeReceivingTab() {
+    document.getElementById('refreshReceivingBtn')?.addEventListener('click', loadReceivingItems);
+    document.getElementById('searchReceivingBtn')?.addEventListener('click', searchReceivingItems);
+    document.getElementById('resetReceivingFiltersBtn')?.addEventListener('click', resetReceivingFilters);
+    document.getElementById('includeInspectedFilter')?.addEventListener('change', loadReceivingItems);
+    
+    // 入庫確認モーダル
+    document.getElementById('closeReceiveModal')?.addEventListener('click', hideReceiveModal);
+    document.getElementById('cancelReceive')?.addEventListener('click', hideReceiveModal);
+    document.getElementById('receiveForm')?.addEventListener('submit', handleReceive);
+    
+    // モーダル背景クリックで閉じる
+    const receiveModal = document.getElementById('receiveModal');
+    if (receiveModal) {
+        receiveModal.addEventListener('click', function(e) {
+            if (e.target === receiveModal || e.target.classList.contains('modal-overlay')) {
+                hideReceiveModal();
+            }
+        });
+    }
+    
+    // ESCキーでモーダルを閉じる
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const receiveModal = document.getElementById('receiveModal');
+            if (receiveModal && !receiveModal.classList.contains('hidden')) {
+                hideReceiveModal();
+            }
+        }
+    });
+}
+
+async function loadReceivingItems() {
+    const tableBody = document.getElementById('receivingItemsTableBody');
+    const loading = document.getElementById('receivingLoading');
+    const empty = document.getElementById('receivingEmpty');
+
+    loading.classList.remove('hidden');
+    tableBody.innerHTML = '';
+    empty.classList.add('hidden');
+
+    try {
+        const includeInspected = document.getElementById('includeInspectedFilter')?.checked ? 'true' : 'false';
+        const response = await fetch(`/api/purchase-orders/pending-or-inspection/items/?include_inspected=${includeInspected}`);
+        const items = await response.json();
+
+        loading.classList.add('hidden');
+
+        if (items.length === 0) {
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        // 発注情報も取得（N+1問題対策：一括取得）
+        const orderIds = [...new Set(items.map(i => i.purchase_order_id))];
+        const ordersMap = new Map();
+
+        await Promise.all(
+            orderIds.map(async (orderId) => {
+                try {
+                    const orderResponse = await fetch(`/api/purchase-orders/${orderId}`);
+                    if (orderResponse.ok) {
+                        const order = await orderResponse.json();
+                        ordersMap.set(orderId, order);
+                    }
+                } catch (error) {
+                    console.error('発注情報取得エラー:', error);
+                }
+            })
+        );
+
+        // 各アイテムに発注情報を紐付け
+        const itemsWithOrders = items.map(item => ({
+            ...item,
+            purchase_order: ordersMap.get(item.purchase_order_id) || null
+        }));
+
+        itemsWithOrders.forEach(item => {
+            const row = createReceivingItemRow(item);
+            tableBody.appendChild(row);
+        });
+
+    } catch (error) {
+        loading.classList.add('hidden');
+        console.error('入庫待ちアイテム読み込みエラー:', error);
+        if (typeof showToast === 'function') {
+            showToast('入庫待ちアイテムの読み込みに失敗しました', 'error');
+        }
+    }
+}
+
+function createReceivingItemRow(item) {
+    const row = document.createElement('tr');
+    row.className = 'hover:bg-gray-50';
+
+    const orderNumber = item.purchase_order ? item.purchase_order.order_number : '-';
+    const supplier = item.purchase_order ? item.purchase_order.supplier : '-';
+    
+    const isReceived = String(item.status).toUpperCase() === 'RECEIVED';
+    const receivingBtnLabel = isReceived ? '再編集' : '入庫確認';
+    const receivingBtnClasses = isReceived
+        ? 'bg-amber-500 text-white px-3 py-1 rounded text-sm hover:bg-amber-600'
+        : 'bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700';
+
+    // 検品状態バッジ
+    let inspectionText = '-';
+    let inspectionClass = 'bg-gray-100 text-gray-600';
+    if (isReceived) {
+        const statusUpper = String(item.inspection_status || 'PENDING').toUpperCase();
+        if (statusUpper === 'PASSED') {
+            inspectionText = '合格';
+            inspectionClass = 'bg-green-100 text-green-700';
+        } else if (statusUpper === 'FAILED') {
+            inspectionText = '不合格';
+            inspectionClass = 'bg-red-100 text-red-700';
+        } else {
+            inspectionText = '未検品';
+            inspectionClass = 'bg-amber-100 text-amber-700';
+        }
+    }
+
+    row.innerHTML = `
+        <td class="px-4 py-3 text-sm font-medium text-gray-900">${orderNumber}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${supplier}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${item.item_name}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${getOrderDisplayText(item)}</td>
+        <td class="px-4 py-3">
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${inspectionClass}">${inspectionText}</span>
+        </td>
+        <td class="px-4 py-3">
+            <button onclick="showReceiveModal(${item.id})" class="${receivingBtnClasses}">
+                ${receivingBtnLabel}
+            </button>
+        </td>
+    `;
+
+    return row;
+}
+
+function getOrderDisplayText(item) {
+    if (item.order_type === 'weight') {
+        return `${item.ordered_weight_kg}kg`;
+    } else {
+        return `${item.ordered_quantity}本`;
+    }
+}
+
+function searchReceivingItems() {
+    const supplier = document.getElementById('receivingSupplierFilter')?.value?.toLowerCase() || '';
+    const material = document.getElementById('receivingMaterialFilter')?.value?.toLowerCase() || '';
+
+    const rows = document.querySelectorAll('#receivingItemsTableBody tr');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const rowSupplier = row.cells[1].textContent.toLowerCase();
+        const rowMaterial = row.cells[2].textContent.toLowerCase();
+
+        const matchSupplier = !supplier || rowSupplier.includes(supplier);
+        const matchMaterial = !material || rowMaterial.includes(material);
+
+        if (matchSupplier && matchMaterial) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function resetReceivingFilters() {
+    document.getElementById('receivingSupplierFilter').value = '';
+    document.getElementById('receivingMaterialFilter').value = '';
+    loadReceivingItems();
+}
+
+// 入庫確認モーダル（receiving.jsから移植・簡略化）
+async function showReceiveModal(itemId) {
+    try {
+        const response = await fetch(`/api/purchase-orders/pending-or-inspection/items/`);
+        const items = await response.json();
+        const item = items.find(i => i.id === itemId);
+
+        if (!item) {
+            if (typeof showToast === 'function') {
+                showToast('アイテムが見つかりません', 'error');
+            }
+            return;
+        }
+
+        const orderResponse = await fetch(`/api/purchase-orders/${item.purchase_order_id}`);
+        const order = await orderResponse.json();
+
+        document.getElementById('receiveItemId').value = itemId;
+        
+        // 比重プリセット一覧を読み込み
+        await loadDensityPresets();
+
+        const itemInfo = document.getElementById('itemInfo');
+        itemInfo.innerHTML = `
+            <div>
+                <dt class="font-medium text-gray-500">発注番号</dt>
+                <dd class="text-gray-900">${order.order_number}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">仕入先</dt>
+                <dd class="text-gray-900">${order.supplier}</dd>
+            </div>
+            <div class="md:col-span-2">
+                <dt class="font-medium text-gray-500 mb-2">材料仕様（発注品名）</dt>
+                <dd class="text-gray-900">
+                    <textarea id="purchaseItemNameTextarea" class="w-full mt-1 p-2 text-sm border rounded bg-white" rows="2" readonly>${item.item_name}</textarea>
+                    <div class="mt-1">
+                        <button type="button" class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
+                            onclick="copySelectionFromTextarea('purchaseItemNameTextarea')">
+                            選択範囲をコピー
+                        </button>
+                    </div>
+                </dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">発注数量/重量</dt>
+                <dd class="text-gray-900">${getOrderDisplayText(item)}</dd>
+            </div>
+        `;
+
+        // 入荷日のデフォルト値を本日に設定
+        const now = new Date();
+        const localDate = now.getFullYear() + '-' +
+            String(now.getMonth() + 1).padStart(2, '0') + '-' +
+            String(now.getDate()).padStart(2, '0');
+        document.querySelector('input[name="received_date"]').value = localDate;
+
+        // 材料情報の要素を取得
+        const diameterInput = document.querySelector('input[name="diameter_input"]');
+        const densityInput = document.getElementById('densityInput');
+        const lengthInput = document.querySelector('input[name="length_mm"]');
+
+        // 長さのデフォルト値を2500に設定
+        if (lengthInput) {
+            lengthInput.value = 2500;
+        }
+
+        // 発注数量・発注タイプを保存
+        currentOrderType = item.order_type || 'quantity';
+        currentOrderedQuantity = item.order_type === 'weight' ? 0 : item.ordered_quantity;
+        document.getElementById('orderedQuantity').textContent = currentOrderedQuantity > 0 ? currentOrderedQuantity : '-';
+
+        // ロット行をクリアして初期化
+        clearLotRows();
+        
+        // 最初の1行に発注数量/重量を自動入力
+        if (item.order_type === 'weight' && item.ordered_weight_kg) {
+            addLotRow(null, item.ordered_weight_kg);
+        } else if (item.ordered_quantity) {
+            addLotRow(item.ordered_quantity, null);
+        } else {
+            addLotRow();
+        }
+        
+        // addLotBtnのイベントリスナーを設定
+        const addLotBtn = document.getElementById('addLotBtn');
+        if (addLotBtn) {
+            addLotBtn.onclick = addLotRow;
+        }
+
+        // 材料情報変更時に合計を更新（イベントリスナーの重複を防ぐ）
+        
+        if (diameterInput) {
+            diameterInput.removeEventListener('input', updateTotalQuantity);
+            diameterInput.addEventListener('input', updateTotalQuantity);
+        }
+        if (densityInput) {
+            densityInput.removeEventListener('input', updateTotalQuantity);
+            densityInput.addEventListener('input', updateTotalQuantity);
+        }
+        if (lengthInput) {
+            lengthInput.removeEventListener('input', updateTotalQuantity);
+            lengthInput.addEventListener('input', updateTotalQuantity);
+        }
+
+        document.getElementById('receiveModal').classList.remove('hidden');
+    } catch (error) {
+        console.error('入庫確認モーダル表示エラー:', error);
+        if (typeof showToast === 'function') {
+            showToast('入庫確認画面の表示に失敗しました', 'error');
+        }
+    }
+}
+
+function hideReceiveModal() {
+    document.getElementById('receiveModal').classList.add('hidden');
+    document.getElementById('receiveForm').reset();
+    
+    // 比重プリセット選択をリセット
+    const densityPresetSelect = document.getElementById('densityPresetSelect');
+    if (densityPresetSelect) {
+        densityPresetSelect.value = '';
+    }
+    
+    // ロット行をクリア
+    clearLotRows();
+    
+    // 発注数量をリセット
+    currentOrderedQuantity = 0;
+}
+
+// 換算機能のイベントリスナーを設定
+function setupConversionListeners() {
+    const quantityInput = document.getElementById('quantityInput');
+    const weightInput = document.getElementById('weightInput');
+    const diameterInput = document.querySelector('input[name="diameter_input"]');
+    const densityInput = document.getElementById('densityInput');
+    const lengthInput = document.querySelector('input[name="length_mm"]');
+    const inputMethodRadios = document.querySelectorAll('input[name="input_method"]');
+
+    // 本数入力時：重量をクリア、本数モードに切り替え
+    if (quantityInput) {
+        quantityInput.oninput = function() {
+            if (this.value) {
+                weightInput.value = '';
+                const quantityRadio = document.querySelector('input[name="input_method"][value="quantity"]');
+                if (quantityRadio) quantityRadio.checked = true;
+            }
+            updateConversion();
+        };
+    }
+
+    // 重量入力時：本数をクリア、重量モードに切り替え
+    if (weightInput) {
+        weightInput.oninput = function() {
+            if (this.value) {
+                quantityInput.value = '';
+                const weightRadio = document.querySelector('input[name="input_method"][value="weight"]');
+                if (weightRadio) weightRadio.checked = true;
+            }
+            updateConversion();
+        };
+    }
+
+    // 径・比重・長さ変更時に換算を更新
+    if (diameterInput) diameterInput.addEventListener('input', updateConversion);
+    if (densityInput) densityInput.addEventListener('input', updateConversion);
+    if (lengthInput) lengthInput.addEventListener('input', updateConversion);
+
+    // 入力方式切り替え時
+    inputMethodRadios.forEach(radio => {
+        radio.onchange = function() {
+            if (this.value === 'quantity') {
+                if (quantityInput) quantityInput.focus();
+                if (weightInput) weightInput.value = '';
+            } else {
+                if (weightInput) weightInput.focus();
+                if (quantityInput) quantityInput.value = '';
+            }
+            updateConversion();
+        };
+    });
+}
+
+// 比重プリセット一覧を読み込み
+async function loadDensityPresets() {
+    try {
+        const response = await fetch('/api/density-presets/?is_active=true&limit=100');
+        if (!response.ok) {
+            console.warn('比重プリセットの取得に失敗しました');
+            return;
+        }
+        
+        const presets = await response.json();
+        const selectElement = document.getElementById('densityPresetSelect');
+        
+        if (!selectElement) return;
+        
+        // 既存のオプションをクリア（最初のプレースホルダーは残す）
+        selectElement.innerHTML = '<option value="">プリセットから選択</option>';
+        
+        // プリセットを追加
+        presets.forEach(preset => {
+            const option = document.createElement('option');
+            option.value = preset.density;
+            option.textContent = `${preset.name} (${preset.density})`;
+            option.dataset.name = preset.name;
+            selectElement.appendChild(option);
+        });
+        
+        // 選択イベントを設定
+        selectElement.onchange = function() {
+            const densityInput = document.getElementById('densityInput');
+            if (this.value && densityInput) {
+                densityInput.value = this.value;
+                
+                // 選択したプリセット名をトーストで通知
+                const selectedOption = this.options[this.selectedIndex];
+                if (selectedOption && selectedOption.dataset.name && typeof showToast === 'function') {
+                    showToast(`比重プリセット「${selectedOption.dataset.name}」を適用しました`, 'success');
+                }
+                
+                // 合計を更新
+                if (typeof updateTotalQuantity === 'function') {
+                    updateTotalQuantity();
+                }
+            }
+        };
+        
+    } catch (error) {
+        console.error('比重プリセット読み込みエラー:', error);
+    }
+}
+
+async function handleReceive(event) {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    const itemId = formData.get('item_id');
+
+    // 径入力をパース
+    const diameterInput = formData.get('diameter_input') || '';
+    const parsedDiameter = parseDiameterInputValue(diameterInput);
+    
+    if (parsedDiameter.error) {
+        if (typeof showToast === 'function') {
+            showToast(parsedDiameter.error, 'error');
+        }
+        return;
+    }
+
+    // 材料情報（共通）
+    const commonMaterialData = {
+        material_name: formData.get('material_name'),
+        detail_info: formData.get('detail_info') || null,
+        diameter_mm: parsedDiameter.diameter_mm,
+        shape: parsedDiameter.shape,
+        density: parseFloat(formData.get('density')),
+        length_mm: parseInt(formData.get('length_mm')),
+        received_date: formData.get('received_date') + 'T00:00:00'
+    };
+
+    // 各ロット情報を収集
+    const lots = [];
+    for (let i = 1; i <= lotRowCounter; i++) {
+        const lotRow = document.getElementById(`lot-row-${i}`);
+        if (!lotRow) continue;
+
+        const lotNumber = formData.get(`lot_number_${i}`);
+        const quantityStr = formData.get(`lot_quantity_${i}`);
+        const weightStr = formData.get(`lot_weight_${i}`);
+        const location = formData.get(`lot_location_${i}`);
+
+        console.log(`ロット ${i}:`, { lotNumber, quantityStr, weightStr, location }); // デバッグ
+
+        if (!lotNumber || lotNumber.trim() === '') {
+            if (typeof showToast === 'function') {
+                showToast(`ロット ${i}: ロット番号は必須です`, 'error');
+            }
+            return;
+        }
+
+        // 空文字列をnullに変換
+        const quantity = quantityStr && quantityStr.trim() !== '' ? quantityStr : null;
+        const weight = weightStr && weightStr.trim() !== '' ? weightStr : null;
+
+        if (!quantity && !weight) {
+            if (typeof showToast === 'function') {
+                showToast(`ロット ${i}: 数量または重量を入力してください`, 'error');
+            }
+            return;
+        }
+
+        const lotData = {
+            lot_number: lotNumber.trim(),
+            location_id: location && location.trim() !== '' ? parseInt(location) : null
+        };
+
+        // 数量または重量を設定
+        if (quantity) {
+            lotData.received_quantity = parseInt(quantity);
+        } else if (weight) {
+            lotData.received_weight_kg = parseFloat(weight);
+        }
+
+        lots.push(lotData);
+    }
+
+    if (lots.length === 0) {
+        if (typeof showToast === 'function') {
+            showToast('少なくとも1つのロットを入力してください', 'error');
+        }
+        return;
+    }
+
+    // 合計数量チェック（本数指定のロットのみ）
+    const totalQuantity = lots.reduce((sum, lot) => sum + (lot.received_quantity || 0), 0);
+    if (currentOrderedQuantity > 0 && totalQuantity > 0 && totalQuantity !== currentOrderedQuantity) {
+        const confirmMsg = `合計数量（${totalQuantity}本）が発注数量（${currentOrderedQuantity}本）と一致しません。このまま登録しますか？`;
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+    }
+
+    // 各ロットに対してAPI呼び出し
+    try {
+        let successCount = 0;
+        
+        for (const lot of lots) {
+            const receiveData = {
+                ...commonMaterialData,
+                lot_number: lot.lot_number
+            };
+
+            // 数量または重量を設定
+            if (lot.received_quantity) {
+                receiveData.received_quantity = lot.received_quantity;
+            } else if (lot.received_weight_kg) {
+                receiveData.received_weight_kg = lot.received_weight_kg;
+            }
+
+            if (lot.location_id) {
+                receiveData.location_id = lot.location_id;
+            }
+
+            console.log('送信データ:', receiveData); // デバッグ
+            
+            const response = await fetch(`/api/purchase-orders/items/${itemId}/receive/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(receiveData)
+            });
+
+            if (!response.ok) {
+                let errorMsg;
+                // レスポンスボディを一度テキストとして読み込む
+                const responseText = await response.text();
+                console.error('サーバーエラー（テキスト）:', responseText);
+                
+                try {
+                    // テキストをJSONとしてパース
+                    const error = JSON.parse(responseText);
+                    errorMsg = error.detail || JSON.stringify(error);
+                } catch (e) {
+                    // JSONパースに失敗した場合はテキストをそのまま使用
+                    errorMsg = responseText.substring(0, 200) || `サーバーエラー (${response.status})`;
+                }
+                throw new Error(`ロット ${lot.lot_number}: ${errorMsg}`);
+            }
+
+            successCount++;
+        }
+
+        if (typeof showToast === 'function') {
+            showToast(`${successCount}件のロットの入庫確認が完了しました`, 'success');
+        }
+        hideReceiveModal();
+        loadReceivingItems();
+
+    } catch (error) {
+        console.error('入庫確認エラー:', error);
+        if (typeof showToast === 'function') {
+            showToast(error.message || '入庫確認に失敗しました', 'error');
+        }
+    }
+}
+
+// 径入力パース関数（receiving.jsから移植）
+const SHAPE_SYMBOL_MAP = {
+    round: ['φ', 'Φ', '⌀', 'Ø', 'ø', 'ϕ', '￠'],
+    hexagon: ['H', 'h', 'Ｈ', 'ｈ'],
+    square: ['□', '■', '口', '▢']
+};
+
+function parseDiameterInputValue(raw) {
+    if (!raw || !raw.trim()) {
+        return { error: '径を入力してください' };
+    }
+    let text = raw.normalize('NFKC').trim();
+    let shape = null;
+
+    const firstChar = text.charAt(0);
+    for (const [key, symbols] of Object.entries(SHAPE_SYMBOL_MAP)) {
+        if (symbols.includes(firstChar)) {
+            shape = key;
+            text = text.slice(1).trimStart();
+            break;
+        }
+    }
+
+    if (!shape) {
+        return { error: '先頭に形状記号（φ・H・□など）を付けてください' };
+    }
+
+    text = text.replace(/(mm|㎜)/gi, ' ');
+    const numberMatch = text.match(/(\d+(?:[.,]\d+)?)/);
+    if (!numberMatch) {
+        return { error: '径の数値が確認できません' };
+    }
+
+    const diameter = parseFloat(numberMatch[1].replace(',', '.'));
+    if (!(diameter > 0)) {
+        return { error: '径は正の数で入力してください' };
+    }
+
+    return { shape, diameter_mm: diameter };
+}
+
+// ==== 検品タブ ====
+let currentInspectionLotId = null;
+
+function initializeInspectionTab() {
+    document.getElementById('loadInspectionTargetBtn')?.addEventListener('click', loadInspectionTargetByCode);
+    document.getElementById('resetInspectionFormBtn')?.addEventListener('click', resetInspectionForm);
+    document.getElementById('inspectionForm')?.addEventListener('submit', submitInspection);
+    document.getElementById('refreshInspectionListBtn')?.addEventListener('click', loadInspectionItemsList);
+
+    // デフォルト日時を現在に設定
+    const now = new Date();
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+        .toISOString().slice(0,16);
+    const dtEl = document.getElementById('inspectedAtInput');
+    if (dtEl) dtEl.value = local;
+}
+
+// 入庫済みアイテム一覧を読み込み
+async function loadInspectionItemsList() {
+    const tableBody = document.getElementById('inspectionItemsListBody');
+    const loading = document.getElementById('inspectionListLoading');
+    const empty = document.getElementById('inspectionListEmpty');
+
+    loading.classList.remove('hidden');
+    tableBody.innerHTML = '';
+    empty.classList.add('hidden');
+
+    try {
+        // 入庫済みアイテムを取得（limit=1000で取得）
+        const response = await fetch('/api/inventory/?skip=0&limit=1000&is_active=true&has_stock=true');
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+        }
+        
+        const items = await response.json();
+        
+        console.log('取得したアイテム数:', items.length); // デバッグ用
+
+        loading.classList.add('hidden');
+
+        // 入庫済み（lot情報あり）のアイテムのみフィルタ
+        const validItems = Array.isArray(items) 
+            ? items.filter(item => item.lot && item.lot.id)
+            : [];
+
+        console.log('有効なアイテム数:', validItems.length); // デバッグ用
+
+        if (validItems.length === 0) {
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        validItems.forEach(item => {
+            const row = createInspectionItemRow(item);
+            tableBody.appendChild(row);
+        });
+
+    } catch (error) {
+        loading.classList.add('hidden');
+        console.error('入庫済みアイテム読み込みエラー:', error);
+        if (typeof showToast === 'function') {
+            showToast('入庫済みアイテムの読み込みに失敗しました: ' + error.message, 'error');
+        }
+    }
+}
+
+function createInspectionItemRow(item) {
+    const row = document.createElement('tr');
+    row.className = 'hover:bg-gray-50';
+
+    // 材料仕様を生成（材質名 + 形状 + 径 + 長さ）
+    const materialName = item.material?.name || '-';
+    const shape = item.material?.shape || 'round';
+    const diameter = item.material?.diameter_mm || 0;
+    const length = item.lot?.length_mm || 0;
+    
+    let shapeSymbol = 'φ';
+    if (shape === 'hexagon') shapeSymbol = 'H';
+    else if (shape === 'square') shapeSymbol = '□';
+    
+    const materialSpec = `${materialName} ${shapeSymbol}${diameter} L${length}`;
+    
+    const lotNumber = item.lot?.lot_number || '-';
+    
+    // 重量計算
+    const totalWeight = item.total_weight_kg || 0;
+    const weightDisplay = totalWeight > 0 ? `${totalWeight.toFixed(3)}kg` : '-';
+    
+    // 検品状態バッジ
+    const inspectionStatus = (item.lot?.inspection_status || 'pending').toLowerCase();
+    
+    console.log(`アイテム ${item.management_code} の検品ステータス:`, inspectionStatus); // デバッグ
+    
+    let statusText = '未検品';
+    let statusClass = 'bg-amber-100 text-amber-700';
+    
+    if (inspectionStatus === 'passed') {
+        statusText = '合格';
+        statusClass = 'bg-green-100 text-green-700';
+    } else if (inspectionStatus === 'failed') {
+        statusText = '不合格';
+        statusClass = 'bg-red-100 text-red-700';
+    }
+
+    row.innerHTML = `
+        <td class="px-3 py-2 text-xs text-gray-900">${materialSpec}</td>
+        <td class="px-3 py-2 text-xs text-gray-600">${lotNumber}</td>
+        <td class="px-3 py-2 text-xs text-gray-600">${item.current_quantity}本</td>
+        <td class="px-3 py-2 text-xs text-gray-600">${weightDisplay}</td>
+        <td class="px-3 py-2">
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass}">${statusText}</span>
+        </td>
+        <td class="px-3 py-2">
+            <button onclick="selectInspectionItem('${item.management_code}')" 
+                    class="bg-indigo-600 text-white px-2 py-1 rounded text-xs hover:bg-indigo-700">
+                選択
+            </button>
+        </td>
+    `;
+
+    return row;
+}
+
+function selectInspectionItem(managementCode) {
+    // 管理コード入力欄に設定
+    const codeInput = document.getElementById('inspectionCodeInput');
+    if (codeInput) {
+        codeInput.value = managementCode;
+    }
+    
+    // 自動で検品対象を読み込み
+    loadInspectionTargetByCode();
+    
+    // 検品フォームまでスクロール
+    const inspectionForm = document.getElementById('inspectionForm');
+    if (inspectionForm) {
+        inspectionForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+}
+
+async function loadInspectionTargetByCode() {
+    const codeInput = document.getElementById('inspectionCodeInput');
+    const infoEl = document.getElementById('inspectionTargetInfo');
+    const code = (codeInput?.value || '').trim();
+    
+    console.log('検品対象読み込み開始:', code); // デバッグ
+    
+    if (!code) {
+        if (typeof showToast === 'function') {
+            showToast('管理コードを入力してください', 'error');
+        }
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/inventory/search/${encodeURIComponent(code)}`);
+        console.log('API応答ステータス:', res.status); // デバッグ
+        
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || '管理コードの読み込みに失敗しました');
+        }
+        const item = await res.json();
+        console.log('取得したアイテム:', item); // デバッグ
+        
+        currentInspectionLotId = item?.lot?.id || null;
+        console.log('設定したLot ID:', currentInspectionLotId); // デバッグ
+        
+        if (!currentInspectionLotId) {
+            if (typeof showToast === 'function') {
+                showToast('該当ロットが見つかりません', 'error');
+            }
+            return;
+        }
+        
+        if (infoEl) {
+            const lotNum = item?.lot?.lot_number || '-';
+            const qty = item?.current_quantity ?? '-';
+            const materialName = item?.material?.display_name || item?.material?.name || '-';
+            infoEl.textContent = `${materialName} / ロット番号 ${lotNum} / 管理コード ${item.management_code} / 現在本数 ${qty}本`;
+            infoEl.classList.remove('text-gray-600');
+            infoEl.classList.add('text-blue-700', 'font-medium');
+        }
+        
+        if (typeof showToast === 'function') {
+            showToast('検品対象を読み込みました', 'success');
+        }
+    } catch (e) {
+        console.error('管理コード読み込みエラー:', e);
+        if (typeof showToast === 'function') {
+            showToast(e.message || '管理コードの読み込みに失敗しました', 'error');
+        }
+        if (infoEl) {
+            infoEl.textContent = '管理コードを入力して読み込んでください。';
+            infoEl.classList.remove('text-blue-700', 'font-medium');
+            infoEl.classList.add('text-gray-600');
+        }
+    }
+}
+
+function resetInspectionForm() {
+    document.getElementById('inspectionForm').reset();
+    currentInspectionLotId = null;
+    document.getElementById('inspectionTargetInfo').textContent = '管理コードを入力して読み込んでください。';
+    
+    // デフォルト日時を現在に設定
+    const now = new Date();
+    const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+        .toISOString().slice(0,16);
+    const dtEl = document.getElementById('inspectedAtInput');
+    if (dtEl) dtEl.value = local;
+}
+
+async function submitInspection(event) {
+    event.preventDefault();
+    
+    console.log('検品送信開始 - currentInspectionLotId:', currentInspectionLotId); // デバッグ
+    
+    if (!currentInspectionLotId) {
+        if (typeof showToast === 'function') {
+            showToast('検品対象の管理コードを読み込んでください', 'error');
+        }
+        return;
+    }
+
+    const inspectedAtStr = document.getElementById('inspectedAtInput').value;
+    const measuredValStr = document.getElementById('measuredValueInput').value;
+    const appearanceOk = document.getElementById('appearanceOkInput').checked;
+    const bendingOk = document.getElementById('bendingOkInput').checked;
+    const inspectedBy = document.getElementById('inspectedByInput').value.trim();
+    const notes = document.getElementById('inspectionNotesInput').value.trim();
+
+    const payload = {
+        inspection_date: inspectedAtStr ? new Date(inspectedAtStr).toISOString() : new Date().toISOString(),
+        measured_value: measuredValStr ? parseFloat(measuredValStr) : null,
+        appearance_ok: appearanceOk,
+        bending_ok: bendingOk,
+        inspector_name: inspectedBy || "",
+        notes: notes || null
+    };
+
+    console.log('検品データペイロード:', payload); // デバッグ
+
+    try {
+        const url = `/api/inspections/lots/${currentInspectionLotId}/`;
+        console.log('検品API URL:', url); // デバッグ
+        
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        console.log('検品API応答ステータス:', res.status); // デバッグ
+        
+        if (res.ok) {
+            const result = await res.json();
+            console.log('検品登録成功:', result); // デバッグ
+            console.log('検品ステータス:', result.inspection_status); // デバッグ
+            
+            if (typeof showToast === 'function') {
+                const statusText = result.inspection_status === 'passed' ? '合格' : result.inspection_status === 'failed' ? '不合格' : '完了';
+                showToast(`検品結果を登録しました（${statusText}）`, 'success');
+            }
+            resetInspectionForm();
+            
+            // データベースの更新を待ってから一覧を再読み込み
+            setTimeout(() => {
+                console.log('検品一覧を再読み込み中...'); // デバッグ
+                loadInspectionItemsList();
+                loadReceivingItems();
+            }, 500);
+        } else {
+            const err = await res.json().catch(() => ({}));
+            console.error('検品登録失敗:', err); // デバッグ
+            if (typeof showToast === 'function') {
+                showToast(err.detail || '検品登録に失敗しました', 'error');
+            }
+        }
+    } catch (e) {
+        console.error('検品登録エラー:', e);
+        if (typeof showToast === 'function') {
+            showToast('検品登録に失敗しました: ' + e.message, 'error');
+        }
+    }
+}
+
+// ==== 印刷タブ ====
+let currentPrintItemCode = null;
+let currentPrintLotId = null;
+
+function initializePrintTab() {
+    document.getElementById('refreshPrintBtn')?.addEventListener('click', loadPrintableItems);
+    document.getElementById('searchPrintBtn')?.addEventListener('click', searchPrintItems);
+    document.getElementById('resetPrintFiltersBtn')?.addEventListener('click', resetPrintFilters);
+    
+    // 印刷モーダル
+    document.getElementById('closePrintModal')?.addEventListener('click', hidePrintModal);
+    document.getElementById('cancelPrint')?.addEventListener('click', hidePrintModal);
+    document.getElementById('executePrintManagementCode')?.addEventListener('click', executePrintManagementCode);
+    document.getElementById('executePrintLotNumber')?.addEventListener('click', executePrintLotNumber);
+    
+    // ESCキーでモーダルを閉じる
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const printModal = document.getElementById('printModal');
+            if (printModal && !printModal.classList.contains('hidden')) {
+                hidePrintModal();
+            }
+        }
+    });
+}
+
+async function loadPrintableItems() {
+    const tableBody = document.getElementById('printItemsTableBody');
+    const loading = document.getElementById('printLoading');
+    const empty = document.getElementById('printEmpty');
+
+    loading.classList.remove('hidden');
+    tableBody.innerHTML = '';
+    empty.classList.add('hidden');
+
+    try {
+        // 検品完了（PASSED）のアイテムを取得
+        const response = await fetch('/api/inventory/?skip=0&limit=1000&is_active=true&has_stock=true');
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+        }
+        
+        const items = await response.json();
+
+        loading.classList.add('hidden');
+
+        // 検品完了（PASSED）のアイテムをフィルタ
+        const printableItems = Array.isArray(items)
+            ? items.filter(item => {
+                const status = item.lot?.inspection_status;
+                return status && status.toLowerCase() === 'passed';
+            })
+            : [];
+
+        if (printableItems.length === 0) {
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        printableItems.forEach(item => {
+            const row = createPrintItemRow(item);
+            tableBody.appendChild(row);
+        });
+
+    } catch (error) {
+        loading.classList.add('hidden');
+        console.error('印刷可能アイテム読み込みエラー:', error);
+        if (typeof showToast === 'function') {
+            showToast('印刷可能アイテムの読み込みに失敗しました: ' + error.message, 'error');
+        }
+    }
+}
+
+function createPrintItemRow(item) {
+    const row = document.createElement('tr');
+    row.className = 'hover:bg-gray-50';
+
+    const materialName = item.material?.display_name || item.material?.name || '-';
+    const lotNumber = item.lot?.lot_number || '-';
+    const inspectionDate = item.lot?.inspection_date 
+        ? new Date(item.lot.inspection_date).toLocaleDateString('ja-JP')
+        : '-';
+
+    row.innerHTML = `
+        <td class="px-4 py-3 text-sm font-mono text-gray-900">${item.management_code.substring(0, 8)}...</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${materialName}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${lotNumber}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${item.current_quantity}本</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${inspectionDate}</td>
+        <td class="px-4 py-3">
+            <button onclick="showPrintModal('${item.management_code}')" 
+                    class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
+                <i class="fas fa-print mr-1"></i>印刷
+            </button>
+        </td>
+    `;
+
+    return row;
+}
+
+function searchPrintItems() {
+    const material = document.getElementById('printMaterialFilter')?.value?.toLowerCase() || '';
+    const lot = document.getElementById('printLotFilter')?.value?.toLowerCase() || '';
+
+    const rows = document.querySelectorAll('#printItemsTableBody tr');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+        const rowMaterial = row.cells[1].textContent.toLowerCase();
+        const rowLot = row.cells[2].textContent.toLowerCase();
+
+        const matchMaterial = !material || rowMaterial.includes(material);
+        const matchLot = !lot || rowLot.includes(lot);
+
+        if (matchMaterial && matchLot) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function resetPrintFilters() {
+    document.getElementById('printMaterialFilter').value = '';
+    document.getElementById('printLotFilter').value = '';
+    loadPrintableItems();
+}
+
+async function showPrintModal(managementCode) {
+    currentPrintItemCode = managementCode;
+    currentPrintLotId = null;
+    
+    try {
+        // プレビュー情報を取得
+        const response = await fetch(`/api/labels/preview/${encodeURIComponent(managementCode)}`);
+        if (!response.ok) {
+            throw new Error('プレビュー情報の取得に失敗しました');
+        }
+        const data = await response.json();
+        
+        // Lot IDを保存
+        currentPrintLotId = data.lot?.id || null;
+
+        // プレビュー情報を表示
+        const previewContent = document.getElementById('printPreviewContent');
+        previewContent.innerHTML = `
+            <div>
+                <dt class="font-medium text-gray-500">管理コード</dt>
+                <dd class="text-gray-900">${data.item.management_code}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">材料名</dt>
+                <dd class="text-gray-900">${data.material.name}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">形状・寸法</dt>
+                <dd class="text-gray-900">${data.material.shape_name} φ${data.material.diameter_mm}mm</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">長さ</dt>
+                <dd class="text-gray-900">${data.lot.length_mm}mm</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">ロット番号</dt>
+                <dd class="text-gray-900">${data.lot.lot_number}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">現在本数</dt>
+                <dd class="text-gray-900">${data.item.current_quantity}本</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">単重</dt>
+                <dd class="text-gray-900">${data.calculated.weight_per_piece_kg}kg/本</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">総重量</dt>
+                <dd class="text-gray-900">${data.calculated.total_weight_kg}kg</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">置き場</dt>
+                <dd class="text-gray-900">${data.location.name}</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">仕入先</dt>
+                <dd class="text-gray-900">${data.lot.supplier || '未登録'}</dd>
+            </div>
+        `;
+
+        document.getElementById('printModal').classList.remove('hidden');
+        
+    } catch (error) {
+        console.error('印刷モーダル表示エラー:', error);
+        if (typeof showToast === 'function') {
+            showToast('印刷プレビューの取得に失敗しました', 'error');
+        }
+    }
+}
+
+function hidePrintModal() {
+    document.getElementById('printModal').classList.add('hidden');
+    currentPrintItemCode = null;
+    currentPrintLotId = null;
+}
+
+async function executePrintManagementCode() {
+    if (!currentPrintItemCode) {
+        if (typeof showToast === 'function') {
+            showToast('印刷対象が選択されていません', 'error');
+        }
+        return;
+    }
+
+    const labelType = document.getElementById('printLabelType')?.value || 'standard';
+    const copies = parseInt(document.getElementById('printCopies')?.value || '1');
+
+    try {
+        const response = await fetch('/api/labels/print', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                management_code: currentPrintItemCode,
+                label_type: labelType,
+                copies: copies
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('ラベル印刷に失敗しました');
+        }
+
+        // PDFをダウンロード
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `label_${currentPrintItemCode.substring(0, 8)}_${new Date().getTime()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        if (typeof showToast === 'function') {
+            showToast('管理コードラベルPDFを保存しました', 'success');
+        }
+
+        hidePrintModal();
+
+    } catch (error) {
+        console.error('管理コードラベル印刷エラー:', error);
+        if (typeof showToast === 'function') {
+            showToast('管理コードラベル印刷に失敗しました', 'error');
+        }
+    }
+}
+
+async function executePrintLotNumber() {
+    if (!currentPrintLotId) {
+        if (typeof showToast === 'function') {
+            showToast('ロット情報が取得できません', 'error');
+        }
+        return;
+    }
+
+    const labelType = document.getElementById('printLabelType')?.value || 'standard';
+    const copies = parseInt(document.getElementById('printCopies')?.value || '1');
+
+    try {
+        const response = await fetch('/api/labels/lot-tag', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                lot_id: currentPrintLotId,
+                label_type: labelType,
+                copies: copies
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('ロット番号タグ印刷に失敗しました');
+        }
+
+        // PDFをダウンロード
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `lot_tag_${currentPrintLotId}_${new Date().getTime()}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        if (typeof showToast === 'function') {
+            showToast('ロット番号タグPDFを保存しました', 'success');
+        }
+
+        hidePrintModal();
+
+    } catch (error) {
+        console.error('ロット番号タグ印刷エラー:', error);
+        if (typeof showToast === 'function') {
+            showToast('ロット番号タグ印刷に失敗しました: ' + error.message, 'error');
+        }
+    }
+}
+
+// ==== 重量・本数換算機能 ====
+function roundTo3(value) {
+    return Math.round(value * 1000) / 1000;
+}
+
+function calculateUnitWeightKg(shape, diameterMm, lengthMm, density) {
+    const lengthCm = lengthMm / 10;
+    const base = diameterMm / 10;
+    let volumeCm3;
+    
+    if (shape === 'round') {
+        const radiusCm = base / 2;
+        volumeCm3 = Math.PI * radiusCm * radiusCm * lengthCm;
+    } else if (shape === 'hexagon') {
+        volumeCm3 = (3 * Math.sqrt(3) / 2) * Math.pow(base, 2) * lengthCm;
+    } else if (shape === 'square') {
+        volumeCm3 = Math.pow(base, 2) * lengthCm;
+    } else {
+        throw new Error('未対応の形状です');
+    }
+    
+    return volumeCm3 * density / 1000;
+}
+
+function updateConversionDisplays(quantity, weight, unitWeight) {
+    const quantityEl = document.getElementById('displayQuantity');
+    const weightEl = document.getElementById('displayWeight');
+    const unitWeightEl = document.getElementById('displayUnitWeight');
+
+    if (quantityEl) quantityEl.textContent = Number.isFinite(quantity) && quantity > 0 ? String(quantity) : '-';
+    if (weightEl) weightEl.textContent = typeof weight === 'number' && Number.isFinite(weight) ? weight.toFixed(3) : '-';
+    if (unitWeightEl) unitWeightEl.textContent = typeof unitWeight === 'number' && Number.isFinite(unitWeight) ? unitWeight.toFixed(3) : '-';
+}
+
+function clearConversionDisplays() {
+    updateConversionDisplays(null, null, null);
+}
+
+function updateConversion() {
+    try {
+        const quantityInput = document.getElementById('quantityInput');
+        const weightInput = document.getElementById('weightInput');
+        const diameterInput = document.querySelector('input[name="diameter_input"]');
+        const densityInput = document.getElementById('densityInput');
+        const lengthInput = document.querySelector('input[name="length_mm"]');
+
+        if (!diameterInput || !densityInput || !lengthInput) {
+            clearConversionDisplays();
+            return;
+        }
+
+        const parsedDiameter = parseDiameterInputValue(diameterInput.value || '');
+        if (parsedDiameter.error) {
+            clearConversionDisplays();
+            return;
+        }
+
+        const density = parseFloat(densityInput.value);
+        const lengthMm = parseInt(lengthInput.value, 10);
+
+        if (!(density > 0) || !(lengthMm > 0)) {
+            clearConversionDisplays();
+            return;
+        }
+
+        const unitWeight = roundTo3(calculateUnitWeightKg(parsedDiameter.shape, parsedDiameter.diameter_mm, lengthMm, density));
+
+        const selectedMethod = document.querySelector('input[name="input_method"]:checked');
+        const method = selectedMethod ? selectedMethod.value : 'quantity';
+
+        const quantity = parseInt(quantityInput.value, 10);
+        const weight = parseFloat(weightInput.value);
+
+        let displayQuantity = null;
+        let displayWeight = null;
+
+        if (method === 'quantity' && Number.isFinite(quantity) && quantity > 0) {
+            displayQuantity = quantity;
+            displayWeight = roundTo3(unitWeight * quantity);
+        } else if (method === 'weight' && Number.isFinite(weight) && weight > 0) {
+            displayWeight = roundTo3(weight);
+            const computedQuantity = Math.max(1, Math.round(weight / unitWeight));
+            displayQuantity = computedQuantity;
+        } else if (Number.isFinite(quantity) && quantity > 0) {
+            displayQuantity = quantity;
+            displayWeight = roundTo3(unitWeight * quantity);
+        } else if (Number.isFinite(weight) && weight > 0) {
+            displayWeight = roundTo3(weight);
+            const computedQuantity = Math.max(1, Math.round(weight / unitWeight));
+            displayQuantity = computedQuantity;
+        }
+
+        updateConversionDisplays(displayQuantity, displayWeight, unitWeight);
+    } catch (error) {
+        console.error('換算計算エラー:', error);
+        clearConversionDisplays();
+    }
+}
+
+// テキストエリアの選択範囲をクリップボードへコピー（receiving.jsから移植）
+function copySelectionFromTextarea(textareaId) {
+    const ta = document.getElementById(textareaId);
+    if (!ta) return;
+    const start = ta.selectionStart ?? 0;
+    const end = ta.selectionEnd ?? start;
+    const s = Math.min(start, end);
+    const e = Math.max(start, end);
+    const text = ta.value.substring(s, e);
+    if (!text) {
+        // 何も選択されていない場合は全文コピー
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(ta.value);
+            if (typeof showToast === 'function') {
+                showToast('全文をコピーしました', 'success');
+            }
+        }
+        return;
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text);
+        if (typeof showToast === 'function') {
+            showToast('選択範囲をコピーしました', 'success');
+        }
+    } else {
+        const tmp = document.createElement('textarea');
+        tmp.value = text;
+        document.body.appendChild(tmp);
+        tmp.focus();
+        tmp.select();
+        try { document.execCommand('copy'); } catch (e) {}
+        document.body.removeChild(tmp);
+    }
+}
+
+// ==== 複数ロット管理機能 ====
+let lotRowCounter = 0;
+let currentOrderedQuantity = 0;
+let currentOrderType = 'quantity';
+
+function addLotRow(defaultQuantity = null, defaultWeight = null) {
+    lotRowCounter++;
+    const container = document.getElementById('lotsContainer');
+    const rowId = `lot-row-${lotRowCounter}`;
+    const counter = lotRowCounter;
+    
+    const quantityValue = defaultQuantity && defaultQuantity > 0 ? ` value="${defaultQuantity}"` : '';
+    const weightValue = defaultWeight && defaultWeight > 0 ? ` value="${defaultWeight}"` : '';
+    
+    const lotRow = document.createElement('div');
+    lotRow.id = rowId;
+    lotRow.className = 'bg-white rounded-lg p-4 border-2 border-purple-200';
+    lotRow.innerHTML = `
+        <div class="flex justify-between items-center mb-3">
+            <h4 class="font-medium text-gray-900">ロット ${counter}</h4>
+            <button type="button" onclick="removeLotRow('${rowId}')" class="text-red-600 hover:text-red-800 text-sm">
+                <i class="fas fa-trash"></i> 削除
+            </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">ロット番号 *</label>
+                <input type="text" name="lot_number_${counter}" required
+                       class="w-full p-2 border border-gray-300 rounded text-sm"
+                       placeholder="例: L001">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">入庫数量（本）</label>
+                <input type="number" name="lot_quantity_${counter}" min="1" step="1"
+                       class="lot-quantity-input w-full p-2 border border-gray-300 rounded text-sm"
+                       placeholder="本数"
+                       data-lot-id="${counter}"${quantityValue}
+                       oninput="onLotQuantityChange(${counter})">
+                <p class="text-xs text-gray-500 mt-1">または重量</p>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">入庫重量（kg）</label>
+                <input type="number" name="lot_weight_${counter}" min="0.001" step="0.001"
+                       class="lot-weight-input w-full p-2 border border-gray-300 rounded text-sm"
+                       placeholder="重量"
+                       data-lot-id="${counter}"${weightValue}
+                       oninput="onLotWeightChange(${counter})">
+                <p class="text-xs text-gray-500 mt-1">どちらか入力</p>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">置き場</label>
+                <input type="text" name="lot_location_${counter}"
+                       class="w-full p-2 border border-gray-300 rounded text-sm"
+                       placeholder="例: 12">
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(lotRow);
+    updateTotalQuantity();
+}
+
+function onLotQuantityChange(lotId) {
+    const quantityInput = document.querySelector(`input[name="lot_quantity_${lotId}"]`);
+    const weightInput = document.querySelector(`input[name="lot_weight_${lotId}"]`);
+    
+    if (quantityInput && quantityInput.value && weightInput) {
+        // 本数入力時は重量をクリア
+        weightInput.value = '';
+    }
+    
+    updateTotalQuantity();
+}
+
+function onLotWeightChange(lotId) {
+    const quantityInput = document.querySelector(`input[name="lot_quantity_${lotId}"]`);
+    const weightInput = document.querySelector(`input[name="lot_weight_${lotId}"]`);
+    
+    if (weightInput && weightInput.value && quantityInput) {
+        // 重量入力時は本数をクリア
+        quantityInput.value = '';
+    }
+    
+    updateTotalQuantity();
+}
+
+function removeLotRow(rowId) {
+    const row = document.getElementById(rowId);
+    if (row) {
+        row.remove();
+        updateTotalQuantity();
+    }
+}
+
+function updateTotalQuantity() {
+    // 材料情報を取得
+    const diameterInput = document.querySelector('input[name="diameter_input"]');
+    const densityInput = document.getElementById('densityInput');
+    const lengthInput = document.querySelector('input[name="length_mm"]');
+    
+    let unitWeight = 0;
+    if (diameterInput && densityInput && lengthInput) {
+        const parsedDiameter = parseDiameterInputValue(diameterInput.value || '');
+        const density = parseFloat(densityInput.value);
+        const lengthMm = parseInt(lengthInput.value, 10);
+        
+        if (!parsedDiameter.error && density > 0 && lengthMm > 0) {
+            try {
+                unitWeight = calculateUnitWeightKg(parsedDiameter.shape, parsedDiameter.diameter_mm, lengthMm, density);
+            } catch (e) {
+                unitWeight = 0;
+            }
+        }
+    }
+    
+    let totalQuantity = 0;
+    let totalWeight = 0;
+    
+    // 各ロットの数量と重量を集計
+    for (let i = 1; i <= lotRowCounter; i++) {
+        const lotRow = document.getElementById(`lot-row-${i}`);
+        if (!lotRow) continue;
+        
+        const quantityInput = document.querySelector(`input[name="lot_quantity_${i}"]`);
+        const weightInput = document.querySelector(`input[name="lot_weight_${i}"]`);
+        
+        const quantity = parseInt(quantityInput?.value) || 0;
+        const weight = parseFloat(weightInput?.value) || 0;
+        
+        if (quantity > 0) {
+            totalQuantity += quantity;
+            if (unitWeight > 0) {
+                totalWeight += quantity * unitWeight;
+            }
+        } else if (weight > 0) {
+            totalWeight += weight;
+            if (unitWeight > 0) {
+                totalQuantity += Math.round(weight / unitWeight);
+            }
+        }
+    }
+    
+    // 合計表示を更新
+    document.getElementById('totalQuantity').textContent = totalQuantity;
+    document.getElementById('totalWeight').textContent = totalWeight > 0 ? totalWeight.toFixed(3) : '0.000';
+    
+    // 発注数量と比較して色を変更
+    const totalEl = document.getElementById('totalQuantity');
+    if (currentOrderedQuantity > 0) {
+        if (totalQuantity === currentOrderedQuantity) {
+            totalEl.classList.remove('text-red-600');
+            totalEl.classList.add('text-green-600');
+        } else if (totalQuantity > currentOrderedQuantity) {
+            totalEl.classList.remove('text-green-600');
+            totalEl.classList.add('text-red-600');
+        } else {
+            totalEl.classList.remove('text-green-600', 'text-red-600');
+            totalEl.classList.add('text-purple-600');
+        }
+    }
+}
+
+function clearLotRows() {
+    const container = document.getElementById('lotsContainer');
+    if (container) {
+        container.innerHTML = '';
+    }
+    lotRowCounter = 0;
+    updateTotalQuantity();
+}
+
+// ==== ユーティリティ関数 ====
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}

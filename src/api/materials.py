@@ -9,64 +9,14 @@ import json
 
 from src.db import get_db
 from src.db.models import (
-    Material, MaterialShape, Density,
-    MaterialStandard, MaterialGrade, MaterialProduct, MaterialAlias
+    Material, MaterialShape, MaterialAlias
 )
 
 router = APIRouter()
 
 # ========================================
-# 標準規格管理用 Pydantic スキーマ（簡素化）
+# 材料別名用 Pydantic スキーマ
 # ========================================
-
-class MaterialStandardBase(BaseModel):
-    jis_code: str = Field(..., max_length=50, description="JIS規格コード（例: SUS303, C3604）")
-    jis_name: str = Field(..., max_length=100, description="JIS規格名称")
-    category: Optional[str] = Field(None, max_length=50, description="カテゴリ（ステンレス/黄銅/炭素鋼等）")
-    description: Optional[str] = Field(None, description="説明")
-
-class MaterialStandardCreate(MaterialStandardBase):
-    pass
-
-class MaterialStandardResponse(MaterialStandardBase):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    is_active: bool
-    created_at: datetime
-    updated_at: datetime
-
-class MaterialGradeBase(BaseModel):
-    standard_id: int = Field(..., description="標準規格ID")
-    grade_code: str = Field(..., max_length=50, description="グレードコード（例: LCD, 標準）")
-    characteristics: Optional[str] = Field(None, max_length=200, description="特性（快削性、耐食性等）")
-    description: Optional[str] = Field(None, description="説明")
-
-class MaterialGradeCreate(MaterialGradeBase):
-    pass
-
-class MaterialGradeResponse(MaterialGradeBase):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    is_active: bool
-    created_at: datetime
-    updated_at: datetime
-
-class MaterialProductBase(BaseModel):
-    grade_id: int = Field(..., description="グレードID")
-    product_code: str = Field(..., max_length=100, description="製品コード（例: ASK3000, C3604LCD）")
-    manufacturer: Optional[str] = Field(None, max_length=200, description="メーカー名")
-    is_equivalent: bool = Field(False, description="同等品フラグ")
-    description: Optional[str] = Field(None, description="説明")
-
-class MaterialProductCreate(MaterialProductBase):
-    pass
-
-class MaterialProductResponse(MaterialProductBase):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    is_active: bool
-    created_at: datetime
-    updated_at: datetime
 
 class MaterialAliasBase(BaseModel):
     material_id: int = Field(..., description="材料ID")
@@ -86,7 +36,6 @@ class MaterialAliasResponse(MaterialAliasBase):
 # ========================================
 
 class MaterialBase(BaseModel):
-    product_id: Optional[int] = Field(None, description="製品ID（第3層との紐付け）")
     part_number: Optional[str] = Field(None, max_length=100, description="品番")
     name: str = Field(..., max_length=100, description="材質名（例：S45C）")
     display_name: Optional[str] = Field(None, max_length=200, description="表示名（表記揺れ対応: φ10.0D等）")
@@ -95,13 +44,11 @@ class MaterialBase(BaseModel):
     shape: MaterialShape = Field(..., description="断面形状")
     diameter_mm: float = Field(..., gt=0, description="直径または一辺の長さ（mm）")
     current_density: float = Field(..., gt=0, description="現在の比重（g/cm³）")
-    dedicated_part_number: Optional[str] = Field(None, max_length=100, description="専用品番")
 
 class MaterialCreate(MaterialBase):
     pass
 
 class MaterialUpdate(BaseModel):
-    product_id: Optional[int] = Field(None, description="製品ID（第3層との紐付け）")
     part_number: Optional[str] = Field(None, max_length=100, description="品番")
     name: Optional[str] = Field(None, max_length=100, description="材質名")
     display_name: Optional[str] = Field(None, max_length=200, description="表示名（表記揺れ対応）")
@@ -110,7 +57,6 @@ class MaterialUpdate(BaseModel):
     shape: Optional[MaterialShape] = Field(None, description="断面形状")
     diameter_mm: Optional[float] = Field(None, gt=0, description="直径または一辺の長さ（mm）")
     current_density: Optional[float] = Field(None, gt=0, description="現在の比重（g/cm³）")
-    dedicated_part_number: Optional[str] = Field(None, max_length=100, description="専用品番")
     is_active: Optional[bool] = Field(None, description="有効フラグ")
 
 class MaterialResponse(MaterialBase):
@@ -152,135 +98,6 @@ async def get_materials(
 
     if part_number is not None:
         query = query.filter(Material.part_number == part_number)
-
-    # 部分一致検索用パラメータ（フロントエンド予測入力用）
-    part_number_contains = request.query_params.get("part_number_contains")
-    if part_number_contains is not None:
-        query = query.filter(Material.part_number.contains(part_number_contains))
-
-    if diameter_mm is not None:
-        query = query.filter(Material.diameter_mm == diameter_mm)
-
-    materials = query.offset(skip).limit(limit).all()
-    return materials
-
-@router.get("/count")
-async def get_materials_count(
-    is_active: Optional[bool] = None,
-    shape: Optional[MaterialShape] = None,
-    name: Optional[str] = None,
-    display_name: Optional[str] = None,
-    part_number: Optional[str] = None,
-    diameter_mm: Optional[float] = None,
-    db: Session = Depends(get_db)
-):
-    """材料総件数取得"""
-    query = db.query(Material)
-
-    if is_active is not None:
-        query = query.filter(Material.is_active == is_active)
-
-    if shape is not None:
-        query = query.filter(Material.shape == shape)
-
-    if name is not None:
-        query = query.filter(Material.name.contains(name))
-
-    if display_name is not None:
-        query = query.filter(Material.display_name.contains(display_name))
-
-    if part_number is not None:
-        query = query.filter(Material.part_number == part_number)
-
-    if diameter_mm is not None:
-        query = query.filter(Material.diameter_mm == diameter_mm)
-
-    count = query.count()
-    return {"total": count}
-
-@router.get("/{material_id}", response_model=MaterialResponse)
-async def get_material(material_id: int, db: Session = Depends(get_db)):
-    """材料詳細取得"""
-    material = db.query(Material).filter(Material.id == material_id).first()
-    if not material:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="材料が見つかりません"
-        )
-    return material
-
-@router.post("/", response_model=MaterialResponse, status_code=status.HTTP_201_CREATED)
-async def create_material(material: MaterialCreate, db: Session = Depends(get_db)):
-    """材料作成"""
-    # 重複チェックを無効化 - すべての材料登録を許可
-
-    # 説明フィールドが空文字列の場合はNoneに設定
-    material_data = material.model_dump()
-    if material_data.get('description') == "":
-        material_data['description'] = None
-    if material_data.get('detail_info') == "":
-        material_data['detail_info'] = None
-
-    db_material = Material(**material_data)
-    db.add(db_material)
-    db.commit()
-    db.refresh(db_material)
-
-    # 比重履歴の記録は一旦スキップ（created_by制約のため）
-    # TODO: 認証実装後に比重履歴機能を有効化
-    # density_record = Density(
-    #     material_id=db_material.id,
-    #     density=material.current_density,
-    #     effective_from=datetime.now(),
-    #     created_by=1
-    # )
-    # db.add(density_record)
-    # db.commit()
-
-    return db_material
-
-@router.put("/{material_id}", response_model=MaterialResponse)
-async def update_material(
-    material_id: int,
-    material_update: MaterialUpdate,
-    db: Session = Depends(get_db)
-):
-    """材料更新"""
-    db_material = db.query(Material).filter(Material.id == material_id).first()
-    if not db_material:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="材料が見つかりません"
-        )
-
-    # 比重が更新される場合、比重履歴にも記録
-    old_density = db_material.current_density
-
-    update_data = material_update.model_dump(exclude_unset=True)
-
-    # 説明フィールドが空文字列の場合は適切に処理
-    if 'description' in update_data and update_data['description'] == "":
-        update_data['description'] = None
-    if 'detail_info' in update_data and update_data['detail_info'] == "":
-        update_data['detail_info'] = None
-
-    for field, value in update_data.items():
-        setattr(db_material, field, value)
-
-    db.commit()
-    db.refresh(db_material)
-
-    # 比重履歴の記録は一旦スキップ（created_by制約のため）
-    # TODO: 認証実装後に比重履歴機能を有効化
-    # if 'current_density' in update_data and update_data['current_density'] != old_density:
-    #     density_record = Density(
-    #         material_id=material_id,
-    #         density=update_data['current_density'],
-    #         effective_from=datetime.now(),
-    #         created_by=1
-    #     )
-    #     db.add(density_record)
-    #     db.commit()
 
     return db_material
 
@@ -502,144 +319,8 @@ def parse_material_specification(spec_text: str) -> Dict[str, Optional[str]]:
     }
 
     # ========================================
-    # 標準規格管理用 API エンドポイント（簡素化）
+    # 材料別名管理用 API エンドポイント
     # ========================================
-
-@router.get("/standards/", response_model=List[MaterialStandardResponse])
-async def get_material_standards(
-    skip: int = 0,
-    limit: int = 100,
-    is_active: Optional[bool] = None,
-    category: Optional[str] = None,
-    db: Session = Depends(get_db)
-):
-    """標準材質一覧取得"""
-    query = db.query(MaterialStandard)
-
-    if is_active is not None:
-        query = query.filter(MaterialStandard.is_active == is_active)
-
-    if category is not None:
-        query = query.filter(MaterialStandard.category == category)
-
-    standards = query.offset(skip).limit(limit).all()
-    return standards
-
-@router.post("/standards/", response_model=MaterialStandardResponse, status_code=status.HTTP_201_CREATED)
-async def create_material_standard(
-    standard: MaterialStandardCreate,
-    db: Session = Depends(get_db)
-):
-    """標準材質作成"""
-    # 重複チェック
-    existing = db.query(MaterialStandard).filter(
-        MaterialStandard.jis_code == standard.jis_code
-    ).first()
-
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"JIS規格コード '{standard.jis_code}' は既に登録されています"
-        )
-
-    db_standard = MaterialStandard(**standard.model_dump())
-    db.add(db_standard)
-    db.commit()
-    db.refresh(db_standard)
-
-    return db_standard
-
-@router.get("/grades/", response_model=List[MaterialGradeResponse])
-async def get_material_grades(
-    standard_id: Optional[int] = None,
-    skip: int = 0,
-    limit: int = 100,
-    is_active: Optional[bool] = None,
-    db: Session = Depends(get_db)
-):
-    """グレード一覧取得（標準規格IDでフィルタ可能）"""
-    query = db.query(MaterialGrade)
-
-    if standard_id is not None:
-        query = query.filter(MaterialGrade.standard_id == standard_id)
-
-    if is_active is not None:
-        query = query.filter(MaterialGrade.is_active == is_active)
-
-    grades = query.offset(skip).limit(limit).all()
-    return grades
-
-@router.post("/grades/", response_model=MaterialGradeResponse, status_code=status.HTTP_201_CREATED)
-async def create_material_grade(
-    grade: MaterialGradeCreate,
-    db: Session = Depends(get_db)
-):
-    """グレード作成"""
-    # 標準規格存在チェック
-    standard = db.query(MaterialStandard).filter(
-        MaterialStandard.id == grade.standard_id
-    ).first()
-
-    if not standard:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"標準規格ID {grade.standard_id} が見つかりません"
-        )
-
-    db_grade = MaterialGrade(**grade.model_dump())
-    db.add(db_grade)
-    db.commit()
-    db.refresh(db_grade)
-
-    return db_grade
-
-@router.get("/products/", response_model=List[MaterialProductResponse])
-async def get_material_products(
-    grade_id: Optional[int] = None,
-    skip: int = 0,
-    limit: int = 100,
-    is_active: Optional[bool] = None,
-    is_equivalent: Optional[bool] = None,
-    db: Session = Depends(get_db)
-):
-    """製品一覧取得（グレードIDでフィルタ可能）"""
-    query = db.query(MaterialProduct)
-
-    if grade_id is not None:
-        query = query.filter(MaterialProduct.grade_id == grade_id)
-
-    if is_active is not None:
-        query = query.filter(MaterialProduct.is_active == is_active)
-
-    if is_equivalent is not None:
-        query = query.filter(MaterialProduct.is_equivalent == is_equivalent)
-
-    products = query.offset(skip).limit(limit).all()
-    return products
-
-@router.post("/products/", response_model=MaterialProductResponse, status_code=status.HTTP_201_CREATED)
-async def create_material_product(
-    product: MaterialProductCreate,
-    db: Session = Depends(get_db)
-):
-    """製品作成"""
-    # グレード存在チェック
-    grade = db.query(MaterialGrade).filter(
-        MaterialGrade.id == product.grade_id
-    ).first()
-
-    if not grade:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"グレードID {product.grade_id} が見つかりません"
-        )
-
-    db_product = MaterialProduct(**product.model_dump())
-    db.add(db_product)
-    db.commit()
-    db.refresh(db_product)
-
-    return db_product
 
 @router.get("/aliases/", response_model=List[MaterialAliasResponse])
 async def get_material_aliases(

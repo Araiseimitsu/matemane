@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_
 from typing import List, Optional
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_serializer
 from datetime import datetime
 
 from src.db import get_db
-from src.db.models import Item, Lot, Material, Location, MaterialShape, MaterialGroup, MaterialGroupMember
+from src.db.models import Item, Lot, Material, Location, MaterialShape, MaterialGroup, MaterialGroupMember, InspectionStatus
 
 router = APIRouter()
 
@@ -115,6 +115,16 @@ class LotInfo(BaseModel):
     initial_quantity: int
     supplier: Optional[str] = None
     received_date: Optional[datetime] = None
+    inspection_status: Optional[InspectionStatus] = None
+    inspected_at: Optional[datetime] = None
+    
+    @field_serializer('inspection_status')
+    def serialize_inspection_status(self, value: Optional[InspectionStatus], _info):
+        if value is None:
+            return None
+        if isinstance(value, InspectionStatus):
+            return value.value
+        return value
 
 class InventoryItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -236,7 +246,9 @@ async def get_inventory(
                 "length_mm": item.lot.length_mm,
                 "initial_quantity": item.lot.initial_quantity,
                 "supplier": item.lot.supplier,
-                "received_date": item.lot.received_date
+                "received_date": item.lot.received_date,
+                "inspection_status": item.lot.inspection_status,
+                "inspected_at": item.lot.inspected_at
             },
             "material": {
                 "id": material.id,
@@ -545,7 +557,9 @@ async def search_inventory_items(
                 "length_mm": item.lot.length_mm,
                 "initial_quantity": item.lot.initial_quantity,
                 "supplier": item.lot.supplier,
-                "received_date": item.lot.received_date
+                "received_date": item.lot.received_date,
+                "inspection_status": item.lot.inspection_status,
+                "inspected_at": item.lot.inspected_at
             },
             "material": {
                 "id": material.id,
