@@ -193,7 +193,6 @@ class Movement(Base):
     item_id = Column(Integer, ForeignKey("items.id"), nullable=False)
     movement_type = Column(Enum(MovementType), nullable=False)
     quantity = Column(Integer, nullable=False, comment="移動本数")
-    instruction_number = Column(String(50), comment="指示書番号（IS-YYYY-NNNN）")
     notes = Column(Text, comment="備考")
     processed_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     processed_at = Column(DateTime(timezone=True), server_default=func.now())

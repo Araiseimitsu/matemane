@@ -84,8 +84,10 @@ python -m src.scripts.excel_po_import --excel "材料管理.xlsx" --sheet "材�
 - `src/db/models.py`: SQLAlchemyモデル定義
   - **削除済み**: `MaterialStandard`, `MaterialGrade`, `MaterialProduct` テーブル（未実装の3層構造）
   - **削除済み**: `UsageType` Enum（グループ運用へ移行）
-  - **削除済みカラム**: `materials.product_id`, `materials.usage_type`, `materials.dedicated_part_number`
-  - **削除済みカラム**: `purchase_order_items.management_code`（入庫時にItem側でUUID生成）
+  - **削除済みカラム**:
+    - `materials.product_id`, `materials.usage_type`, `materials.dedicated_part_number`
+    - `purchase_order_items.management_code`（入庫時にItem側でUUID生成）
+    - `movements.instruction_number`（未実装の指示書機能）
 
   - 主要テーブル: User, Material, MaterialAlias, MaterialGroup, MaterialGroupMember, Density, Location, Lot, Item, Movement, PurchaseOrder, PurchaseOrderItem, DensityPreset, AuditLog
   - Enumクラス: UserRole, MaterialShape, MovementType, PurchaseOrderStatus, PurchaseOrderItemStatus, OrderType, InspectionStatus
@@ -102,6 +104,10 @@ python -m src.scripts.excel_po_import --excel "材料管理.xlsx" --sheet "材�
   - **削除済み**: 標準規格/グレード/製品関連のエンドポイント
   - **保持**: 材料CRUD、別名管理、材料検索
 
+- `src/api/movements.py`: 入出庫管理（2025-01完全実装）
+  - **削除済み**: 指示書番号関連のエンドポイント (`GET /api/movements/by-instruction/{instruction_number}`)
+  - **実装済み**: 入庫（戻し）処理、出庫処理、履歴取得
+
 - `src/scripts/excel_po_import.py`: Excel取込スクリプト
   - 材料管理.xlsxから発注データを自動作成
   - 条件: I列(品番)非空、L列(材料)非空、Z列(指定納期)入力あり、AC列(入荷日)が空
@@ -117,6 +123,11 @@ python -m src.scripts.excel_po_import --excel "材料管理.xlsx" --sheet "材�
   - 材料情報入力フォーム
   - 検品ステータス表示
 
+- `src/templates/movements.html`: 入出庫管理画面（統合フォーム）
+  - **削除済み**: 重複した入庫/出庫フォーム（約200行）
+  - **削除済み**: 重複したJavaScript関数（約300行）
+  - **保持**: 統合フォーム（出庫/戻し切替）、在庫一覧、履歴表示、QRスキャン
+
 ## 実装状況（2025-01更新）
 
 ### 完全実装済み
@@ -127,9 +138,9 @@ python -m src.scripts.excel_po_import --excel "材料管理.xlsx" --sheet "材�
 - ✅ **材料管理**: 材料CRUD、別名管理、グループ管理
 - ✅ **生産スケジュール管理**: Excel解析、材料引当
 - ✅ **Excel照合ビューア**: 直接Excel読込、在庫照合
+- ✅ **入出庫管理**: 統合フォーム（出庫/戻し）、在庫一覧表示、履歴管理、QRスキャン、数量⇔重量換算
 
 ### 実装待ち
-- ⏳ **入出庫管理機能**: `src/api/movements.py` - スタブのみ
 - ⏳ **ラベル印刷機能**: `src/api/labels.py` - スタブのみ
 - ⏳ **テスト**: `tests/` ディレクトリ未作成
 
@@ -146,6 +157,13 @@ python -m src.scripts.excel_po_import --excel "材料管理.xlsx" --sheet "材�
 3. ロット番号・入庫数量を入力
 4. 検品ステータスを管理（PENDING/PASSED/FAILED）
 
+### 入出庫管理（2025-01実装完了）
+1. `/movements` で統合フォームから出庫/戻しを選択
+2. 在庫一覧で対象アイテムを検索または直接選択ボタンをクリック
+3. 数量または重量を入力（自動相互換算）
+4. 備考を入力して実行
+5. 履歴は自動記録され、下部に表示
+
 ## データベース設計（2025-01更新）
 
 ### 重要なテーブル
@@ -156,6 +174,8 @@ python -m src.scripts.excel_po_import --excel "材料管理.xlsx" --sheet "材�
 - `material_group_members`: グループ所属（多対多）
 - `lots`: ロット管理（束単位、検品ステータス）
 - `items`: アイテム管理（UUID管理コード、現在本数・置き場）
+- `movements`: 入出庫履歴（種別・数量・備考・処理者・処理日時）
+  - **削除**: `instruction_number`（未実装の指示書機能）
 - `purchase_orders`: 発注管理（発注番号、仕入先、状態管理）
 - `purchase_order_items`: 発注アイテム（材料仕様文字列、数量）
   - **削除**: `management_code`（入庫時にItem側で生成）
@@ -165,6 +185,7 @@ python -m src.scripts.excel_po_import --excel "材料管理.xlsx" --sheet "材�
 2. **入庫確認**: PurchaseOrderItem → Material（新規時）→ Lot → Item（UUID生成）
 3. **検品**: Lot.inspection_status 更新
 4. **在庫管理**: Item（UUID管理コード、現在本数、置き場）
+5. **入出庫**: Item.current_quantity 更新 → Movement履歴記録 → AuditLog記録
 
 ## API設計（2025-01更新）
 
@@ -191,6 +212,14 @@ python -m src.scripts.excel_po_import --excel "材料管理.xlsx" --sheet "材�
 - `GET /api/materials/aliases/` - 別名一覧取得
 - `POST /api/materials/aliases/` - 別名作成
 
+### 入出庫管理（2025-01完全実装）
+- `GET /api/movements/` - 入出庫履歴取得（フィルタ: movement_type, item_id）
+- `POST /api/movements/in/{item_id}` - 入庫（戻し）処理
+- `POST /api/movements/out/{item_id}` - 出庫処理
+  - 数量または重量を指定（相互換算対応）
+  - 備考記入可能
+  - 自動的にMovementとAuditLog記録
+
 ## 重要な制約事項
 
 ### データベース
@@ -214,16 +243,25 @@ python -m src.scripts.excel_po_import --excel "材料管理.xlsx" --sheet "材�
 
 ### 実施内容
 1. ✅ **不要なDBテーブル削除**: MaterialStandard, MaterialGrade, MaterialProduct
-2. ✅ **不要なカラム削除**: materials.product_id, usage_type, dedicated_part_number / purchase_order_items.management_code
+2. ✅ **不要なカラム削除**:
+   - materials.product_id, usage_type, dedicated_part_number
+   - purchase_order_items.management_code
+   - movements.instruction_number
 3. ✅ **発注管理API簡素化**: 手動作成/編集/削除API削除、Excel取込専用化
 4. ✅ **発注管理UI簡素化**: モーダル1500行削除、Excel取込+一覧表示のみ
 5. ✅ **materials.py整理**: 標準規格関連のスキーマ・エンドポイント削除
+6. ✅ **入出庫管理完全実装**: 統合フォーム実装、重複コード約500行削除
 
 ### 削除理由
 - **MaterialStandard/Grade/Product**: 未実装の3層構造、実運用で不要
 - **UsageType（汎用/専用区分）**: MaterialGroup運用へ移行済み
 - **management_code事前生成**: 入庫時にItem側でUUID生成するため重複
 - **手動発注作成API**: Excel取込のみ使用、UI削除済みのため不要
+- **instruction_number**: 指示書機能は未実装で使用されていない
+- **重複フォーム（movements）**: 統合フォームで機能統一、旧フォームは不要
+
+### 詳細ログ
+詳細なリファクタリング履歴は `docs/refactoring_log.md` を参照
 
 ## デフォルトユーザー（reset_db.py実行後）
 ※現在ログイン機能は不要ですが、データベースには以下のユーザーが作成されます：

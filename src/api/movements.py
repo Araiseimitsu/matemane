@@ -101,7 +101,6 @@ async def get_movements(
     limit: int = 100,
     movement_type: Optional[MovementType] = None,
     item_id: Optional[int] = None,
-    instruction_number: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """入出庫履歴取得"""
@@ -114,9 +113,6 @@ async def get_movements(
 
     if item_id is not None:
         query = query.filter(Movement.item_id == item_id)
-
-    if instruction_number is not None:
-        query = query.filter(Movement.instruction_number.ilike(f"%{instruction_number}%"))
 
     movements = query.order_by(desc(Movement.processed_at)).offset(skip).limit(limit).all()
 
@@ -206,7 +202,6 @@ async def create_in_movement(
         item_id=item_id,
         movement_type=MovementType.IN,
         quantity=resolved_quantity,
-        instruction_number=None,
         notes=movement_data.notes,
         processed_by=1  # TODO: 認証実装後にユーザーIDを設定
     )
@@ -307,7 +302,6 @@ async def create_out_movement(
         item_id=item_id,
         movement_type=MovementType.OUT,
         quantity=resolved_quantity,
-        instruction_number=None,
         notes=movement_data.notes,
         processed_by=1  # TODO: 認証実装後にユーザーIDを設定
     )
@@ -340,61 +334,6 @@ async def create_out_movement(
         "input_weight_kg": normalized_input_weight,
         "weight_difference_kg": weight_difference
     }
-
-@router.get("/by-instruction/{instruction_number}")
-async def get_movements_by_instruction(
-    instruction_number: str,
-    db: Session = Depends(get_db)
-):
-    """指示書番号別の入出庫履歴取得"""
-    movements = db.query(Movement).options(
-        joinedload(Movement.item).joinedload(Item.lot).joinedload(Lot.material)
-    ).filter(
-        Movement.instruction_number == instruction_number
-    ).order_by(desc(Movement.processed_at)).all()
-
-    if not movements:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="指定された指示書番号の履歴が見つかりません"
-        )
-
-    result = []
-    for movement in movements:
-        material = movement.item.lot.material
-        weight_per_piece_kg = _calculate_weight_per_piece_kg(movement.item)
-        total_weight_kg = round(weight_per_piece_kg * movement.quantity, 3)
-
-        result.append({
-            "movement_id": movement.id,
-            "movement_type": movement.movement_type.value,
-            "quantity": movement.quantity,
-            "weight_kg": total_weight_kg,
-            "processed_at": movement.processed_at,
-            "item": {
-                "management_code": movement.item.management_code,
-                "current_quantity": movement.item.current_quantity
-            },
-            "material": {
-                "name": material.name,
-                "shape": material.shape.value,
-                "diameter_mm": material.diameter_mm
-            },
-            "lot": {
-                "lot_number": movement.item.lot.lot_number,
-                "length_mm": movement.item.lot.length_mm
-            },
-            "notes": movement.notes
-        })
-
-    return {
-        "instruction_number": instruction_number,
-        "movements": result,
-        "total_movements": len(result)
-    }
-
-
-
 
 def get_shape_name(shape_value: str) -> str:
     """形状値を日本語名に変換"""

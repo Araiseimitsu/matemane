@@ -55,209 +55,6 @@ endblock %} {% block content %}
 
   <!-- コンテンツエリア -->
   <div class="px-4 py-6">
-    <!-- 入出庫処理カード -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-      <!-- 入庫処理（受入れページへ誘導） -->
-      <div class="bg-white rounded-lg shadow-sm p-6 hidden">
-        <div class="flex items-center mb-4">
-          <div class="p-2 bg-indigo-50 rounded-lg mr-3">
-            <svg
-              class="w-6 h-6 text-indigo-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 16h-1v-4H8l4-8v5h3l-2 7z"
-              />
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-gray-900">戻し（在庫への返却）</h3>
-        </div>
-
-        <div class="space-y-3">
-          <form id="inForm" class="space-y-4">
-            <input type="hidden" name="item_id" />
-
-            <!-- アイテム選択 -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">対象アイテム</label>
-              <div class="space-y-2">
-                <div id="inSelectedItemSummary" class="p-3 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-500">アイテムが選択されていません</div>
-                <div class="flex space-x-2">
-                  <button type="button" id="inSelectItemBtn" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    アイテム検索
-                  </button>
-                  <button type="button" id="inClearItemBtn" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">クリア</button>
-                </div>
-              </div>
-            </div>
-
-            <!-- 数量・重量入力 -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">戻し数量（本）</label>
-                <input type="number" name="quantity" min="1" step="1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="本数を入力" />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">戻し重量（kg）</label>
-                <input type="number" name="weight_kg" min="0.001" step="0.001" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="重量を入力" />
-              </div>
-            </div>
-            <p class="text-sm text-gray-500">※数量または重量のいずれかを入力してください（相互換算されます）</p>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
-              <textarea name="notes" rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="戻しに関する備考"></textarea>
-            </div>
-
-            <button type="submit" class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center">
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-              在庫へ戻す
-            </button>
-          </form>
-        </div>
-      </div>
-
-      <!-- 出庫処理 -->
-      <div class="bg-white rounded-lg shadow-sm p-6 hidden">
-        <div class="flex items-center mb-4">
-          <div class="p-2 bg-red-50 rounded-lg mr-3">
-            <svg
-              class="w-6 h-6 text-red-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M20 12H4"
-              />
-            </svg>
-          </div>
-          <h3 class="text-lg font-semibold text-gray-900">出庫処理</h3>
-        </div>
-
-        <form id="outForm" class="space-y-4">
-          <input type="hidden" name="item_id" />
-
-          <!-- アイテム選択 -->
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2"
-              >対象アイテム</label
-            >
-            <div class="space-y-2">
-              <div
-                id="outSelectedItemSummary"
-                class="p-3 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-500"
-              >
-                アイテムが選択されていません
-              </div>
-              <div class="flex space-x-2">
-                <button
-                  type="button"
-                  id="outSelectItemBtn"
-                  class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
-                >
-                  <svg
-                    class="w-4 h-4 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                  アイテム検索
-                </button>
-                <button
-                  type="button"
-                  id="outClearItemBtn"
-                  class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
-                >
-                  クリア
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- 数量・重量入力 -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2"
-                >出庫数量（本）</label
-              >
-              <input
-                type="number"
-                name="quantity"
-                min="1"
-                step="1"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="本数を入力"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-2"
-                >出庫重量（kg）</label
-              >
-              <input
-                type="number"
-                name="weight_kg"
-                min="0.001"
-                step="0.001"
-                class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="重量を入力"
-              />
-            </div>
-          </div>
-          <p class="text-sm text-gray-500">
-            ※数量または重量のいずれかを入力してください（相互換算されます）
-          </p>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2"
-              >備考</label
-            >
-            <textarea
-              name="notes"
-              rows="2"
-              class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="出庫に関する備考"
-            ></textarea>
-          </div>
-
-          <button
-            type="submit"
-            class="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center"
-          >
-            <svg
-              class="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M20 12H4"
-              />
-            </svg>
-            出庫実行
-          </button>
-        </form>
-      </div>
-    </div>
 
     <!-- 統合ムーブメントフォーム -->
     <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -325,6 +122,7 @@ endblock %} {% block content %}
           出庫実行
         </button>
       </form>
+      <p class="text-xs text-gray-500 mt-4">※ 在庫一覧から直接「出庫」または「戻し」ボタンをクリックすることもできます</p>
     </div>
 
     <!-- 在庫アイテム一覧 -->
@@ -656,7 +454,6 @@ endblock %} {% block content %}
   // グローバル変数
   let inventoryItems = [];
   let movementHistory = [];
-  let selectedItems = { in: null, out: null };
   let currentItemTarget = null;
   let selectedItem = null;
   let movementType = "out";
@@ -911,14 +708,6 @@ endblock %} {% block content %}
 
   // イベントリスナー設定
   function setupEventListeners() {
-    // フォーム送信
-    document
-      .getElementById("inForm")
-      .addEventListener("submit", handleInMovement);
-    document
-      .getElementById("outForm")
-      .addEventListener("submit", handleOutMovement);
-
     // 統合フォーム
     const movementForm = document.getElementById("movementForm");
     if (movementForm) {
@@ -934,20 +723,6 @@ endblock %} {% block content %}
       setupUnifiedConverters();
       setMovementType("out");
     }
-
-    // アイテム選択
-    document
-      .getElementById("inSelectItemBtn")
-      .addEventListener("click", () => openItemSearchModal("in"));
-    document
-      .getElementById("outSelectItemBtn")
-      .addEventListener("click", () => openItemSearchModal("out"));
-    document
-      .getElementById("inClearItemBtn")
-      .addEventListener("click", () => clearSelectedItem("in"));
-    document
-      .getElementById("outClearItemBtn")
-      .addEventListener("click", () => clearSelectedItem("out"));
 
     // モーダル
     document
@@ -1011,12 +786,9 @@ endblock %} {% block content %}
     document
       .getElementById("includeZeroStock")
       .addEventListener("change", loadInventory);
-
-    // 数量・重量の相互換算
-    setupQuantityWeightSync();
   }
 
-  // 在庫一覧検索へ誘導（モーダル廃止方向）
+  // 在庫一覧検索へ誘導
   function focusInventorySearch() {
     const section = document.getElementById("inventorySection");
     const input = document.getElementById("materialSearchInput");
@@ -1029,62 +801,10 @@ endblock %} {% block content %}
     showToast("下の在庫一覧で検索してください", "success");
   }
 
-  // 数量・重量の相互換算設定
-  function setupQuantityWeightSync() {
-    ["in", "out"].forEach((type) => {
-      const form = document.getElementById(`${type}Form`);
-      const quantityInput = form.querySelector('input[name="quantity"]');
-      const weightInput = form.querySelector('input[name="weight_kg"]');
-
-      quantityInput.addEventListener("input", () => syncQuantityToWeight(type));
-      weightInput.addEventListener("input", () => syncWeightToQuantity(type));
-    });
-  }
-
-  // 本数から重量への換算
-  function syncQuantityToWeight(type) {
-    const item = selectedItems[type];
-    if (!item || !item.weight_per_piece_kg) return;
-
-    const form = document.getElementById(`${type}Form`);
-    const quantityInput = form.querySelector('input[name="quantity"]');
-    const weightInput = form.querySelector('input[name="weight_kg"]');
-
-    const quantity = parseInt(quantityInput.value);
-    if (quantity > 0) {
-      const weight = quantity * item.weight_per_piece_kg;
-      weightInput.value = weight.toFixed(3);
-    } else {
-      weightInput.value = "";
-    }
-  }
-
-  // 重量から本数への換算
-  function syncWeightToQuantity(type) {
-    const item = selectedItems[type];
-    if (!item || !item.weight_per_piece_kg) return;
-
-    const form = document.getElementById(`${type}Form`);
-    const quantityInput = form.querySelector('input[name="quantity"]');
-    const weightInput = form.querySelector('input[name="weight_kg"]');
-
-    const weight = parseFloat(weightInput.value);
-    if (weight > 0) {
-      const quantity = Math.max(
-        1,
-        Math.round(weight / item.weight_per_piece_kg)
-      );
-      quantityInput.value = quantity;
-    } else {
-      quantityInput.value = "";
-    }
-  }
-
   // アイテム検索モーダルを開く
   function openItemSearchModal(target) {
     currentItemTarget = target;
-    document.getElementById("itemSearchModalTitle").textContent =
-      target === "in" ? "入庫するアイテムを選択" : "出庫するアイテムを選択";
+    document.getElementById("itemSearchModalTitle").textContent = "アイテムを検索";
     document.getElementById("itemSearchModal").classList.remove("hidden");
 
     // 初期検索実行
@@ -1160,9 +880,7 @@ endblock %} {% block content %}
     tableBody.innerHTML = results
       .map((item) => {
         const shapeText = getShapeText(item.material.shape);
-        const isSelected =
-          selectedItems[currentItemTarget] &&
-          selectedItems[currentItemTarget].id === item.id;
+        const isSelected = selectedItem && selectedItem.id === item.id;
         const isOutOfStock = item.current_quantity === 0;
         const rowClass = isOutOfStock
           ? isSelected
@@ -1219,9 +937,7 @@ endblock %} {% block content %}
       return;
     }
 
-    selectedItems[currentItemTarget] = item;
-    updateSelectedItemDisplay(currentItemTarget);
-    // 統合フォームにも反映
+    // 統合フォームに反映
     selectedItem = item;
     updateUnifiedSelectedItemDisplay();
     const mfItemId = document.querySelector('#movementForm input[name="item_id"]');
@@ -1238,70 +954,18 @@ endblock %} {% block content %}
       return;
     }
 
-    selectedItems[type] = item;
-    updateSelectedItemDisplay(type);
-    // 統合フォームにも反映
+    // 統合フォームに反映
     selectedItem = item;
     setMovementType(type);
     updateUnifiedSelectedItemDisplay();
     const mfItemId = document.querySelector('#movementForm input[name="item_id"]');
     if (mfItemId) mfItemId.value = item.id;
     showToast(
-      `${type === "in" ? "入庫" : "出庫"}アイテムを選択しました`,
+      `${type === "in" ? "戻し" : "出庫"}アイテムを選択しました`,
       "success"
     );
   }
 
-  // 選択アイテムの表示更新
-  function updateSelectedItemDisplay(type) {
-    const summary = document.getElementById(`${type}SelectedItemSummary`);
-    const form = document.getElementById(`${type}Form`);
-    const hiddenInput = form.querySelector('input[name="item_id"]');
-
-    const item = selectedItems[type];
-
-    if (!item) {
-      summary.innerHTML = "アイテムが選択されていません";
-      summary.className =
-        "p-3 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-500";
-      hiddenInput.value = "";
-      return;
-    }
-
-    hiddenInput.value = item.id;
-    summary.className =
-      "p-3 border border-blue-300 rounded-lg bg-blue-50 text-sm text-gray-900";
-
-    const shapeText = getShapeText(item.material.shape);
-    summary.innerHTML = `
-        <div class="font-mono text-xs text-gray-700">${
-          item.management_code
-        }</div>
-        <div class="mt-1 text-sm">${item.material.name} / ${shapeText} φ${
-      item.material.diameter_mm
-    }mm × ${item.lot.length_mm}mm</div>
-        <div class="mt-1 text-xs text-gray-600">ロット: ${
-          item.lot.lot_number
-        } / 残量: ${item.current_quantity}本 (${(
-      item.total_weight_kg || 0
-    ).toFixed(3)}kg)</div>
-        <div class="mt-1 text-xs text-gray-600">1本あたり: ${(
-          item.weight_per_piece_kg || 0
-        ).toFixed(3)}kg / 置き場: ${
-      item.location ? item.location.name : "未配置"
-    }</div>
-    `;
-  }
-
-  // 選択アイテムのクリア
-  function clearSelectedItem(type) {
-    selectedItems[type] = null;
-    updateSelectedItemDisplay(type);
-
-    const form = document.getElementById(`${type}Form`);
-    form.querySelector('input[name="quantity"]').value = "";
-    form.querySelector('input[name="weight_kg"]').value = "";
-  }
 
   // 統合フォーム: 選択表示更新
   function updateUnifiedSelectedItemDisplay() {
@@ -1398,9 +1062,7 @@ endblock %} {% block content %}
     const data = { notes: formData.get("notes") || null };
     if (quantity) data.quantity = quantity;
     if (weight) data.weight_kg = weight;
-    if (movementType === "out") {
-      // 指示番号は不要
-    }
+
     try {
       const result = movementType === "out"
         ? await APIClient.outMovement(itemId, data)
@@ -1414,106 +1076,6 @@ endblock %} {% block content %}
     } catch (error) {
       console.error("統合フォーム送信エラー:", error);
       showToast(error.message || "処理に失敗しました", "error");
-    }
-  }
-
-  // 入庫処理
-  async function handleInMovement(event) {
-    event.preventDefault();
-
-    const formData = new FormData(event.target);
-    const itemId = parseInt(formData.get("item_id"));
-
-    if (!itemId) {
-      showToast("対象アイテムを選択してください", "error");
-      return;
-    }
-
-    const quantity = formData.get("quantity")
-      ? parseInt(formData.get("quantity"))
-      : null;
-    const weight = formData.get("weight_kg")
-      ? parseFloat(formData.get("weight_kg"))
-      : null;
-
-    if (!quantity && !weight) {
-      showToast("数量または重量を入力してください", "error");
-      return;
-    }
-
-    try {
-      const data = {
-        notes: formData.get("notes") || null,
-      };
-
-      if (quantity) data.quantity = quantity;
-      if (weight) data.weight_kg = weight;
-
-      const result = await APIClient.inMovement(itemId, data);
-
-      showToast(
-        `入庫が完了しました (${result.old_quantity}本 → ${result.new_quantity}本)`,
-        "success"
-      );
-
-      // データ更新
-      event.target.reset();
-      clearSelectedItem("in");
-      await loadInventory();
-      await loadMovements();
-    } catch (error) {
-      console.error("入庫処理エラー:", error);
-      showToast(error.message || "入庫処理に失敗しました", "error");
-    }
-  }
-
-  // 出庫処理
-  async function handleOutMovement(event) {
-    event.preventDefault();
-
-    const formData = new FormData(event.target);
-    const itemId = parseInt(formData.get("item_id"));
-
-    if (!itemId) {
-      showToast("対象アイテムを選択してください", "error");
-      return;
-    }
-
-    const quantity = formData.get("quantity")
-      ? parseInt(formData.get("quantity"))
-      : null;
-    const weight = formData.get("weight_kg")
-      ? parseFloat(formData.get("weight_kg"))
-      : null;
-
-    if (!quantity && !weight) {
-      showToast("数量または重量を入力してください", "error");
-      return;
-    }
-
-    try {
-      const data = {
-        notes: formData.get("notes") || null,
-      };
-
-      if (quantity) data.quantity = quantity;
-      if (weight) data.weight_kg = weight;
-
-      const result = await APIClient.outMovement(itemId, data);
-
-      showToast(
-        `出庫が完了しました (${result.old_quantity}本 → ${result.new_quantity}本)`,
-        "success"
-      );
-
-      // データ更新
-      event.target.reset();
-      clearSelectedItem("out");
-      await loadInventory();
-      await loadMovements();
-    } catch (error) {
-      console.error("出庫処理エラー:", error);
-      showToast(error.message || "出庫処理に失敗しました", "error");
     }
   }
 
@@ -1537,12 +1099,10 @@ endblock %} {% block content %}
       if (result) {
         // アイテムを自動選択（入庫または出庫の選択ダイアログ表示）
         const action = confirm(
-          "スキャンしたアイテムを入庫しますか？\n「キャンセル」で出庫を選択できます。"
+          "スキャンしたアイテムを戻しますか？\n「キャンセル」で出庫を選択できます。"
         );
-        selectedItems[action ? "in" : "out"] = result;
-        updateSelectedItemDisplay(action ? "in" : "out");
 
-        // 統合フォームにも反映
+        // 統合フォームに反映
         selectedItem = result;
         setMovementType(action ? "in" : "out");
         updateUnifiedSelectedItemDisplay();
@@ -1561,12 +1121,12 @@ endblock %} {% block content %}
 
   // フィルター処理
   function filterInventory() {
-    // 実装予定：フィルタリング処理
+    // TODO: 実装予定
     console.log("在庫フィルター処理");
   }
 
   function filterMovements() {
-    // 実装予定：フィルタリング処理
+    // TODO: 実装予定
     console.log("履歴フィルター処理");
   }
 
