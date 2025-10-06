@@ -1,7 +1,7 @@
 """
 Excelから発注を作成する外部スクリプト
 
-対象ファイル: 材料管理.xlsx
+対象ファイル: \\192.168.1.200\共有\生産管理課\材料管理.xlsx
 対象シート: 材料管理表
 
 抽出条件:
@@ -28,7 +28,7 @@ Excelから発注を作成する外部スクリプト
 - 未設定の長さは既定 2500mm、発注方式は本数指定、数量は1本（変更可）
 
 使い方:
-  python -m src.scripts.excel_po_import --excel "材料管理.xlsx" --sheet "材料管理表" --dry-run
+  python -m src.scripts.excel_po_import --excel "\\192.168.1.200\共有\生産管理課\材料管理.xlsx" --sheet "材料管理表" --dry-run
 """
 
 from __future__ import annotations
@@ -271,7 +271,12 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
 
 def main():
     parser = argparse.ArgumentParser(description="Excelから発注を作成する外部スクリプト")
-    parser.add_argument("--excel", type=str, default="材料管理.xlsx", help="Excelファイルパス")
+    parser.add_argument(
+        "--excel",
+        type=str,
+        default="\\\\192.168.1.200\\共有\\生産管理課\\材料管理.xlsx",
+        help="Excelファイルパス",
+    )
     parser.add_argument("--sheet", type=str, default="材料管理表", help="シート名")
     parser.add_argument("--dry-run", action="store_true", help="DBへ書き込まず検証のみ")
     args = parser.parse_args()
