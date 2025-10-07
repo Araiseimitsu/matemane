@@ -489,6 +489,12 @@ function createReceivingItemRow(item) {
 
     const orderNumber = item.purchase_order ? item.purchase_order.order_number : '-';
     const supplier = item.purchase_order ? item.purchase_order.supplier : '-';
+    const orderDate = (item.purchase_order && item.purchase_order.order_date)
+        ? new Date(item.purchase_order.order_date).toLocaleDateString('ja-JP')
+        : '-';
+    const expectedDate = (item.purchase_order && item.purchase_order.expected_delivery_date)
+        ? new Date(item.purchase_order.expected_delivery_date).toLocaleDateString('ja-JP')
+        : '-';
     
     const isReceived = String(item.status).toUpperCase() === 'RECEIVED';
     const receivingBtnLabel = isReceived ? '再編集' : '入庫確認';
@@ -516,6 +522,8 @@ function createReceivingItemRow(item) {
     row.innerHTML = `
         <td class="px-4 py-3 text-sm font-medium text-gray-900">${orderNumber}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${supplier}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${orderDate}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${expectedDate}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${item.item_name}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${getOrderDisplayText(item)}</td>
         <td class="px-4 py-3">
@@ -541,19 +549,22 @@ function getOrderDisplayText(item) {
 
 function searchReceivingItems() {
     const supplier = document.getElementById('receivingSupplierFilter')?.value?.toLowerCase() || '';
+    const orderNumber = document.getElementById('receivingOrderNumberFilter')?.value?.toLowerCase() || '';
     const material = document.getElementById('receivingMaterialFilter')?.value?.toLowerCase() || '';
 
     const rows = document.querySelectorAll('#receivingItemsTableBody tr');
     let visibleCount = 0;
 
     rows.forEach(row => {
-        const rowSupplier = row.cells[1].textContent.toLowerCase();
-        const rowMaterial = row.cells[2].textContent.toLowerCase();
+        const rowSupplier = row.cells[1]?.textContent?.toLowerCase() || '';
+        const rowOrderNumber = row.cells[0]?.textContent?.toLowerCase() || '';
+        const rowMaterial = row.cells[4]?.textContent?.toLowerCase() || '';
 
         const matchSupplier = !supplier || rowSupplier.includes(supplier);
+        const matchOrderNumber = !orderNumber || rowOrderNumber.includes(orderNumber);
         const matchMaterial = !material || rowMaterial.includes(material);
 
-        if (matchSupplier && matchMaterial) {
+        if (matchSupplier && matchOrderNumber && matchMaterial) {
             row.style.display = '';
             visibleCount++;
         } else {
@@ -564,6 +575,8 @@ function searchReceivingItems() {
 
 function resetReceivingFilters() {
     document.getElementById('receivingSupplierFilter').value = '';
+    const orderNumberInput = document.getElementById('receivingOrderNumberFilter');
+    if (orderNumberInput) orderNumberInput.value = '';
     document.getElementById('receivingMaterialFilter').value = '';
     loadReceivingItems();
 }
@@ -618,20 +631,100 @@ async function showReceiveModal(itemId) {
             </div>
         `;
 
-        // 入荷日のデフォルト値を本日に設定
-        const now = new Date();
-        const localDate = now.getFullYear() + '-' +
-            String(now.getMonth() + 1).padStart(2, '0') + '-' +
-            String(now.getDate()).padStart(2, '0');
-        document.querySelector('input[name="received_date"]').value = localDate;
+        // 受入済みの再編集時は、登録時の値（最新ロット）をそのまま自動入力
+        let previousFilled = false;
+        try {
+            const isReceived = String(item.status).toUpperCase() === 'RECEIVED';
+            if (isReceived) {
+                const prevRes = await fetch(`/api/purchase-orders/items/${itemId}/receive/previous/`);
+                if (prevRes.ok) {
+                    const prev = await prevRes.json();
+
+                    // 入力要素
+                    const materialNameInput = document.querySelector('input[name="material_name"]');
+                    const diameterField = document.querySelector('input[name="diameter_input"]');
+                    const detailInfoInput = document.querySelector('input[name="detail_info"]');
+                    const densityField = document.getElementById('densityInput');
+                    const lengthField = document.querySelector('input[name="length_mm"]');
+                    const receivedDateField = document.querySelector('input[name="received_date"]');
+
+                    // 材料情報
+                    // ユーザー未入力時にフルネーム（発注品名）が自動で入らないよう、
+                    // 前回の材質名が発注品名と同一なら反映をスキップする
+                    if (materialNameInput && prev.material_name && prev.material_name !== item.item_name) {
+                        materialNameInput.value = prev.material_name;
+                    }
+                    if (detailInfoInput && typeof prev.detail_info === 'string') detailInfoInput.value = prev.detail_info || '';
+                    if (densityField && typeof prev.density === 'number') densityField.value = prev.density;
+                    if (lengthField && typeof prev.length_mm === 'number') lengthField.value = prev.length_mm;
+
+                    // 径入力は形状＋径を整形して表示（元の自由入力は保存していないため）
+                    if (diameterField && prev.shape && typeof prev.diameter_mm === 'number') {
+                        const formatted = formatDiameterInputValueForDisplay(prev.shape, prev.diameter_mm);
+                        if (formatted) diameterField.value = formatted;
+                    }
+
+                    // 入荷日
+                    if (receivedDateField && prev.received_date) {
+                        const d = new Date(prev.received_date);
+                        const ymd = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                        receivedDateField.value = ymd;
+                    }
+
+                    // ロット情報（先頭1行に復元）
+                    clearLotRows();
+                    addLotRow(prev.received_quantity || null, prev.received_weight_kg || null);
+                    const lotNumberInput = document.querySelector('input[name="lot_number_1"]');
+                    if (lotNumberInput && prev.lot_number) lotNumberInput.value = prev.lot_number;
+                    const lotLocationInput = document.querySelector('input[name="lot_location_1"]');
+                    if (lotLocationInput && prev.location_id) lotLocationInput.value = String(prev.location_id);
+
+                    previousFilled = true;
+
+                    // 再編集フラグをフォームに設定（handleReceiveでPUT/POSTを切り替えるため）
+                    const receiveForm = document.getElementById('receiveForm');
+                    if (receiveForm) {
+                        let isEditInput = receiveForm.querySelector('input[name="is_edit"]');
+                        if (!isEditInput) {
+                            isEditInput = document.createElement('input');
+                            isEditInput.type = 'hidden';
+                            isEditInput.name = 'is_edit';
+                            receiveForm.appendChild(isEditInput);
+                        }
+                        isEditInput.value = 'true';
+
+                        let prevLotInput = receiveForm.querySelector('input[name="previous_lot_number"]');
+                        if (!prevLotInput) {
+                            prevLotInput = document.createElement('input');
+                            prevLotInput.type = 'hidden';
+                            prevLotInput.name = 'previous_lot_number';
+                            receiveForm.appendChild(prevLotInput);
+                        }
+                        prevLotInput.value = prev.lot_number || '';
+                    }
+                }
+            }
+        } catch (error) {
+            console.warn('再編集用自動入力に失敗しました', error);
+        }
+
+        // 入荷日のデフォルト（未設定時のみ本日に設定）
+        const receivedDateField = document.querySelector('input[name="received_date"]');
+        if (receivedDateField && !receivedDateField.value) {
+            const now = new Date();
+            const localDate = now.getFullYear() + '-' +
+                String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                String(now.getDate()).padStart(2, '0');
+            receivedDateField.value = localDate;
+        }
 
         // 材料情報の要素を取得
         const diameterInput = document.querySelector('input[name="diameter_input"]');
         const densityInput = document.getElementById('densityInput');
         const lengthInput = document.querySelector('input[name="length_mm"]');
 
-        // 長さのデフォルト値を2500に設定
-        if (lengthInput) {
+        // 長さのデフォルト値（未設定時のみ 2500）
+        if (lengthInput && !lengthInput.value) {
             lengthInput.value = 2500;
         }
 
@@ -640,16 +733,16 @@ async function showReceiveModal(itemId) {
         currentOrderedQuantity = item.order_type === 'weight' ? 0 : item.ordered_quantity;
         document.getElementById('orderedQuantity').textContent = currentOrderedQuantity > 0 ? currentOrderedQuantity : '-';
 
-        // ロット行をクリアして初期化
-        clearLotRows();
-        
-        // 最初の1行に発注数量/重量を自動入力
-        if (item.order_type === 'weight' && item.ordered_weight_kg) {
-            addLotRow(null, item.ordered_weight_kg);
-        } else if (item.ordered_quantity) {
-            addLotRow(item.ordered_quantity, null);
-        } else {
-            addLotRow();
+        // ロット行を初期化（未復元時のみ発注情報で初期化）
+        if (!previousFilled) {
+            clearLotRows();
+            if (item.order_type === 'weight' && item.ordered_weight_kg) {
+                addLotRow(null, item.ordered_weight_kg);
+            } else if (item.ordered_quantity) {
+                addLotRow(item.ordered_quantity, null);
+            } else {
+                addLotRow();
+            }
         }
         
         // addLotBtnのイベントリスナーを設定
@@ -808,6 +901,10 @@ async function handleReceive(event) {
     const formData = new FormData(event.target);
     const itemId = formData.get('item_id');
 
+    // 再編集フラグ（最新ロットの更新時はPUTを使用）
+    const isEdit = (formData.get('is_edit') || '') === 'true';
+    const previousLotNumber = formData.get('previous_lot_number') || null;
+
     // 径入力をパース
     const diameterInput = formData.get('diameter_input') || '';
     const parsedDiameter = parseDiameterInputValue(diameterInput);
@@ -820,8 +917,10 @@ async function handleReceive(event) {
     }
 
     // 材料情報（共通）
+    // 材質名は空文字の場合は null として送信（API側の任意扱いと整合）
+    const materialNameRaw = (formData.get('material_name') || '').trim();
     const commonMaterialData = {
-        material_name: formData.get('material_name'),
+        material_name: materialNameRaw !== '' ? materialNameRaw : null,
         detail_info: formData.get('detail_info') || null,
         diameter_mm: parsedDiameter.diameter_mm,
         shape: parsedDiameter.shape,
@@ -915,8 +1014,12 @@ async function handleReceive(event) {
 
             console.log('送信データ:', receiveData); // デバッグ
             
+            // 再編集（既存ロットの更新）かどうかを判定
+            const isUpdatingExisting = isEdit && lotRowCounter === 1 && lot.lot_number === previousLotNumber;
+            const methodToUse = isUpdatingExisting ? 'PUT' : 'POST';
+
             const response = await fetch(`/api/purchase-orders/items/${itemId}/receive/`, {
-                method: 'POST',
+                method: methodToUse,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(receiveData)
             });
@@ -964,7 +1067,8 @@ const SHAPE_SYMBOL_MAP = {
 
 function parseDiameterInputValue(raw) {
     if (!raw || !raw.trim()) {
-        return { error: '径を入力してください' };
+        // 空欄は許容（形状・径は未設定として送信）
+        return { shape: null, diameter_mm: null };
     }
     let text = raw.normalize('NFKC').trim();
     let shape = null;
@@ -994,6 +1098,17 @@ function parseDiameterInputValue(raw) {
     }
 
     return { shape, diameter_mm: diameter };
+}
+
+// 形状・径を入力フィールド用に整形
+function formatDiameterInputValueForDisplay(shape, diameterMm) {
+    if (!shape || typeof diameterMm !== 'number') return '';
+    const d = Number(diameterMm);
+    const s = String(shape).toLowerCase();
+    if (s === 'round') return `φ${d}`;
+    if (s === 'hexagon') return `H${d}`;
+    if (s === 'square') return `□${d}`;
+    return `${d}`;
 }
 
 // ==== 検品タブ ====

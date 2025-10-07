@@ -336,7 +336,7 @@ async def get_inventory_summary(
 
 @router.get("/summary-by-name", response_model=List[InventorySummaryByName])
 async def get_inventory_summary_by_name(
-    name: Optional[str] = Query(None, description="材料名でフィルタ（完全一致）"),
+    name: Optional[str] = Query(None, description="材料表示名（フルネーム）でフィルタ（完全一致）"),
     include_zero_stock: Optional[bool] = Query(False, description="在庫数=0のアイテムも含める"),
     db: Session = Depends(get_db)
 ):
@@ -350,7 +350,7 @@ async def get_inventory_summary_by_name(
         base_filter.append(Item.current_quantity > 0)
 
     group_query = db.query(
-        Material.name.label("material_name"),
+        Material.display_name.label("material_name"),
         func.sum(Item.current_quantity).label("total_quantity"),
         func.count(func.distinct(Lot.id)).label("lot_count"),
         func.count(func.distinct(Item.location_id)).label("location_count"),
@@ -359,9 +359,9 @@ async def get_inventory_summary_by_name(
     ).select_from(Item).join(Lot).join(Material).filter(*base_filter)
 
     if name is not None:
-        group_query = group_query.filter(Material.name == name)
+        group_query = group_query.filter(Material.display_name == name)
 
-    group_query = group_query.group_by(Material.name)
+    group_query = group_query.group_by(Material.display_name)
     grouped = group_query.all()
 
     summaries: List[InventorySummaryByName] = []

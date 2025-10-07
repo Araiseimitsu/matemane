@@ -166,13 +166,18 @@
                 <!-- フィルター -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-gray-50 rounded-lg p-4">
                     <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">発注番号</label>
+                        <input type="text" id="receivingOrderNumberFilter" placeholder="発注番号で絞り込み"
+                               class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">仕入先</label>
                         <input type="text" id="receivingSupplierFilter" placeholder="仕入先名で絞り込み"
                                class="w-full p-2 border border-gray-300 rounded-md">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">材料名</label>
-                        <input type="text" id="receivingMaterialFilter" placeholder="材料名で絞り込み"
+                        <label class="block text-sm font-medium text-gray-700 mb-2">材料仕様</label>
+                        <input type="text" id="receivingMaterialFilter" placeholder="材料仕様で絞り込み"
                                class="w-full p-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="col-span-2 flex items-end space-x-2">
@@ -192,7 +197,9 @@
                             <tr>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">発注番号</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">仕入先</th>
-                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">発注品名</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">発注日</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">納期予定</th>
+                                <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">材料仕様</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">発注数量/重量</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">検品状態</th>
                                 <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">操作</th>
@@ -483,14 +490,14 @@
                     <h3 class="text-lg font-medium text-blue-900 mb-3">材料情報入力</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">材質名 *</label>
-                            <input type="text" name="material_name" required
+                            <label class="block text-sm font-medium text-gray-700 mb-2">材質名</label>
+                            <input type="text" name="material_name"
                                    class="w-full p-3 border border-gray-300 rounded-md"
                                    placeholder="例: SUS303">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">径入力 *</label>
-                            <input type="text" name="diameter_input" required
+                            <label class="block text-sm font-medium text-gray-700 mb-2">径入力</label>
+                            <input type="text" name="diameter_input"
                                    class="w-full p-3 border border-gray-300 rounded-md"
                                    placeholder="例: φ10.0 / H12 / □20">
                             <p class="text-xs text-gray-500 mt-1">先頭にφ・H・□などの記号を付けて入力</p>

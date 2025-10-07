@@ -111,11 +111,11 @@ class PaginatedPurchaseOrderResponse(BaseModel):
 
 class ReceivingConfirmation(BaseModel):
     lot_number: str = Field(..., max_length=100, description="ロット番号")
-    material_name: str = Field(..., max_length=100, description="材質名")
-    detail_info: Optional[str] = Field(None, max_length=200, description="詳細情報")
-    diameter_mm: float = Field(..., gt=0, description="直径または一辺の長さ（mm）")
-    shape: MaterialShape = Field(..., description="断面形状")
-    density: float = Field(..., gt=0, description="比重（g/cm³）")
+    material_name: Optional[str] = Field(None, max_length=100, description="材質名（任意）")
+    detail_info: Optional[str] = Field(None, max_length=200, description="詳細情報（任意）")
+    diameter_mm: Optional[float] = Field(None, gt=0, description="直径または一辺の長さ（mm・任意）")
+    shape: Optional[MaterialShape] = Field(None, description="断面形状（任意）")
+    density: Optional[float] = Field(None, gt=0, description="比重（g/cm³・任意）")
     # 入庫情報
     length_mm: int = Field(..., gt=0, description="長さ（mm）")
     received_date: datetime = Field(..., description="入荷日")
@@ -376,7 +376,8 @@ async def receive_item(
                 ).first()
 
         # 3) 上記で見つからない場合は、ユーザー入力の材質名でもマッチを試みる（後方互換）
-        if not existing_material:
+        # 空文字はマッチ対象にしない
+        if not existing_material and receiving.material_name and receiving.material_name.strip() != '':
             existing_material = db.query(Material).filter(
                 or_(
                     Material.display_name == receiving.material_name,
@@ -394,10 +395,18 @@ async def receive_item(
                         Material.is_active == True
                     ).first()
 
+        # 新規材料登録が必要な場合は、形状・径・比重の入力が必須
+        if not existing_material:
+            if receiving.shape is None or receiving.diameter_mm is None or receiving.density is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="既存材料が見つからないため、形状・径・比重の入力が必要です"
+                )
+
         # 計算用属性（既存があればマスター値を優先）
-        effective_shape = existing_material.shape if existing_material else receiving.shape
-        effective_diameter = existing_material.diameter_mm if existing_material else receiving.diameter_mm
-        effective_density = existing_material.current_density if existing_material else receiving.density
+        effective_shape = existing_material.shape if existing_material else receiving.shape  # type: ignore
+        effective_diameter = existing_material.diameter_mm if existing_material else receiving.diameter_mm  # type: ignore
+        effective_density = existing_material.current_density if existing_material else receiving.density  # type: ignore
 
         # ユーザーの入力に応じて最終的な入庫数量と重量を計算
         if receiving.received_weight_kg:
@@ -420,12 +429,12 @@ async def receive_item(
         else:
             # 新規材料として登録（マスターは発注品名の全文を基準にdisplay_nameへ保存）
             new_material = Material(
-                name=receiving.material_name,
+                name=(receiving.material_name.strip() if receiving.material_name else item.item_name),
                 display_name=item.item_name,  # 発注品名の全文
                 detail_info=detail_info,
-                shape=receiving.shape,
-                diameter_mm=receiving.diameter_mm,
-                current_density=receiving.density,
+                shape=receiving.shape,  # type: ignore
+                diameter_mm=receiving.diameter_mm,  # type: ignore
+                current_density=receiving.density,  # type: ignore
             )
             db.add(new_material)
             db.flush()
@@ -587,11 +596,12 @@ async def update_received_item(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ロットに紐づく材料が見つかりません")
 
     # 材料属性の更新（display_nameは維持。name/detail/shape/径/密度を更新）
-    material.name = receiving.material_name
-    material.detail_info = (receiving.detail_info or None)
-    material.shape = receiving.shape
-    material.diameter_mm = receiving.diameter_mm
-    material.current_density = receiving.density
+    # 材質名が空文字の場合は更新しない（未入力を許容）
+    material.name = (receiving.material_name.strip() if (receiving.material_name is not None and receiving.material_name.strip() != '') else material.name)
+    material.detail_info = receiving.detail_info if receiving.detail_info is not None else material.detail_info
+    material.shape = receiving.shape if receiving.shape is not None else material.shape
+    material.diameter_mm = receiving.diameter_mm if receiving.diameter_mm is not None else material.diameter_mm
+    material.current_density = receiving.density if receiving.density is not None else material.current_density
     db.flush()
 
     # 計算用属性（更新後の材料値を使用）
@@ -674,6 +684,70 @@ async def update_received_item(
         "management_code": inv_item.management_code,
         "material_id": material.id
     }
+
+
+@router.get("/items/{item_id}/receive/previous/", response_model=ReceivingConfirmation)
+async def get_previous_receiving_values(
+    item_id: int,
+    db: Session = Depends(get_db)
+):
+    """再編集用に、ユーザーが登録した受入値（最新ロット）を返す
+
+    - 指定の発注アイテムに紐づく最新ロットを取得
+    - ロットの材料属性・入庫属性・金額情報・置き場をまとめて返す
+    - 重量は保存していないため、数量から計算し補完
+    """
+    # 発注アイテム確認
+    po_item = db.query(PurchaseOrderItem).filter(PurchaseOrderItem.id == item_id).first()
+    if not po_item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="発注アイテムが見つかりません")
+
+    # 紐づく最新ロット（受入日降順→ID降順）
+    lot = db.query(Lot).filter(Lot.purchase_order_item_id == item_id).order_by(Lot.received_date.desc(), Lot.id.desc()).first()
+    if not lot:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="紐づくロットが見つかりません")
+
+    # 材料
+    material = db.query(Material).filter(Material.id == lot.material_id, Material.is_active == True).first()
+    if not material:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ロットに紐づく材料が見つかりません")
+
+    # 重量は数量から計算して補完
+    received_quantity = lot.initial_quantity
+    received_weight_kg = None
+    if received_quantity and received_quantity > 0:
+        try:
+            received_weight_kg = calculate_weight_from_quantity(
+                received_quantity, material.shape, material.diameter_mm, lot.length_mm, material.current_density
+            )
+        except Exception:
+            received_weight_kg = None
+
+    # 置き場（複数の在庫アイテムがあり得るため配列で返す）
+    items_for_lot = db.query(Item).filter(Item.lot_id == lot.id).all()
+    location_ids = [itm.location_id for itm in items_for_lot if itm.location_id is not None]
+    primary_location_id = location_ids[0] if location_ids else None
+
+    # ReceivingConfirmation 形式で返却
+    result = ReceivingConfirmation(
+        lot_number=lot.lot_number,
+        material_name=material.name,
+        detail_info=material.detail_info,
+        diameter_mm=material.diameter_mm,
+        shape=material.shape,
+        density=material.current_density,
+        length_mm=lot.length_mm,
+        received_date=lot.received_date or datetime.utcnow(),
+        received_quantity=received_quantity,
+        received_weight_kg=received_weight_kg,
+        unit_price=lot.received_unit_price,
+        amount=lot.received_amount,
+        location_id=primary_location_id,
+        location_ids=location_ids,
+        notes=lot.notes
+    )
+
+    return result
 
 
 @router.get("/items/{item_id}/inspection-target/", response_model=dict)

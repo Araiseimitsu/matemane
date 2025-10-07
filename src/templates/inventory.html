@@ -475,13 +475,9 @@ function buildGroupStore() {
     const materialById = new Map(materialMaster.map(material => [material.id, material]));
 
     const getGroupKey = (material) => {
-        const detailKey = normalizeDetail(material.detail_info);
-        // 詳細情報がある場合は専用品、ない場合は汎用品として扱う
-        const isDedicated = Boolean(detailKey);
-        if (isDedicated) {
-            return `dedicated|${material.name.toUpperCase()}|${normalizeNumber(material.diameter_mm)}|${detailKey}`;
-        }
-        return `general|${material.name.toUpperCase()}|${material.shape}|${normalizeNumber(material.diameter_mm)}`;
+        // フルネーム（display_name）で一意にグルーピング
+        const label = (material.display_name || material.name || '').toUpperCase().trim();
+        return `full|${label}`;
     };
 
     materialMaster.forEach(material => {

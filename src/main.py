@@ -10,7 +10,7 @@ import logging
 
 from src.config import settings
 from src.db import create_tables, SessionLocal
-from src.db.models import Location
+from src.db.models import Location, DensityPreset
 from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders, excel_viewer, production_schedule, material_management, material_groups, inspections
 
 # ログ設定
@@ -92,6 +92,39 @@ async def startup_event():
                 logger.info("置き場は既に初期化済みです")
     except Exception as e:
         logger.error(f"置き場初期化エラー: {e}")
+
+    # 比重プリセットの初期化（未登録時のみ投入）
+    try:
+        with SessionLocal() as db:
+            preset_count = db.query(DensityPreset).count()
+            if preset_count == 0:
+                presets = [
+                    {"name": "SUS303/304/316 丸棒", "density": 7.93, "description": "ステンレス丸棒"},
+                    {"name": "SUS303/304/316 六角", "density": 7.93, "description": "ステンレス六角"},
+                    {"name": "SUS416/420/430/K-M31 丸棒", "density": 7.80, "description": "ステンレス丸棒"},
+                    {"name": "SUS416/420/430/K-M31 六角", "density": 7.75, "description": "ステンレス六角"},
+                    {"name": "鉄 全般 丸棒", "density": 7.90, "description": "一般鋼 丸棒"},
+                    {"name": "鉄 全般 六角", "density": 7.90, "description": "一般鋼 六角"},
+                    {"name": "真鍮 丸棒", "density": 8.50, "description": "真鍮 丸棒"},
+                    {"name": "真鍮 六角", "density": 8.50, "description": "真鍮 六角"},
+                    {"name": "真鍮 四角", "density": 8.50, "description": "真鍮 四角"},
+                    {"name": "アルミ A2011/CB156/G23 丸棒", "density": 2.83, "description": "アルミ 丸棒"},
+                    {"name": "アルミ A2017 丸棒", "density": 2.79, "description": "アルミ 丸棒"},
+                    {"name": "アルミ A5056 丸棒", "density": 2.64, "description": "アルミ 丸棒"},
+                    {"name": "アルミ A6061 丸棒", "density": 2.70, "description": "アルミ 丸棒"},
+                    {"name": "アルミ 一般的比重 丸棒", "density": 2.713, "description": "アルミ 一般"},
+                    {"name": "高力黄銅 HB材等 丸棒", "density": 8.43, "description": "黄銅 丸棒"},
+                    {"name": "銅 全般 丸棒", "density": 8.89, "description": "銅 丸棒"},
+                ]
+
+                for p in presets:
+                    db.add(DensityPreset(**p))
+                db.commit()
+                logger.info(f"比重プリセットを初期化しました: {len(presets)} 件")
+            else:
+                logger.info(f"比重プリセットは既に {preset_count} 件存在します")
+    except Exception as e:
+        logger.error(f"比重プリセット初期化エラー: {e}")
 
     logger.info("材料管理システムの起動が完了しました")
 
@@ -186,14 +219,23 @@ async def internal_error_handler(request: Request, exc):
 if __name__ == "__main__":
     import sys
     import os
+    from dotenv import load_dotenv
     # プロジェクトルートをPythonパスに追加
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.insert(0, project_root)
+    # .env を読み込み
+    load_dotenv()
+
+    # SSL 証明書設定（環境変数から読み込み）
+    ssl_certfile = os.getenv("SSL_CERTFILE")
+    ssl_keyfile = os.getenv("SSL_KEYFILE")
 
     uvicorn.run(
         "src.main:app",
         host="0.0.0.0",
         port=8000,
         reload=settings.debug,
-        log_level="info" if settings.debug else "warning"
+        log_level="info" if settings.debug else "warning",
+        ssl_certfile=ssl_certfile if ssl_certfile else None,
+        ssl_keyfile=ssl_keyfile if ssl_keyfile else None,
     )
