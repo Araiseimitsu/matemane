@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     db_port: int = int(os.getenv("DB_PORT", "3306"))
     db_user: str = os.getenv("DB_USER", "")
     db_password: str = os.getenv("DB_PASSWORD", "")
-    db_name: str = os.getenv("DB_NAME", "matemae")
+    db_name: str = os.getenv("DB_NAME", "matemane")
 
     # セキュリティ設定
     secret_key: str = os.getenv("SECRET_KEY", "your-secret-key-change-this")
