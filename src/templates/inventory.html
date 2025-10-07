@@ -114,7 +114,6 @@
                         <th scope="col" class="px-4 py-3 text-right">在庫ロット数</th>
                         <th scope="col" class="px-4 py-3 text-right">在庫合計（本）</th>
                         <th scope="col" class="px-4 py-3 text-right">在庫重量（kg）</th>
-                        <th scope="col" class="px-4 py-3 text-right">管理コード数</th>
                         <th scope="col" class="px-4 py-3 text-center">詳細</th>
                     </tr>
                 </thead>
@@ -521,14 +520,14 @@ function buildGroupStore() {
                 total_quantity: 0,
                 total_weight_kg: 0,
                 locations: new Set(),
-                management_codes: []
+                lot_numbers: []
             });
         }
 
         const lotEntry = group._lotsMap.get(lotKey);
         lotEntry.total_quantity += item.current_quantity;
         lotEntry.locations.add(locationName);
-        lotEntry.management_codes.push(item.management_code);
+        lotEntry.lot_numbers.push(item.lot_number);
 
         const weightPerPiece = Number(item.weight_per_piece_kg ?? 0);
         const totalWeight = Number(item.total_weight_kg ?? (weightPerPiece * item.current_quantity));
@@ -557,7 +556,6 @@ function createEmptyGroup(key, material) {
         total_quantity: 0,
         total_weight_kg: 0,
         lot_count: 0,
-        management_code_count: 0,
         length_variations: [],
         material_count: 0,
         _lotsMap: new Map(),
@@ -575,19 +573,21 @@ function finalizeGroup(group) {
             total_quantity: lot.total_quantity,
             total_weight_kg: lot.total_weight_kg,
             locations: Array.from(lot.locations),
-            management_codes: lot.management_codes
-        })).sort((a, b) => a.lot_number.localeCompare(b.lot_number, 'ja'));
+            lot_numbers: lot.lot_numbers
+        })).sort((a, b) => {
+            const lotA = a.lot_number || '';
+            const lotB = b.lot_number || '';
+            return lotA.localeCompare(lotB, 'ja');
+        });
 
         group.total_quantity = group.lots.reduce((sum, lot) => sum + lot.total_quantity, 0);
         group.total_weight_kg = group.lots.reduce((sum, lot) => sum + lot.total_weight_kg, 0);
         group.lot_count = group.lots.length;
-        group.management_code_count = group.lots.reduce((sum, lot) => sum + lot.management_codes.length, 0);
     } else {
         group.lots = [];
         group.total_quantity = 0;
         group.total_weight_kg = 0;
         group.lot_count = 0;
-        group.management_code_count = 0;
     }
 
     group.length_variations = Array.from(group._lengthSet)
@@ -605,7 +605,11 @@ function finalizeGroup(group) {
             }
         });
     }
-    group.material_group_names = Array.from(namesSet).sort((a, b) => a.localeCompare(b, 'ja'));
+    group.material_group_names = Array.from(namesSet).sort((a, b) => {
+        const nameA = a || '';
+        const nameB = b || '';
+        return nameA.localeCompare(nameB, 'ja');
+    });
 
     delete group._lotsMap;
     delete group._lengthSet;
@@ -769,7 +773,9 @@ function applyFiltersAndRender() {
     });
 
     filteredGroupsCache = groups.sort((a, b) => {
-        return a.material_name.localeCompare(b.material_name, 'ja');
+        const nameA = a.material_name || '';
+        const nameB = b.material_name || '';
+        return nameA.localeCompare(nameB, 'ja');
     });
 
     currentPage = 1;
@@ -821,7 +827,6 @@ function createGroupRow(group) {
     const lotCount = group.lot_count.toLocaleString('ja-JP');
     const totalQuantity = group.total_quantity.toLocaleString('ja-JP');
     const totalWeight = formatWeight(group.total_weight_kg);
-    const managementCount = group.management_code_count.toLocaleString('ja-JP');
     const groupNamesText = formatGroupNamesList(group.material_group_names);
 
     return `
@@ -836,7 +841,6 @@ function createGroupRow(group) {
             <td class="px-4 py-3 text-sm text-right text-gray-900">${lotCount}</td>
             <td class="px-4 py-3 text-sm text-right text-gray-900">${totalQuantity}</td>
             <td class="px-4 py-3 text-sm text-right text-gray-900">${totalWeight}</td>
-            <td class="px-4 py-3 text-sm text-right text-gray-900">${managementCount}</td>
             <td class="px-4 py-3 text-center">
                 <button type="button" data-group-key="${group.key}" class="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700">
                     詳細
@@ -1086,7 +1090,6 @@ function renderDetailLots(group) {
                     <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">在庫数</th>
                     <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">在庫重量</th>
                     <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">保管場所</th>
-                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">管理コード数</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -1097,7 +1100,6 @@ function renderDetailLots(group) {
                         <td class="px-4 py-3 text-gray-900">${lot.total_quantity.toLocaleString('ja-JP')} 本</td>
                         <td class="px-4 py-3 text-gray-900">${formatWeight(lot.total_weight_kg)} kg</td>
                         <td class="px-4 py-3 text-gray-600">${lot.locations.length ? lot.locations.map(loc => escapeHtml(loc)).join('<br>') : '―'}</td>
-                        <td class="px-4 py-3 text-gray-600">${lot.management_codes.length}</td>
                     </tr>
                 `).join('')}
             </tbody>

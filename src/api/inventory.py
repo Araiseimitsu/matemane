@@ -42,7 +42,7 @@ def match_material_for_allocation(
 
     # 基本条件（材質名・径）
     query = db.query(Material).filter(
-        Material.name == normalized_name,
+        Material.display_name == normalized_name,
         Material.diameter_mm == diameter_mm,
         Material.is_active == True
     )
@@ -93,9 +93,7 @@ class MaterialInfo(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    name: str
-    display_name: Optional[str] = None
-    detail_info: Optional[str] = None
+    display_name: str
     shape: MaterialShape
     diameter_mm: float
     current_density: float
@@ -124,7 +122,7 @@ class InventoryItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    management_code: str
+    lot_id: int
     current_quantity: int
     is_active: bool
     created_at: datetime
@@ -229,7 +227,7 @@ async def get_inventory(
         # アイテムを辞書に変換して重量情報を追加
         item_dict = {
             "id": item.id,
-            "management_code": item.management_code,
+            "lot_id": item.lot_id,
             "current_quantity": item.current_quantity,
             "is_active": item.is_active,
             "created_at": item.created_at,
@@ -246,7 +244,6 @@ async def get_inventory(
             },
             "material": {
                 "id": material.id,
-                "name": material.name,
                 "display_name": material.display_name,
                 "shape": material.shape,
                 "diameter_mm": material.diameter_mm,
@@ -273,7 +270,7 @@ async def get_inventory_summary(
     """在庫サマリー取得（材料・長さ別の集計）"""
     query = db.query(
         Material.id.label("material_id"),
-        Material.name.label("material_name"),
+        Material.display_name.label("material_name"),
         Material.shape.label("material_shape"),
         Material.diameter_mm.label("diameter_mm"),
         Lot.length_mm.label("length_mm"),
@@ -285,7 +282,7 @@ async def get_inventory_summary(
         Item.current_quantity > 0
     ).group_by(
         Material.id,
-        Material.name,
+        Material.display_name,
         Material.shape,
         Material.diameter_mm,
         Lot.length_mm
@@ -374,7 +371,7 @@ async def get_inventory_summary_by_name(
             .join(Lot)
             .join(Material)
             .filter(*base_filter)
-            .filter(Material.name == g.material_name)
+            .filter(Material.display_name == g.material_name)
             .all()
         )
 
@@ -412,18 +409,18 @@ async def get_inventory_summary_by_name(
 
     return summaries
 
-@router.get("/search/{management_code}", response_model=InventoryItem)
-async def search_by_management_code(management_code: str, db: Session = Depends(get_db)):
-    """管理コード（UUID）による検索"""
-    item = db.query(Item).options(
+@router.get("/search/{lot_number}", response_model=InventoryItem)
+async def search_by_lot_number(lot_number: str, db: Session = Depends(get_db)):
+    """LOT番号による検索"""
+    item = db.query(Item).join(Item.lot).options(
         joinedload(Item.lot).joinedload(Lot.material),
         joinedload(Item.location)
-    ).filter(Item.management_code == management_code).first()
+    ).filter(Lot.lot_number == lot_number).first()
 
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="指定された管理コードのアイテムが見つかりません"
+            detail="指定されたLOT番号のアイテムが見つかりません"
         )
 
     # 重量計算
@@ -450,7 +447,7 @@ async def search_by_management_code(management_code: str, db: Session = Depends(
     # InventoryItem形式で返却（在庫一覧APIと同じ構造）
     item_dict = {
         "id": item.id,
-        "management_code": item.management_code,
+        "lot_id": item.lot_id,
         "current_quantity": item.current_quantity,
         "is_active": item.is_active,
         "created_at": item.created_at,
@@ -461,11 +458,12 @@ async def search_by_management_code(management_code: str, db: Session = Depends(
             "length_mm": item.lot.length_mm,
             "initial_quantity": item.lot.initial_quantity,
             "supplier": item.lot.supplier,
-            "received_date": item.lot.received_date
+            "received_date": item.lot.received_date,
+            "inspection_status": item.lot.inspection_status,
+            "inspected_at": item.lot.inspected_at
         },
         "material": {
             "id": material.id,
-            "name": material.name,
             "display_name": material.display_name,
             "shape": material.shape,
             "diameter_mm": material.diameter_mm,
@@ -502,9 +500,7 @@ async def search_inventory_items(
 
     # 検索条件（複数のフィールドで検索）
     search_filter = (
-        Item.management_code.ilike(f"%{query}%") |
         Lot.lot_number.ilike(f"%{query}%") |
-        Material.name.ilike(f"%{query}%") |
         Material.display_name.ilike(f"%{query}%") |
         Material.part_number.ilike(f"%{query}%")
     )
@@ -540,7 +536,7 @@ async def search_inventory_items(
         # アイテムを辞書に変換して重量情報を追加
         item_dict = {
             "id": item.id,
-            "management_code": item.management_code,
+            "lot_id": item.lot_id,
             "current_quantity": item.current_quantity,
             "is_active": item.is_active,
             "created_at": item.created_at,
@@ -557,7 +553,6 @@ async def search_inventory_items(
             },
             "material": {
                 "id": material.id,
-                "name": material.name,
                 "display_name": material.display_name,
                 "shape": material.shape,
                 "diameter_mm": material.diameter_mm,
@@ -613,7 +608,7 @@ async def get_low_stock_items(
         weight_per_piece_kg = (volume_cm3 * material.current_density) / 1000
 
         result.append({
-            "management_code": item.management_code,
+            "lot_number": item.lot.lot_number,
             "material_name": material.name,
             "lot_number": item.lot.lot_number,
             "length_mm": item.lot.length_mm,
@@ -715,3 +710,145 @@ async def get_inventory_groups(
         ))
 
     return summaries
+
+
+# ========================================
+# 検品用エンドポイント
+# ========================================
+
+class InspectionLotResponse(BaseModel):
+    """検品用ロット情報レスポンス"""
+    model_config = ConfigDict(from_attributes=True)
+
+    lot_id: int
+    lot_number: str
+    material_name: str
+    shape: MaterialShape
+    diameter_mm: float
+    length_mm: int
+    total_quantity: int
+    total_weight_kg: float
+    inspection_status: InspectionStatus
+    inspected_at: Optional[datetime] = None
+    received_date: datetime
+
+    @field_serializer('inspection_status')
+    def serialize_inspection_status(self, value: InspectionStatus, _info):
+        return value.value if value else None
+
+    @field_serializer('shape')
+    def serialize_shape(self, value: MaterialShape, _info):
+        return value.value if value else None
+
+
+@router.get("/lots/for-inspection/", response_model=List[InspectionLotResponse])
+def get_lots_for_inspection(
+    include_completed: bool = Query(False, description="検品完了済みも含める"),
+    db: Session = Depends(get_db)
+):
+    """
+    検品対象のロット一覧を取得
+
+    - デフォルトでは検品待ち（PENDING）のロットのみ返す
+    - include_completed=trueで全ロットを返す
+    """
+    # ロットごとの集計クエリ
+    query = db.query(
+        Lot.id.label("lot_id"),
+        Lot.lot_number,
+        Lot.length_mm,
+        Lot.inspection_status,
+        Lot.inspected_at,
+        Lot.received_date,
+        Material.display_name.label("material_name"),
+        Material.shape,
+        Material.diameter_mm,
+        func.sum(Item.current_quantity).label("total_quantity"),
+        func.sum(Item.total_weight_kg).label("total_weight_kg")
+    ).select_from(Lot).join(
+        Item, Item.lot_id == Lot.id
+    ).join(
+        Material, Lot.material_id == Material.id
+    ).filter(
+        Item.is_active == True
+    ).group_by(
+        Lot.id,
+        Lot.lot_number,
+        Lot.length_mm,
+        Lot.inspection_status,
+        Lot.inspected_at,
+        Lot.received_date,
+        Material.display_name,
+        Material.shape,
+        Material.diameter_mm
+    )
+
+    # 検品完了済みを含めるかどうか
+    if not include_completed:
+        query = query.filter(Lot.inspection_status == InspectionStatus.PENDING)
+
+    # 受領日降順でソート
+    query = query.order_by(Lot.received_date.desc())
+
+    results = query.all()
+
+    return [
+        InspectionLotResponse(
+            lot_id=row.lot_id,
+            lot_number=row.lot_number,
+            material_name=row.material_name,
+            shape=row.shape,
+            diameter_mm=row.diameter_mm,
+            length_mm=row.length_mm,
+            total_quantity=row.total_quantity or 0,
+            total_weight_kg=row.total_weight_kg or 0.0,
+            inspection_status=row.inspection_status,
+            inspected_at=row.inspected_at,
+            received_date=row.received_date
+        )
+        for row in results
+    ]
+
+
+class UpdateInspectionRequest(BaseModel):
+    """検品情報更新リクエスト"""
+    inspection_status: InspectionStatus
+    inspected_at: datetime
+    measured_value: Optional[float] = None
+    appearance_ok: Optional[bool] = None
+    bending_ok: Optional[bool] = None
+    inspected_by_name: Optional[str] = None
+    inspection_notes: Optional[str] = None
+
+
+@router.put("/lots/{lot_id}/inspection/")
+def update_lot_inspection(
+    lot_id: int,
+    request: UpdateInspectionRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    ロットの検品情報を更新
+    """
+    lot = db.query(Lot).filter(Lot.id == lot_id).first()
+    if not lot:
+        raise HTTPException(status_code=404, detail="ロットが見つかりません")
+
+    # 検品情報を更新
+    lot.inspection_status = request.inspection_status
+    lot.inspected_at = request.inspected_at
+    lot.measured_value = request.measured_value
+    lot.appearance_ok = request.appearance_ok
+    lot.bending_ok = request.bending_ok
+    lot.inspected_by_name = request.inspected_by_name
+    lot.inspection_notes = request.inspection_notes
+
+    db.commit()
+    db.refresh(lot)
+
+    return {
+        "message": "検品情報を更新しました",
+        "lot_id": lot.id,
+        "lot_number": lot.lot_number,
+        "inspection_status": lot.inspection_status.value
+    }

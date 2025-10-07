@@ -537,11 +537,8 @@ endblock %} {% block content %}
         return `
             <tr class="${rowClass}">
                 <td class="px-4 py-3">
-                    <div class="font-mono text-xs text-gray-900">${item.management_code.substring(
-                      0,
-                      8
-                    )}...</div>
-                    <button onclick="copyToClipboard('${item.management_code}')"
+                    <div class="font-mono text-xs text-gray-900">${item.lot_number}</div>
+                    <button onclick="copyToClipboard('${item.lot_number}')"
                             class="text-xs text-blue-600 hover:text-blue-800 mt-1">
                         コピー
                     </button>
@@ -657,11 +654,7 @@ endblock %} {% block content %}
                     </span>
                 </td>
                 <td class="px-4 py-3 font-mono text-xs text-gray-900">
-                    ${
-                      movement.item_management_code
-                        ? movement.item_management_code.substring(0, 8) + "..."
-                        : "-"
-                    }
+                    ${movement.lot_number || "-"}
                 </td>
                 <td class="px-4 py-3 text-sm">
                     <div class="text-gray-900">${

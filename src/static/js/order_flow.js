@@ -641,28 +641,17 @@ async function showReceiveModal(itemId) {
                     const prev = await prevRes.json();
 
                     // 入力要素
-                    const materialNameInput = document.querySelector('input[name="material_name"]');
-                    const diameterField = document.querySelector('input[name="diameter_input"]');
-                    const detailInfoInput = document.querySelector('input[name="detail_info"]');
+                    const diameterCalcInput = document.getElementById('diameterCalcInput');
+                    const shapeCalcSelect = document.getElementById('shapeCalcSelect');
                     const densityField = document.getElementById('densityInput');
                     const lengthField = document.querySelector('input[name="length_mm"]');
                     const receivedDateField = document.querySelector('input[name="received_date"]');
 
-                    // 材料情報
-                    // ユーザー未入力時にフルネーム（発注品名）が自動で入らないよう、
-                    // 前回の材質名が発注品名と同一なら反映をスキップする
-                    if (materialNameInput && prev.material_name && prev.material_name !== item.item_name) {
-                        materialNameInput.value = prev.material_name;
-                    }
-                    if (detailInfoInput && typeof prev.detail_info === 'string') detailInfoInput.value = prev.detail_info || '';
+                    // 計算用パラメータ
+                    if (diameterCalcInput && typeof prev.diameter_mm === 'number') diameterCalcInput.value = prev.diameter_mm;
+                    if (shapeCalcSelect && prev.shape) shapeCalcSelect.value = prev.shape;
                     if (densityField && typeof prev.density === 'number') densityField.value = prev.density;
                     if (lengthField && typeof prev.length_mm === 'number') lengthField.value = prev.length_mm;
-
-                    // 径入力は形状＋径を整形して表示（元の自由入力は保存していないため）
-                    if (diameterField && prev.shape && typeof prev.diameter_mm === 'number') {
-                        const formatted = formatDiameterInputValueForDisplay(prev.shape, prev.diameter_mm);
-                        if (formatted) diameterField.value = formatted;
-                    }
 
                     // 入荷日
                     if (receivedDateField && prev.received_date) {
@@ -671,13 +660,38 @@ async function showReceiveModal(itemId) {
                         receivedDateField.value = ymd;
                     }
 
-                    // ロット情報（先頭1行に復元）
+                    // ロット情報（全ロットを復元）
                     clearLotRows();
-                    addLotRow(prev.received_quantity || null, prev.received_weight_kg || null);
-                    const lotNumberInput = document.querySelector('input[name="lot_number_1"]');
-                    if (lotNumberInput && prev.lot_number) lotNumberInput.value = prev.lot_number;
-                    const lotLocationInput = document.querySelector('input[name="lot_location_1"]');
-                    if (lotLocationInput && prev.location_id) lotLocationInput.value = String(prev.location_id);
+                    
+                    if (Array.isArray(prev.lots) && prev.lots.length > 0) {
+                        // 複数ロットを復元
+                        prev.lots.forEach(lot => {
+                            addLotRow(
+                                lot.received_quantity || null,
+                                lot.received_weight_kg || null,
+                                lot.lot_number || '',
+                                lot.location_id ? String(lot.location_id) : '',
+                                lot.notes || ''
+                            );
+                        });
+                    } else {
+                        // 旧フォーマット対応（後方互換性）
+                        let lotNotes = '';
+                        if (prev.notes) {
+                            const parts = prev.notes.split('|');
+                            if (parts.length > 1) {
+                                lotNotes = parts.slice(1).join('|').trim();
+                            }
+                        }
+                        
+                        addLotRow(
+                            prev.received_quantity || null,
+                            prev.received_weight_kg || null,
+                            prev.lot_number || '',
+                            prev.location_id ? String(prev.location_id) : '',
+                            lotNotes
+                        );
+                    }
 
                     previousFilled = true;
 
@@ -693,14 +707,28 @@ async function showReceiveModal(itemId) {
                         }
                         isEditInput.value = 'true';
 
-                        let prevLotInput = receiveForm.querySelector('input[name="previous_lot_number"]');
-                        if (!prevLotInput) {
-                            prevLotInput = document.createElement('input');
-                            prevLotInput.type = 'hidden';
-                            prevLotInput.name = 'previous_lot_number';
-                            receiveForm.appendChild(prevLotInput);
+                        // 既存のロット番号リストを保存（JSON文字列として）
+                        let prevLotsInput = receiveForm.querySelector('input[name="previous_lot_numbers"]');
+                        if (!prevLotsInput) {
+                            prevLotsInput = document.createElement('input');
+                            prevLotsInput.type = 'hidden';
+                            prevLotsInput.name = 'previous_lot_numbers';
+                            receiveForm.appendChild(prevLotsInput);
                         }
-                        prevLotInput.value = prev.lot_number || '';
+                        
+                        // 既存ロット番号の配列を作成
+                        const existingLotNumbers = [];
+                        if (Array.isArray(prev.lots)) {
+                            prev.lots.forEach(lot => {
+                                if (lot.lot_number) {
+                                    existingLotNumbers.push(lot.lot_number);
+                                }
+                            });
+                        } else if (prev.lot_number) {
+                            existingLotNumbers.push(prev.lot_number);
+                        }
+                        
+                        prevLotsInput.value = JSON.stringify(existingLotNumbers);
                     }
                 }
             }
@@ -718,10 +746,26 @@ async function showReceiveModal(itemId) {
             receivedDateField.value = localDate;
         }
 
-        // 材料情報の要素を取得
-        const diameterInput = document.querySelector('input[name="diameter_input"]');
+        // 計算用パラメータの要素を取得
+        const diameterCalcInput = document.getElementById('diameterCalcInput');
+        const shapeCalcSelect = document.getElementById('shapeCalcSelect');
         const densityInput = document.getElementById('densityInput');
         const lengthInput = document.querySelector('input[name="length_mm"]');
+
+        // 新規入庫時に径・形状を自動抽出（再編集時はスキップ）
+        if (!previousFilled && item.item_name) {
+            // 径を自動抽出
+            const extractedDiameter = extractDiameterFromName(item.item_name);
+            if (extractedDiameter && diameterCalcInput) {
+                diameterCalcInput.value = extractedDiameter;
+            }
+
+            // 形状を自動判定
+            const detectedShape = detectShapeFromName(item.item_name);
+            if (detectedShape && shapeCalcSelect) {
+                shapeCalcSelect.value = detectedShape;
+            }
+        }
 
         // 長さのデフォルト値（未設定時のみ 2500）
         if (lengthInput && !lengthInput.value) {
@@ -751,11 +795,14 @@ async function showReceiveModal(itemId) {
             addLotBtn.onclick = addLotRow;
         }
 
-        // 材料情報変更時に合計を更新（イベントリスナーの重複を防ぐ）
-        
-        if (diameterInput) {
-            diameterInput.removeEventListener('input', updateTotalQuantity);
-            diameterInput.addEventListener('input', updateTotalQuantity);
+        // 計算用パラメータ変更時に合計を更新（イベントリスナーの重複を防ぐ）
+        if (diameterCalcInput) {
+            diameterCalcInput.removeEventListener('input', updateTotalQuantity);
+            diameterCalcInput.addEventListener('input', updateTotalQuantity);
+        }
+        if (shapeCalcSelect) {
+            shapeCalcSelect.removeEventListener('change', updateTotalQuantity);
+            shapeCalcSelect.addEventListener('change', updateTotalQuantity);
         }
         if (densityInput) {
             densityInput.removeEventListener('input', updateTotalQuantity);
@@ -765,6 +812,9 @@ async function showReceiveModal(itemId) {
             lengthInput.removeEventListener('input', updateTotalQuantity);
             lengthInput.addEventListener('input', updateTotalQuantity);
         }
+
+        // 入荷日変更時に購入月を自動設定
+        setupPurchaseMonthAutoUpdate();
 
         document.getElementById('receiveModal').classList.remove('hidden');
     } catch (error) {
@@ -790,6 +840,37 @@ function hideReceiveModal() {
     
     // 発注数量をリセット
     currentOrderedQuantity = 0;
+}
+
+// 購入月の自動設定
+function setupPurchaseMonthAutoUpdate() {
+    const receivedDateInput = document.getElementById('receivedDateInput');
+    const purchaseMonthInput = document.getElementById('purchaseMonthInput');
+    
+    if (!receivedDateInput || !purchaseMonthInput) return;
+    
+    // 入荷日変更時に購入月を自動設定
+    receivedDateInput.removeEventListener('change', updatePurchaseMonth);
+    receivedDateInput.addEventListener('change', updatePurchaseMonth);
+    
+    // 初回設定（入荷日が既にある場合）
+    if (receivedDateInput.value) {
+        updatePurchaseMonth();
+    }
+}
+
+function updatePurchaseMonth() {
+    const receivedDateInput = document.getElementById('receivedDateInput');
+    const purchaseMonthInput = document.getElementById('purchaseMonthInput');
+    
+    if (!receivedDateInput || !purchaseMonthInput || !receivedDateInput.value) return;
+    
+    const date = new Date(receivedDateInput.value);
+    const year = date.getFullYear() % 100; // 下2桁
+    const month = date.getMonth() + 1; // 1-12
+    
+    const yymm = String(year).padStart(2, '0') + String(month).padStart(2, '0');
+    purchaseMonthInput.value = yymm;
 }
 
 // 換算機能のイベントリスナーを設定
@@ -901,31 +982,74 @@ async function handleReceive(event) {
     const formData = new FormData(event.target);
     const itemId = formData.get('item_id');
 
-    // 再編集フラグ（最新ロットの更新時はPUTを使用）
+    // 再編集フラグ（既存ロットの更新時はPUTを使用）
     const isEdit = (formData.get('is_edit') || '') === 'true';
-    const previousLotNumber = formData.get('previous_lot_number') || null;
-
-    // 径入力をパース
-    const diameterInput = formData.get('diameter_input') || '';
-    const parsedDiameter = parseDiameterInputValue(diameterInput);
     
-    if (parsedDiameter.error) {
+    // 既存のロット番号リストを取得
+    let previousLotNumbers = [];
+    try {
+        const prevLotsStr = formData.get('previous_lot_numbers');
+        console.log('previous_lot_numbers (raw):', prevLotsStr); // デバッグ
+        if (prevLotsStr) {
+            previousLotNumbers = JSON.parse(prevLotsStr);
+        }
+    } catch (e) {
+        console.warn('既存ロット番号の解析に失敗:', e);
+    }
+    
+    console.log('isEdit:', isEdit); // デバッグ
+    console.log('previousLotNumbers:', previousLotNumbers); // デバッグ
+
+    // 計算用パラメータを取得
+    const diameter_mm = parseFloat(formData.get('diameter_mm'));
+    const shape = formData.get('shape');
+    const density = parseFloat(formData.get('density'));
+    const length_mm = parseInt(formData.get('length_mm'));
+
+    // バリデーション
+    if (isNaN(diameter_mm) || diameter_mm <= 0) {
         if (typeof showToast === 'function') {
-            showToast(parsedDiameter.error, 'error');
+            showToast('径を正しく入力してください', 'error');
         }
         return;
     }
 
-    // 材料情報（共通）
-    // 材質名は空文字の場合は null として送信（API側の任意扱いと整合）
-    const materialNameRaw = (formData.get('material_name') || '').trim();
+    if (!shape || !['round', 'hexagon', 'square'].includes(shape)) {
+        if (typeof showToast === 'function') {
+            showToast('形状を選択してください', 'error');
+        }
+        return;
+    }
+
+    if (isNaN(density) || density <= 0) {
+        if (typeof showToast === 'function') {
+            showToast('比重を正しく入力してください', 'error');
+        }
+        return;
+    }
+
+    if (isNaN(length_mm) || length_mm <= 0) {
+        if (typeof showToast === 'function') {
+            showToast('長さを正しく入力してください', 'error');
+        }
+        return;
+    }
+
+    // 購入月を取得
+    const purchaseMonth = formData.get('purchase_month');
+    if (!purchaseMonth || !/^\d{4}$/.test(purchaseMonth)) {
+        if (typeof showToast === 'function') {
+            showToast('購入月をYYMM形式（例: 2501）で入力してください', 'error');
+        }
+        return;
+    }
+
+    // 共通入庫データ
     const commonMaterialData = {
-        material_name: materialNameRaw !== '' ? materialNameRaw : null,
-        detail_info: formData.get('detail_info') || null,
-        diameter_mm: parsedDiameter.diameter_mm,
-        shape: parsedDiameter.shape,
-        density: parseFloat(formData.get('density')),
-        length_mm: parseInt(formData.get('length_mm')),
+        diameter_mm: diameter_mm,
+        shape: shape,
+        density: density,
+        length_mm: length_mm,
         received_date: formData.get('received_date') + 'T00:00:00'
     };
 
@@ -939,8 +1063,9 @@ async function handleReceive(event) {
         const quantityStr = formData.get(`lot_quantity_${i}`);
         const weightStr = formData.get(`lot_weight_${i}`);
         const location = formData.get(`lot_location_${i}`);
+        const lotNotes = formData.get(`lot_notes_${i}`) || '';
 
-        console.log(`ロット ${i}:`, { lotNumber, quantityStr, weightStr, location }); // デバッグ
+        console.log(`ロット ${i}:`, { lotNumber, quantityStr, weightStr, location, lotNotes }); // デバッグ
 
         if (!lotNumber || lotNumber.trim() === '') {
             if (typeof showToast === 'function') {
@@ -960,9 +1085,16 @@ async function handleReceive(event) {
             return;
         }
 
+        // 備考を構築（購入月 + ロット固有の備考）
+        let notesText = `購入月: ${purchaseMonth}`;
+        if (lotNotes.trim()) {
+            notesText += ` | ${lotNotes.trim()}`;
+        }
+
         const lotData = {
             lot_number: lotNumber.trim(),
-            location_id: location && location.trim() !== '' ? parseInt(location) : null
+            location_id: location && location.trim() !== '' ? parseInt(location) : null,
+            notes: notesText
         };
 
         // 数量または重量を設定
@@ -998,7 +1130,8 @@ async function handleReceive(event) {
         for (const lot of lots) {
             const receiveData = {
                 ...commonMaterialData,
-                lot_number: lot.lot_number
+                lot_number: lot.lot_number,
+                notes: lot.notes  // 備考を追加
             };
 
             // 数量または重量を設定
@@ -1015,8 +1148,11 @@ async function handleReceive(event) {
             console.log('送信データ:', receiveData); // デバッグ
             
             // 再編集（既存ロットの更新）かどうかを判定
-            const isUpdatingExisting = isEdit && lotRowCounter === 1 && lot.lot_number === previousLotNumber;
+            // 既存のロット番号リストに含まれている場合はPUT、新規の場合はPOST
+            const isUpdatingExisting = isEdit && previousLotNumbers.includes(lot.lot_number);
             const methodToUse = isUpdatingExisting ? 'PUT' : 'POST';
+            
+            console.log(`ロット ${lot.lot_number}: ${methodToUse} (isEdit=${isEdit}, 既存=${isUpdatingExisting})`); // デバッグ
 
             const response = await fetch(`/api/purchase-orders/items/${itemId}/receive/`, {
                 method: methodToUse,
@@ -1148,12 +1284,21 @@ async function loadInspectionItemsList() {
         const items = await response.json();
         
         console.log('取得したアイテム数:', items.length); // デバッグ用
+        console.log('最初のアイテムのデータ構造:', items[0]); // デバッグ用
 
         loading.classList.add('hidden');
 
         // 入庫済み（lot情報あり）のアイテムのみフィルタ
         const validItems = Array.isArray(items) 
-            ? items.filter(item => item.lot && item.lot.id)
+            ? items.filter(item => {
+                const hasLot = item.lot && item.lot.id && item.lot.lot_number;
+                
+                if (!hasLot) {
+                    console.warn('ロット情報がないアイテム:', item.id, item);
+                }
+                
+                return hasLot;
+            })
             : [];
 
         console.log('有効なアイテム数:', validItems.length); // デバッグ用
@@ -1181,19 +1326,11 @@ function createInspectionItemRow(item) {
     const row = document.createElement('tr');
     row.className = 'hover:bg-gray-50';
 
-    // 材料仕様を生成（材質名 + 形状 + 径 + 長さ）
-    const materialName = item.material?.name || '-';
-    const shape = item.material?.shape || 'round';
-    const diameter = item.material?.diameter_mm || 0;
-    const length = item.lot?.length_mm || 0;
-    
-    let shapeSymbol = 'φ';
-    if (shape === 'hexagon') shapeSymbol = 'H';
-    else if (shape === 'square') shapeSymbol = '□';
-    
-    const materialSpec = `${materialName} ${shapeSymbol}${diameter} L${length}`;
+    // 材料仕様はExcelから取得したフルネーム（display_name）を表示
+    const materialSpec = item.material?.display_name || item.material?.name || '-';
     
     const lotNumber = item.lot?.lot_number || '-';
+    const managementCode = item.management_code || '';
     
     // 重量計算
     const totalWeight = item.total_weight_kg || 0;
@@ -1202,7 +1339,7 @@ function createInspectionItemRow(item) {
     // 検品状態バッジ
     const inspectionStatus = (item.lot?.inspection_status || 'pending').toLowerCase();
     
-    console.log(`アイテム ${item.management_code} の検品ステータス:`, inspectionStatus); // デバッグ
+    console.log(`アイテム ${managementCode} の検品ステータス:`, inspectionStatus); // デバッグ
     
     let statusText = '未検品';
     let statusClass = 'bg-amber-100 text-amber-700';
@@ -1215,6 +1352,14 @@ function createInspectionItemRow(item) {
         statusClass = 'bg-red-100 text-red-700';
     }
 
+    // ロット番号がない場合はボタンを無効化
+    const buttonDisabled = !lotNumber;
+    const buttonClass = buttonDisabled 
+        ? 'bg-gray-400 text-white px-2 py-1 rounded text-xs cursor-not-allowed'
+        : 'bg-indigo-600 text-white px-2 py-1 rounded text-xs hover:bg-indigo-700';
+    
+    const buttonOnClick = buttonDisabled ? '' : `onclick="selectInspectionItem('${lotNumber}')"`;
+
     row.innerHTML = `
         <td class="px-3 py-2 text-xs text-gray-900">${materialSpec}</td>
         <td class="px-3 py-2 text-xs text-gray-600">${lotNumber}</td>
@@ -1224,9 +1369,9 @@ function createInspectionItemRow(item) {
             <span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass}">${statusText}</span>
         </td>
         <td class="px-3 py-2">
-            <button onclick="selectInspectionItem('${item.management_code}')" 
-                    class="bg-indigo-600 text-white px-2 py-1 rounded text-xs hover:bg-indigo-700">
-                選択
+            <button ${buttonOnClick} ${buttonDisabled ? 'disabled' : ''}
+                    class="${buttonClass}">
+                ${buttonDisabled ? 'ロット番号なし' : '選択'}
             </button>
         </td>
     `;
@@ -1234,11 +1379,11 @@ function createInspectionItemRow(item) {
     return row;
 }
 
-function selectInspectionItem(managementCode) {
-    // 管理コード入力欄に設定
+function selectInspectionItem(lotNumber) {
+    // ロット番号入力欄に設定
     const codeInput = document.getElementById('inspectionCodeInput');
     if (codeInput) {
-        codeInput.value = managementCode;
+        codeInput.value = lotNumber;
     }
     
     // 自動で検品対象を読み込み
@@ -1254,24 +1399,24 @@ function selectInspectionItem(managementCode) {
 async function loadInspectionTargetByCode() {
     const codeInput = document.getElementById('inspectionCodeInput');
     const infoEl = document.getElementById('inspectionTargetInfo');
-    const code = (codeInput?.value || '').trim();
+    const lotNumber = (codeInput?.value || '').trim();
     
-    console.log('検品対象読み込み開始:', code); // デバッグ
+    console.log('検品対象読み込み開始:', lotNumber); // デバッグ
     
-    if (!code) {
+    if (!lotNumber) {
         if (typeof showToast === 'function') {
-            showToast('管理コードを入力してください', 'error');
+            showToast('ロット番号を入力してください', 'error');
         }
         return;
     }
 
     try {
-        const res = await fetch(`/api/inventory/search/${encodeURIComponent(code)}`);
+        const res = await fetch(`/api/inventory/search/${encodeURIComponent(lotNumber)}`);
         console.log('API応答ステータス:', res.status); // デバッグ
         
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            throw new Error(err.detail || '管理コードの読み込みに失敗しました');
+            throw new Error(err.detail || 'ロット番号の読み込みに失敗しました');
         }
         const item = await res.json();
         console.log('取得したアイテム:', item); // デバッグ
@@ -1290,22 +1435,65 @@ async function loadInspectionTargetByCode() {
             const lotNum = item?.lot?.lot_number || '-';
             const qty = item?.current_quantity ?? '-';
             const materialName = item?.material?.display_name || item?.material?.name || '-';
-            infoEl.textContent = `${materialName} / ロット番号 ${lotNum} / 管理コード ${item.management_code} / 現在本数 ${qty}本`;
+            const length = item?.lot?.length_mm || '-';
+            const weight = item?.total_weight_kg ? `${item.total_weight_kg.toFixed(3)}kg` : '-';
+            
+            // 検品ステータスを取得
+            const inspectionStatus = (item?.lot?.inspection_status || 'pending').toLowerCase();
+            let statusBadge = '';
+            if (inspectionStatus === 'passed') {
+                statusBadge = '<span class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">合格</span>';
+            } else if (inspectionStatus === 'failed') {
+                statusBadge = '<span class="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">不合格</span>';
+            } else {
+                statusBadge = '<span class="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">未検品</span>';
+            }
+            
+            infoEl.innerHTML = `
+                <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                            <span class="text-blue-600 font-medium">材料:</span>
+                            <span class="text-gray-900 ml-2">${materialName}</span>
+                        </div>
+                        <div>
+                            <span class="text-blue-600 font-medium">ロット番号:</span>
+                            <span class="text-gray-900 ml-2 font-mono">${lotNum}</span>
+                        </div>
+                        <div>
+                            <span class="text-blue-600 font-medium">現在検品状態:</span>
+                            <span class="ml-2">${statusBadge}</span>
+                        </div>
+                        <div>
+                            <span class="text-blue-600 font-medium">本数:</span>
+                            <span class="text-gray-900 ml-2">${qty}本</span>
+                        </div>
+                        <div>
+                            <span class="text-blue-600 font-medium">重量:</span>
+                            <span class="text-gray-900 ml-2">${weight}</span>
+                        </div>
+                        <div>
+                            <span class="text-blue-600 font-medium">長さ:</span>
+                            <span class="text-gray-900 ml-2">${length}mm</span>
+                        </div>
+                    </div>
+                </div>
+            `;
             infoEl.classList.remove('text-gray-600');
-            infoEl.classList.add('text-blue-700', 'font-medium');
+            infoEl.classList.add('text-blue-700');
         }
         
         if (typeof showToast === 'function') {
             showToast('検品対象を読み込みました', 'success');
         }
     } catch (e) {
-        console.error('管理コード読み込みエラー:', e);
+        console.error('ロット番号読み込みエラー:', e);
         if (typeof showToast === 'function') {
-            showToast(e.message || '管理コードの読み込みに失敗しました', 'error');
+            showToast(e.message || 'ロット番号の読み込みに失敗しました', 'error');
         }
         if (infoEl) {
-            infoEl.textContent = '管理コードを入力して読み込んでください。';
-            infoEl.classList.remove('text-blue-700', 'font-medium');
+            infoEl.innerHTML = '<p class="text-gray-600">ロット番号を入力して読み込んでください。</p>';
+            infoEl.classList.remove('text-blue-700');
             infoEl.classList.add('text-gray-600');
         }
     }
@@ -1314,7 +1502,12 @@ async function loadInspectionTargetByCode() {
 function resetInspectionForm() {
     document.getElementById('inspectionForm').reset();
     currentInspectionLotId = null;
-    document.getElementById('inspectionTargetInfo').textContent = '管理コードを入力して読み込んでください。';
+    const infoEl = document.getElementById('inspectionTargetInfo');
+    if (infoEl) {
+        infoEl.innerHTML = '<p class="text-gray-600">ロット番号を入力して読み込んでください。</p>';
+        infoEl.classList.remove('text-blue-700');
+        infoEl.classList.add('text-gray-600');
+    }
     
     // デフォルト日時を現在に設定
     const now = new Date();
@@ -1343,23 +1536,27 @@ async function submitInspection(event) {
     const inspectedBy = document.getElementById('inspectedByInput').value.trim();
     const notes = document.getElementById('inspectionNotesInput').value.trim();
 
+    // 検品ステータスを判定（両方OKなら合格、それ以外は不合格）
+    const inspectionStatus = appearanceOk && bendingOk ? 'passed' : 'failed';
+
     const payload = {
-        inspection_date: inspectedAtStr ? new Date(inspectedAtStr).toISOString() : new Date().toISOString(),
+        inspection_status: inspectionStatus,
+        inspected_at: inspectedAtStr ? new Date(inspectedAtStr).toISOString() : new Date().toISOString(),
         measured_value: measuredValStr ? parseFloat(measuredValStr) : null,
         appearance_ok: appearanceOk,
         bending_ok: bendingOk,
-        inspector_name: inspectedBy || "",
-        notes: notes || null
+        inspected_by_name: inspectedBy || null,
+        inspection_notes: notes || null
     };
 
     console.log('検品データペイロード:', payload); // デバッグ
 
     try {
-        const url = `/api/inspections/lots/${currentInspectionLotId}/`;
+        const url = `/api/inventory/lots/${currentInspectionLotId}/inspection/`;
         console.log('検品API URL:', url); // デバッグ
         
         const res = await fetch(url, {
-            method: 'POST',
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
@@ -1410,7 +1607,6 @@ function initializePrintTab() {
     // 印刷モーダル
     document.getElementById('closePrintModal')?.addEventListener('click', hidePrintModal);
     document.getElementById('cancelPrint')?.addEventListener('click', hidePrintModal);
-    document.getElementById('executePrintManagementCode')?.addEventListener('click', executePrintManagementCode);
     document.getElementById('executePrintLotNumber')?.addEventListener('click', executePrintLotNumber);
     
     // ESCキーでモーダルを閉じる
@@ -1477,18 +1673,17 @@ function createPrintItemRow(item) {
 
     const materialName = item.material?.display_name || item.material?.name || '-';
     const lotNumber = item.lot?.lot_number || '-';
-    const inspectionDate = item.lot?.inspection_date 
-        ? new Date(item.lot.inspection_date).toLocaleDateString('ja-JP')
+    const inspectionDate = item.lot?.inspected_at 
+        ? new Date(item.lot.inspected_at).toLocaleDateString('ja-JP')
         : '-';
 
     row.innerHTML = `
-        <td class="px-4 py-3 text-sm font-mono text-gray-900">${item.management_code.substring(0, 8)}...</td>
+        <td class="px-4 py-3 text-sm font-mono text-gray-900">${lotNumber}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${materialName}</td>
-        <td class="px-4 py-3 text-sm text-gray-600">${lotNumber}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${item.current_quantity}本</td>
         <td class="px-4 py-3 text-sm text-gray-600">${inspectionDate}</td>
         <td class="px-4 py-3">
-            <button onclick="showPrintModal('${item.management_code}')" 
+            <button onclick="showPrintModal('${lotNumber}')" 
                     class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700">
                 <i class="fas fa-print mr-1"></i>印刷
             </button>
@@ -1527,63 +1722,59 @@ function resetPrintFilters() {
     loadPrintableItems();
 }
 
-async function showPrintModal(managementCode) {
-    currentPrintItemCode = managementCode;
+async function showPrintModal(lotNumber) {
+    currentPrintItemCode = lotNumber;
     currentPrintLotId = null;
     
     try {
-        // プレビュー情報を取得
-        const response = await fetch(`/api/labels/preview/${encodeURIComponent(managementCode)}`);
+        // ロット番号からアイテム情報を取得
+        const response = await fetch(`/api/inventory/search/${encodeURIComponent(lotNumber)}`);
         if (!response.ok) {
-            throw new Error('プレビュー情報の取得に失敗しました');
+            throw new Error('印刷情報の取得に失敗しました');
         }
-        const data = await response.json();
+        const item = await response.json();
         
         // Lot IDを保存
-        currentPrintLotId = data.lot?.id || null;
+        currentPrintLotId = item.lot?.id || null;
 
         // プレビュー情報を表示
         const previewContent = document.getElementById('printPreviewContent');
         previewContent.innerHTML = `
             <div>
-                <dt class="font-medium text-gray-500">管理コード</dt>
-                <dd class="text-gray-900">${data.item.management_code}</dd>
+                <dt class="font-medium text-gray-500">ロット番号</dt>
+                <dd class="text-gray-900 font-mono">${item.lot.lot_number}</dd>
             </div>
             <div>
                 <dt class="font-medium text-gray-500">材料名</dt>
-                <dd class="text-gray-900">${data.material.name}</dd>
+                <dd class="text-gray-900">${item.material.display_name}</dd>
             </div>
             <div>
                 <dt class="font-medium text-gray-500">形状・寸法</dt>
-                <dd class="text-gray-900">${data.material.shape_name} φ${data.material.diameter_mm}mm</dd>
+                <dd class="text-gray-900">${item.material.shape} φ${item.material.diameter_mm}mm</dd>
             </div>
             <div>
                 <dt class="font-medium text-gray-500">長さ</dt>
-                <dd class="text-gray-900">${data.lot.length_mm}mm</dd>
-            </div>
-            <div>
-                <dt class="font-medium text-gray-500">ロット番号</dt>
-                <dd class="text-gray-900">${data.lot.lot_number}</dd>
+                <dd class="text-gray-900">${item.lot.length_mm}mm</dd>
             </div>
             <div>
                 <dt class="font-medium text-gray-500">現在本数</dt>
-                <dd class="text-gray-900">${data.item.current_quantity}本</dd>
+                <dd class="text-gray-900">${item.current_quantity}本</dd>
             </div>
             <div>
                 <dt class="font-medium text-gray-500">単重</dt>
-                <dd class="text-gray-900">${data.calculated.weight_per_piece_kg}kg/本</dd>
+                <dd class="text-gray-900">${item.weight_per_piece_kg}kg/本</dd>
             </div>
             <div>
                 <dt class="font-medium text-gray-500">総重量</dt>
-                <dd class="text-gray-900">${data.calculated.total_weight_kg}kg</dd>
+                <dd class="text-gray-900">${item.total_weight_kg}kg</dd>
             </div>
             <div>
                 <dt class="font-medium text-gray-500">置き場</dt>
-                <dd class="text-gray-900">${data.location.name}</dd>
+                <dd class="text-gray-900">${item.location?.name || '未登録'}</dd>
             </div>
             <div>
                 <dt class="font-medium text-gray-500">仕入先</dt>
-                <dd class="text-gray-900">${data.lot.supplier || '未登録'}</dd>
+                <dd class="text-gray-900">${item.lot.supplier || '未登録'}</dd>
             </div>
         `;
 
@@ -1601,57 +1792,6 @@ function hidePrintModal() {
     document.getElementById('printModal').classList.add('hidden');
     currentPrintItemCode = null;
     currentPrintLotId = null;
-}
-
-async function executePrintManagementCode() {
-    if (!currentPrintItemCode) {
-        if (typeof showToast === 'function') {
-            showToast('印刷対象が選択されていません', 'error');
-        }
-        return;
-    }
-
-    const labelType = document.getElementById('printLabelType')?.value || 'standard';
-    const copies = parseInt(document.getElementById('printCopies')?.value || '1');
-
-    try {
-        const response = await fetch('/api/labels/print', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                management_code: currentPrintItemCode,
-                label_type: labelType,
-                copies: copies
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error('ラベル印刷に失敗しました');
-        }
-
-        // PDFをダウンロード
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `label_${currentPrintItemCode.substring(0, 8)}_${new Date().getTime()}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-
-        if (typeof showToast === 'function') {
-            showToast('管理コードラベルPDFを保存しました', 'success');
-        }
-
-        hidePrintModal();
-
-    } catch (error) {
-        console.error('管理コードラベル印刷エラー:', error);
-        if (typeof showToast === 'function') {
-            showToast('管理コードラベル印刷に失敗しました', 'error');
-        }
-    }
 }
 
 async function executePrintLotNumber() {
@@ -1844,7 +1984,7 @@ let lotRowCounter = 0;
 let currentOrderedQuantity = 0;
 let currentOrderType = 'quantity';
 
-function addLotRow(defaultQuantity = null, defaultWeight = null) {
+function addLotRow(defaultQuantity = null, defaultWeight = null, defaultLotNumber = '', defaultLocation = '', defaultNotes = '') {
     lotRowCounter++;
     const container = document.getElementById('lotsContainer');
     const rowId = `lot-row-${lotRowCounter}`;
@@ -1852,6 +1992,9 @@ function addLotRow(defaultQuantity = null, defaultWeight = null) {
     
     const quantityValue = defaultQuantity && defaultQuantity > 0 ? ` value="${defaultQuantity}"` : '';
     const weightValue = defaultWeight && defaultWeight > 0 ? ` value="${defaultWeight}"` : '';
+    const lotNumberValue = defaultLotNumber ? ` value="${defaultLotNumber}"` : '';
+    const locationValue = defaultLocation ? ` value="${defaultLocation}"` : '';
+    const notesValue = defaultNotes ? ` value="${defaultNotes}"` : '';
     
     const lotRow = document.createElement('div');
     lotRow.id = rowId;
@@ -1863,12 +2006,12 @@ function addLotRow(defaultQuantity = null, defaultWeight = null) {
                 <i class="fas fa-trash"></i> 削除
             </button>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">ロット番号 *</label>
                 <input type="text" name="lot_number_${counter}" required
                        class="w-full p-2 border border-gray-300 rounded text-sm"
-                       placeholder="例: L001">
+                       placeholder="例: L001"${lotNumberValue}>
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">入庫数量（本）</label>
@@ -1892,8 +2035,14 @@ function addLotRow(defaultQuantity = null, defaultWeight = null) {
                 <label class="block text-xs font-medium text-gray-700 mb-1">置き場</label>
                 <input type="text" name="lot_location_${counter}"
                        class="w-full p-2 border border-gray-300 rounded text-sm"
-                       placeholder="例: 12">
+                       placeholder="例: 12"${locationValue}>
             </div>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-700 mb-1">備考</label>
+            <input type="text" name="lot_notes_${counter}"
+                   class="w-full p-2 border border-gray-300 rounded text-sm"
+                   placeholder="このロット固有の備考を入力"${notesValue}>
         </div>
     `;
     
@@ -1934,20 +2083,22 @@ function removeLotRow(rowId) {
 }
 
 function updateTotalQuantity() {
-    // 材料情報を取得
-    const diameterInput = document.querySelector('input[name="diameter_input"]');
+    // 計算用パラメータを取得
+    const diameterCalcInput = document.getElementById('diameterCalcInput');
+    const shapeCalcSelect = document.getElementById('shapeCalcSelect');
     const densityInput = document.getElementById('densityInput');
     const lengthInput = document.querySelector('input[name="length_mm"]');
-    
+
     let unitWeight = 0;
-    if (diameterInput && densityInput && lengthInput) {
-        const parsedDiameter = parseDiameterInputValue(diameterInput.value || '');
+    if (diameterCalcInput && shapeCalcSelect && densityInput && lengthInput) {
+        const diameter_mm = parseFloat(diameterCalcInput.value);
+        const shape = shapeCalcSelect.value;
         const density = parseFloat(densityInput.value);
         const lengthMm = parseInt(lengthInput.value, 10);
-        
-        if (!parsedDiameter.error && density > 0 && lengthMm > 0) {
+
+        if (!isNaN(diameter_mm) && diameter_mm > 0 && shape && density > 0 && lengthMm > 0) {
             try {
-                unitWeight = calculateUnitWeightKg(parsedDiameter.shape, parsedDiameter.diameter_mm, lengthMm, density);
+                unitWeight = calculateUnitWeightKg(shape, diameter_mm, lengthMm, density);
             } catch (e) {
                 unitWeight = 0;
             }
@@ -2008,6 +2159,58 @@ function clearLotRows() {
     }
     lotRowCounter = 0;
     updateTotalQuantity();
+}
+
+// ==== 材料名から径・形状を抽出するユーティリティ関数 ====
+
+/**
+ * 材料名から径を抽出
+ * @param {string} itemName - 材料名（例: "SUS303 φ10.0 研磨"）
+ * @returns {number|null} - 抽出された径（例: 10.0）、見つからない場合は null
+ */
+function extractDiameterFromName(itemName) {
+    if (!itemName) return null;
+
+    // φ10.0, Φ10.0, ∅10.0, H12, □20 などのパターンを検出
+    const patterns = [
+        /[φΦ∅][\s]*([0-9]+\.?[0-9]*)/,  // 丸棒: φ10.0, Φ10, ∅10.5
+        /[Hh][\s]*([0-9]+\.?[0-9]*)/,    // 六角: H12, h12.5
+        /[□][\s]*([0-9]+\.?[0-9]*)/      // 角棒: □20, □15.5
+    ];
+
+    for (const pattern of patterns) {
+        const match = itemName.match(pattern);
+        if (match && match[1]) {
+            const diameter = parseFloat(match[1]);
+            if (!isNaN(diameter) && diameter > 0) {
+                return diameter;
+            }
+        }
+    }
+
+    return null;
+}
+
+/**
+ * 材料名から形状を自動判定
+ * @param {string} itemName - 材料名（例: "SUS303 φ10.0 研磨"）
+ * @returns {string} - 形状（'round', 'hexagon', 'square'）
+ */
+function detectShapeFromName(itemName) {
+    if (!itemName) return 'round'; // デフォルトは丸棒
+
+    // 六角棒の判定
+    if (/[Hh][\s]*[0-9]/.test(itemName) || /六角/.test(itemName)) {
+        return 'hexagon';
+    }
+
+    // 角棒の判定
+    if (/[□][\s]*[0-9]/.test(itemName) || /角棒/.test(itemName) || /四角/.test(itemName)) {
+        return 'square';
+    }
+
+    // 丸棒の判定（デフォルト）
+    return 'round';
 }
 
 // ==== ユーティリティ関数 ====

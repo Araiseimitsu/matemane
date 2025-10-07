@@ -2,6 +2,7 @@
 Excelから発注を作成する外部スクリプト
 
 対象ファイル: \\192.168.1.200\共有\生産管理課\材料管理.xlsx
+対象ファイル: 材料管理.xlsx
 対象シート: 材料管理表
 
 抽出条件:
@@ -15,7 +16,7 @@ Excelから発注を作成する外部スクリプト
 - AA列(手配先) → 仕入れ先(supplier)
 - 今日 → 発注日(order_date)
 - Z列(指定納期) → 納期予定日(expected_delivery_date)
-- I列(品番) → 用途・製品名(purpose)
+- I列(品番) → 備考(notes)に記録
 - L列(材料) → 材料仕様文字列（そのまま保存、入庫時に人の手で解析）
 
 材料登録方針:
@@ -29,6 +30,7 @@ Excelから発注を作成する外部スクリプト
 
 使い方:
   python -m src.scripts.excel_po_import --excel "\\192.168.1.200\共有\生産管理課\材料管理.xlsx" --sheet "材料管理表" --dry-run
+  python -m src.scripts.excel_po_import --excel "材料管理.xlsx" --sheet "材料管理表" --dry-run
 """
 
 from __future__ import annotations
@@ -195,16 +197,17 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
 
                 if dry_run:
                     processed += 1
-                    logger.info(f"DRY-RUN: 発注作成予定 - 発注番号={order_number}, 仕入先={supplier}, 用途={item_code}, 材料仕様={material_text}")
+                    logger.info(f"DRY-RUN: 発注作成予定 - 発注番号={order_number}, 仕入先={supplier}, 品番={item_code}, 材料仕様={material_text}")
                     continue
 
-                # 発注作成
+                # 発注作成（品番は備考に記録）
+                notes_text = f"品番: {item_code}" if item_code else None
                 po = PurchaseOrder(
                     order_number=str(order_number).strip(),
                     supplier=str(supplier).strip(),
                     order_date=datetime.now(),
                     expected_delivery_date=pd.to_datetime(due) if not pd.isna(due) else None,
-                    purpose=str(item_code).strip() if item_code else None,
+                    notes=notes_text,
                     status=PurchaseOrderStatus.PENDING,
                     created_by=ensure_import_user_id(),
                 )
@@ -274,7 +277,8 @@ def main():
     parser.add_argument(
         "--excel",
         type=str,
-        default="\\\\192.168.1.200\\共有\\生産管理課\\材料管理.xlsx",
+        # default="\\\\192.168.1.200\\共有\\生産管理課\\材料管理.xlsx",
+        default="材料管理.xlsx",
         help="Excelファイルパス",
     )
     parser.add_argument("--sheet", type=str, default="材料管理表", help="シート名")

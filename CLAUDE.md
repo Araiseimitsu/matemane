@@ -92,12 +92,24 @@ pytest --cov=src --cov-report=html
   - APIルーターとテンプレートルーターの設定
   - Jinja2テンプレートエンジンの設定
 
+### 【重要】材料名の取り扱い方針（2025-01-07更新）
+- **材料名はExcel表記のフルネームのみで管理**
+- **ユーザーによる材料名の解析・分解は不要**
+- **`display_name` カラムのみを使用し、`name`・`detail_info` カラムは完全に廃止**
+- 入庫確認モーダルでは、Excelから取得した材料名（フルネーム）を表示
+- ユーザーは計算用パラメータ（径・形状・比重）のみを入力
+- 径はExcel材料名から自動抽出（例: "SUS303 φ10.0" → 10.0）
+- 形状はExcel材料名から自動判定（φ→丸棒、H→六角棒、□→角棒）
+- 全画面で材料名は`display_name`のみを表示
+
 ### データベース層（2025-01 リファクタリング済み）
 - `src/db/models.py`: SQLAlchemyモデル定義
   - **削除済み**: `MaterialStandard`, `MaterialGrade`, `MaterialProduct` テーブル（未実装の3層構造）
   - **削除済み**: `UsageType` Enum（グループ運用へ移行）
   - **削除済みカラム**:
+    - `materials.name`（材質名）、`materials.detail_info`（詳細情報） → `display_name`に統合
     - `materials.product_id`, `materials.usage_type`, `materials.dedicated_part_number`
+    - `purchase_orders.purpose`（用途・製品名） → `notes`に記録
     - `purchase_order_items.management_code`（入庫時にItem側でUUID生成）
     - `movements.instruction_number`（未実装の指示書機能）
 
@@ -192,11 +204,13 @@ pytest --cov=src --cov-report=html
 2. DRY-RUNで検証 → 実行でDB書き込み
 3. 発注一覧に自動表示
 
-### 入庫確認 → 検品
-1. `/receiving` で入庫待ちアイテムを表示
-2. 材料情報入力（材質・径・長さ・比重）
-3. ロット番号・入庫数量を入力
-4. 検品ステータスを管理（PENDING/PASSED/FAILED）
+### 入庫確認 → 検品（2025-01-07更新）
+1. `/order-flow` の入庫確認タブで入庫待ちアイテムを表示
+2. **材料名**: Excelから取得したフルネームをそのまま表示（ユーザー入力不要）
+3. **計算用パラメータ**: 径・形状・比重を入力（径と形状は材料名から自動抽出）
+4. ロット番号・長さ・入庫数量・仕入先を入力
+5. 入庫実行 → 材料マスタに`display_name`として登録（新規時）
+6. 検品タブで検品ステータスを管理（PENDING/PASSED/FAILED）
 
 ### 入出庫管理（2025-01実装完了）
 1. `/movements` で統合フォームから出庫/戻しを選択
@@ -208,9 +222,11 @@ pytest --cov=src --cov-report=html
 ## データベース設計（2025-01更新）
 
 ### 重要なテーブル
-- `materials`: 材料マスタ（材質・形状・寸法・比重・品番）
-  - **削除**: `product_id`, `usage_type`, `dedicated_part_number`
-  - **現在**: `name`, `display_name`, `detail_info`, `shape`, `diameter_mm`, `current_density`, `part_number`
+- `materials`: 材料マスタ（Excel取込のフルネームで管理）
+  - **削除**: `name`（材質名）, `detail_info`（詳細情報）, `product_id`, `usage_type`, `dedicated_part_number`
+  - **必須**: `display_name`（Excelから取得したフルネーム・例: "SUS303 φ10.0 研磨"）
+  - **計算用**: `shape`, `diameter_mm`, `current_density`（重量⇔本数換算のみに使用）
+  - **その他**: `part_number`, `description`, `is_active`, `created_at`, `updated_at`
 - `material_aliases`: 材料別名（表記揺れ対応）
 - `material_groups`: 材料グループ（同等品管理）
 - `material_group_members`: グループ所属（多対多）
@@ -219,12 +235,18 @@ pytest --cov=src --cov-report=html
 - `movements`: 入出庫履歴（種別・数量・備考・処理者・処理日時）
   - **削除**: `instruction_number`（未実装の指示書機能）
 - `purchase_orders`: 発注管理（発注番号、仕入先、状態管理）
+  - **削除**: `purpose`（用途・製品名） → 品番は`notes`に記録
 - `purchase_order_items`: 発注アイテム（材料仕様文字列、数量）
   - **削除**: `management_code`（入庫時にItem側で生成）
+  - `item_name`: Excelから取得した材料名フルネーム（入庫時に`Material.display_name`として登録）
 
 ### データフロー
-1. **Excel取込**: 材料管理.xlsx → PurchaseOrder + PurchaseOrderItem
-2. **入庫確認**: PurchaseOrderItem → Material（新規時）→ Lot → Item（UUID生成）
+1. **Excel取込**: 材料管理.xlsx → PurchaseOrder + PurchaseOrderItem（`item_name`にフルネームを保存）
+2. **入庫確認**:
+   - **材料名**: PurchaseOrderItem.item_name（Excelのフルネーム）→ Material.display_name（そのまま保存）
+   - **計算用パラメータ**: ユーザーが径・形状・比重を入力 → Material.diameter_mm, shape, current_density（計算専用）
+   - **自動抽出**: JavaScriptが材料名から径・形状を自動抽出してフォームに設定
+   - Lot → Item（UUID生成）
 3. **検品**: Lot.inspection_status 更新
 4. **在庫管理**: Item（UUID管理コード、現在本数、置き場）
 5. **入出庫**: Item.current_quantity 更新 → Movement履歴記録 → AuditLog記録
@@ -396,6 +418,27 @@ pytest --cov=src --cov-report=html
 - アーキテクチャ決定前に既存パターンを理解
 - 問題デバッグ時に以前の解決策を確認
 - コードベースの不慣れな部分で作業する時
+
+[byterover-mcp]
+
+[byterover-mcp]
+
+You are given two tools from Byterover MCP server, including
+## 1. `byterover-store-knowledge`
+You `MUST` always use this tool when:
+
++ Learning new patterns, APIs, or architectural decisions from the codebase
++ Encountering error solutions or debugging techniques
++ Finding reusable code patterns or utility functions
++ Completing any significant task or plan implementation
+
+## 2. `byterover-retrieve-knowledge`
+You `MUST` always use this tool when:
+
++ Starting any new task or implementation to gather relevant context
++ Before making architectural decisions to understand existing patterns
++ When debugging issues to check for previous solutions
++ Working with unfamiliar parts of the codebase
 
 [byterover-mcp]
 

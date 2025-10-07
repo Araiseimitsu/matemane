@@ -1,5 +1,163 @@
 # リファクタリング履歴
 
+## 2025-01-07: 材料名管理の仕様変更（Excel表記への統一）
+
+### 目的
+材料名の管理方式を大幅に変更し、ユーザーによる材料名の解析・分解を廃止。Excel表記のフルネームのみで管理する方式に統一する。
+
+### 背景
+- 従来: ユーザーが入庫確認時に材料名（例: "SUS303 φ10.0 研磨"）を手動で解析し、材質名・径・詳細情報に分解して入力
+- 問題点: 手作業による解析は手間がかかり、表記揺れが発生しやすい
+- 解決策: Excelから取得した材料名をそのまま`display_name`として管理し、計算用パラメータ（径・形状・比重）のみを入力
+
+### 実施内容
+
+#### 1. データベーススキーマの変更
+**ファイル**: `src/db/models.py`
+
+- **削除**: `Material.name`（材質名）
+- **削除**: `Material.detail_info`（詳細情報）
+- **削除**: `PurchaseOrder.purpose`（用途・製品名）
+- **変更**: `Material.display_name`を必須フィールドに変更
+- **保持**: 計算用パラメータ（`diameter_mm`, `shape`, `current_density`）
+
+**変更箇所**:
+```python
+class Material(Base):
+    # 削除: name = Column(String(100), nullable=False)
+    # 削除: detail_info = Column(Text)
+    display_name = Column(String(200), nullable=False, comment="材料名（Excelから取得したフルネーム）")
+    shape = Column(Enum(MaterialShape), nullable=False, comment="断面形状（計算用）")
+    diameter_mm = Column(Float, nullable=False, comment="直径または一辺の長さ（mm・計算用）")
+    current_density = Column(Float, nullable=False, comment="現在の比重（g/cm³・計算用）")
+
+class PurchaseOrder(Base):
+    # 削除: purpose = Column(String(200))
+    notes = Column(Text, comment="備考")  # 品番などはnotesに記録
+```
+
+#### 2. API層の修正
+**ファイル**: `src/api/materials.py`, `src/api/purchase_orders.py`
+
+**materials.py**:
+- `MaterialBase`, `MaterialCreate`, `MaterialUpdate`スキーマから`name`, `detail_info`を削除
+- `display_name`を必須フィールドに変更
+
+**purchase_orders.py**:
+- `ReceivingConfirmation`スキーマを変更: 材料名の入力フィールドを削除
+- 計算用パラメータのみを受け取る: `diameter_mm`, `shape`, `density`
+- 入庫確認処理で、`item_name`（Excel材料名）を`display_name`として保存
+
+**変更箇所**:
+```python
+# src/api/materials.py
+class MaterialBase(BaseModel):
+    part_number: Optional[str] = None
+    display_name: str = Field(..., max_length=200, description="材料名（Excelから取得したフルネーム）")
+    # 削除: name, detail_info
+    shape: MaterialShape = Field(..., description="断面形状（計算用）")
+    diameter_mm: float = Field(..., gt=0, description="直径または一辺の長さ（mm・計算用）")
+    current_density: float = Field(..., gt=0, description="現在の比重（g/cm³・計算用）")
+
+# src/api/purchase_orders.py
+class ReceivingConfirmation(BaseModel):
+    lot_number: str
+    # 計算用パラメータ（必須）
+    diameter_mm: float = Field(..., gt=0, description="直径または一辺の長さ（mm・計算用）")
+    shape: MaterialShape = Field(..., description="断面形状（計算用）")
+    density: float = Field(..., gt=0, description="比重（g/cm³・計算用）")
+    # ... その他のフィールド
+```
+
+#### 3. フロントエンドの修正
+**ファイル**: `src/templates/order_flow.html`, `src/static/js/order_flow.js`
+
+**order_flow.html**:
+- 入庫確認モーダルから材料名・材質名・詳細情報の入力フィールドを削除
+- 代わりに「計算用パラメータ」セクションを追加: 径・形状・比重の入力フィールド
+
+**order_flow.js**:
+- `extractDiameterFromName(itemName)`: 材料名から径を自動抽出（例: "φ10.0" → 10.0）
+- `detectShapeFromName(itemName)`: 材料名から形状を自動判定（φ→丸棒、H→六角棒、□→角棒）
+- `showReceiveModal()`: モーダル表示時に径と形状を自動設定
+- `handleReceive()`: 入庫確認処理で計算用パラメータのみを送信
+
+**変更箇所**:
+```javascript
+function extractDiameterFromName(itemName) {
+    const patterns = [
+        /[φΦ∅][\s]*([0-9]+\.?[0-9]*)/,  // 丸棒: φ10.0
+        /[Hh][\s]*([0-9]+\.?[0-9]*)/,    // 六角: H12
+        /[□][\s]*([0-9]+\.?[0-9]*)/      // 角棒: □20
+    ];
+    for (const pattern of patterns) {
+        const match = itemName.match(pattern);
+        if (match && match[1]) {
+            const diameter = parseFloat(match[1]);
+            if (!isNaN(diameter) && diameter > 0) return diameter;
+        }
+    }
+    return null;
+}
+
+function detectShapeFromName(itemName) {
+    if (/[Hh][\s]*[0-9]/.test(itemName) || /六角/.test(itemName)) return 'hexagon';
+    if (/[□][\s]*[0-9]/.test(itemName) || /角棒/.test(itemName)) return 'round';
+    return 'round';
+}
+```
+
+#### 4. Excel取込スクリプトの修正
+**ファイル**: `src/scripts/excel_po_import.py`
+
+- `PurchaseOrder`作成時の`purpose`パラメータを削除
+- 品番（I列）は`notes`に記録するように変更
+- ドキュメントのマッピング説明を更新
+
+**変更箇所**:
+```python
+# 発注作成（品番は備考に記録）
+notes_text = f"品番: {item_code}" if item_code else None
+po = PurchaseOrder(
+    order_number=str(order_number).strip(),
+    supplier=str(supplier).strip(),
+    order_date=datetime.now(),
+    expected_delivery_date=pd.to_datetime(due) if not pd.isna(due) else None,
+    notes=notes_text,  # 変更: purpose → notes
+    status=PurchaseOrderStatus.PENDING,
+    created_by=ensure_import_user_id(),
+)
+```
+
+#### 5. ドキュメントの更新
+**ファイル**: `CLAUDE.md`
+
+- 「【重要】材料名の取り扱い方針」セクションを追加
+- データベース設計セクションを更新: 削除カラムの明記
+- 入庫確認ワークフローの説明を更新
+- データフローの説明を更新
+
+### 影響範囲
+- ✅ データベーススキーマ: `materials`, `purchase_orders`
+- ✅ API: `src/api/materials.py`, `src/api/purchase_orders.py`
+- ✅ フロントエンド: `order_flow.html`, `order_flow.js`
+- ✅ Excel取込: `excel_po_import.py`
+- ⏳ **未対応**: 他画面（inventory, movements等）での`display_name`表示への統一
+
+### テスト結果
+- データベースリセット: 成功
+- アプリケーション起動: 成功
+- Excel取込スクリプト修正: 完了（`purpose`削除対応）
+- 入庫確認モーダル: 径・形状の自動抽出機能実装済み
+- **残課題**: Excel取込の実行テスト、他画面の表示修正
+
+### 削除理由
+- **Material.name, detail_info**: ユーザーによる手動解析が不要になったため
+- **PurchaseOrder.purpose**: 品番は`notes`で十分管理できるため
+- 材料名はExcelのフルネーム（`display_name`）のみで管理し、計算用パラメータは重量⇔本数換算のみに使用
+
+---
+
 ## 2025-01-06: 材料マスターページのリファクタリング
 
 ### 目的

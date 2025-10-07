@@ -37,26 +37,22 @@ class MaterialAliasResponse(MaterialAliasBase):
 
 class MaterialBase(BaseModel):
     part_number: Optional[str] = Field(None, max_length=100, description="品番")
-    name: str = Field(..., max_length=100, description="材質名（例：S45C）")
-    display_name: Optional[str] = Field(None, max_length=200, description="表示名（表記揺れ対応: φ10.0D等）")
-    detail_info: Optional[str] = Field(None, max_length=200, description="詳細情報（寸法以降の補足）")
+    display_name: str = Field(..., max_length=200, description="材料名（Excelから取得したフルネーム）")
     description: Optional[str] = Field(None, description="説明")
-    shape: MaterialShape = Field(..., description="断面形状")
-    diameter_mm: float = Field(..., gt=0, description="直径または一辺の長さ（mm）")
-    current_density: float = Field(..., gt=0, description="現在の比重（g/cm³）")
+    shape: MaterialShape = Field(..., description="断面形状（計算用）")
+    diameter_mm: float = Field(..., gt=0, description="直径または一辺の長さ（mm・計算用）")
+    current_density: float = Field(..., gt=0, description="現在の比重（g/cm³・計算用）")
 
 class MaterialCreate(MaterialBase):
     pass
 
 class MaterialUpdate(BaseModel):
     part_number: Optional[str] = Field(None, max_length=100, description="品番")
-    name: Optional[str] = Field(None, max_length=100, description="材質名")
-    display_name: Optional[str] = Field(None, max_length=200, description="表示名（表記揺れ対応）")
-    detail_info: Optional[str] = Field(None, max_length=200, description="詳細情報（寸法以降の補足）")
+    display_name: Optional[str] = Field(None, max_length=200, description="材料名（Excelから取得したフルネーム）")
     description: Optional[str] = Field(None, description="説明")
-    shape: Optional[MaterialShape] = Field(None, description="断面形状")
-    diameter_mm: Optional[float] = Field(None, gt=0, description="直径または一辺の長さ（mm）")
-    current_density: Optional[float] = Field(None, gt=0, description="現在の比重（g/cm³）")
+    shape: Optional[MaterialShape] = Field(None, description="断面形状（計算用）")
+    diameter_mm: Optional[float] = Field(None, gt=0, description="直径または一辺の長さ（mm・計算用）")
+    current_density: Optional[float] = Field(None, gt=0, description="現在の比重（g/cm³・計算用）")
     is_active: Optional[bool] = Field(None, description="有効フラグ")
 
 class MaterialResponse(MaterialBase):
@@ -71,11 +67,8 @@ class MaterialResponse(MaterialBase):
 @router.get("/count")
 async def get_materials_count(
     is_active: Optional[bool] = None,
-    shape: Optional[MaterialShape] = None,
-    name: Optional[str] = None,
     display_name: Optional[str] = None,
     part_number: Optional[str] = None,
-    diameter_mm: Optional[float] = None,
     db: Session = Depends(get_db)
 ):
     """材料総件数取得（フィルタ対応）"""
@@ -84,20 +77,11 @@ async def get_materials_count(
     if is_active is not None:
         query = query.filter(Material.is_active == is_active)
 
-    if shape is not None:
-        query = query.filter(Material.shape == shape)
-
-    if name is not None:
-        query = query.filter(Material.name.contains(name))
-
     if display_name is not None:
         query = query.filter(Material.display_name.contains(display_name))
 
     if part_number is not None:
         query = query.filter(Material.part_number == part_number)
-
-    if diameter_mm is not None:
-        query = query.filter(Material.diameter_mm == diameter_mm)
 
     total = query.count()
     return {"total": total}
@@ -108,11 +92,8 @@ async def get_materials(
     skip: int = 0,
     limit: int = 100,  # ページネーション用に100件制限
     is_active: Optional[bool] = None,
-    shape: Optional[MaterialShape] = None,
-    name: Optional[str] = None,
     display_name: Optional[str] = None,
     part_number: Optional[str] = None,
-    diameter_mm: Optional[float] = None,
     db: Session = Depends(get_db)
 ):
     """材料一覧取得"""
@@ -121,20 +102,11 @@ async def get_materials(
     if is_active is not None:
         query = query.filter(Material.is_active == is_active)
 
-    if shape is not None:
-        query = query.filter(Material.shape == shape)
-
-    if name is not None:
-        query = query.filter(Material.name.contains(name))
-
     if display_name is not None:
         query = query.filter(Material.display_name.contains(display_name))
 
     if part_number is not None:
         query = query.filter(Material.part_number == part_number)
-
-    if diameter_mm is not None:
-        query = query.filter(Material.diameter_mm == diameter_mm)
 
     materials = query.offset(skip).limit(limit).all()
     return materials

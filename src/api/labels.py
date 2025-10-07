@@ -4,6 +4,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 from datetime import datetime
 from io import BytesIO
+from urllib.parse import quote
 import qrcode
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4, letter
@@ -23,7 +24,7 @@ router = APIRouter()
 pdfmetrics.registerFont(UnicodeCIDFont('HeiseiKakuGo-W5'))
 
 class LabelPrintRequest(BaseModel):
-    management_code: str = Field(..., description="管理コード（UUID）")
+    lot_number: str = Field(..., description="LOT番号")
     label_type: str = Field(default="standard", description="ラベルタイプ: standard | small")
     copies: int = Field(default=1, ge=1, le=10, description="印刷部数")
 
@@ -39,16 +40,16 @@ async def print_label(
 ):
     """QRコード付きラベル印刷（PDF生成）"""
 
-    # アイテム情報取得
-    item = db.query(Item).options(
+    # アイテム情報取得（LOT番号から検索）
+    item = db.query(Item).join(Item.lot).options(
         joinedload(Item.lot).joinedload(Lot.material),
         joinedload(Item.location)
-    ).filter(Item.management_code == request.management_code).first()
+    ).filter(Lot.lot_number == request.lot_number).first()
 
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="指定された管理コードのアイテムが見つかりません"
+            detail="指定されたLOT番号のアイテムが見つかりません"
         )
 
     material = item.lot.material
@@ -84,12 +85,16 @@ async def print_label(
 
     buffer.seek(0)
 
+    # ファイル名をURLエンコード（日本語対応）
+    filename = f"label_{request.lot_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    filename_encoded = quote(filename)
+
     # PDFレスポンス
     response = Response(
         content=buffer.getvalue(),
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f"attachment; filename=label_{request.management_code}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            "Content-Disposition": f"attachment; filename*=UTF-8''{filename_encoded}"
         }
     )
 
@@ -144,11 +149,11 @@ def create_standard_label(buffer: BytesIO, item, material, weight_per_piece_kg: 
         story.append(Spacer(1, 10*mm))
 
         # QRコード
-        qr_buffer = create_qr_code(item.management_code, 25)
+        qr_buffer = create_qr_code(item.lot.lot_number, 25)
         qr_image = Image(qr_buffer, width=25*mm, height=25*mm)
 
         # QRコードとタイトルを並べて配置
-        header_table = Table([[qr_image, "管理コード: " + item.management_code[:25] + ("..." if len(item.management_code) > 25 else "")]],
+        header_table = Table([[qr_image, "LOT番号: " + item.lot.lot_number[:25] + ("..." if len(item.lot.lot_number) > 25 else "")]],
                            colWidths=[30*mm, 130*mm])
         header_table.setStyle(TableStyle([
             ('FONT', (1, 0), (1, 0), 'HeiseiKakuGo-W5'),
@@ -162,12 +167,11 @@ def create_standard_label(buffer: BytesIO, item, material, weight_per_piece_kg: 
 
         # メイン情報テーブル
         data = [
-            ["管理コード", item.management_code],
-            ["材質", material.name],
+            ["LOT番号", item.lot.lot_number],
+            ["材質", material.display_name],
             ["形状", get_shape_name(material.shape.value)],
             ["寸法", f"φ{material.diameter_mm}mm" if material.shape.value == "round" else f"{material.diameter_mm}mm角"],
             ["長さ", f"{item.lot.length_mm}mm"],
-            ["ロット番号", item.lot.lot_number],
             ["現在本数", f"{item.current_quantity}本"],
             ["単重", f"{weight_per_piece_kg:.3f}kg/本"],
             ["総重量", f"{total_weight_kg:.3f}kg"],
@@ -205,14 +209,14 @@ def create_small_label(buffer: BytesIO, item, material, weight_per_piece_kg: flo
             c.showPage()
 
         # QRコード（20mm角）
-        qr_buffer = create_qr_code(item.management_code, 20)
+        qr_buffer = create_qr_code(item.lot.lot_number, 20)
         c.drawImage(qr_buffer, 2*mm, 8*mm, width=20*mm, height=20*mm)
 
         # テキスト情報（右側）
         c.setFont('HeiseiKakuGo-W5', 6)
 
         # 材質・形状
-        c.drawString(24*mm, 25*mm, f"{material.name}")
+        c.drawString(24*mm, 25*mm, f"{material.display_name}")
         c.drawString(24*mm, 22*mm, f"{get_shape_name(material.shape.value)}")
 
         # 寸法・長さ
@@ -227,10 +231,10 @@ def create_small_label(buffer: BytesIO, item, material, weight_per_piece_kg: flo
         c.drawString(24*mm, 13*mm, f"{item.current_quantity}本")
         c.drawString(24*mm, 10*mm, f"{total_weight_kg:.1f}kg")
 
-        # 管理コード（下部）
+        # LOT番号（下部）
         c.setFont('HeiseiKakuGo-W5', 4)
-        code_short = item.management_code[:8] + "..."
-        c.drawString(2*mm, 4*mm, code_short)
+        lot_short = item.lot.lot_number[:12] + "..." if len(item.lot.lot_number) > 12 else item.lot.lot_number
+        c.drawString(2*mm, 4*mm, lot_short)
 
         # 印刷日
         c.drawString(2*mm, 1*mm, datetime.now().strftime("%m/%d"))
@@ -246,18 +250,18 @@ def get_shape_name(shape_value: str) -> str:
     }
     return shape_map.get(shape_value, shape_value)
 
-@router.get("/preview/{management_code}")
-async def preview_label(management_code: str, db: Session = Depends(get_db)):
+@router.get("/preview/{lot_number}")
+async def preview_label(lot_number: str, db: Session = Depends(get_db)):
     """ラベルプレビュー情報取得"""
-    item = db.query(Item).options(
+    item = db.query(Item).join(Item.lot).options(
         joinedload(Item.lot).joinedload(Lot.material),
         joinedload(Item.location)
-    ).filter(Item.management_code == management_code).first()
+    ).filter(Lot.lot_number == lot_number).first()
 
     if not item:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="指定された管理コードのアイテムが見つかりません"
+            detail="指定されたLOT番号のアイテムが見つかりません"
         )
 
     material = item.lot.material
@@ -283,12 +287,12 @@ async def preview_label(management_code: str, db: Session = Depends(get_db)):
 
     return {
         "item": {
-            "management_code": item.management_code,
+            "lot_number": item.lot.lot_number,
             "current_quantity": item.current_quantity,
             "created_at": item.created_at
         },
         "material": {
-            "name": material.name,
+            "display_name": material.display_name,
             "shape": material.shape.value,
             "shape_name": get_shape_name(material.shape.value),
             "diameter_mm": material.diameter_mm,
@@ -343,12 +347,16 @@ async def print_lot_tag(
 
     buffer.seek(0)
 
+    # ファイル名をURLエンコード（日本語対応）
+    filename = f"lot_tag_{lot.lot_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    filename_encoded = quote(filename)
+
     # PDFレスポンス
     response = Response(
         content=buffer.getvalue(),
         media_type="application/pdf",
         headers={
-            "Content-Disposition": f"attachment; filename=lot_tag_{lot.lot_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            "Content-Disposition": f"attachment; filename*=UTF-8''{filename_encoded}"
         }
     )
 
@@ -422,7 +430,7 @@ def create_standard_lot_tag(buffer: BytesIO, lot, material, copies: int):
         # メイン情報テーブル
         data = [
             ["ロット番号", lot.lot_number],
-            ["材質", material.name],
+            ["材質", material.display_name],
             ["形状・寸法", f"{get_shape_name(material.shape.value)} φ{material.diameter_mm}mm" if material.shape.value == "round" else f"{get_shape_name(material.shape.value)} {material.diameter_mm}mm"],
             ["長さ", f"{lot.length_mm}mm"],
             ["単重", f"{weight_per_piece_kg:.3f}kg/本"],
@@ -478,7 +486,7 @@ def create_small_lot_tag(buffer: BytesIO, lot, material, copies: int):
         c.setFont('HeiseiKakuGo-W5', 5)
 
         # 材質・形状
-        c.drawString(20*mm, 22*mm, f"{material.name}")
+        c.drawString(20*mm, 22*mm, f"{material.display_name}")
         c.drawString(20*mm, 19*mm, f"{get_shape_name(material.shape.value)}")
 
         # 寸法・長さ
@@ -544,7 +552,7 @@ async def preview_lot_tag(lot_id: int, db: Session = Depends(get_db)):
             "created_at": lot.created_at
         },
         "material": {
-            "name": material.name,
+            "display_name": material.display_name,
             "shape": material.shape.value,
             "shape_name": get_shape_name(material.shape.value),
             "diameter_mm": material.diameter_mm,
