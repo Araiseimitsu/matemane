@@ -1,7 +1,7 @@
 // 発注フロー統合ページの主要機能
 
 // ==== タブ切り替え機能 ====
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initializeTabs();
     initializeImportTab();
     initializeOrdersTab();
@@ -51,7 +51,7 @@ function initializeImportTab() {
     const btn = document.getElementById('runExternalScriptBtn');
     if (!btn) return;
 
-    btn.addEventListener('click', async function() {
+    btn.addEventListener('click', async function () {
         const originalText = btn.innerHTML;
         btn.disabled = true;
         btn.classList.add('opacity-50');
@@ -272,7 +272,7 @@ async function viewOrderDetail(orderId) {
             ? new Date(order.expected_delivery_date).toLocaleDateString('ja-JP')
             : '-';
         const firstItem = Array.isArray(order.items) && order.items.length > 0 ? order.items[0] : null;
-        
+
         let orderDisplay = '';
         if (firstItem) {
             if (firstItem.order_type === 'weight') {
@@ -345,7 +345,7 @@ function showDetailModal(title, content) {
     // 簡易モーダルを動的に作成
     const modalId = 'orderDetailModal';
     let modal = document.getElementById(modalId);
-    
+
     if (!modal) {
         modal = document.createElement('div');
         modal.id = modalId;
@@ -364,22 +364,22 @@ function showDetailModal(title, content) {
             </div>
         `;
         document.body.appendChild(modal);
-        
+
         // ESCキーで閉じる
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
                 closeDetailModal();
             }
         });
-        
+
         // 背景クリックで閉じる
-        modal.addEventListener('click', function(e) {
+        modal.addEventListener('click', function (e) {
             if (e.target === modal) {
                 closeDetailModal();
             }
         });
     }
-    
+
     document.getElementById('orderDetailContent').innerHTML = content;
     modal.classList.remove('hidden');
 }
@@ -397,24 +397,24 @@ function initializeReceivingTab() {
     document.getElementById('searchReceivingBtn')?.addEventListener('click', searchReceivingItems);
     document.getElementById('resetReceivingFiltersBtn')?.addEventListener('click', resetReceivingFilters);
     document.getElementById('includeInspectedFilter')?.addEventListener('change', loadReceivingItems);
-    
+
     // 入庫確認モーダル
     document.getElementById('closeReceiveModal')?.addEventListener('click', hideReceiveModal);
     document.getElementById('cancelReceive')?.addEventListener('click', hideReceiveModal);
     document.getElementById('receiveForm')?.addEventListener('submit', handleReceive);
-    
+
     // モーダル背景クリックで閉じる
     const receiveModal = document.getElementById('receiveModal');
     if (receiveModal) {
-        receiveModal.addEventListener('click', function(e) {
+        receiveModal.addEventListener('click', function (e) {
             if (e.target === receiveModal || e.target.classList.contains('modal-overlay')) {
                 hideReceiveModal();
             }
         });
     }
-    
+
     // ESCキーでモーダルを閉じる
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             const receiveModal = document.getElementById('receiveModal');
             if (receiveModal && !receiveModal.classList.contains('hidden')) {
@@ -495,7 +495,7 @@ function createReceivingItemRow(item) {
     const expectedDate = (item.purchase_order && item.purchase_order.expected_delivery_date)
         ? new Date(item.purchase_order.expected_delivery_date).toLocaleDateString('ja-JP')
         : '-';
-    
+
     const isReceived = String(item.status).toUpperCase() === 'RECEIVED';
     const receivingBtnLabel = isReceived ? '再編集' : '入庫確認';
     const receivingBtnClasses = isReceived
@@ -599,7 +599,7 @@ async function showReceiveModal(itemId) {
         const order = await orderResponse.json();
 
         document.getElementById('receiveItemId').value = itemId;
-        
+
         // 比重プリセット一覧を読み込み
         await loadDensityPresets();
 
@@ -614,22 +614,50 @@ async function showReceiveModal(itemId) {
                 <dd class="text-gray-900">${order.supplier}</dd>
             </div>
             <div class="md:col-span-2">
-                <dt class="font-medium text-gray-500 mb-2">材料仕様（発注品名）</dt>
-                <dd class="text-gray-900">
-                    <textarea id="purchaseItemNameTextarea" class="w-full mt-1 p-2 text-sm border rounded bg-white" rows="2" readonly>${item.item_name}</textarea>
-                    <div class="mt-1">
-                        <button type="button" class="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded hover:bg-gray-300"
-                            onclick="copySelectionFromTextarea('purchaseItemNameTextarea')">
-                            選択範囲をコピー
-                        </button>
-                    </div>
-                </dd>
+                <dt class="font-medium text-gray-500">材料仕様（発注品名）</dt>
+                <dd class="text-gray-900 mt-1">${item.item_name}</dd>
             </div>
             <div>
                 <dt class="font-medium text-gray-500">発注数量/重量</dt>
                 <dd class="text-gray-900">${getOrderDisplayText(item)}</dd>
             </div>
         `;
+
+        // 単価・金額の初期値設定
+        const unitPriceInput = document.getElementById('unitPriceInput');
+        const amountInput = document.getElementById('amountInput');
+        if (unitPriceInput && item.unit_price !== null && item.unit_price !== undefined) {
+            unitPriceInput.value = item.unit_price;
+        } else if (unitPriceInput) {
+            unitPriceInput.value = '';
+        }
+        if (amountInput && item.amount !== null && item.amount !== undefined) {
+            amountInput.value = item.amount;
+        } else if (amountInput) {
+            amountInput.value = '';
+        }
+
+        // 単価×数量で自動計算（単価が入力された場合）
+        // 発注タイプに応じて数量または重量を使用
+        if (unitPriceInput) {
+            const calculateAmount = function () {
+                const unitPrice = parseFloat(unitPriceInput.value);
+                if (isNaN(unitPrice) || unitPrice <= 0) return;
+
+                let calculationBase = 0;
+                if (item.order_type === 'quantity' && item.ordered_quantity) {
+                    calculationBase = item.ordered_quantity;
+                } else if (item.order_type === 'weight' && item.ordered_weight_kg) {
+                    calculationBase = item.ordered_weight_kg;
+                }
+
+                if (calculationBase > 0 && amountInput) {
+                    amountInput.value = (unitPrice * calculationBase).toFixed(2);
+                }
+            };
+
+            unitPriceInput.addEventListener('input', calculateAmount);
+        }
 
         // 受入済みの再編集時は、登録時の値（最新ロット）をそのまま自動入力
         let previousFilled = false;
@@ -662,7 +690,7 @@ async function showReceiveModal(itemId) {
 
                     // ロット情報（全ロットを復元）
                     clearLotRows();
-                    
+
                     if (Array.isArray(prev.lots) && prev.lots.length > 0) {
                         // 複数ロットを復元
                         prev.lots.forEach(lot => {
@@ -683,7 +711,7 @@ async function showReceiveModal(itemId) {
                                 lotNotes = parts.slice(1).join('|').trim();
                             }
                         }
-                        
+
                         addLotRow(
                             prev.received_quantity || null,
                             prev.received_weight_kg || null,
@@ -715,7 +743,7 @@ async function showReceiveModal(itemId) {
                             prevLotsInput.name = 'previous_lot_numbers';
                             receiveForm.appendChild(prevLotsInput);
                         }
-                        
+
                         // 既存ロット番号の配列を作成
                         const existingLotNumbers = [];
                         if (Array.isArray(prev.lots)) {
@@ -727,7 +755,7 @@ async function showReceiveModal(itemId) {
                         } else if (prev.lot_number) {
                             existingLotNumbers.push(prev.lot_number);
                         }
-                        
+
                         prevLotsInput.value = JSON.stringify(existingLotNumbers);
                     }
                 }
@@ -788,7 +816,7 @@ async function showReceiveModal(itemId) {
                 addLotRow();
             }
         }
-        
+
         // addLotBtnのイベントリスナーを設定
         const addLotBtn = document.getElementById('addLotBtn');
         if (addLotBtn) {
@@ -828,16 +856,16 @@ async function showReceiveModal(itemId) {
 function hideReceiveModal() {
     document.getElementById('receiveModal').classList.add('hidden');
     document.getElementById('receiveForm').reset();
-    
+
     // 比重プリセット選択をリセット
     const densityPresetSelect = document.getElementById('densityPresetSelect');
     if (densityPresetSelect) {
         densityPresetSelect.value = '';
     }
-    
+
     // ロット行をクリア
     clearLotRows();
-    
+
     // 発注数量をリセット
     currentOrderedQuantity = 0;
 }
@@ -846,13 +874,13 @@ function hideReceiveModal() {
 function setupPurchaseMonthAutoUpdate() {
     const receivedDateInput = document.getElementById('receivedDateInput');
     const purchaseMonthInput = document.getElementById('purchaseMonthInput');
-    
+
     if (!receivedDateInput || !purchaseMonthInput) return;
-    
+
     // 入荷日変更時に購入月を自動設定
     receivedDateInput.removeEventListener('change', updatePurchaseMonth);
     receivedDateInput.addEventListener('change', updatePurchaseMonth);
-    
+
     // 初回設定（入荷日が既にある場合）
     if (receivedDateInput.value) {
         updatePurchaseMonth();
@@ -862,13 +890,13 @@ function setupPurchaseMonthAutoUpdate() {
 function updatePurchaseMonth() {
     const receivedDateInput = document.getElementById('receivedDateInput');
     const purchaseMonthInput = document.getElementById('purchaseMonthInput');
-    
+
     if (!receivedDateInput || !purchaseMonthInput || !receivedDateInput.value) return;
-    
+
     const date = new Date(receivedDateInput.value);
     const year = date.getFullYear() % 100; // 下2桁
     const month = date.getMonth() + 1; // 1-12
-    
+
     const yymm = String(year).padStart(2, '0') + String(month).padStart(2, '0');
     purchaseMonthInput.value = yymm;
 }
@@ -884,7 +912,7 @@ function setupConversionListeners() {
 
     // 本数入力時：重量をクリア、本数モードに切り替え
     if (quantityInput) {
-        quantityInput.oninput = function() {
+        quantityInput.oninput = function () {
             if (this.value) {
                 weightInput.value = '';
                 const quantityRadio = document.querySelector('input[name="input_method"][value="quantity"]');
@@ -896,7 +924,7 @@ function setupConversionListeners() {
 
     // 重量入力時：本数をクリア、重量モードに切り替え
     if (weightInput) {
-        weightInput.oninput = function() {
+        weightInput.oninput = function () {
             if (this.value) {
                 quantityInput.value = '';
                 const weightRadio = document.querySelector('input[name="input_method"][value="weight"]');
@@ -913,7 +941,7 @@ function setupConversionListeners() {
 
     // 入力方式切り替え時
     inputMethodRadios.forEach(radio => {
-        radio.onchange = function() {
+        radio.onchange = function () {
             if (this.value === 'quantity') {
                 if (quantityInput) quantityInput.focus();
                 if (weightInput) weightInput.value = '';
@@ -934,15 +962,15 @@ async function loadDensityPresets() {
             console.warn('比重プリセットの取得に失敗しました');
             return;
         }
-        
+
         const presets = await response.json();
         const selectElement = document.getElementById('densityPresetSelect');
-        
+
         if (!selectElement) return;
-        
+
         // 既存のオプションをクリア（最初のプレースホルダーは残す）
         selectElement.innerHTML = '<option value="">プリセットから選択</option>';
-        
+
         // プリセットを追加
         presets.forEach(preset => {
             const option = document.createElement('option');
@@ -951,26 +979,26 @@ async function loadDensityPresets() {
             option.dataset.name = preset.name;
             selectElement.appendChild(option);
         });
-        
+
         // 選択イベントを設定
-        selectElement.onchange = function() {
+        selectElement.onchange = function () {
             const densityInput = document.getElementById('densityInput');
             if (this.value && densityInput) {
                 densityInput.value = this.value;
-                
+
                 // 選択したプリセット名をトーストで通知
                 const selectedOption = this.options[this.selectedIndex];
                 if (selectedOption && selectedOption.dataset.name && typeof showToast === 'function') {
                     showToast(`比重プリセット「${selectedOption.dataset.name}」を適用しました`, 'success');
                 }
-                
+
                 // 合計を更新
                 if (typeof updateTotalQuantity === 'function') {
                     updateTotalQuantity();
                 }
             }
         };
-        
+
     } catch (error) {
         console.error('比重プリセット読み込みエラー:', error);
     }
@@ -984,7 +1012,7 @@ async function handleReceive(event) {
 
     // 再編集フラグ（既存ロットの更新時はPUTを使用）
     const isEdit = (formData.get('is_edit') || '') === 'true';
-    
+
     // 既存のロット番号リストを取得
     let previousLotNumbers = [];
     try {
@@ -996,7 +1024,7 @@ async function handleReceive(event) {
     } catch (e) {
         console.warn('既存ロット番号の解析に失敗:', e);
     }
-    
+
     console.log('isEdit:', isEdit); // デバッグ
     console.log('previousLotNumbers:', previousLotNumbers); // デバッグ
 
@@ -1044,6 +1072,10 @@ async function handleReceive(event) {
         return;
     }
 
+    // 単価・金額を取得
+    const unitPrice = formData.get('unit_price');
+    const amount = formData.get('amount');
+
     // 共通入庫データ
     const commonMaterialData = {
         diameter_mm: diameter_mm,
@@ -1052,6 +1084,14 @@ async function handleReceive(event) {
         length_mm: length_mm,
         received_date: formData.get('received_date') + 'T00:00:00'
     };
+
+    // 単価・金額を追加（値が入力されている場合のみ）
+    if (unitPrice && unitPrice.trim() !== '' && !isNaN(parseFloat(unitPrice))) {
+        commonMaterialData.unit_price = parseFloat(unitPrice);
+    }
+    if (amount && amount.trim() !== '' && !isNaN(parseFloat(amount))) {
+        commonMaterialData.amount = parseFloat(amount);
+    }
 
     // 各ロット情報を収集
     const lots = [];
@@ -1126,7 +1166,7 @@ async function handleReceive(event) {
     // 各ロットに対してAPI呼び出し
     try {
         let successCount = 0;
-        
+
         for (const lot of lots) {
             const receiveData = {
                 ...commonMaterialData,
@@ -1146,12 +1186,12 @@ async function handleReceive(event) {
             }
 
             console.log('送信データ:', receiveData); // デバッグ
-            
+
             // 再編集（既存ロットの更新）かどうかを判定
             // 既存のロット番号リストに含まれている場合はPUT、新規の場合はPOST
             const isUpdatingExisting = isEdit && previousLotNumbers.includes(lot.lot_number);
             const methodToUse = isUpdatingExisting ? 'PUT' : 'POST';
-            
+
             console.log(`ロット ${lot.lot_number}: ${methodToUse} (isEdit=${isEdit}, 既存=${isUpdatingExisting})`); // デバッグ
 
             const response = await fetch(`/api/purchase-orders/items/${itemId}/receive/`, {
@@ -1165,7 +1205,7 @@ async function handleReceive(event) {
                 // レスポンスボディを一度テキストとして読み込む
                 const responseText = await response.text();
                 console.error('サーバーエラー（テキスト）:', responseText);
-                
+
                 try {
                     // テキストをJSONとしてパース
                     const error = JSON.parse(responseText);
@@ -1259,7 +1299,7 @@ function initializeInspectionTab() {
     // デフォルト日時を現在に設定
     const now = new Date();
     const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-        .toISOString().slice(0,16);
+        .toISOString().slice(0, 16);
     const dtEl = document.getElementById('inspectedAtInput');
     if (dtEl) dtEl.value = local;
 }
@@ -1280,23 +1320,23 @@ async function loadInspectionItemsList() {
         if (!response.ok) {
             throw new Error(`API error: ${response.status}`);
         }
-        
+
         const items = await response.json();
-        
+
         console.log('取得したアイテム数:', items.length); // デバッグ用
         console.log('最初のアイテムのデータ構造:', items[0]); // デバッグ用
 
         loading.classList.add('hidden');
 
         // 入庫済み（lot情報あり）のアイテムのみフィルタ
-        const validItems = Array.isArray(items) 
+        const validItems = Array.isArray(items)
             ? items.filter(item => {
                 const hasLot = item.lot && item.lot.id && item.lot.lot_number;
-                
+
                 if (!hasLot) {
                     console.warn('ロット情報がないアイテム:', item.id, item);
                 }
-                
+
                 return hasLot;
             })
             : [];
@@ -1328,22 +1368,22 @@ function createInspectionItemRow(item) {
 
     // 材料仕様はExcelから取得したフルネーム（display_name）を表示
     const materialSpec = item.material?.display_name || item.material?.name || '-';
-    
+
     const lotNumber = item.lot?.lot_number || '-';
     const managementCode = item.management_code || '';
-    
+
     // 重量計算
     const totalWeight = item.total_weight_kg || 0;
     const weightDisplay = totalWeight > 0 ? `${totalWeight.toFixed(3)}kg` : '-';
-    
+
     // 検品状態バッジ
     const inspectionStatus = (item.lot?.inspection_status || 'pending').toLowerCase();
-    
+
     console.log(`アイテム ${managementCode} の検品ステータス:`, inspectionStatus); // デバッグ
-    
+
     let statusText = '未検品';
     let statusClass = 'bg-amber-100 text-amber-700';
-    
+
     if (inspectionStatus === 'passed') {
         statusText = '合格';
         statusClass = 'bg-green-100 text-green-700';
@@ -1354,10 +1394,10 @@ function createInspectionItemRow(item) {
 
     // ロット番号がない場合はボタンを無効化
     const buttonDisabled = !lotNumber;
-    const buttonClass = buttonDisabled 
+    const buttonClass = buttonDisabled
         ? 'bg-gray-400 text-white px-2 py-1 rounded text-xs cursor-not-allowed'
         : 'bg-indigo-600 text-white px-2 py-1 rounded text-xs hover:bg-indigo-700';
-    
+
     const buttonOnClick = buttonDisabled ? '' : `onclick="selectInspectionItem('${lotNumber}')"`;
 
     row.innerHTML = `
@@ -1385,10 +1425,10 @@ function selectInspectionItem(lotNumber) {
     if (codeInput) {
         codeInput.value = lotNumber;
     }
-    
+
     // 自動で検品対象を読み込み
     loadInspectionTargetByCode();
-    
+
     // 検品フォームまでスクロール
     const inspectionForm = document.getElementById('inspectionForm');
     if (inspectionForm) {
@@ -1400,9 +1440,9 @@ async function loadInspectionTargetByCode() {
     const codeInput = document.getElementById('inspectionCodeInput');
     const infoEl = document.getElementById('inspectionTargetInfo');
     const lotNumber = (codeInput?.value || '').trim();
-    
+
     console.log('検品対象読み込み開始:', lotNumber); // デバッグ
-    
+
     if (!lotNumber) {
         if (typeof showToast === 'function') {
             showToast('ロット番号を入力してください', 'error');
@@ -1413,31 +1453,31 @@ async function loadInspectionTargetByCode() {
     try {
         const res = await fetch(`/api/inventory/search/${encodeURIComponent(lotNumber)}`);
         console.log('API応答ステータス:', res.status); // デバッグ
-        
+
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
             throw new Error(err.detail || 'ロット番号の読み込みに失敗しました');
         }
         const item = await res.json();
         console.log('取得したアイテム:', item); // デバッグ
-        
+
         currentInspectionLotId = item?.lot?.id || null;
         console.log('設定したLot ID:', currentInspectionLotId); // デバッグ
-        
+
         if (!currentInspectionLotId) {
             if (typeof showToast === 'function') {
                 showToast('該当ロットが見つかりません', 'error');
             }
             return;
         }
-        
+
         if (infoEl) {
             const lotNum = item?.lot?.lot_number || '-';
             const qty = item?.current_quantity ?? '-';
             const materialName = item?.material?.display_name || item?.material?.name || '-';
             const length = item?.lot?.length_mm || '-';
             const weight = item?.total_weight_kg ? `${item.total_weight_kg.toFixed(3)}kg` : '-';
-            
+
             // 検品ステータスを取得
             const inspectionStatus = (item?.lot?.inspection_status || 'pending').toLowerCase();
             let statusBadge = '';
@@ -1448,7 +1488,7 @@ async function loadInspectionTargetByCode() {
             } else {
                 statusBadge = '<span class="px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">未検品</span>';
             }
-            
+
             infoEl.innerHTML = `
                 <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
                     <div class="grid grid-cols-2 gap-3 text-sm">
@@ -1482,7 +1522,7 @@ async function loadInspectionTargetByCode() {
             infoEl.classList.remove('text-gray-600');
             infoEl.classList.add('text-blue-700');
         }
-        
+
         if (typeof showToast === 'function') {
             showToast('検品対象を読み込みました', 'success');
         }
@@ -1508,20 +1548,20 @@ function resetInspectionForm() {
         infoEl.classList.remove('text-blue-700');
         infoEl.classList.add('text-gray-600');
     }
-    
+
     // デフォルト日時を現在に設定
     const now = new Date();
     const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-        .toISOString().slice(0,16);
+        .toISOString().slice(0, 16);
     const dtEl = document.getElementById('inspectedAtInput');
     if (dtEl) dtEl.value = local;
 }
 
 async function submitInspection(event) {
     event.preventDefault();
-    
+
     console.log('検品送信開始 - currentInspectionLotId:', currentInspectionLotId); // デバッグ
-    
+
     if (!currentInspectionLotId) {
         if (typeof showToast === 'function') {
             showToast('検品対象の管理コードを読み込んでください', 'error');
@@ -1554,26 +1594,26 @@ async function submitInspection(event) {
     try {
         const url = `/api/inventory/lots/${currentInspectionLotId}/inspection/`;
         console.log('検品API URL:', url); // デバッグ
-        
+
         const res = await fetch(url, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        
+
         console.log('検品API応答ステータス:', res.status); // デバッグ
-        
+
         if (res.ok) {
             const result = await res.json();
             console.log('検品登録成功:', result); // デバッグ
             console.log('検品ステータス:', result.inspection_status); // デバッグ
-            
+
             if (typeof showToast === 'function') {
                 const statusText = result.inspection_status === 'passed' ? '合格' : result.inspection_status === 'failed' ? '不合格' : '完了';
                 showToast(`検品結果を登録しました（${statusText}）`, 'success');
             }
             resetInspectionForm();
-            
+
             // データベースの更新を待ってから一覧を再読み込み
             setTimeout(() => {
                 console.log('検品一覧を再読み込み中...'); // デバッグ
@@ -1603,14 +1643,14 @@ function initializePrintTab() {
     document.getElementById('refreshPrintBtn')?.addEventListener('click', loadPrintableItems);
     document.getElementById('searchPrintBtn')?.addEventListener('click', searchPrintItems);
     document.getElementById('resetPrintFiltersBtn')?.addEventListener('click', resetPrintFilters);
-    
+
     // 印刷モーダル
     document.getElementById('closePrintModal')?.addEventListener('click', hidePrintModal);
     document.getElementById('cancelPrint')?.addEventListener('click', hidePrintModal);
     document.getElementById('executePrintLotNumber')?.addEventListener('click', executePrintLotNumber);
-    
+
     // ESCキーでモーダルを閉じる
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             const printModal = document.getElementById('printModal');
             if (printModal && !printModal.classList.contains('hidden')) {
@@ -1635,7 +1675,7 @@ async function loadPrintableItems() {
         if (!response.ok) {
             throw new Error(`API error: ${response.status}`);
         }
-        
+
         const items = await response.json();
 
         loading.classList.add('hidden');
@@ -1673,7 +1713,7 @@ function createPrintItemRow(item) {
 
     const materialName = item.material?.display_name || item.material?.name || '-';
     const lotNumber = item.lot?.lot_number || '-';
-    const inspectionDate = item.lot?.inspected_at 
+    const inspectionDate = item.lot?.inspected_at
         ? new Date(item.lot.inspected_at).toLocaleDateString('ja-JP')
         : '-';
 
@@ -1725,7 +1765,7 @@ function resetPrintFilters() {
 async function showPrintModal(lotNumber) {
     currentPrintItemCode = lotNumber;
     currentPrintLotId = null;
-    
+
     try {
         // ロット番号からアイテム情報を取得
         const response = await fetch(`/api/inventory/search/${encodeURIComponent(lotNumber)}`);
@@ -1733,7 +1773,7 @@ async function showPrintModal(lotNumber) {
             throw new Error('印刷情報の取得に失敗しました');
         }
         const item = await response.json();
-        
+
         // Lot IDを保存
         currentPrintLotId = item.lot?.id || null;
 
@@ -1779,7 +1819,7 @@ async function showPrintModal(lotNumber) {
         `;
 
         document.getElementById('printModal').classList.remove('hidden');
-        
+
     } catch (error) {
         console.error('印刷モーダル表示エラー:', error);
         if (typeof showToast === 'function') {
@@ -1854,7 +1894,7 @@ function calculateUnitWeightKg(shape, diameterMm, lengthMm, density) {
     const lengthCm = lengthMm / 10;
     const base = diameterMm / 10;
     let volumeCm3;
-    
+
     if (shape === 'round') {
         const radiusCm = base / 2;
         volumeCm3 = Math.PI * radiusCm * radiusCm * lengthCm;
@@ -1865,7 +1905,7 @@ function calculateUnitWeightKg(shape, diameterMm, lengthMm, density) {
     } else {
         throw new Error('未対応の形状です');
     }
-    
+
     return volumeCm3 * density / 1000;
 }
 
@@ -1974,7 +2014,7 @@ function copySelectionFromTextarea(textareaId) {
         document.body.appendChild(tmp);
         tmp.focus();
         tmp.select();
-        try { document.execCommand('copy'); } catch (e) {}
+        try { document.execCommand('copy'); } catch (e) { }
         document.body.removeChild(tmp);
     }
 }
@@ -1989,13 +2029,13 @@ function addLotRow(defaultQuantity = null, defaultWeight = null, defaultLotNumbe
     const container = document.getElementById('lotsContainer');
     const rowId = `lot-row-${lotRowCounter}`;
     const counter = lotRowCounter;
-    
+
     const quantityValue = defaultQuantity && defaultQuantity > 0 ? ` value="${defaultQuantity}"` : '';
     const weightValue = defaultWeight && defaultWeight > 0 ? ` value="${defaultWeight}"` : '';
     const lotNumberValue = defaultLotNumber ? ` value="${defaultLotNumber}"` : '';
     const locationValue = defaultLocation ? ` value="${defaultLocation}"` : '';
     const notesValue = defaultNotes ? ` value="${defaultNotes}"` : '';
-    
+
     const lotRow = document.createElement('div');
     lotRow.id = rowId;
     lotRow.className = 'bg-white rounded-lg p-4 border-2 border-purple-200';
@@ -2045,7 +2085,7 @@ function addLotRow(defaultQuantity = null, defaultWeight = null, defaultLotNumbe
                    placeholder="このロット固有の備考を入力"${notesValue}>
         </div>
     `;
-    
+
     container.appendChild(lotRow);
     updateTotalQuantity();
 }
@@ -2053,24 +2093,24 @@ function addLotRow(defaultQuantity = null, defaultWeight = null, defaultLotNumbe
 function onLotQuantityChange(lotId) {
     const quantityInput = document.querySelector(`input[name="lot_quantity_${lotId}"]`);
     const weightInput = document.querySelector(`input[name="lot_weight_${lotId}"]`);
-    
+
     if (quantityInput && quantityInput.value && weightInput) {
         // 本数入力時は重量をクリア
         weightInput.value = '';
     }
-    
+
     updateTotalQuantity();
 }
 
 function onLotWeightChange(lotId) {
     const quantityInput = document.querySelector(`input[name="lot_quantity_${lotId}"]`);
     const weightInput = document.querySelector(`input[name="lot_weight_${lotId}"]`);
-    
+
     if (weightInput && weightInput.value && quantityInput) {
         // 重量入力時は本数をクリア
         quantityInput.value = '';
     }
-    
+
     updateTotalQuantity();
 }
 
@@ -2104,21 +2144,21 @@ function updateTotalQuantity() {
             }
         }
     }
-    
+
     let totalQuantity = 0;
     let totalWeight = 0;
-    
+
     // 各ロットの数量と重量を集計
     for (let i = 1; i <= lotRowCounter; i++) {
         const lotRow = document.getElementById(`lot-row-${i}`);
         if (!lotRow) continue;
-        
+
         const quantityInput = document.querySelector(`input[name="lot_quantity_${i}"]`);
         const weightInput = document.querySelector(`input[name="lot_weight_${i}"]`);
-        
+
         const quantity = parseInt(quantityInput?.value) || 0;
         const weight = parseFloat(weightInput?.value) || 0;
-        
+
         if (quantity > 0) {
             totalQuantity += quantity;
             if (unitWeight > 0) {
@@ -2131,11 +2171,11 @@ function updateTotalQuantity() {
             }
         }
     }
-    
+
     // 合計表示を更新
     document.getElementById('totalQuantity').textContent = totalQuantity;
     document.getElementById('totalWeight').textContent = totalWeight > 0 ? totalWeight.toFixed(3) : '0.000';
-    
+
     // 発注数量と比較して色を変更
     const totalEl = document.getElementById('totalQuantity');
     if (currentOrderedQuantity > 0) {

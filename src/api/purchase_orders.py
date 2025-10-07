@@ -485,6 +485,13 @@ async def receive_item(
         # 発注アイテムの状態更新（複数ロット対応：累積計算）
         item.received_quantity = (item.received_quantity or 0) + final_received_quantity
         item.received_weight_kg = round((item.received_weight_kg or 0) + final_received_weight, 3)
+        
+        # 単価・金額を更新（入力された場合のみ）
+        if receiving.unit_price is not None:
+            item.unit_price = receiving.unit_price
+        if receiving.amount is not None:
+            item.amount = receiving.amount
+        
         if item.status == PurchaseOrderItemStatus.PENDING:
             item.status = PurchaseOrderItemStatus.RECEIVED
 
@@ -613,6 +620,12 @@ async def update_received_item(
     lot.received_amount = receiving.amount
     lot.notes = receiving.notes
     db.flush()
+
+    # 発注アイテムの単価・金額も更新（入力された場合のみ）
+    if receiving.unit_price is not None:
+        item.unit_price = receiving.unit_price
+    if receiving.amount is not None:
+        item.amount = receiving.amount
 
     # 在庫アイテム（第一置き場）の更新
     inv_item = db.query(Item).filter(Item.lot_id == lot.id).order_by(Item.id.asc()).first()
