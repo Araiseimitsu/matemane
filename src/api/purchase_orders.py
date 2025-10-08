@@ -11,7 +11,7 @@ from src.db import get_db
 from src.db.models import (
     PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, PurchaseOrderItemStatus,
     Material, MaterialShape, Lot, Item, Location, OrderType, User,
-    MaterialGroup, MaterialGroupMember, InspectionStatus
+    MaterialGroup, MaterialGroupMember, InspectionStatus, AuditLog
 )
 from src.utils.auth import get_password_hash
 
@@ -107,6 +107,19 @@ class PaginatedPurchaseOrderResponse(BaseModel):
     page: int
     page_size: int
     total_pages: int
+
+class PurchaseOrderUpdate(BaseModel):
+    """発注ヘッダー更新用スキーマ"""
+    supplier: Optional[str] = Field(None, max_length=200, description="仕入先")
+    expected_delivery_date: Optional[datetime] = Field(None, description="納期")
+    notes: Optional[str] = Field(None, description="備考")
+
+class PurchaseOrderItemUpdate(BaseModel):
+    """発注アイテム更新用スキーマ"""
+    ordered_quantity: Optional[int] = Field(None, gt=0, description="発注数量")
+    ordered_weight_kg: Optional[float] = Field(None, gt=0, description="発注重量（kg）")
+    unit_price: Optional[float] = Field(None, ge=0, description="単価")
+    amount: Optional[float] = Field(None, ge=0, description="金額")
 
 class ReceivingConfirmation(BaseModel):
     lot_number: str = Field(..., max_length=100, description="ロット番号")
@@ -765,3 +778,167 @@ async def get_inspection_target(item_id: int, db: Session = Depends(get_db)):
     }
 
 # 重量⇔本数換算APIは廃止（フロントエンド未使用）
+
+@router.put("/{order_id}", response_model=PurchaseOrderResponse)
+async def update_purchase_order(
+    order_id: int,
+    order_data: PurchaseOrderUpdate,
+    db: Session = Depends(get_db)
+):
+    """発注ヘッダーの編集（仕入先・納期・備考を更新）"""
+    # 発注取得
+    order = db.query(PurchaseOrder).options(joinedload(PurchaseOrder.items)).filter(
+        PurchaseOrder.id == order_id
+    ).first()
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="発注が見つかりません"
+        )
+
+    # 入庫済み（COMPLETED/PARTIAL）の場合は警告（編集は許可するが推奨しない）
+    if order.status in [PurchaseOrderStatus.COMPLETED, PurchaseOrderStatus.PARTIAL]:
+        # 警告をログに出力（実運用ではフロントエンドで確認ダイアログを表示推奨）
+        print(f"警告: 入庫済み発注（ID: {order_id}）を編集しています")
+
+    # 旧値を記録
+    old_values = f"仕入先: {order.supplier}, 納期: {order.expected_delivery_date}, 備考: {order.notes or 'なし'}"
+
+    # 更新
+    if order_data.supplier is not None:
+        order.supplier = order_data.supplier
+    if order_data.expected_delivery_date is not None:
+        order.expected_delivery_date = order_data.expected_delivery_date
+    if order_data.notes is not None:
+        order.notes = order_data.notes
+
+    order.updated_at = datetime.now()
+
+    # 監査ログ記録
+    audit_log = AuditLog(
+        user_id=1,  # TODO: 認証実装後にユーザーIDを設定
+        action="発注ヘッダー編集",
+        target_table="purchase_orders",
+        target_id=order_id,
+        old_values=old_values,
+        new_values=f"仕入先: {order.supplier}, 納期: {order.expected_delivery_date}, 備考: {order.notes or 'なし'}",
+        created_at=datetime.now()
+    )
+
+    db.add(audit_log)
+    db.commit()
+    db.refresh(order)
+
+    return order
+
+@router.put("/items/{item_id}", response_model=PurchaseOrderItemResponse)
+async def update_purchase_order_item(
+    item_id: int,
+    item_data: PurchaseOrderItemUpdate,
+    db: Session = Depends(get_db)
+):
+    """発注アイテムの編集（数量・単価・金額を更新）"""
+    # アイテム取得
+    item = db.query(PurchaseOrderItem).filter(PurchaseOrderItem.id == item_id).first()
+
+    if not item:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="発注アイテムが見つかりません"
+        )
+
+    # 入庫済み（RECEIVED）の場合は編集不可
+    if item.status == PurchaseOrderItemStatus.RECEIVED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="入庫済みアイテムは編集できません。入庫内容の修正は PUT /items/{item_id}/receive/ を使用してください"
+        )
+
+    # 旧値を記録
+    old_values = f"数量: {item.ordered_quantity}, 重量: {item.ordered_weight_kg}, 単価: {item.unit_price}, 金額: {item.amount}"
+
+    # 更新
+    if item_data.ordered_quantity is not None:
+        item.ordered_quantity = item_data.ordered_quantity
+    if item_data.ordered_weight_kg is not None:
+        item.ordered_weight_kg = item_data.ordered_weight_kg
+    if item_data.unit_price is not None:
+        item.unit_price = item_data.unit_price
+    if item_data.amount is not None:
+        item.amount = item_data.amount
+
+    item.updated_at = datetime.now()
+
+    # 監査ログ記録
+    audit_log = AuditLog(
+        user_id=1,  # TODO: 認証実装後にユーザーIDを設定
+        action="発注アイテム編集",
+        target_table="purchase_order_items",
+        target_id=item_id,
+        old_values=old_values,
+        new_values=f"数量: {item.ordered_quantity}, 重量: {item.ordered_weight_kg}, 単価: {item.unit_price}, 金額: {item.amount}",
+        created_at=datetime.now()
+    )
+
+    db.add(audit_log)
+    db.commit()
+    db.refresh(item)
+
+    return item
+
+@router.delete("/{order_id}")
+async def delete_purchase_order(
+    order_id: int,
+    db: Session = Depends(get_db)
+):
+    """発注の削除（未入庫のみ）"""
+    # 発注取得
+    order = db.query(PurchaseOrder).options(joinedload(PurchaseOrder.items)).filter(
+        PurchaseOrder.id == order_id
+    ).first()
+
+    if not order:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="発注が見つかりません"
+        )
+
+    # 入庫済みアイテムがある場合は削除不可
+    has_received_items = any(
+        item.status == PurchaseOrderItemStatus.RECEIVED
+        for item in order.items
+    )
+
+    if has_received_items:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="入庫済みアイテムがあるため削除できません"
+        )
+
+    # 監査ログ記録
+    audit_log = AuditLog(
+        user_id=1,  # TODO: 認証実装後にユーザーIDを設定
+        action="発注削除",
+        target_table="purchase_orders",
+        target_id=order_id,
+        old_values=f"発注番号: {order.order_number}, 仕入先: {order.supplier}, アイテム数: {len(order.items)}",
+        new_values="削除",
+        created_at=datetime.now()
+    )
+
+    db.add(audit_log)
+
+    # 発注アイテムを先に削除（外部キー制約対応）
+    for item in order.items:
+        db.delete(item)
+
+    # 発注本体を削除
+    db.delete(order)
+    db.commit()
+
+    return {
+        "message": "発注を削除しました",
+        "order_id": order_id,
+        "order_number": order.order_number
+    }

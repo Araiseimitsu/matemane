@@ -1,295 +1,436 @@
-{% extends "base.html" %} {% block title %}入出庫管理 - 材料管理システム{%
-endblock %} {% block content %}
-<div class="min-h-screen bg-gray-50">
-  <!-- ヘッダー -->
-  <div class="bg-white shadow-sm border-b">
-    <div class="px-4 py-6">
-      <div class="flex justify-between items-center">
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900">持ち出し・戻し管理</h1>
-          <p class="text-gray-600 mt-1">在庫としてストックしてある材料の持ち出し・戻しを管理します</p>
+{% extends "base.html" %}
+
+{% block title %}入出庫管理 - 材料管理システム{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* グラデーション背景アニメーション */
+    @keyframes gradient-shift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* フローティングアニメーション */
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+
+    .icon-float {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    /* 入庫・出庫のグラデーション */
+    .movement-in-gradient {
+        background: linear-gradient(135deg, #10b981, #059669, #047857);
+        box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+    }
+
+    .movement-out-gradient {
+        background: linear-gradient(135deg, #ef4444, #dc2626, #b91c1c);
+        box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
+    }
+
+    /* ホバーエフェクト */
+    .action-btn {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .action-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.5s;
+    }
+
+    .action-btn:hover::before {
+        left: 100%;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px) scale(1.02);
+    }
+
+    /* テーブル行のホバーエフェクト */
+    .table-row-hover {
+        transition: all 0.2s ease;
+    }
+
+    .table-row-hover:hover {
+        background: linear-gradient(90deg, #f0f9ff, #dbeafe);
+        transform: translateX(4px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+    }
+
+    /* 履歴カードのグラデーション */
+    .history-card-in {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.05));
+        border-left: 4px solid #10b981;
+    }
+
+    .history-card-out {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.05));
+        border-left: 4px solid #ef4444;
+    }
+
+    /* プログレスバー */
+    .progress-shimmer {
+        height: 4px;
+        border-radius: 10px;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+        background-size: 200% 100%;
+        animation: shimmer 2s linear infinite;
+    }
+
+    @keyframes shimmer {
+        0% { background-position: -100% 0; }
+        100% { background-position: 200% 0; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen gradient-bg">
+  <div class="max-w-[1600px] mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <!-- ヘッダーセクション -->
+    <div class="mb-10">
+      <div class="flex items-center justify-between">
+        <div class="space-y-2">
+          <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-600 to-pink-600">
+            入出庫管理
+          </h1>
+          <p class="text-lg text-gray-600 font-medium">在庫の持ち出し・戻しをリアルタイムで管理</p>
         </div>
-        <div class="flex space-x-4">
+        <div class="hidden md:flex items-center space-x-4">
           <button
             id="qrScanBtn"
-            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+            class="action-btn glass-card flex items-center px-6 py-4 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300"
           >
-            <svg
-              class="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h2M4 4h4m4 0h2m0 0h.01M4 20h4m12 0h2m-6 0h2M4 8h2.5"
-              ></path>
-            </svg>
-            QRスキャン
+            <i class="fas fa-qrcode text-2xl text-indigo-600 mr-3"></i>
+            <span class="font-bold text-gray-700">QRスキャン</span>
           </button>
           <button
             id="refreshBtn"
-            class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center"
+            class="action-btn glass-card p-4 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 group"
+            title="データを再取得"
           >
-            <svg
-              class="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            更新
+            <i class="fas fa-sync-alt text-2xl text-gray-600 group-hover:rotate-180 transition-transform duration-500"></i>
           </button>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- コンテンツエリア -->
-  <div class="px-4 py-6">
+    <!-- コンテンツエリア -->
+    <div class="space-y-8">
 
-    <!-- 統合ムーブメントフォーム -->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-      <div class="flex items-center mb-4">
-        <div class="p-2 bg-gray-100 rounded-lg mr-3">
-          <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12m6-6H6" />
-          </svg>
+      <!-- 統合ムーブメントフォーム -->
+      <div class="glass-card rounded-3xl p-8 shadow-xl">
+        <div class="flex items-center mb-8">
+          <div class="p-4 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg mr-4 icon-float">
+            <i class="fas fa-exchange-alt text-3xl text-white"></i>
+          </div>
+          <h3 class="text-2xl font-black text-gray-900">入出庫フォーム</h3>
         </div>
-        <h3 class="text-lg font-semibold text-gray-900">入出庫統合フォーム</h3>
+        <div class="progress-shimmer mb-6"></div>
+
+        <form id="movementForm" class="space-y-6">
+          <input type="hidden" name="item_id" />
+
+          <!-- 種別トグル -->
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-3">処理種別</label>
+            <div class="flex space-x-4">
+              <button type="button" id="typeOutBtn" class="action-btn flex-1 movement-out-gradient text-white px-6 py-4 rounded-2xl font-bold text-lg transition-all duration-300">
+                <i class="fas fa-arrow-right mr-2"></i>出庫
+              </button>
+              <button type="button" id="typeInBtn" class="action-btn flex-1 bg-gradient-to-br from-gray-400 to-gray-500 text-white px-6 py-4 rounded-2xl font-bold text-lg transition-all duration-300">
+                <i class="fas fa-arrow-left mr-2"></i>戻し
+              </button>
+              <input type="hidden" id="movementTypeInput" name="movement_type" value="out" />
+            </div>
+          </div>
+
+          <!-- アイテム選択 -->
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-3">対象アイテム</label>
+            <div class="space-y-3">
+              <div id="selectedItemSummary" class="glass-card p-5 border-2 border-dashed border-gray-300 rounded-2xl text-sm text-gray-500 font-medium">
+                アイテムが選択されていません
+              </div>
+              <div class="flex space-x-3">
+                <button type="button" id="selectItemBtn" class="action-btn flex-1 bg-gradient-to-br from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-2xl hover:shadow-xl transition-all duration-300 flex items-center justify-center font-bold">
+                  <i class="fas fa-search mr-2"></i>在庫一覧で検索
+                </button>
+                <button type="button" id="clearItemBtn" class="action-btn bg-gradient-to-br from-gray-500 to-gray-600 text-white px-6 py-3 rounded-2xl hover:shadow-xl transition-all duration-300 font-bold">
+                  <i class="fas fa-times mr-2"></i>クリア
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 数量・重量入力 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-3">
+                <i class="fas fa-list-ol mr-2 text-blue-500"></i>数量（本）
+              </label>
+              <input type="number" id="movementQuantity" name="quantity" min="1" step="1"
+                class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-blue-300 focus:border-blue-500 transition-all duration-300 font-semibold text-lg"
+                placeholder="本数を入力" />
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-gray-700 mb-3">
+                <i class="fas fa-weight mr-2 text-green-500"></i>重量（kg）
+              </label>
+              <input type="number" id="movementWeight" name="weight_kg" min="0.001" step="0.001"
+                class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-green-300 focus:border-green-500 transition-all duration-300 font-semibold text-lg"
+                placeholder="重量を入力" />
+            </div>
+          </div>
+          <div class="glass-card p-4 rounded-2xl border-l-4 border-blue-500">
+            <p class="text-sm text-gray-700 font-medium">
+              <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+              数量または重量のいずれかを入力してください（相互換算されます）
+            </p>
+          </div>
+
+          <!-- 備考 -->
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-3">
+              <i class="fas fa-comment mr-2 text-purple-500"></i>備考
+            </label>
+            <textarea name="notes" rows="3"
+              class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all duration-300 font-medium"
+              placeholder="備考を入力してください"></textarea>
+          </div>
+
+          <button type="submit" id="movementSubmitBtn" class="action-btn w-full movement-out-gradient text-white py-5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center font-black text-xl shadow-2xl">
+            <i class="fas fa-arrow-right text-2xl mr-3"></i>
+            出庫実行
+          </button>
+        </form>
+
+        <div class="glass-card p-4 rounded-2xl border-l-4 border-indigo-500 mt-6">
+          <p class="text-xs text-gray-600 font-medium">
+            <i class="fas fa-lightbulb text-indigo-500 mr-2"></i>
+            在庫一覧から直接「出庫」または「戻し」ボタンをクリックすることもできます
+          </p>
+        </div>
       </div>
 
-      <form id="movementForm" class="space-y-4">
-        <input type="hidden" name="item_id" />
-
-        <!-- 種別トグル -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">処理種別</label>
-          <div class="flex space-x-2">
-            <button type="button" id="typeOutBtn" class="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">出庫</button>
-            <button type="button" id="typeInBtn" class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">戻し</button>
-            <input type="hidden" id="movementTypeInput" name="movement_type" value="out" />
+      <!-- 在庫アイテム一覧 -->
+      <div id="inventorySection" class="glass-card rounded-3xl p-8 shadow-xl">
+        <div class="flex items-center justify-between mb-8">
+          <div class="flex items-center">
+            <div class="p-4 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl shadow-lg mr-4 icon-float" style="animation-delay: 0.2s;">
+              <i class="fas fa-warehouse text-3xl text-white"></i>
+            </div>
+            <h2 class="text-2xl font-black text-gray-900">在庫アイテム一覧</h2>
           </div>
         </div>
+        <div class="progress-shimmer mb-6" style="background: linear-gradient(90deg, #f59e0b, #ea580c);"></div>
 
-        <!-- アイテム選択 -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">対象アイテム</label>
-          <div class="space-y-2">
-            <div id="selectedItemSummary" class="p-3 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-500">アイテムが選択されていません</div>
-            <div class="flex space-x-2">
-              <button type="button" id="selectItemBtn" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                在庫一覧で検索
-              </button>
-              <button type="button" id="clearItemBtn" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">クリア</button>
+        <!-- 検索・フィルターエリア -->
+        <div class="glass-card p-6 rounded-2xl mb-6 border border-gray-200">
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-2">
+                <i class="fas fa-search mr-1 text-blue-500"></i>材料名
+              </label>
+              <input
+                type="text"
+                id="materialSearchInput"
+                placeholder="材料名で検索"
+                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-300 focus:border-blue-500 transition-all duration-300 font-medium"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-2">
+                <i class="fas fa-barcode mr-1 text-green-500"></i>ロット番号
+              </label>
+              <input
+                type="text"
+                id="lotSearchInput"
+                placeholder="ロット番号で検索"
+                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-green-300 focus:border-green-500 transition-all duration-300 font-medium"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-2">
+                <i class="fas fa-map-marker-alt mr-1 text-purple-500"></i>置き場
+              </label>
+              <select
+                id="locationFilter"
+                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all duration-300 font-medium"
+              >
+                <option value="">すべて</option>
+                <!-- 動的に生成 -->
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-2">
+                <i class="fas fa-filter mr-1 text-gray-500"></i>表示オプション
+              </label>
+              <label class="glass-card flex items-center space-x-3 p-3 rounded-xl cursor-pointer hover:shadow-lg transition-all duration-300 border border-gray-200">
+                <input
+                  type="checkbox"
+                  id="includeZeroStock"
+                  class="rounded border-gray-300 w-5 h-5 text-blue-600 focus:ring-blue-500"
+                />
+                <span class="text-sm text-gray-700 font-bold">在庫切れを含む</span>
+              </label>
             </div>
           </div>
         </div>
 
-        <!-- 数量・重量入力 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">数量（本）</label>
-            <input type="number" id="movementQuantity" name="quantity" min="1" step="1" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="本数を入力" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2">重量（kg）</label>
-            <input type="number" id="movementWeight" name="weight_kg" min="0.001" step="0.001" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="重量を入力" />
-          </div>
-        </div>
-        <p class="text-sm text-gray-500">※数量または重量のいずれかを入力してください（相互換算されます）</p>
+        <!-- ページネーション（上部） -->
+        <div id="inventoryPaginationTop" class="mb-4"></div>
 
-        <!-- 指示番号（出庫のみ） -->
-        <!-- 指示番号は不要のため削除 -->
-
-        <!-- 備考 -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
-          <textarea name="notes" rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="備考"></textarea>
-        </div>
-
-        <button type="submit" id="movementSubmitBtn" class="w-full bg-red-600 text-white py-3 px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
-          出庫実行
-        </button>
-      </form>
-      <p class="text-xs text-gray-500 mt-4">※ 在庫一覧から直接「出庫」または「戻し」ボタンをクリックすることもできます</p>
-    </div>
-
-    <!-- 在庫アイテム一覧 -->
-    <div id="inventorySection" class="bg-white rounded-lg shadow-sm mb-6">
-      <div class="p-4 border-b">
-        <div class="flex justify-between items-center">
-          <h2 class="text-lg font-semibold text-gray-900">在庫アイテム一覧</h2>
-          <div class="flex space-x-4">
-            <input
-              type="text"
-              id="materialSearchInput"
-              placeholder="材料名で検索"
-              class="w-48 p-2 border border-gray-300 rounded-md"
-            />
-            <input
-              type="text"
-              id="lotSearchInput"
-              placeholder="ロット番号で検索"
-              class="w-48 p-2 border border-gray-300 rounded-md"
-            />
-            <select
-              id="locationFilter"
-              class="w-32 p-2 border border-gray-300 rounded-md"
-            >
-              <option value="">すべて</option>
+        <div class="overflow-x-auto rounded-2xl border-2 border-gray-200">
+          <table class="w-full">
+            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+              <tr>
+                <th class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-tag mr-2 text-blue-500"></i>材料仕様
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-shapes mr-2 text-green-500"></i>形状
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-ruler mr-2 text-purple-500"></i>径
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-barcode mr-2 text-yellow-500"></i>ロット番号
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-comment mr-2 text-gray-500"></i>ロット備考
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-arrows-alt-h mr-2 text-indigo-500"></i>長さ
+                </th>
+                <th class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-boxes mr-2 text-blue-600"></i>現在庫
+                </th>
+                <th class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-weight mr-2 text-green-600"></i>重量
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-map-marker-alt mr-2 text-red-500"></i>置き場
+                </th>
+                <th class="px-6 py-4 text-center text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-cogs mr-2 text-gray-600"></i>操作
+                </th>
+              </tr>
+            </thead>
+            <tbody id="inventoryTableBody" class="divide-y divide-gray-200 bg-white">
               <!-- 動的に生成 -->
-            </select>
-            <label class="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="includeZeroStock"
-                class="rounded border-gray-300"
-              />
-              <span class="text-sm text-gray-700">在庫切れを含む</span>
-            </label>
-          </div>
+            </tbody>
+          </table>
         </div>
+
+        <div id="inventoryLoading" class="text-center py-16 hidden">
+          <div class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mb-4"></div>
+          <p class="text-lg text-gray-700 font-bold">在庫データを読み込んでいます...</p>
+          <p class="text-sm text-gray-500 mt-2">しばらくお待ちください</p>
+        </div>
+
+        <div id="inventoryEmpty" class="text-center py-16 hidden">
+          <div class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-6 shadow-inner">
+            <i class="fas fa-inbox text-5xl text-gray-400"></i>
+          </div>
+          <p class="text-xl text-gray-700 font-bold">該当するアイテムがありません</p>
+          <p class="text-sm text-gray-500 mt-2">検索条件を変更してください</p>
+        </div>
+
+        <!-- ページネーション（下部） -->
+        <div id="inventoryPaginationBottom" class="mt-6"></div>
       </div>
 
-      <!-- ページネーション（上部） -->
-      <div id="inventoryPaginationTop" class="mb-4"></div>
-
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                材料仕様
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                形状
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                径
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                ロット番号
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                ロット備考
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                長さ
-              </th>
-              <th
-                class="px-4 py-3 text-right text-sm font-medium text-gray-500"
-              >
-                現在庫
-              </th>
-              <th
-                class="px-4 py-3 text-right text-sm font-medium text-gray-500"
-              >
-                重量
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                置き場
-              </th>
-              <th
-                class="px-4 py-3 text-center text-sm font-medium text-gray-500"
-              >
-                操作
-              </th>
-            </tr>
-          </thead>
-          <tbody id="inventoryTableBody" class="divide-y divide-gray-200">
-            <!-- 動的に生成 -->
-          </tbody>
-        </table>
-      </div>
-      <div id="inventoryLoading" class="text-center py-8 hidden">
-        <div
-          class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
-        ></div>
-        <p class="mt-2 text-gray-600">読み込み中...</p>
-      </div>
-      <div id="inventoryEmpty" class="text-center py-8 hidden">
-        <p class="text-gray-500">該当するアイテムがありません</p>
-      </div>
-
-      <!-- ページネーション（下部） -->
-      <div id="inventoryPaginationBottom" class="mt-4"></div>
-    </div>
-
-    <!-- 入出庫履歴 -->
-    <div class="bg-white rounded-lg shadow-sm">
-      <div class="p-4 border-b">
-        <div class="flex justify-between items-center">
-          <h2 class="text-lg font-semibold text-gray-900">持ち出し・戻し履歴</h2>
-          <div class="flex space-x-4">
+      <!-- 入出庫履歴 -->
+      <div class="glass-card rounded-3xl p-8 shadow-xl">
+        <div class="flex items-center justify-between mb-8">
+          <div class="flex items-center">
+            <div class="p-4 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl shadow-lg mr-4 icon-float" style="animation-delay: 0.4s;">
+              <i class="fas fa-history text-3xl text-white"></i>
+            </div>
+            <h2 class="text-2xl font-black text-gray-900">入出庫履歴</h2>
+          </div>
+          <div class="flex items-center space-x-4">
+            <label class="block text-xs font-bold text-gray-700">
+              <i class="fas fa-filter mr-1 text-blue-500"></i>種別フィルター
+            </label>
             <select
               id="typeFilter"
-              class="w-32 p-2 border border-gray-300 rounded-md"
+              class="p-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-300 focus:border-blue-500 transition-all duration-300 font-bold"
             >
               <option value="">すべて</option>
-              <option value="in">戻しのみ</option>
-              <option value="out">出庫のみ</option>
+              <option value="in">🟢 戻しのみ</option>
+              <option value="out">🔴 出庫のみ</option>
             </select>
           </div>
         </div>
-      </div>
+        <div class="progress-shimmer mb-6" style="background: linear-gradient(90deg, #3b82f6, #06b6d4);"></div>
 
-      <!-- ページネーション（上部） -->
-      <div id="movementsPaginationTop" class="mb-4"></div>
+        <!-- ページネーション（上部） -->
+        <div id="movementsPaginationTop" class="mb-6"></div>
 
-      <div class="overflow-x-auto">
-        <table class="w-full">
-          <thead class="bg-gray-50">
-            <tr>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                処理日時
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                種別
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                管理コード
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                材料・ロット
-              </th>
-              <th
-                class="px-4 py-3 text-right text-sm font-medium text-gray-500"
-              >
-                数量・重量
-              </th>
-              <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                備考
-              </th>
-            </tr>
-          </thead>
-          <tbody id="movementsTableBody" class="divide-y divide-gray-200">
-            <!-- 動的に生成 -->
-          </tbody>
-        </table>
-      </div>
-      <div id="movementsLoading" class="text-center py-8 hidden">
-        <div
-          class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
-        ></div>
-        <p class="mt-2 text-gray-600">読み込み中...</p>
-      </div>
-      <div id="movementsEmpty" class="text-center py-8 hidden">
-        <p class="text-gray-500">入出庫履歴がありません</p>
-      </div>
+        <div class="overflow-x-auto rounded-2xl border-2 border-gray-200">
+          <table class="w-full">
+            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+              <tr>
+                <th class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-clock mr-2 text-blue-500"></i>処理日時
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-tag mr-2 text-purple-500"></i>種別
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-barcode mr-2 text-green-500"></i>管理コード
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-box mr-2 text-yellow-500"></i>材料・ロット
+                </th>
+                <th class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-balance-scale mr-2 text-indigo-500"></i>数量・重量
+                </th>
+                <th class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-comment mr-2 text-gray-500"></i>備考
+                </th>
+                <th class="px-6 py-4 text-center text-xs font-black text-gray-700 uppercase tracking-wider">
+                  <i class="fas fa-cog mr-2 text-orange-500"></i>操作
+                </th>
+              </tr>
+            </thead>
+            <tbody id="movementsTableBody" class="divide-y divide-gray-200 bg-white">
+              <!-- 動的に生成 -->
+            </tbody>
+          </table>
+        </div>
 
-      <!-- ページネーション（下部） -->
-      <div id="movementsPaginationBottom" class="mt-4"></div>
+        <div id="movementsLoading" class="text-center py-16 hidden">
+          <div class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mb-4"></div>
+          <p class="text-lg text-gray-700 font-bold">履歴データを読み込んでいます...</p>
+          <p class="text-sm text-gray-500 mt-2">しばらくお待ちください</p>
+        </div>
+
+        <div id="movementsEmpty" class="text-center py-16 hidden">
+          <div class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-6 shadow-inner">
+            <i class="fas fa-history text-5xl text-gray-400"></i>
+          </div>
+          <p class="text-xl text-gray-700 font-bold">入出庫履歴がありません</p>
+          <p class="text-sm text-gray-500 mt-2">処理を実行すると履歴が表示されます</p>
+        </div>
+
+        <!-- ページネーション（下部） -->
+        <div id="movementsPaginationBottom" class="mt-6"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -297,104 +438,97 @@ endblock %} {% block content %}
 <!-- アイテム検索モーダル -->
 <div
   id="itemSearchModal"
-  class="fixed inset-0 bg-black bg-opacity-50 hidden z-50"
+  class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm hidden z-50"
 >
   <div class="flex items-center justify-center min-h-screen p-4 modal-backdrop">
     <div
-      class="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden"
+      class="glass-card rounded-3xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl border-2 border-gray-200"
       onclick="event.stopPropagation()"
     >
-      <div class="p-6 border-b">
+      <div class="p-8 border-b-2 border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
         <div class="flex justify-between items-center">
-          <h2
-            id="itemSearchModalTitle"
-            class="text-xl font-semibold text-gray-900"
-          >
-            アイテムを検索
-          </h2>
+          <div class="flex items-center">
+            <div class="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg mr-4">
+              <i class="fas fa-search text-2xl text-white"></i>
+            </div>
+            <h2
+              id="itemSearchModalTitle"
+              class="text-3xl font-black text-gray-900"
+            >
+              アイテムを検索
+            </h2>
+          </div>
           <button
             id="closeItemSearchModal"
-            class="text-gray-400 hover:text-gray-600"
+            class="action-btn p-3 bg-white rounded-xl hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-all duration-300"
           >
-            <svg
-              class="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <i class="fas fa-times text-2xl"></i>
           </button>
         </div>
       </div>
 
-      <div class="p-6">
+      <div class="p-8">
         <!-- 検索フィルター -->
         <form
           id="itemSearchForm"
-          class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6"
+          class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
         >
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2"
-              >材料名</label
-            >
+            <label class="block text-xs font-bold text-gray-700 mb-2">
+              <i class="fas fa-tag mr-1 text-blue-500"></i>材料名
+            </label>
             <input
               type="text"
               name="material_name"
               placeholder="材料名を入力"
-              class="w-full p-2 border border-gray-300 rounded-md"
+              class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-300 focus:border-blue-500 transition-all duration-300 font-medium"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2"
-              >径（mm）</label
-            >
+            <label class="block text-xs font-bold text-gray-700 mb-2">
+              <i class="fas fa-ruler mr-1 text-green-500"></i>径（mm）
+            </label>
             <input
               type="number"
               name="diameter_mm"
               placeholder="径を入力"
-              class="w-full p-2 border border-gray-300 rounded-md"
+              class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-green-300 focus:border-green-500 transition-all duration-300 font-medium"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2"
-              >ロット番号</label
-            >
+            <label class="block text-xs font-bold text-gray-700 mb-2">
+              <i class="fas fa-barcode mr-1 text-purple-500"></i>ロット番号
+            </label>
             <input
               type="text"
               name="lot_number"
               placeholder="ロット番号を入力"
-              class="w-full p-2 border border-gray-300 rounded-md"
+              class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all duration-300 font-medium"
             />
           </div>
           <div class="flex items-end">
-            <label class="flex items-center space-x-2 mb-2">
+            <label class="glass-card flex items-center space-x-3 p-3 rounded-xl cursor-pointer hover:shadow-lg transition-all duration-300 border border-gray-200 w-full">
               <input
                 type="checkbox"
                 name="include_zero_stock"
-                class="rounded border-gray-300"
+                class="rounded border-gray-300 w-5 h-5 text-blue-600 focus:ring-blue-500"
               />
-              <span class="text-sm text-gray-700">在庫切れを含む</span>
+              <span class="text-sm text-gray-700 font-bold">在庫切れを含む</span>
             </label>
           </div>
-          <div class="flex items-end space-x-2 md:col-span-4">
+          <div class="flex items-end space-x-3 md:col-span-4">
             <button
               type="submit"
-              class="flex-1 bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors"
+              class="action-btn flex-1 bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-4 rounded-2xl hover:shadow-xl transition-all duration-300 font-black text-lg"
             >
-              検索
+              <i class="fas fa-search mr-2"></i>検索
             </button>
             <button
               type="button"
               id="resetSearchBtn"
-              class="bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600 transition-colors"
+              class="action-btn bg-gradient-to-br from-gray-500 to-gray-600 text-white p-4 rounded-2xl hover:shadow-xl transition-all duration-300 font-bold"
             >
-              リセット
+              <i class="fas fa-redo mr-2"></i>リセット
             </button>
           </div>
         </form>
@@ -402,60 +536,232 @@ endblock %} {% block content %}
         <!-- 検索結果 -->
         <div
           id="searchResultsContainer"
-          class="border border-gray-200 rounded-lg max-h-96 overflow-y-auto"
+          class="border-2 border-gray-200 rounded-2xl max-h-96 overflow-y-auto"
         >
           <table class="w-full">
-            <thead class="bg-gray-50 sticky top-0">
+            <thead class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0">
               <tr>
                 <th
-                  class="px-4 py-3 text-left text-sm font-medium text-gray-500"
+                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
                 >
-                  材料情報
+                  <i class="fas fa-info-circle mr-2 text-blue-500"></i>材料情報
                 </th>
                 <th
-                  class="px-4 py-3 text-left text-sm font-medium text-gray-500"
+                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
                 >
-                  ロット
+                  <i class="fas fa-barcode mr-2 text-green-500"></i>ロット
                 </th>
                 <th
-                  class="px-4 py-3 text-right text-sm font-medium text-gray-500"
+                  class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider"
                 >
-                  残数量
+                  <i class="fas fa-boxes mr-2 text-purple-500"></i>残数量
                 </th>
                 <th
-                  class="px-4 py-3 text-right text-sm font-medium text-gray-500"
+                  class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider"
                 >
-                  重量
+                  <i class="fas fa-weight mr-2 text-yellow-500"></i>重量
                 </th>
                 <th
-                  class="px-4 py-3 text-left text-sm font-medium text-gray-500"
+                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
                 >
-                  置き場
+                  <i class="fas fa-map-marker-alt mr-2 text-red-500"></i>置き場
                 </th>
                 <th
-                  class="px-4 py-3 text-center text-sm font-medium text-gray-500"
+                  class="px-6 py-4 text-center text-xs font-black text-gray-700 uppercase tracking-wider"
                 >
-                  選択
+                  <i class="fas fa-check-circle mr-2 text-indigo-500"></i>選択
                 </th>
               </tr>
             </thead>
-            <tbody id="searchResultsBody" class="divide-y divide-gray-200">
+            <tbody id="searchResultsBody" class="divide-y divide-gray-200 bg-white">
               <!-- 動的に生成 -->
             </tbody>
           </table>
         </div>
-        <div id="searchLoading" class="text-center py-8 hidden">
-          <div
-            class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
-          ></div>
-          <p class="mt-2 text-gray-600">検索中...</p>
+        <div id="searchLoading" class="text-center py-16 hidden">
+          <div class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mb-4"></div>
+          <p class="text-lg text-gray-700 font-bold">検索中...</p>
+          <p class="text-sm text-gray-500 mt-2">しばらくお待ちください</p>
         </div>
-        <div id="searchEmpty" class="text-center py-8 hidden">
-          <p class="text-gray-500">
+        <div id="searchEmpty" class="text-center py-16 hidden">
+          <div class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-6 shadow-inner">
+            <i class="fas fa-search-minus text-5xl text-gray-400"></i>
+          </div>
+          <p class="text-xl text-gray-700 font-bold">
             条件に合致するアイテムが見つかりませんでした
+          </p>
+          <p class="text-sm text-gray-500 mt-2">検索条件を変更して再試行してください</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 置き場変更モーダル -->
+<div
+  id="relocationModal"
+  class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm hidden z-50"
+>
+  <div class="flex items-center justify-center min-h-screen p-4 modal-backdrop">
+    <div
+      class="glass-card rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl border-2 border-gray-200 flex flex-col"
+      onclick="event.stopPropagation()"
+    >
+      <div class="p-8 border-b-2 border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50 flex-shrink-0">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center">
+            <div class="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg mr-4">
+              <i class="fas fa-map-marked-alt text-2xl text-white"></i>
+            </div>
+            <h2 class="text-3xl font-black text-gray-900">置き場を変更</h2>
+          </div>
+          <button
+            id="closeRelocationModal"
+            class="action-btn p-3 bg-white rounded-xl hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-all duration-300"
+          >
+            <i class="fas fa-times text-2xl"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="p-8 overflow-y-auto flex-1">
+        <!-- アイテム情報 -->
+        <div id="relocationItemInfo" class="glass-card p-5 border-2 border-dashed border-purple-300 rounded-2xl mb-6">
+          <div class="text-sm text-gray-700 font-medium">
+            アイテムを選択してください
+          </div>
+        </div>
+
+        <!-- フォーム -->
+        <form id="relocationForm" class="space-y-6">
+          <input type="hidden" id="relocationItemId" name="item_id" />
+
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-3">
+              <i class="fas fa-map-marker-alt mr-2 text-purple-500"></i>新しい置き場
+            </label>
+            <select
+              id="relocationLocationSelect"
+              name="location_id"
+              required
+              class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all duration-300 font-semibold text-lg"
+            >
+              <option value="">置き場を選択してください</option>
+              <!-- 動的に生成 -->
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-bold text-gray-700 mb-3">
+              <i class="fas fa-comment mr-2 text-gray-500"></i>備考（任意）
+            </label>
+            <textarea
+              name="notes"
+              rows="3"
+              class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-gray-300 focus:border-gray-500 transition-all duration-300 font-medium"
+              placeholder="備考を入力してください（任意）"
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            class="action-btn w-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white py-5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center font-black text-xl shadow-2xl hover:shadow-3xl"
+          >
+            <i class="fas fa-map-marked-alt text-2xl mr-3"></i>
+            置き場を変更
+          </button>
+        </form>
+
+        <div class="glass-card p-4 rounded-2xl border-l-4 border-purple-500 mt-6">
+          <p class="text-xs text-gray-600 font-medium">
+            <i class="fas fa-info-circle text-purple-500 mr-2"></i>
+            この操作では在庫数は変更されません。置き場のみが移動されます。
           </p>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- 履歴編集モーダル -->
+<div
+  id="editMovementModal"
+  class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm hidden z-50"
+  onclick="closeEditMovementModal()"
+>
+  <div class="flex items-center justify-center min-h-screen p-4">
+    <div
+      class="glass-card rounded-3xl max-w-2xl w-full shadow-2xl border-2 border-gray-200"
+      onclick="event.stopPropagation()"
+    >
+      <div class="p-8 border-b-2 border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center">
+            <div class="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg mr-4">
+              <i class="fas fa-edit text-2xl text-white"></i>
+            </div>
+            <h2 class="text-3xl font-black text-gray-900">入出庫履歴の編集</h2>
+          </div>
+          <button
+            onclick="closeEditMovementModal()"
+            class="text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+
+      <form id="editMovementForm" class="p-8 space-y-6">
+        <input type="hidden" id="editMovementId" />
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-3">
+            <i class="fas fa-hashtag mr-2 text-purple-500"></i>数量（本）
+          </label>
+          <input
+            type="number"
+            id="editMovementQuantity"
+            min="1"
+            step="1"
+            class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all duration-300 font-bold text-lg"
+            placeholder="数量を入力"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-3">
+            <i class="fas fa-weight mr-2 text-orange-500"></i>重量（kg）※数量または重量どちらか入力
+          </label>
+          <input
+            type="number"
+            id="editMovementWeight"
+            min="0"
+            step="0.001"
+            class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-orange-300 focus:border-orange-500 transition-all duration-300 font-bold text-lg"
+            placeholder="重量を入力（任意）"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-3">
+            <i class="fas fa-comment mr-2 text-gray-500"></i>備考
+          </label>
+          <textarea
+            id="editMovementNotes"
+            rows="3"
+            class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-gray-300 focus:border-gray-500 transition-all duration-300 font-medium"
+            placeholder="備考を入力してください（任意）"
+          ></textarea>
+        </div>
+
+        <button
+          type="submit"
+          class="action-btn w-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white py-5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center font-black text-xl shadow-2xl hover:shadow-3xl"
+        >
+          <i class="fas fa-save text-2xl mr-3"></i>
+          履歴を更新
+        </button>
+      </form>
     </div>
   </div>
 </div>
@@ -567,63 +873,80 @@ endblock %} {% block content %}
         const shapeText = getShapeText(item.material.shape);
         const isOutOfStock = item.current_quantity === 0;
         const stockClass = isOutOfStock
-          ? "text-red-600"
+          ? "text-red-600 font-black"
           : item.current_quantity <= 5
-          ? "text-yellow-600"
-          : "text-gray-900";
+          ? "text-yellow-600 font-bold"
+          : "text-gray-900 font-semibold";
         const rowClass = isOutOfStock
           ? "bg-gray-50 opacity-75"
-          : "hover:bg-gray-50";
+          : "table-row-hover";
 
         return `
             <tr class="${rowClass}">
-                <td class="px-4 py-3 text-sm text-gray-900">${
+                <td class="px-6 py-4 text-sm font-semibold text-gray-900">${
                   item.material.display_name || "-"
                 }</td>
-                <td class="px-4 py-3 text-sm text-gray-600">${shapeText}</td>
-                <td class="px-4 py-3 text-sm text-gray-600">${
+                <td class="px-6 py-4">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                        ${shapeText}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-sm font-bold text-purple-700">${
                   item.material.diameter_mm
-                }</td>
-                <td class="px-4 py-3 text-sm text-gray-900">${
-                  item.lot.lot_number
-                }</td>
-                <td class="px-4 py-3 text-sm text-gray-500">${
+                }mm</td>
+                <td class="px-6 py-4">
+                    <span class="inline-flex items-center font-mono text-xs font-bold text-gray-900 bg-yellow-100 px-3 py-1 rounded-lg">
+                        ${item.lot.lot_number}
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-600 font-medium">${
                   item.lot.notes || "-"
                 }</td>
-                <td class="px-4 py-3 text-sm text-gray-600">${
-                  item.lot.length_mm
-                }mm</td>
-                <td class="px-4 py-3 text-right text-sm font-medium ${stockClass}">
+                <td class="px-6 py-4">
+                    <span class="inline-flex items-center text-sm font-bold text-indigo-700">
+                        ${item.lot.length_mm}mm
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-right text-base ${stockClass}">
                     ${item.current_quantity}本
                     ${
                       isOutOfStock
-                        ? '<span class="text-xs text-red-500 ml-1">(在庫切れ)</span>'
+                        ? '<span class="block text-xs text-red-500 mt-1 font-bold">在庫切れ</span>'
                         : ""
                     }
                 </td>
-                <td class="px-4 py-3 text-right text-sm text-gray-600">${(
+                <td class="px-6 py-4 text-right text-sm font-bold text-green-700">${(
                   item.total_weight_kg || 0
                 ).toFixed(3)}kg</td>
-                <td class="px-4 py-3 text-sm text-gray-600">${
-                  item.location ? item.location.name : "未配置"
-                }</td>
-                <td class="px-4 py-3 text-center">
-                    <div class="flex justify-center space-x-1">
+                <td class="px-6 py-4">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">
+                        <i class="fas fa-map-marker-alt mr-1"></i>${
+                          item.location ? item.location.name : "未配置"
+                        }
+                    </span>
+                </td>
+                <td class="px-6 py-4 text-center">
+                    <div class="flex justify-center space-x-2">
                         <button onclick="selectItemForMovement(${item.id}, 'in')"
-                                class="bg-green-600 text-white text-xs px-2 py-1 rounded hover:bg-green-700 transition-colors"
+                                class="action-btn movement-in-gradient text-white text-xs px-4 py-2 rounded-xl font-bold transition-all duration-300 hover:shadow-lg"
                                 title="在庫へ戻す">
-                            戻し
+                            <i class="fas fa-arrow-left mr-1"></i>戻し
                         </button>
                         <button onclick="selectItemForMovement(${
                           item.id
                         }, 'out')"
-                                class="${
+                                class="action-btn ${
                                   isOutOfStock
                                     ? "bg-gray-400 cursor-not-allowed"
-                                    : "bg-red-600 hover:bg-red-700"
-                                } text-white text-xs px-2 py-1 rounded transition-colors"
+                                    : "movement-out-gradient"
+                                } text-white text-xs px-4 py-2 rounded-xl font-bold transition-all duration-300 hover:shadow-lg"
                                 ${isOutOfStock ? "disabled" : ""}>
-                            出庫
+                            <i class="fas fa-arrow-right mr-1"></i>出庫
+                        </button>
+                        <button onclick="openRelocationModal(${item.id})"
+                                class="action-btn bg-gradient-to-br from-purple-500 to-indigo-600 text-white text-xs px-4 py-2 rounded-xl font-bold transition-all duration-300 hover:shadow-lg"
+                                title="置き場を移動">
+                            <i class="fas fa-map-marked-alt mr-1"></i>移動
                         </button>
                     </div>
                 </td>
@@ -677,7 +1000,7 @@ endblock %} {% block content %}
     if (filteredHistory.length === 0) {
       tableBody.innerHTML = `
             <tr>
-                <td colspan="6" class="px-4 py-8 text-center text-gray-500">
+                <td colspan="7" class="px-4 py-8 text-center text-gray-500">
                     該当する入出庫履歴がありません
                 </td>
             </tr>
@@ -699,45 +1022,80 @@ endblock %} {% block content %}
 
     tableBody.innerHTML = pageItems
       .map((movement) => {
-        const typeClass =
-          movement.movement_type === "in" ? "text-green-600" : "text-red-600";
-        const typeText = movement.movement_type === "in" ? "入庫" : "出庫";
-        const typeIcon = movement.movement_type === "in" ? "+" : "-";
+        const isIn = movement.movement_type === "in";
+        const typeClass = isIn ? "text-green-700" : "text-red-700";
+        const typeText = isIn ? "戻し" : "出庫";
+        const typeIcon = isIn ? "fa-arrow-left" : "fa-arrow-right";
+        const rowClass = isIn ? "history-card-in" : "history-card-out";
+        const badgeClass = isIn
+          ? "bg-gradient-to-r from-green-500 to-emerald-600"
+          : "bg-gradient-to-r from-red-500 to-rose-600";
 
         return `
-            <tr class="hover:bg-gray-50">
-                <td class="px-4 py-3 text-sm text-gray-900">
-                    ${new Date(movement.processed_at).toLocaleString("ja-JP")}
+            <tr class="table-row-hover ${rowClass}">
+                <td class="px-6 py-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-clock text-blue-500 mr-2"></i>
+                        <span class="text-sm font-bold text-gray-900">
+                            ${new Date(movement.processed_at).toLocaleString("ja-JP")}
+                        </span>
+                    </div>
                 </td>
-                <td class="px-4 py-3">
-                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${typeClass} bg-${
-          movement.movement_type === "in" ? "green" : "red"
-        }-50">
-                        ${typeText}
+                <td class="px-6 py-4">
+                    <span class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-black text-white shadow-lg ${badgeClass}">
+                        <i class="fas ${typeIcon} mr-2"></i>${typeText}
                     </span>
                 </td>
-                <td class="px-4 py-3 font-mono text-xs text-gray-900">
-                    ${movement.lot_number || "-"}
+                <td class="px-6 py-4">
+                    <span class="inline-flex items-center font-mono text-xs font-bold text-gray-900 bg-gray-100 px-3 py-2 rounded-lg">
+                        ${movement.lot_number || "-"}
+                    </span>
                 </td>
-                <td class="px-4 py-3 text-sm">
-                    <div class="text-gray-900">${
+                <td class="px-6 py-4">
+                    <div class="font-semibold text-gray-900 text-sm">${
                       movement.material_name || "-"
                     }</div>
-                    <div class="text-gray-500 text-xs">${
-                      movement.lot_number || "-"
-                    }</div>
+                    <div class="text-gray-500 text-xs font-medium mt-1">
+                        <i class="fas fa-barcode mr-1"></i>${
+                          movement.lot_number || "-"
+                        }
+                    </div>
                 </td>
-                <td class="px-4 py-3 text-right text-sm font-medium ${typeClass}">
-                    <div>${typeIcon}${movement.quantity}本</div>
-                    <div class="text-xs text-gray-500">${
-                      movement.weight_kg
-                        ? movement.weight_kg.toFixed(3) + "kg"
-                        : "-"
-                    }</div>
+                <td class="px-6 py-4 text-right">
+                    <div class="text-base font-black ${typeClass}">
+                        ${isIn ? "+" : "-"}${movement.quantity}本
+                    </div>
+                    <div class="text-xs text-gray-600 font-semibold mt-1">
+                        ${
+                          movement.weight_kg
+                            ? movement.weight_kg.toFixed(3) + "kg"
+                            : "-"
+                        }
+                    </div>
                 </td>
-                <td class="px-4 py-3 text-sm text-gray-500">${
-                  movement.notes || "-"
-                }</td>
+                <td class="px-6 py-4">
+                    <div class="text-sm text-gray-700 font-medium">
+                        ${movement.notes || "-"}
+                    </div>
+                </td>
+                <td class="px-6 py-4 text-center">
+                    <div class="flex items-center justify-center space-x-2">
+                        <button
+                            onclick="openEditMovementModal(${movement.id})"
+                            class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
+                            title="履歴を編集"
+                        >
+                            <i class="fas fa-edit mr-1"></i>編集
+                        </button>
+                        <button
+                            onclick="deleteMovement(${movement.id})"
+                            class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
+                            title="履歴を削除"
+                        >
+                            <i class="fas fa-trash mr-1"></i>削除
+                        </button>
+                    </div>
+                </td>
             </tr>
         `;
       })
@@ -821,8 +1179,22 @@ endblock %} {% block content %}
         if (itemSearchModal && !itemSearchModal.classList.contains("hidden")) {
           closeItemSearchModal();
         }
+        const relocationModal = document.getElementById("relocationModal");
+        if (relocationModal && !relocationModal.classList.contains("hidden")) {
+          closeRelocationModal();
+        }
+        const editMovementModal = document.getElementById("editMovementModal");
+        if (editMovementModal && !editMovementModal.classList.contains("hidden")) {
+          closeEditMovementModal();
+        }
       }
     });
+
+    // 履歴編集フォーム
+    const editMovementForm = document.getElementById("editMovementForm");
+    if (editMovementForm) {
+      editMovementForm.addEventListener("submit", handleEditMovement);
+    }
 
     // QRスキャン
     document
@@ -852,6 +1224,26 @@ endblock %} {% block content %}
     document
       .getElementById("includeZeroStock")
       .addEventListener("change", loadInventory);
+
+    // 置き場変更モーダル
+    document
+      .getElementById("closeRelocationModal")
+      .addEventListener("click", closeRelocationModal);
+    document
+      .getElementById("relocationForm")
+      .addEventListener("submit", handleRelocation);
+
+    // 置き場変更モーダルの背景クリック時の処理
+    document
+      .getElementById("relocationModal")
+      .addEventListener("click", (e) => {
+        if (
+          e.target.id === "relocationModal" ||
+          e.target.classList.contains("modal-backdrop")
+        ) {
+          closeRelocationModal();
+        }
+      });
   }
 
   // 在庫一覧検索へ誘導
@@ -1005,7 +1397,103 @@ endblock %} {% block content %}
     const mfItemId = document.querySelector('#movementForm input[name="item_id"]');
     if (mfItemId) mfItemId.value = item.id;
     closeItemSearchModal();
-    showToast("アイテムを選択しました", "success");
+  }
+
+  // 履歴編集モーダルを開く
+  function openEditMovementModal(movementId) {
+    const movement = movementHistory.find((m) => m.id === movementId);
+    if (!movement) {
+      showToast("履歴が見つかりません", "error");
+      return;
+    }
+
+    // フォームに値をセット
+    document.getElementById("editMovementId").value = movement.id;
+    document.getElementById("editMovementQuantity").value = movement.quantity;
+    document.getElementById("editMovementWeight").value = movement.weight_kg || "";
+    document.getElementById("editMovementNotes").value = movement.notes || "";
+
+    // モーダルを表示
+    document.getElementById("editMovementModal").classList.remove("hidden");
+  }
+
+  // 履歴編集モーダルを閉じる
+  function closeEditMovementModal() {
+    document.getElementById("editMovementModal").classList.add("hidden");
+    document.getElementById("editMovementForm").reset();
+  }
+
+  // 履歴編集処理
+  async function handleEditMovement(e) {
+    e.preventDefault();
+
+    const movementId = document.getElementById("editMovementId").value;
+    const quantity = document.getElementById("editMovementQuantity").value;
+    const weight = document.getElementById("editMovementWeight").value;
+    const notes = document.getElementById("editMovementNotes").value;
+
+    if (!quantity && !weight) {
+      showToast("数量または重量を入力してください", "error");
+      return;
+    }
+
+    try {
+      const payload = {
+        quantity: quantity ? parseInt(quantity) : null,
+        weight_kg: weight ? parseFloat(weight) : null,
+        notes: notes || null
+      };
+
+      const response = await fetch(`/api/movements/${movementId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "履歴の更新に失敗しました");
+      }
+
+      const result = await response.json();
+      showToast(result.message || "履歴を更新しました", "success");
+
+      // モーダルを閉じてデータを再読み込み
+      closeEditMovementModal();
+      await loadMovements();
+      await loadInventory();
+    } catch (error) {
+      console.error("履歴更新エラー:", error);
+      showToast(error.message, "error");
+    }
+  }
+
+  // 履歴削除処理
+  async function deleteMovement(movementId) {
+    if (!confirm("この履歴を削除してもよろしいですか？\n在庫数が巻き戻されます。")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/movements/${movementId}`, {
+        method: "DELETE"
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "履歴の削除に失敗しました");
+      }
+
+      const result = await response.json();
+      showToast(result.message || "履歴を削除しました", "success");
+
+      // データを再読み込み
+      await loadMovements();
+      await loadInventory();
+    } catch (error) {
+      console.error("履歴削除エラー:", error);
+      showToast(error.message, "error");
+    }
   }
 
   // 直接アイテムを選択（テーブルから）
@@ -1064,16 +1552,39 @@ endblock %} {% block content %}
     movementType = type;
     const typeInput = document.getElementById("movementTypeInput");
     const submitBtn = document.getElementById("movementSubmitBtn");
+    const outBtn = document.getElementById("typeOutBtn");
+    const inBtn = document.getElementById("typeInBtn");
+
     if (typeInput) typeInput.value = type;
-    if (submitBtn) {
-      if (type === "out") {
-        submitBtn.classList.remove("bg-indigo-600","hover:bg-indigo-700");
-        submitBtn.classList.add("bg-red-600","hover:bg-red-700");
-        submitBtn.innerHTML = '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>出庫実行';
-      } else {
-        submitBtn.classList.remove("bg-red-600","hover:bg-red-700");
-        submitBtn.classList.add("bg-indigo-600","hover:bg-indigo-700");
-        submitBtn.innerHTML = '<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>在庫へ戻す';
+
+    // ボタンのアクティブ状態を更新
+    if (type === "out") {
+      // 出庫ボタンをアクティブに
+      outBtn?.classList.remove("bg-gradient-to-br", "from-gray-400", "to-gray-500");
+      outBtn?.classList.add("movement-out-gradient");
+      // 戻しボタンを非アクティブに
+      inBtn?.classList.remove("movement-in-gradient");
+      inBtn?.classList.add("bg-gradient-to-br", "from-gray-400", "to-gray-500");
+
+      // 送信ボタンを出庫用に
+      if (submitBtn) {
+        submitBtn.classList.remove("movement-in-gradient");
+        submitBtn.classList.add("movement-out-gradient");
+        submitBtn.innerHTML = '<i class="fas fa-arrow-right text-2xl mr-3"></i>出庫実行';
+      }
+    } else {
+      // 戻しボタンをアクティブに
+      inBtn?.classList.remove("bg-gradient-to-br", "from-gray-400", "to-gray-500");
+      inBtn?.classList.add("movement-in-gradient");
+      // 出庫ボタンを非アクティブに
+      outBtn?.classList.remove("movement-out-gradient");
+      outBtn?.classList.add("bg-gradient-to-br", "from-gray-400", "to-gray-500");
+
+      // 送信ボタンを戻し用に
+      if (submitBtn) {
+        submitBtn.classList.remove("movement-out-gradient");
+        submitBtn.classList.add("movement-in-gradient");
+        submitBtn.innerHTML = '<i class="fas fa-arrow-left text-2xl mr-3"></i>在庫へ戻す';
       }
     }
   }
@@ -1264,6 +1775,119 @@ endblock %} {% block content %}
       clearTimeout(timeout);
       timeout = setTimeout(later, wait);
     };
+  }
+
+  // ===== 置き場変更機能 =====
+
+  /**
+   * 置き場変更モーダルを開く
+   */
+  async function openRelocationModal(itemId) {
+    const item = inventoryItems.find((i) => i.id === itemId);
+    if (!item) {
+      showToast("アイテムが見つかりません", "error");
+      return;
+    }
+
+    // アイテム情報を表示
+    const infoDiv = document.getElementById("relocationItemInfo");
+    const shapeText = getShapeText(item.material.shape);
+    infoDiv.innerHTML = `
+      <div class="space-y-2">
+        <div class="text-base font-bold text-gray-900">${item.material.display_name || "-"}</div>
+        <div class="text-sm text-gray-700">
+          <span class="font-semibold">形状:</span> ${shapeText} φ${item.material.diameter_mm}mm × ${item.lot.length_mm}mm
+        </div>
+        <div class="text-sm text-gray-700">
+          <span class="font-semibold">ロット:</span> ${item.lot.lot_number}
+        </div>
+        <div class="text-sm text-gray-700">
+          <span class="font-semibold">現在の置き場:</span> ${item.location ? item.location.name : "未配置"}
+        </div>
+        <div class="text-sm text-gray-700">
+          <span class="font-semibold">在庫数:</span> ${item.current_quantity}本
+        </div>
+      </div>
+    `;
+
+    // フォームに item_id をセット
+    document.getElementById("relocationItemId").value = itemId;
+
+    // 置き場一覧を読み込み
+    try {
+      const locations = await APIClient.getLocations();
+      const select = document.getElementById("relocationLocationSelect");
+      select.innerHTML = '<option value="">置き場を選択してください</option>';
+      locations.forEach((location) => {
+        const option = document.createElement("option");
+        option.value = location.id;
+        option.textContent = location.name;
+        // 現在の置き場を選択済みにする
+        if (item.location && location.id === item.location.id) {
+          option.selected = true;
+        }
+        select.appendChild(option);
+      });
+    } catch (error) {
+      console.error("置き場一覧読み込みエラー:", error);
+      showToast("置き場一覧の読み込みに失敗しました", "error");
+    }
+
+    // モーダルを表示
+    document.getElementById("relocationModal").classList.remove("hidden");
+  }
+
+  /**
+   * 置き場変更モーダルを閉じる
+   */
+  function closeRelocationModal() {
+    document.getElementById("relocationModal").classList.add("hidden");
+    document.getElementById("relocationForm").reset();
+    document.getElementById("relocationItemId").value = "";
+  }
+
+  /**
+   * 置き場変更処理
+   */
+  async function handleRelocation(event) {
+    event.preventDefault();
+
+    const form = event.target;
+    const formData = new FormData(form);
+    const itemId = parseInt(formData.get("item_id"));
+    const locationId = parseInt(formData.get("location_id"));
+    const notes = formData.get("notes") || null;
+
+    if (!itemId) {
+      showToast("アイテムが選択されていません", "error");
+      return;
+    }
+
+    if (!locationId) {
+      showToast("置き場を選択してください", "error");
+      return;
+    }
+
+    try {
+      const result = await APIClient.relocateItem(itemId, {
+        location_id: locationId,
+        notes: notes,
+      });
+
+      showToast(
+        `${result.message}: ${result.old_location} → ${result.new_location}`,
+        "success"
+      );
+
+      // モーダルを閉じる
+      closeRelocationModal();
+
+      // 在庫一覧を再読み込み
+      await loadInventory();
+    } catch (error) {
+      console.error("置き場変更エラー:", error);
+      showToast(error.message || "置き場の変更に失敗しました", "error");
+    }
   }
 </script>
 {% endblock %}

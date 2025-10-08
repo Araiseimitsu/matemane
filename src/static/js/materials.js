@@ -234,12 +234,18 @@ class MaterialManager {
     if (this.materials.length === 0) {
       tbody.innerHTML = `
                 <tr>
-                    <td colspan="4" class="px-6 py-12 text-center text-gray-500">
-                        <p class="text-lg mb-4">登録された材料がありません</p>
-                        <button onclick="materialManager.showCreateForm()"
-                                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                            最初の材料を登録
-                        </button>
+                    <td colspan="4" class="px-6 py-16 text-center">
+                        <div class="inline-flex flex-col items-center">
+                            <div class="p-6 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-6 shadow-inner">
+                                <i class="fas fa-box-open text-5xl text-gray-400"></i>
+                            </div>
+                            <p class="text-xl font-bold text-gray-700 mb-3">登録された材料がありません</p>
+                            <p class="text-sm text-gray-500 mb-6">最初の材料を登録してください</p>
+                            <button onclick="materialManager.showCreateForm()"
+                                    class="btn-gradient-primary text-white font-bold py-3 px-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+                                <i class="fas fa-plus mr-2"></i>最初の材料を登録
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -350,39 +356,43 @@ class MaterialManager {
     // 形状表示
     const shapeText = shapeNames[material.shape] || material.shape || "（未設定）";
 
+    // 形状アイコン
+    const shapeIcons = {
+      round: '<i class="fas fa-circle text-blue-500 mr-2"></i>',
+      hexagon: '<i class="fas fa-hexagon text-green-500 mr-2"></i>',
+      square: '<i class="fas fa-square text-purple-500 mr-2"></i>',
+    };
+    const shapeIcon = shapeIcons[material.shape] || '<i class="fas fa-shapes text-gray-500 mr-2"></i>';
+
     return `
-            <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">${materialSpec}</div>
+            <tr class="table-row-hover">
+                <td class="px-8 py-5">
+                    <div class="text-sm font-bold text-gray-900">${materialSpec}</div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">${shapeText}</div>
+                <td class="px-8 py-5">
+                    <div class="text-sm font-semibold text-gray-700 flex items-center">
+                        ${shapeIcon}${shapeText}
+                    </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">${material.diameter_mm}</div>
+                <td class="px-8 py-5">
+                    <div class="text-sm font-semibold text-gray-900">${material.diameter_mm}</div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                <td class="px-8 py-5 text-right">
                     <div class="flex justify-end space-x-2">
                         <button onclick="materialManager.editMaterial(${material.id})"
-                                class="text-blue-600 hover:text-blue-900 p-1" title="編集">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                            </svg>
+                                class="p-3 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600 hover:from-blue-100 hover:to-blue-200 hover:scale-110 transition-all duration-300 shadow-sm hover:shadow-md"
+                                title="編集">
+                            <i class="fas fa-edit text-lg"></i>
                         </button>
                         <button onclick="materialManager.deleteMaterial(${material.id})"
-                                class="text-red-600 hover:text-red-900 p-1" title="削除">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
+                                class="p-3 rounded-xl bg-gradient-to-br from-red-50 to-red-100 text-red-600 hover:from-red-100 hover:to-red-200 hover:scale-110 transition-all duration-300 shadow-sm hover:shadow-md"
+                                title="削除">
+                            <i class="fas fa-trash text-lg"></i>
                         </button>
                         <button onclick="materialManager.showWeightCalculator(${material.id})"
-                                class="text-gray-600 hover:text-gray-900 p-1" title="重量計算">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                      d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                            </svg>
+                                class="p-3 rounded-xl bg-gradient-to-br from-green-50 to-emerald-100 text-green-600 hover:from-green-100 hover:to-emerald-200 hover:scale-110 transition-all duration-300 shadow-sm hover:shadow-md"
+                                title="重量計算">
+                            <i class="fas fa-calculator text-lg"></i>
                         </button>
                     </div>
                 </td>
@@ -618,20 +628,27 @@ class MaterialManager {
   // 計算結果表示
   displayCalculationResult(result) {
     const html = `
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-                <h4 class="font-semibold text-blue-800 mb-3">計算結果</h4>
-                <div class="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                        <span class="text-gray-600">体積（1本）:</span>
-                        <span class="font-medium">${result.volume_per_piece_cm3} cm³</span>
+            <div>
+                <div class="flex items-center mb-4">
+                    <div class="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg mr-3">
+                        <i class="fas fa-check-circle text-white text-lg"></i>
                     </div>
-                    <div>
-                        <span class="text-gray-600">重量（1本）:</span>
-                        <span class="font-medium">${result.weight_per_piece_kg} kg</span>
+                    <h4 class="text-lg font-black text-gray-900">計算結果</h4>
+                </div>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                        <span class="text-sm font-bold text-gray-700">体積（1本）</span>
+                        <span class="text-base font-black text-blue-600">${result.volume_per_piece_cm3} cm³</span>
                     </div>
-                    <div class="col-span-2 pt-2 border-t border-blue-200">
-                        <span class="text-gray-600">総重量（${result.quantity}本）:</span>
-                        <span class="font-bold text-blue-800 text-lg">${result.total_weight_kg} kg</span>
+                    <div class="flex justify-between items-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                        <span class="text-sm font-bold text-gray-700">重量（1本）</span>
+                        <span class="text-base font-black text-green-600">${result.weight_per_piece_kg} kg</span>
+                    </div>
+                    <div class="p-5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-xl">
+                        <div class="text-white">
+                            <div class="text-sm font-semibold mb-2 opacity-90">総重量（${result.quantity}本）</div>
+                            <div class="text-3xl font-black">${result.total_weight_kg} kg</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -703,36 +720,13 @@ class MaterialManager {
     }
   }
 
-  // トースト通知
+  // トースト通知（base.htmlのグローバル関数を使用）
   showToast(message, type = "info") {
-    const toast = document.createElement("div");
-    const bgColor =
-      {
-        success: "bg-green-500",
-        error: "bg-red-500",
-        warning: "bg-yellow-500",
-        info: "bg-blue-500",
-      }[type] || "bg-blue-500";
-
-    toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full`;
-    toast.textContent = message;
-
-    document.body.appendChild(toast);
-
-    // アニメーション
-    setTimeout(() => {
-      toast.classList.remove("translate-x-full");
-    }, 100);
-
-    // 自動削除
-    setTimeout(() => {
-      toast.classList.add("translate-x-full");
-      setTimeout(() => {
-        if (toast.parentNode) {
-          toast.parentNode.removeChild(toast);
-        }
-      }, 300);
-    }, 3000);
+    if (typeof window.showToast === 'function') {
+      window.showToast(message, type);
+    } else {
+      console.log(`[${type.toUpperCase()}] ${message}`);
+    }
   }
 
   // 比重プリセット読み込み

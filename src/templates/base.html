@@ -20,8 +20,29 @@
   <!-- Custom CSS -->
   <link rel="stylesheet" href="{{ url_for('static', path='/css/mobile.css') }}" />
 
-  <!-- 必要最小限のカスタムCSS -->
+  <!-- グローバルスタイル -->
   <style>
+    /* グラスモーフィズム共通クラス */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    }
+
+    /* グラデーション背景 */
+    .gradient-bg {
+      background: linear-gradient(-45deg, #f0f9ff, #dbeafe, #e0e7ff, #f5f3ff);
+      background-size: 400% 400%;
+      animation: gradient-shift 15s ease infinite;
+    }
+
+    @keyframes gradient-shift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
     /* アニメーション */
     .animate-fade-in-up {
       animation: fadeInUp 0.6s ease-out both;
@@ -32,34 +53,117 @@
         opacity: 0;
         transform: translateY(20px);
       }
-
       to {
         opacity: 1;
         transform: translateY(0);
       }
     }
 
+    @keyframes slideInDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.6); }
+    }
+
+    /* ナビゲーションスタイル */
+    .nav-glass {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .nav-link {
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+      transform: translateX(-50%);
+      transition: width 0.3s ease;
+      border-radius: 10px;
+    }
+
+    .nav-link:hover::before,
+    .nav-link.active::before {
+      width: 80%;
+    }
+
+    .nav-link:hover {
+      transform: translateY(-2px);
+    }
+
+    .nav-link.active {
+      color: #3b82f6;
+      font-weight: 700;
+    }
+
     /* スクロールバー */
     ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
+      width: 8px;
+      height: 8px;
     }
 
     ::-webkit-scrollbar-track {
       background: #f1f5f9;
-      border-radius: 9999px;
+      border-radius: 10px;
     }
 
     ::-webkit-scrollbar-thumb {
-      background: #9ca3af;
-      border-radius: 9999px;
+      background: linear-gradient(180deg, #3b82f6, #8b5cf6);
+      border-radius: 10px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-      background: #6b7280;
+      background: linear-gradient(180deg, #2563eb, #7c3aed);
     }
 
-    /* ロゴリンクのフォーカスリング削除 */
+    /* ロゴアニメーション */
+    .logo-icon {
+      transition: all 0.4s ease;
+    }
+
+    .logo-icon:hover {
+      transform: rotate(360deg) scale(1.1);
+    }
+
+    /* トースト改善 */
+    .toast {
+      animation: slideInDown 0.4s ease-out;
+    }
+
+    /* ユーザーメニュー */
+    .user-menu-item {
+      transition: all 0.2s ease;
+    }
+
+    .user-menu-item:hover {
+      background: linear-gradient(90deg, #eff6ff, #f5f3ff);
+      transform: translateX(4px);
+    }
+
+    /* モバイルメニューアニメーション */
+    #mobile-menu {
+      animation: slideInDown 0.3s ease-out;
+    }
+
+    /* フォーカスリング削除 */
     nav a[href="/"]:focus,
     nav a[href="/"]:focus-visible {
       outline: none !important;
@@ -67,7 +171,6 @@
       border: none !important;
     }
 
-    /* すべてのナビゲーションリンクとクイックアクションのフォーカスリング制御 */
     a:focus:not(:focus-visible) {
       outline: none !important;
     }
@@ -76,71 +179,77 @@
   {% block extra_head %}{% endblock %}
 </head>
 
-<body class="bg-gray-50 font-sans">
+<body class="bg-gray-50 font-sans min-h-screen flex flex-col">
   <!-- ナビゲーションヘッダー -->
-  <nav class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between h-16">
+  <nav class="nav-glass sticky top-0 z-50 border-b border-gray-200">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between h-20">
         <div class="flex items-center">
           <!-- ロゴ -->
-          <a href="/" class="flex items-center focus:outline-none" tabindex="-1" style="outline: none !important; box-shadow: none !important;">
-            <div class="p-2 bg-blue-600 rounded-lg mr-3">
-              <i class="fas fa-industry text-white text-lg"></i>
+          <a href="/" class="flex items-center focus:outline-none group" tabindex="-1">
+            <div class="logo-icon p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl mr-4 shadow-lg">
+              <i class="fas fa-industry text-white text-2xl"></i>
             </div>
-            <span class="text-xl font-bold text-gray-800">
+            <span class="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
               材料管理システム
             </span>
           </a>
         </div>
 
         <!-- メインナビゲーション -->
-        <div class="hidden md:flex items-center space-x-8">
-          <a href="/" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+        <div class="hidden lg:flex items-center space-x-2">
+          <a href="/" class="nav-link text-gray-700 hover:text-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">
             <i class="fas fa-tachometer-alt mr-2"></i>ダッシュボード
           </a>
-          <a href="/inventory" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+          <a href="/inventory" class="nav-link text-gray-700 hover:text-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">
             <i class="fas fa-boxes mr-2"></i>在庫管理
           </a>
-          <a href="/materials" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-            <i class="fas fa-cubes mr-2"></i>材料マスター
+          <a href="/materials" class="nav-link text-gray-700 hover:text-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">
+            <i class="fas fa-cubes mr-2"></i>材料マスタ
           </a>
-          <a href="/order-flow" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+          <a href="/order-flow" class="nav-link text-gray-700 hover:text-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">
             <i class="fas fa-stream mr-2"></i>発注フロー
           </a>
-          <a href="/movements" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
+          <a href="/movements" class="nav-link text-gray-700 hover:text-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">
             <i class="fas fa-exchange-alt mr-2"></i>入出庫
-          </a>
-          <a href="/excel-viewer" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-            <i class="fas fa-file-excel mr-2"></i>セット予定読み込み
-          </a>
-          <a href="/production-schedule"
-            class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-            <i class="fas fa-list-check mr-2"></i>生産中一覧
           </a>
         </div>
 
         <!-- ユーザーメニュー -->
-        <div class="flex items-center">
+        <div class="flex items-center space-x-3">
           <!-- モバイル：ハンバーガー -->
           <button id="mobile-menu-button" aria-label="メニュー" aria-expanded="false"
-            class="md:hidden p-2 mr-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            class="lg:hidden p-3 rounded-xl border-2 border-gray-300 bg-white hover:bg-gray-50 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300">
             <i id="mobile-menu-icon" class="fas fa-bars text-gray-700 text-xl"></i>
           </button>
+
           <div class="relative">
             <button id="user-menu-button"
-              class="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <i class="fas fa-user-circle text-2xl text-gray-600"></i>
+              class="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-300 border border-blue-200">
+              <i class="fas fa-user-circle text-3xl text-blue-600"></i>
+              <span class="hidden md:block text-sm font-semibold text-gray-700">メニュー</span>
+              <i class="fas fa-chevron-down text-xs text-gray-500"></i>
             </button>
-            <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-              <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">プロフィール</a>
-              <a href="/analytics" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                <i class="fas fa-chart-line mr-2"></i>集計・分析
+            <div id="user-menu" class="hidden absolute right-0 mt-3 w-56 glass-card rounded-2xl shadow-2xl py-2 z-50 border border-gray-200">
+              <a href="#" class="user-menu-item flex items-center px-5 py-3 text-sm text-gray-700 font-medium">
+                <i class="fas fa-user-circle mr-3 text-blue-500"></i>プロフィール
               </a>
-              <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                <i class="fas fa-cog mr-2"></i>設定
+              <a href="/analytics" class="user-menu-item flex items-center px-5 py-3 text-sm text-gray-700 font-medium">
+                <i class="fas fa-chart-line mr-3 text-green-500"></i>集計・分析
               </a>
-              <hr class="my-1" />
-              <a href="#" onclick="logout()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">ログアウト</a>
+              <a href="/excel-viewer" class="user-menu-item flex items-center px-5 py-3 text-sm text-gray-700 font-medium">
+                <i class="fas fa-file-excel mr-3 text-teal-500"></i>セット予定読み込み
+              </a>
+              <a href="/production-schedule" class="user-menu-item flex items-center px-5 py-3 text-sm text-gray-700 font-medium">
+                <i class="fas fa-list-check mr-3 text-purple-500"></i>生産中一覧
+              </a>
+              <a href="/settings" class="user-menu-item flex items-center px-5 py-3 text-sm text-gray-700 font-medium">
+                <i class="fas fa-cog mr-3 text-gray-500"></i>設定
+              </a>
+              <hr class="my-2 border-gray-200" />
+              <a href="#" onclick="logout()" class="user-menu-item flex items-center px-5 py-3 text-sm text-red-600 font-medium">
+                <i class="fas fa-sign-out-alt mr-3"></i>ログアウト
+              </a>
             </div>
           </div>
         </div>
@@ -149,59 +258,60 @@
 
     <!-- モバイルメニュー -->
     <div id="mobile-menu"
-      class="md:hidden hidden absolute top-16 left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50">
-      <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-        <a href="/" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
-          <i class="fas fa-tachometer-alt mr-2"></i>ダッシュボード
+      class="lg:hidden hidden absolute top-20 left-0 right-0 nav-glass border-b border-gray-200 shadow-2xl z-50">
+      <div class="px-4 pt-4 pb-6 space-y-2">
+        <a href="/" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+          <i class="fas fa-tachometer-alt mr-3 w-5"></i>ダッシュボード
         </a>
-        <a href="/inventory" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
-          <i class="fas fa-boxes mr-2"></i>在庫管理
+        <a href="/inventory" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+          <i class="fas fa-boxes mr-3 w-5"></i>在庫管理
         </a>
-        <a href="/materials" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
-          <i class="fas fa-cubes mr-2"></i>材料マスター
+        <a href="/materials" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+          <i class="fas fa-cubes mr-3 w-5"></i>材料マスタ
         </a>
-        <a href="/order-flow" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
-          <i class="fas fa-stream mr-2"></i>発注フロー
+        <a href="/order-flow" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+          <i class="fas fa-stream mr-3 w-5"></i>発注フロー
         </a>
-        <a href="/movements" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
-          <i class="fas fa-exchange-alt mr-2"></i>入出庫
+        <a href="/movements" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+          <i class="fas fa-exchange-alt mr-3 w-5"></i>入出庫
         </a>
-        <a href="/excel-viewer"
-          class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
-          <i class="fas fa-file-excel mr-2"></i>セット予定読み込み
+        <hr class="my-3 border-gray-200" />
+        <a href="/analytics" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+          <i class="fas fa-chart-line mr-3 w-5"></i>集計・分析
         </a>
-        <a href="/production-schedule"
-          class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
-          <i class="fas fa-list-check mr-2"></i>生産中一覧
+        <a href="/excel-viewer" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+          <i class="fas fa-file-excel mr-3 w-5"></i>セット予定読み込み
         </a>
-        <hr class="my-2 border-gray-200" />
-        <a href="/analytics" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
-          <i class="fas fa-chart-line mr-2"></i>集計・分析
+        <a href="/production-schedule" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+          <i class="fas fa-list-check mr-3 w-5"></i>生産中一覧
         </a>
-        <a href="/settings" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
-          <i class="fas fa-cog mr-2"></i>設定
+        <a href="/settings" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+          <i class="fas fa-cog mr-3 w-5"></i>設定
         </a>
       </div>
     </div>
   </nav>
 
   <!-- モバイルメニューの背景（クリックで閉じる） -->
-  <div id="mobile-menu-backdrop" class="fixed inset-0 bg-black bg-opacity-40 hidden z-40"></div>
+  <div id="mobile-menu-backdrop" class="fixed inset-0 bg-black bg-opacity-40 hidden z-40 backdrop-blur-sm"></div>
 
   <!-- メインコンテンツ -->
   <main class="flex-1">{% block content %}{% endblock %}</main>
 
   <!-- フッター -->
   <footer class="bg-white border-t border-gray-200 mt-auto">
-    <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-      <div class="text-center text-gray-500 text-sm">
-        © 2025 材料管理システム (matemane)
+    <div class="max-w-[1600px] mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <div class="text-center">
+        <p class="text-gray-600 text-sm font-medium">
+          © 2025 <span class="font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">材料管理システム</span> (matemane)
+        </p>
+        <p class="text-gray-400 text-xs mt-1">Powered by FastAPI & Modern Web Technologies</p>
       </div>
     </div>
   </footer>
 
   <!-- トースト通知 -->
-  <div id="toast-container" class="fixed top-4 right-4 z-50 space-y-2"></div>
+  <div id="toast-container" class="fixed top-6 right-6 z-50 space-y-3"></div>
 
   <!-- QRスキャナーライブラリ -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
@@ -290,34 +400,36 @@
 
       // ウィンドウ幅が広がった時に閉じる（保険）
       window.addEventListener("resize", function () {
-        if (window.innerWidth >= 768) {
+        if (window.innerWidth >= 1024) {
           closeMenu();
         }
       });
     })();
 
-    // トースト通知
+    // 改善されたトースト通知
     function showToast(message, type = "info") {
       const container = document.getElementById("toast-container");
       const toast = document.createElement("div");
 
-      const bgColor =
-        {
-          success: "bg-green-500",
-          error: "bg-red-500",
-          warning: "bg-yellow-500",
-          info: "bg-blue-500",
-        }[type] || "bg-blue-500";
+      const styles = {
+        success: { bg: "from-green-500 to-emerald-600", icon: "fa-check-circle" },
+        error: { bg: "from-red-500 to-rose-600", icon: "fa-times-circle" },
+        warning: { bg: "from-yellow-500 to-orange-600", icon: "fa-exclamation-triangle" },
+        info: { bg: "from-blue-500 to-indigo-600", icon: "fa-info-circle" }
+      };
 
-      toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+      const style = styles[type] || styles.info;
+
+      toast.className = `toast bg-gradient-to-r ${style.bg} text-white px-6 py-4 rounded-2xl shadow-2xl transform transition-all duration-300 translate-x-full`;
       toast.innerHTML = `
-                <div class="flex items-center">
-                    <span>${message}</span>
-                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            `;
+        <div class="flex items-center">
+          <i class="fas ${style.icon} text-2xl mr-3"></i>
+          <span class="font-semibold">${message}</span>
+          <button onclick="this.parentElement.parentElement.remove()" class="ml-6 text-white hover:text-gray-200 transition-colors">
+            <i class="fas fa-times text-lg"></i>
+          </button>
+        </div>
+      `;
 
       container.appendChild(toast);
 
@@ -337,40 +449,20 @@
       }, 5000);
     }
 
-    // 認証チェック（現在無効化中）
-    // function checkAuth() {
-    //     const token = localStorage.getItem('access_token');
-    //     if (!token && window.location.pathname !== '/login') {
-    //         window.location.href = '/login';
-    //         return false;
-    //     }
-    //     return true;
-    // }
-
-    // ページ読み込み時の認証チェック（現在無効化中）
-    // document.addEventListener('DOMContentLoaded', function() {
-    //     if (window.location.pathname !== '/login') {
-    //         checkAuth();
-    //     }
-    // });
-
     // ナビゲーションのアクティブ状態を設定
     document.addEventListener('DOMContentLoaded', function() {
       const currentPath = window.location.pathname;
-      // ロゴリンクを除外し、メインナビゲーションのみを対象にする
-      const navLinks = document.querySelectorAll('nav a[href]:not([tabindex="-1"])');
+      const navLinks = document.querySelectorAll('.nav-link');
 
       navLinks.forEach(link => {
         const href = link.getAttribute('href');
 
-        // デフォルトスタイルに戻す
-        link.classList.remove('text-blue-700', 'hover:text-blue-900', 'font-bold', 'border', 'border-blue-300', 'bg-blue-50', 'hover:bg-blue-100');
-        link.classList.add('text-gray-600', 'hover:text-gray-900', 'font-medium');
+        // アクティブクラスを削除
+        link.classList.remove('active');
 
         // 現在のページと一致する場合はアクティブスタイルを適用
         if (href === currentPath || (href !== '/' && currentPath.startsWith(href))) {
-          link.classList.remove('text-gray-600', 'hover:text-gray-900', 'font-medium');
-          link.classList.add('text-blue-700', 'hover:text-blue-900', 'font-bold', 'border', 'border-blue-300', 'bg-blue-50', 'hover:bg-blue-100');
+          link.classList.add('active');
         }
       });
     });

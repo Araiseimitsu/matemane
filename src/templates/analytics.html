@@ -5,202 +5,348 @@
 {% block extra_head %}
 <!-- Chart.js v4 CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  /* エンプティステート */
+  .empty-state {
+    transition: all 0.3s ease;
+  }
+
+  .empty-state:hover {
+    transform: translateY(-4px);
+  }
+
+  /* チャートコンテナ */
+  .chart-container {
+    position: relative;
+    height: 300px;
+  }
+
+  /* 検索フォーム入力フィールド */
+  .form-input {
+    transition: all 0.3s ease;
+  }
+
+  .form-input:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.15);
+  }
+
+  /* エクスポートボタン */
+  .export-btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .export-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  .export-btn:hover::before {
+    width: 300px;
+    height: 300px;
+  }
+
+  .export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  <!-- ヘッダー -->
-  <div class="mb-8">
-    <h1 class="text-3xl font-bold text-gray-900">
-      <i class="fas fa-chart-line mr-3 text-blue-600"></i>集計・分析
-    </h1>
-    <p class="mt-2 text-gray-600">入出庫履歴、在庫、金額を多角的に分析します</p>
-  </div>
-
-  <!-- 検索フォーム -->
-  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-    <h2 class="text-lg font-bold text-gray-900 mb-4">
-      <i class="fas fa-filter mr-2"></i>検索条件
-    </h2>
-    <form id="search-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <!-- 開始日 -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">開始日</label>
-        <input type="date" id="start-date" name="start_date"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" />
-      </div>
-
-      <!-- 終了日 -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">終了日</label>
-        <input type="date" id="end-date" name="end_date"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" />
-      </div>
-
-      <!-- 材料名 -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">材料名</label>
-        <input type="text" id="material-name" name="material_name" placeholder="部分一致"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" />
-      </div>
-
-      <!-- 購入月 -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">購入月（YYMM）</label>
-        <input type="text" id="purchase-month" name="purchase_month" placeholder="例: 2501"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-          maxlength="4" />
-      </div>
-
-      <!-- 仕入先 -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">仕入先</label>
-        <input type="text" id="supplier" name="supplier" placeholder="部分一致"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" />
-      </div>
-
-      <!-- 入出庫種別 -->
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">入出庫種別</label>
-        <select id="movement-type" name="movement_type"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
-          <option value="">全て</option>
-          <option value="in">入庫のみ</option>
-          <option value="out">出庫のみ</option>
-        </select>
-      </div>
-
-      <!-- ボタン -->
-      <div class="md:col-span-2 lg:col-span-3 flex gap-3">
-        <button type="button" id="search-btn"
-          class="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:ring-2 focus:ring-blue-500">
-          <i class="fas fa-search mr-2"></i>検索
-        </button>
-        <button type="button" id="reset-btn"
-          class="px-6 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 focus:ring-2 focus:ring-gray-400">
-          <i class="fas fa-redo mr-2"></i>リセット
-        </button>
-        <button type="button" id="export-csv-btn"
-          class="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:ring-2 focus:ring-green-500">
-          <i class="fas fa-file-csv mr-2"></i>CSV出力
-        </button>
-        <button type="button" id="export-excel-btn"
-          class="px-6 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500">
-          <i class="fas fa-file-excel mr-2"></i>Excel出力
-        </button>
-      </div>
-    </form>
-  </div>
-
-  <!-- 集計サマリー -->
-  <div id="summary-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 hidden">
-    <!-- 現在在庫 -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+<div class="min-h-screen gradient-bg">
+  <div class="max-w-[1600px] mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <!-- ヘッダー -->
+    <div class="mb-10">
       <div class="flex items-center justify-between">
-        <div>
-          <p class="text-sm text-gray-600">現在在庫</p>
-          <p class="text-2xl font-bold text-gray-900" id="total-stock-qty">0</p>
-          <p class="text-xs text-gray-500" id="total-stock-weight">0.000 kg</p>
+        <div class="space-y-2">
+          <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
+            集計・分析
+          </h1>
+          <p class="text-lg text-gray-600 font-medium">入出庫履歴、在庫、金額を多角的に分析</p>
         </div>
-        <div class="p-3 bg-blue-100 rounded-full">
-          <i class="fas fa-boxes text-blue-600 text-xl"></i>
-        </div>
-      </div>
-    </div>
-
-    <!-- 入庫数 -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-sm text-gray-600">入庫数</p>
-          <p class="text-2xl font-bold text-green-600" id="total-in-qty">0</p>
-          <p class="text-xs text-gray-500" id="total-in-weight">0.000 kg</p>
-        </div>
-        <div class="p-3 bg-green-100 rounded-full">
-          <i class="fas fa-arrow-down text-green-600 text-xl"></i>
-        </div>
-      </div>
-    </div>
-
-    <!-- 出庫数 -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-sm text-gray-600">出庫数</p>
-          <p class="text-2xl font-bold text-red-600" id="total-out-qty">0</p>
-          <p class="text-xs text-gray-500" id="total-out-weight">0.000 kg</p>
-        </div>
-        <div class="p-3 bg-red-100 rounded-full">
-          <i class="fas fa-arrow-up text-red-600 text-xl"></i>
+        <div class="hidden md:flex items-center space-x-4">
+          <button id="quick-search-today"
+            class="glass-card px-6 py-3 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            title="今日のデータを表示">
+            <i class="fas fa-calendar-day mr-2 text-blue-600"></i>
+            <span class="text-sm font-semibold text-gray-700">今日</span>
+          </button>
+          <button id="quick-search-week"
+            class="glass-card px-6 py-3 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            title="今週のデータを表示">
+            <i class="fas fa-calendar-week mr-2 text-green-600"></i>
+            <span class="text-sm font-semibold text-gray-700">今週</span>
+          </button>
+          <button id="quick-search-month"
+            class="glass-card px-6 py-3 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            title="今月のデータを表示">
+            <i class="fas fa-calendar-alt mr-2 text-purple-600"></i>
+            <span class="text-sm font-semibold text-gray-700">今月</span>
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- 合計金額 -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-sm text-gray-600">合計金額</p>
-          <p class="text-2xl font-bold text-gray-900" id="total-amount">¥0</p>
-          <p class="text-xs text-gray-500">入庫時金額</p>
+    <!-- 検索フォーム -->
+    <div class="glass-card rounded-3xl p-8 shadow-xl mb-8">
+      <div class="flex items-center mb-6">
+        <div class="p-3 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl shadow-lg mr-4">
+          <i class="fas fa-filter text-2xl text-white"></i>
         </div>
-        <div class="p-3 bg-yellow-100 rounded-full">
-          <i class="fas fa-yen-sign text-yellow-600 text-xl"></i>
+        <h2 class="text-2xl font-black text-gray-900">検索条件</h2>
+      </div>
+      <form id="search-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- 開始日 -->
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">
+            <i class="fas fa-calendar-alt mr-1 text-blue-500"></i>開始日
+          </label>
+          <input type="date" id="start-date" name="start_date"
+            class="form-input w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium" />
+        </div>
+
+        <!-- 終了日 -->
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">
+            <i class="fas fa-calendar-check mr-1 text-blue-500"></i>終了日
+          </label>
+          <input type="date" id="end-date" name="end_date"
+            class="form-input w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium" />
+        </div>
+
+        <!-- 材料名 -->
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">
+            <i class="fas fa-cubes mr-1 text-green-500"></i>材料名
+          </label>
+          <input type="text" id="material-name" name="material_name" placeholder="部分一致で検索"
+            class="form-input w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium" />
+        </div>
+
+        <!-- 購入月 -->
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">
+            <i class="fas fa-calendar mr-1 text-purple-500"></i>購入月（YYMM）
+          </label>
+          <input type="text" id="purchase-month" name="purchase_month" placeholder="例: 2501"
+            class="form-input w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium"
+            maxlength="4" />
+        </div>
+
+        <!-- 仕入先 -->
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">
+            <i class="fas fa-truck mr-1 text-orange-500"></i>仕入先
+          </label>
+          <input type="text" id="supplier" name="supplier" placeholder="部分一致で検索"
+            class="form-input w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium" />
+        </div>
+
+        <!-- 入出庫種別 -->
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">
+            <i class="fas fa-exchange-alt mr-1 text-red-500"></i>入出庫種別
+          </label>
+          <select id="movement-type" name="movement_type"
+            class="form-input w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium">
+            <option value="">全て</option>
+            <option value="in">入庫のみ</option>
+            <option value="out">出庫のみ</option>
+          </select>
+        </div>
+
+        <!-- ボタン -->
+        <div class="md:col-span-2 lg:col-span-3 flex flex-wrap gap-3 pt-4">
+          <button type="button" id="search-btn"
+            class="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 shadow-lg font-bold transition-all duration-300 hover:scale-105">
+            <i class="fas fa-search mr-2"></i>検索
+          </button>
+          <button type="button" id="reset-btn"
+            class="px-8 py-3 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-xl hover:from-gray-500 hover:to-gray-600 focus:ring-4 focus:ring-gray-300 shadow-lg font-bold transition-all duration-300 hover:scale-105">
+            <i class="fas fa-redo mr-2"></i>リセット
+          </button>
+          <button type="button" id="export-csv-btn"
+            class="export-btn px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 focus:ring-4 focus:ring-green-300 shadow-lg font-bold relative overflow-hidden">
+            <i class="fas fa-file-csv mr-2 relative z-10"></i><span class="relative z-10">CSV出力</span>
+          </button>
+          <button type="button" id="export-excel-btn"
+            class="export-btn px-8 py-3 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-xl hover:from-teal-600 hover:to-cyan-700 focus:ring-4 focus:ring-teal-300 shadow-lg font-bold relative overflow-hidden">
+            <i class="fas fa-file-excel mr-2 relative z-10"></i><span class="relative z-10">Excel出力</span>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 集計サマリー -->
+    <div id="summary-cards" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8 mb-10 hidden">
+      <!-- 現在在庫 -->
+      <div class="glass-card rounded-3xl p-8 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+        <div class="flex items-start justify-between mb-6">
+          <div class="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
+            <i class="fas fa-boxes text-3xl text-white"></i>
+          </div>
+          <div class="text-right flex-1 ml-4">
+            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">現在在庫</div>
+            <div class="text-4xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-1" id="total-stock-qty">0</div>
+            <div class="text-sm font-semibold text-blue-600">本</div>
+          </div>
+        </div>
+        <div class="h-1 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full mb-4"></div>
+        <div class="text-sm font-bold text-gray-600" id="total-stock-weight">0.000 kg</div>
+      </div>
+
+      <!-- 入庫数 -->
+      <div class="glass-card rounded-3xl p-8 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+        <div class="flex items-start justify-between mb-6">
+          <div class="p-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg">
+            <i class="fas fa-arrow-down text-3xl text-white"></i>
+          </div>
+          <div class="text-right flex-1 ml-4">
+            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">入庫数</div>
+            <div class="text-4xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-1" id="total-in-qty">0</div>
+            <div class="text-sm font-semibold text-green-600">本</div>
+          </div>
+        </div>
+        <div class="h-1 bg-gradient-to-r from-green-400 to-emerald-600 rounded-full mb-4"></div>
+        <div class="text-sm font-bold text-gray-600" id="total-in-weight">0.000 kg</div>
+      </div>
+
+      <!-- 出庫数 -->
+      <div class="glass-card rounded-3xl p-8 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+        <div class="flex items-start justify-between mb-6">
+          <div class="p-4 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl shadow-lg">
+            <i class="fas fa-arrow-up text-3xl text-white"></i>
+          </div>
+          <div class="text-right flex-1 ml-4">
+            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">出庫数</div>
+            <div class="text-4xl font-black bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent mb-1" id="total-out-qty">0</div>
+            <div class="text-sm font-semibold text-red-600">本</div>
+          </div>
+        </div>
+        <div class="h-1 bg-gradient-to-r from-red-400 to-rose-600 rounded-full mb-4"></div>
+        <div class="text-sm font-bold text-gray-600" id="total-out-weight">0.000 kg</div>
+      </div>
+
+      <!-- 合計金額 -->
+      <div class="glass-card rounded-3xl p-8 shadow-xl transition-all duration-300 hover:scale-105 hover:shadow-2xl">
+        <div class="flex items-start justify-between mb-6">
+          <div class="p-4 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg">
+            <i class="fas fa-yen-sign text-3xl text-white"></i>
+          </div>
+          <div class="text-right flex-1 ml-4">
+            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">合計金額</div>
+            <div class="text-3xl font-black bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent mb-1" id="total-amount">¥0</div>
+            <div class="text-sm font-semibold text-amber-600">入庫時</div>
+          </div>
+        </div>
+        <div class="h-1 bg-gradient-to-r from-amber-400 to-orange-600 rounded-full mb-4"></div>
+        <div class="text-sm font-bold text-gray-600">入庫時金額</div>
+      </div>
+    </div>
+
+    <!-- グラフエリア -->
+    <div id="graph-area" class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10 hidden">
+      <!-- 時系列推移 -->
+      <div class="glass-card rounded-3xl p-8 shadow-xl">
+        <div class="flex items-center mb-6">
+          <div class="p-3 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl shadow-lg mr-4">
+            <i class="fas fa-chart-area text-2xl text-white"></i>
+          </div>
+          <h3 class="text-2xl font-black text-gray-900">入出庫推移</h3>
+        </div>
+        <div class="chart-container">
+          <canvas id="timeline-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- 材料別構成比 -->
+      <div class="glass-card rounded-3xl p-8 shadow-xl">
+        <div class="flex items-center mb-6">
+          <div class="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-lg mr-4">
+            <i class="fas fa-chart-pie text-2xl text-white"></i>
+          </div>
+          <h3 class="text-2xl font-black text-gray-900">材料別在庫構成</h3>
+        </div>
+        <div class="chart-container">
+          <canvas id="composition-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- 仕入先別金額 -->
+      <div class="glass-card rounded-3xl p-8 shadow-xl lg:col-span-2">
+        <div class="flex items-center mb-6">
+          <div class="p-3 bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl shadow-lg mr-4">
+            <i class="fas fa-chart-bar text-2xl text-white"></i>
+          </div>
+          <h3 class="text-2xl font-black text-gray-900">仕入先別金額</h3>
+        </div>
+        <div class="chart-container">
+          <canvas id="supplier-chart"></canvas>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- グラフエリア -->
-  <div id="graph-area" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 hidden">
-    <!-- 時系列推移 -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <h3 class="text-lg font-bold text-gray-900 mb-4">
-        <i class="fas fa-chart-area mr-2"></i>入出庫推移
-      </h3>
-      <canvas id="timeline-chart"></canvas>
+    <!-- 集計結果テーブル -->
+    <div id="result-table-container" class="glass-card rounded-3xl p-8 shadow-xl hidden">
+      <div class="flex items-center mb-6">
+        <div class="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg mr-4">
+          <i class="fas fa-table text-2xl text-white"></i>
+        </div>
+        <h2 class="text-2xl font-black text-gray-900">材料別集計結果</h2>
+      </div>
+      <div class="overflow-x-auto rounded-2xl border-2 border-gray-100">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gradient-to-r from-gray-50 to-blue-50">
+            <tr>
+              <th class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider">材料名</th>
+              <th class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider">在庫本数</th>
+              <th class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider">在庫重量(kg)</th>
+              <th class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider">入庫本数</th>
+              <th class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider">入庫重量(kg)</th>
+              <th class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider">出庫本数</th>
+              <th class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider">出庫重量(kg)</th>
+              <th class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider">金額（円）</th>
+            </tr>
+          </thead>
+          <tbody id="result-tbody" class="bg-white divide-y divide-gray-100">
+            <!-- JavaScriptで動的生成 -->
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- 材料別構成比 -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <h3 class="text-lg font-bold text-gray-900 mb-4">
-        <i class="fas fa-chart-pie mr-2"></i>材料別在庫構成
-      </h3>
-      <canvas id="composition-chart"></canvas>
-    </div>
-
-    <!-- 仕入先別金額 -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 lg:col-span-2">
-      <h3 class="text-lg font-bold text-gray-900 mb-4">
-        <i class="fas fa-chart-bar mr-2"></i>仕入先別金額
-      </h3>
-      <canvas id="supplier-chart"></canvas>
-    </div>
-  </div>
-
-  <!-- 集計結果テーブル -->
-  <div id="result-table-container" class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hidden">
-    <h2 class="text-lg font-bold text-gray-900 mb-4">
-      <i class="fas fa-table mr-2"></i>材料別集計結果
-    </h2>
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">材料名</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">在庫本数</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">在庫重量(kg)</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">入庫本数</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">入庫重量(kg)</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">出庫本数</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">出庫重量(kg)</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">金額（円）</th>
-          </tr>
-        </thead>
-        <tbody id="result-tbody" class="bg-white divide-y divide-gray-200">
-          <!-- JavaScriptで動的生成 -->
-        </tbody>
-      </table>
+    <!-- エンプティステート（初期表示用） -->
+    <div id="empty-state" class="glass-card rounded-3xl p-16 shadow-xl text-center mb-10">
+      <div class="empty-state inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-full mb-8 shadow-lg">
+        <i class="fas fa-chart-line text-5xl text-white"></i>
+      </div>
+      <h3 class="text-2xl font-black text-gray-900 mb-4">集計データを取得できます</h3>
+      <p class="text-gray-600 font-medium mb-6">上記の検索条件を入力して「検索」ボタンをクリックしてください</p>
+      <div class="flex justify-center gap-4">
+        <div class="flex items-center px-6 py-3 bg-blue-50 rounded-xl">
+          <i class="fas fa-calendar-alt mr-2 text-blue-600"></i>
+          <span class="text-sm font-bold text-gray-700">日付範囲で絞り込み</span>
+        </div>
+        <div class="flex items-center px-6 py-3 bg-green-50 rounded-xl">
+          <i class="fas fa-cubes mr-2 text-green-600"></i>
+          <span class="text-sm font-bold text-gray-700">材料名で検索</span>
+        </div>
+        <div class="flex items-center px-6 py-3 bg-purple-50 rounded-xl">
+          <i class="fas fa-truck mr-2 text-purple-600"></i>
+          <span class="text-sm font-bold text-gray-700">仕入先で絞り込み</span>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -213,6 +359,10 @@
 
   // 検索実行
   async function performSearch() {
+    // エンプティステートを非表示
+    const emptyState = document.getElementById('empty-state');
+    if (emptyState) emptyState.classList.add('hidden');
+
     const formData = new FormData(document.getElementById('search-form'));
     const params = new URLSearchParams();
 
@@ -241,15 +391,16 @@
       tbody.innerHTML = '';
       summary.materials.forEach(m => {
         const row = tbody.insertRow();
+        row.className = 'hover:bg-blue-50 transition-colors duration-200';
         row.innerHTML = `
-          <td class="px-4 py-3 text-sm text-gray-900">${m.material_name}</td>
-          <td class="px-4 py-3 text-sm text-gray-900 text-right">${m.current_stock_quantity.toLocaleString()}</td>
-          <td class="px-4 py-3 text-sm text-gray-900 text-right">${m.current_stock_weight_kg.toFixed(3)}</td>
-          <td class="px-4 py-3 text-sm text-green-600 text-right">${m.total_in_quantity.toLocaleString()}</td>
-          <td class="px-4 py-3 text-sm text-green-600 text-right">${m.total_in_weight_kg.toFixed(3)}</td>
-          <td class="px-4 py-3 text-sm text-red-600 text-right">${m.total_out_quantity.toLocaleString()}</td>
-          <td class="px-4 py-3 text-sm text-red-600 text-right">${m.total_out_weight_kg.toFixed(3)}</td>
-          <td class="px-4 py-3 text-sm text-gray-900 text-right">¥${m.total_amount.toLocaleString()}</td>
+          <td class="px-6 py-4 text-sm font-bold text-gray-900">${m.material_name}</td>
+          <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">${m.current_stock_quantity.toLocaleString()}</td>
+          <td class="px-6 py-4 text-sm font-semibold text-gray-900 text-right">${m.current_stock_weight_kg.toFixed(3)}</td>
+          <td class="px-6 py-4 text-sm font-semibold text-green-600 text-right">${m.total_in_quantity.toLocaleString()}</td>
+          <td class="px-6 py-4 text-sm font-semibold text-green-600 text-right">${m.total_in_weight_kg.toFixed(3)}</td>
+          <td class="px-6 py-4 text-sm font-semibold text-red-600 text-right">${m.total_out_quantity.toLocaleString()}</td>
+          <td class="px-6 py-4 text-sm font-semibold text-red-600 text-right">${m.total_out_weight_kg.toFixed(3)}</td>
+          <td class="px-6 py-4 text-sm font-bold text-gray-900 text-right">¥${m.total_amount.toLocaleString()}</td>
         `;
       });
       document.getElementById('result-table-container').classList.remove('hidden');
@@ -347,6 +498,38 @@
     document.getElementById('summary-cards').classList.add('hidden');
     document.getElementById('graph-area').classList.add('hidden');
     document.getElementById('result-table-container').classList.add('hidden');
+    // エンプティステートを再表示
+    const emptyState = document.getElementById('empty-state');
+    if (emptyState) emptyState.classList.remove('hidden');
+    showToast('検索条件をリセットしました', 'info');
+  }
+
+  // クイック検索：今日
+  function quickSearchToday() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('start-date').value = today;
+    document.getElementById('end-date').value = today;
+    performSearch();
+  }
+
+  // クイック検索：今週
+  function quickSearchWeek() {
+    const today = new Date();
+    const firstDay = new Date(today.setDate(today.getDate() - today.getDay()));
+    const lastDay = new Date(today.setDate(today.getDate() - today.getDay() + 6));
+    document.getElementById('start-date').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('end-date').value = lastDay.toISOString().split('T')[0];
+    performSearch();
+  }
+
+  // クイック検索：今月
+  function quickSearchMonth() {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    document.getElementById('start-date').value = firstDay.toISOString().split('T')[0];
+    document.getElementById('end-date').value = lastDay.toISOString().split('T')[0];
+    performSearch();
   }
 
   // CSV出力
@@ -377,6 +560,15 @@
   document.getElementById('export-csv-btn').addEventListener('click', exportCSV);
   document.getElementById('export-excel-btn').addEventListener('click', exportExcel);
 
+  // クイック検索ボタン
+  const quickTodayBtn = document.getElementById('quick-search-today');
+  const quickWeekBtn = document.getElementById('quick-search-week');
+  const quickMonthBtn = document.getElementById('quick-search-month');
+
+  if (quickTodayBtn) quickTodayBtn.addEventListener('click', quickSearchToday);
+  if (quickWeekBtn) quickWeekBtn.addEventListener('click', quickSearchWeek);
+  if (quickMonthBtn) quickMonthBtn.addEventListener('click', quickSearchMonth);
+
   // Enterキーで検索
   document.getElementById('search-form').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
@@ -385,9 +577,16 @@
     }
   });
 
-  // 初期表示（全データ）
+  // 初期表示（エンプティステートを表示）
   document.addEventListener('DOMContentLoaded', () => {
-    performSearch();
+    // 初期表示時はエンプティステートを表示
+    const emptyState = document.getElementById('empty-state');
+    if (emptyState) emptyState.classList.remove('hidden');
+
+    // サマリーカード、グラフ、テーブルは非表示
+    document.getElementById('summary-cards').classList.add('hidden');
+    document.getElementById('graph-area').classList.add('hidden');
+    document.getElementById('result-table-container').classList.add('hidden');
   });
 </script>
 {% endblock %}

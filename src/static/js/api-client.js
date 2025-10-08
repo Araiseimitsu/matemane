@@ -309,6 +309,13 @@ class APIClient {
     return this.post(`/movements/out/${itemId}`, data);
   }
 
+  /**
+   * 置き場変更処理（アイテムIDベース）
+   */
+  static async relocateItem(itemId, data) {
+    return this.put(`/movements/relocate/${itemId}`, data);
+  }
+
   // ===== ラベル印刷 =====
 
   /**

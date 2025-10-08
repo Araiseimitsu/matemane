@@ -2,80 +2,95 @@
 
 {% block title %}Excel在庫照合ビューア - 材料管理システム{% endblock %}
 
+{% block extra_head %}
+<style>
+    /* グラスモーフィズム効果 */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    }
+
+    /* グラデーション背景 */
+    @keyframes gradient-shift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    .gradient-bg {
+        background: linear-gradient(-45deg, #f0f9ff, #dbeafe, #e0e7ff, #f5f3ff);
+        background-size: 400% 400%;
+        animation: gradient-shift 15s ease infinite;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="min-h-screen bg-gray-50">
-    <!-- ヘッダー -->
-    <div class="bg-white shadow-sm border-b">
-        <div class="px-4 py-6">
-            <div class="flex justify-between items-center">
-                <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Excel在庫照合ビューア</h1>
-                    <p class="text-gray-600 mt-1">Excelファイルを読み込んで在庫との照合結果を表示します</p>
+<div class="min-h-screen gradient-bg">
+    <div class="max-w-[1600px] mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <!-- ヘッダー -->
+        <div class="mb-10">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div class="space-y-2">
+                    <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600">
+                        Excel在庫照合ビューア
+                    </h1>
+                    <p class="text-lg text-gray-600 font-medium">Excelファイルを読み込んで在庫との照合結果を表示します</p>
                 </div>
-                <button id="uploadExcelBtn" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
-                    </svg>
-                    Excelファイルを選択
+                <button id="uploadExcelBtn" class="glass-card px-6 py-3 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-110 group flex items-center">
+                    <i class="fas fa-file-excel text-teal-600 text-2xl mr-3 group-hover:scale-110 transition-transform"></i>
+                    <span class="font-semibold text-gray-700">Excelファイルを選択</span>
                 </button>
             </div>
         </div>
-    </div>
 
-    <!-- メインコンテンツ -->
-    <div class="px-4 py-6">
+        <!-- メインコンテンツ -->
         <!-- 統計情報 -->
-        <div id="statsSection" class="hidden mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="p-2 bg-blue-100 rounded-lg">
-                            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                            </svg>
+        <div id="statsSection" class="hidden mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="glass-card rounded-3xl p-8 shadow-xl">
+                    <div class="flex items-start justify-between">
+                        <div class="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg">
+                            <i class="fas fa-file-alt text-3xl text-white"></i>
                         </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-500">総行数</p>
-                            <p class="text-2xl font-bold text-gray-900" id="totalRows">0</p>
+                        <div class="text-right flex-1 ml-4">
+                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">総行数</div>
+                            <div class="text-4xl font-black text-gray-900" id="totalRows">0</div>
                         </div>
                     </div>
                 </div>
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="p-2 bg-green-100 rounded-lg">
-                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
+                <div class="glass-card rounded-3xl p-8 shadow-xl">
+                    <div class="flex items-start justify-between">
+                        <div class="p-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg">
+                            <i class="fas fa-check-circle text-3xl text-white"></i>
                         </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-500">在庫充足</p>
-                            <p class="text-2xl font-bold text-green-600" id="sufficientCount">0</p>
+                        <div class="text-right flex-1 ml-4">
+                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">在庫充足</div>
+                            <div class="text-4xl font-black text-green-600" id="sufficientCount">0</div>
                         </div>
                     </div>
                 </div>
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="p-2 bg-yellow-100 rounded-lg">
-                            <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z"/>
-                            </svg>
+                <div class="glass-card rounded-3xl p-8 shadow-xl">
+                    <div class="flex items-start justify-between">
+                        <div class="p-4 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg">
+                            <i class="fas fa-exclamation-triangle text-3xl text-white"></i>
                         </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-500">一部不足</p>
-                            <p class="text-2xl font-bold text-yellow-600" id="partialCount">0</p>
+                        <div class="text-right flex-1 ml-4">
+                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">一部不足</div>
+                            <div class="text-4xl font-black text-amber-600" id="partialCount">0</div>
                         </div>
                     </div>
                 </div>
-                <div class="bg-white rounded-lg shadow p-6">
-                    <div class="flex items-center">
-                        <div class="p-2 bg-red-100 rounded-lg">
-                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                            </svg>
+                <div class="glass-card rounded-3xl p-8 shadow-xl">
+                    <div class="flex items-start justify-between">
+                        <div class="p-4 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl shadow-lg">
+                            <i class="fas fa-times-circle text-3xl text-white"></i>
                         </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-500">在庫不足</p>
-                            <p class="text-2xl font-bold text-red-600" id="shortageCount">0</p>
+                        <div class="text-right flex-1 ml-4">
+                            <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">在庫不足</div>
+                            <div class="text-4xl font-black text-red-600" id="shortageCount">0</div>
                         </div>
                     </div>
                 </div>
@@ -83,19 +98,19 @@
         </div>
 
         <!-- 結果テーブル -->
-        <div class="bg-white shadow rounded-lg overflow-hidden">
-            <div id="noData" class="text-center py-12">
-                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">データがありません</h3>
-                <p class="mt-1 text-sm text-gray-500">上のボタンからExcelファイルを選択してください</p>
+        <div class="glass-card rounded-3xl shadow-xl overflow-hidden">
+            <div id="noData" class="text-center py-16">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-full mb-6 shadow-lg">
+                    <i class="fas fa-file-excel text-4xl text-white"></i>
+                </div>
+                <h3 class="text-gray-900 font-bold text-lg">データがありません</h3>
+                <p class="text-sm text-gray-600 mt-2 font-medium">上のボタンからExcelファイルを選択してください</p>
             </div>
 
             <div id="resultsSection" class="hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
+                        <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">行</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">予定日</th>

@@ -2,249 +2,464 @@
 
 {% block title %}在庫管理 - 同等品ビュー{% endblock %}
 
+{% block extra_head %}
+<style>
+    /* グラデーション背景アニメーション */
+    @keyframes gradient-shift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    .gradient-bg {
+        background: linear-gradient(-45deg, #f0f9ff, #dbeafe, #e0e7ff, #f5f3ff);
+        background-size: 400% 400%;
+        animation: gradient-shift 15s ease infinite;
+    }
+
+    /* グラスモーフィズム効果 */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    }
+
+    /* サマリーカードアニメーション */
+    .summary-card {
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .summary-card:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    /* アイコンアニメーション */
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+
+    .icon-float {
+        animation: float 3s ease-in-out infinite;
+    }
+
+    /* カウンターグラデーション */
+    .gradient-number {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* テーブルホバー効果 */
+    #groupTableBody tr {
+        transition: all 0.3s ease;
+    }
+
+    #groupTableBody tr:hover {
+        background: linear-gradient(90deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
+        transform: scale(1.01);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    /* フィルターカードアニメーション */
+    .filter-card {
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* ボタンホバーエフェクト */
+    .btn-primary {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+
+    .btn-primary:hover::before {
+        width: 300px;
+        height: 300px;
+    }
+
+    .btn-primary:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-    <div class="mb-8">
-        <div class="flex items-center justify-between flex-wrap gap-4">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">在庫管理（同等品ビュー）</h1>
-                <p class="mt-2 text-gray-600">材料マスターに登録された情報をもとに、汎用・専用の同等品単位で在庫を把握します。</p>
+<div class="min-h-screen gradient-bg">
+    <div class="max-w-[1600px] mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <!-- ヘッダーセクション -->
+        <div class="mb-10 animate-fade-in-up">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div class="space-y-2">
+                    <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
+                        在庫管理
+                    </h1>
+                    <p class="text-lg text-gray-600 font-medium">材料マスターに登録された情報をもとに、同等品単位で在庫を把握します</p>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="glass-card inline-flex items-center px-4 py-2 rounded-2xl text-sm font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg">
+                        <i class="fas fa-link mr-2"></i>材料マスター連携
+                    </span>
+                    <span class="glass-card inline-flex items-center px-4 py-2 rounded-2xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg">
+                        <i class="fas fa-barcode mr-2"></i>ロット追跡
+                    </span>
+                    <button id="openGroupManager" class="btn-primary relative inline-flex items-center px-5 py-3 text-sm font-bold bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl shadow-xl hover:shadow-2xl transition-all">
+                        <i class="fas fa-object-group mr-2 relative z-10"></i>
+                        <span class="relative z-10">グループ管理</span>
+                    </button>
+                </div>
             </div>
-            <div class="flex items-center space-x-3">
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">材料マスター連携</span>
-                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-700">ロット在庫追跡</span>
-                <button id="openGroupManager" class="inline-flex items-center px-3 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                    <i class="fas fa-object-group mr-2"></i>グループ管理
+        </div>
+
+        <!-- フィルターセクション -->
+        <div class="glass-card rounded-3xl p-8 mb-8 shadow-xl filter-card">
+            <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
+                <div class="flex items-center">
+                    <div class="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg mr-4">
+                        <i class="fas fa-filter text-2xl text-white"></i>
+                    </div>
+                    <h2 class="text-xl font-black text-gray-900">絞り込み検索</h2>
+                </div>
+                <button id="resetFilters" class="inline-flex items-center px-5 py-2.5 text-sm font-bold text-gray-700 glass-card rounded-2xl hover:shadow-lg transition-all hover:scale-105">
+                    <i class="fas fa-undo mr-2"></i>リセット
                 </button>
             </div>
-        </div>
-    </div>
-
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
-            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">絞り込み</h2>
-            <button id="resetFilters" class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
-                <i class="fas fa-undo mr-2"></i>リセット
-            </button>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div>
-                <label for="filterName" class="block text-sm font-medium text-gray-700 mb-2">材料仕様（display_name）</label>
-                <input type="text" id="filterName" placeholder="例: SUS303 φ10.0D" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
-            </div>
-            <div>
-                <label for="filterShape" class="block text-sm font-medium text-gray-700 mb-2">形状</label>
-                <select id="filterShape" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
-                    <option value="">すべて</option>
-                    <option value="round">丸棒</option>
-                    <option value="hexagon">六角</option>
-                    <option value="square">平角</option>
-                </select>
-            </div>
-            <div>
-                <label for="filterDiameter" class="block text-sm font-medium text-gray-700 mb-2">寸法（mm）</label>
-                <input type="text" id="filterDiameter" placeholder="例: 10 / 12.7" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
-            </div>
-            <div>
-                <label for="filterLotNumber" class="block text-sm font-medium text-gray-700 mb-2">ロット番号</label>
-                <input type="text" id="filterLotNumber" placeholder="例: 2401-001" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
-            </div>
-            <div>
-                <label for="filterGroupName" class="block text-sm font-medium text-gray-700 mb-2">グループ名</label>
-                <input type="text" id="filterGroupName" placeholder="例: SUS303 汎用グループ" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
+                <div>
+                    <label for="filterName" class="block text-sm font-bold text-gray-700 mb-2">材料仕様</label>
+                    <input type="text" id="filterName" placeholder="例: SUS303 φ10.0D" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300 shadow-sm">
+                </div>
+                <div>
+                    <label for="filterShape" class="block text-sm font-bold text-gray-700 mb-2">形状</label>
+                    <select id="filterShape" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300 shadow-sm">
+                        <option value="">すべて</option>
+                        <option value="round">丸棒</option>
+                        <option value="hexagon">六角</option>
+                        <option value="square">平角</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filterDiameter" class="block text-sm font-bold text-gray-700 mb-2">寸法（mm）</label>
+                    <input type="text" id="filterDiameter" placeholder="例: 10 / 12.7" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300 shadow-sm">
+                </div>
+                <div>
+                    <label for="filterLotNumber" class="block text-sm font-bold text-gray-700 mb-2">ロット番号</label>
+                    <input type="text" id="filterLotNumber" placeholder="例: 2401-001" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300 shadow-sm">
+                </div>
+                <div>
+                    <label for="filterGroupName" class="block text-sm font-bold text-gray-700 mb-2">グループ名</label>
+                    <input type="text" id="filterGroupName" placeholder="例: SUS303 汎用グループ" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-blue-300 shadow-sm">
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-                <p class="text-sm text-gray-500">対象材料（ユニーク）</p>
-                <p id="summaryMaterialCount" class="mt-1 text-2xl font-semibold text-gray-900">-</p>
+        <!-- サマリーカード -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
+            <div class="summary-card glass-card rounded-3xl p-8 shadow-xl">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg icon-float">
+                        <i class="fas fa-cubes text-3xl text-white"></i>
+                    </div>
+                    <div class="text-right flex-1 ml-4">
+                        <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">対象材料（ユニーク）</div>
+                        <div id="summaryMaterialCount" class="text-4xl font-black gradient-number">-</div>
+                        <div class="text-sm font-semibold text-blue-600 mt-1">種類</div>
+                    </div>
+                </div>
             </div>
-            <div>
-                <p class="text-sm text-gray-500">同等品グループ数</p>
-                <p id="summaryGroupCount" class="mt-1 text-2xl font-semibold text-gray-900">-</p>
+
+            <div class="summary-card glass-card rounded-3xl p-8 shadow-xl">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="p-4 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg icon-float" style="animation-delay: 0.2s;">
+                        <i class="fas fa-layer-group text-3xl text-white"></i>
+                    </div>
+                    <div class="text-right flex-1 ml-4">
+                        <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">同等品グループ数</div>
+                        <div id="summaryGroupCount" class="text-4xl font-black gradient-number">-</div>
+                        <div class="text-sm font-semibold text-purple-600 mt-1">グループ</div>
+                    </div>
+                </div>
             </div>
-            <div>
-                <p class="text-sm text-gray-500">在庫ありロット</p>
-                <p id="summaryLotCount" class="mt-1 text-2xl font-semibold text-gray-900">-</p>
+
+            <div class="summary-card glass-card rounded-3xl p-8 shadow-xl">
+                <div class="flex items-start justify-between mb-4">
+                    <div class="p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg icon-float" style="animation-delay: 0.4s;">
+                        <i class="fas fa-box text-3xl text-white"></i>
+                    </div>
+                    <div class="text-right flex-1 ml-4">
+                        <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">在庫ありロット</div>
+                        <div id="summaryLotCount" class="text-4xl font-black gradient-number">-</div>
+                        <div class="text-sm font-semibold text-emerald-600 mt-1">ロット</div>
+                    </div>
+                </div>
             </div>
         </div>
-        <p class="mt-4 text-sm text-gray-500 leading-6">
-            同等品グループは材料の表示名（display_name）をキーに構成します。形状・寸法は表示・絞り込みに利用できます。
-            グループを開くと在庫中のロット番号が一覧表示されます。
-        </p>
-    </div>
 
-    <div id="groupLoading" class="bg-white border border-gray-200 rounded-lg py-16 flex flex-col items-center justify-center text-gray-500">
-        <div class="mb-4">
-            <svg class="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0116 0h-2a6 6 0 00-12 0H4z"></path>
-            </svg>
+        <!-- 説明カード -->
+        <div class="glass-card rounded-2xl p-6 mb-8 shadow-lg border-l-4 border-blue-500">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-info-circle text-2xl text-blue-500 mt-1"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-700 font-medium leading-relaxed">
+                        同等品グループは材料の表示名（display_name）をキーに構成します。形状・寸法は表示・絞り込みに利用できます。
+                        グループを開くと在庫中のロット番号が一覧表示されます。
+                    </p>
+                </div>
+            </div>
         </div>
-        <p>同等品グループを読み込んでいます...</p>
-    </div>
 
-    <div id="groupEmpty" class="hidden bg-white border border-gray-200 rounded-lg p-10 text-center text-gray-500">
-        <p class="text-lg font-medium mb-2">条件に合致する同等品グループがありません</p>
-        <p class="text-sm">絞り込み条件を緩めるか、材料マスターの登録内容をご確認ください。</p>
-    </div>
-
-    <!-- ページネーション（上部） -->
-    <div id="groupPaginationTop" class="mb-4"></div>
-
-    <div id="groupTableWrapper" class="bg-white rounded-lg shadow-sm border border-gray-200 hidden">
-        <div class="overflow-x-auto">
-            <table id="groupTable" class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr class="text-xs font-semibold uppercase tracking-wider text-gray-500">
-                        <th scope="col" class="px-4 py-3 text-left">材料情報</th>
-                        <th scope="col" class="px-4 py-3 text-left">グループ名</th>
-                        <th scope="col" class="px-4 py-3 text-left">長さバリエーション</th>
-                        
-                        <th scope="col" class="px-4 py-3 text-right">登録材料数</th>
-                        <th scope="col" class="px-4 py-3 text-right">在庫ロット数</th>
-                        <th scope="col" class="px-4 py-3 text-right">在庫合計（本）</th>
-                        <th scope="col" class="px-4 py-3 text-right">在庫重量（kg）</th>
-                        <th scope="col" class="px-4 py-3 text-center">詳細</th>
-                    </tr>
-                </thead>
-                <tbody id="groupTableBody" class="bg-white divide-y divide-gray-100"></tbody>
-            </table>
+        <!-- ローディング表示 -->
+        <div id="groupLoading" class="glass-card rounded-3xl py-20 flex flex-col items-center justify-center shadow-xl">
+            <div class="mb-6">
+                <div class="relative w-20 h-20">
+                    <div class="absolute inset-0 rounded-full border-4 border-blue-200"></div>
+                    <div class="absolute inset-0 rounded-full border-4 border-t-blue-600 border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
+                </div>
+            </div>
+            <p class="text-lg font-bold text-gray-700">同等品グループを読み込んでいます...</p>
+            <p class="text-sm text-gray-500 mt-2">データを処理中です</p>
         </div>
+
+        <!-- 空状態表示 -->
+        <div id="groupEmpty" class="hidden glass-card rounded-3xl p-16 shadow-xl text-center">
+            <div class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-6 shadow-lg">
+                <i class="fas fa-inbox text-4xl text-gray-400"></i>
+            </div>
+            <p class="text-xl font-black text-gray-800 mb-3">条件に合致する同等品グループがありません</p>
+            <p class="text-sm text-gray-600 font-medium">絞り込み条件を緩めるか、材料マスターの登録内容をご確認ください</p>
+        </div>
+
+        <!-- ページネーション（上部） -->
+        <div id="groupPaginationTop" class="mb-4"></div>
+
+        <!-- データテーブル -->
+        <div id="groupTableWrapper" class="glass-card rounded-3xl shadow-xl hidden overflow-hidden">
+            <div class="overflow-x-auto">
+                <table id="groupTable" class="min-w-full">
+                    <thead class="bg-gradient-to-r from-blue-50 to-indigo-50">
+                        <tr class="text-xs font-black uppercase tracking-wider text-gray-600">
+                            <th scope="col" class="px-6 py-4 text-left">材料情報</th>
+                            <th scope="col" class="px-6 py-4 text-left">グループ名</th>
+                            <th scope="col" class="px-6 py-4 text-left">長さバリエーション</th>
+                            <th scope="col" class="px-6 py-4 text-right">登録材料数</th>
+                            <th scope="col" class="px-6 py-4 text-right">在庫ロット数</th>
+                            <th scope="col" class="px-6 py-4 text-right">在庫合計（本）</th>
+                            <th scope="col" class="px-6 py-4 text-right">在庫重量（kg）</th>
+                            <th scope="col" class="px-6 py-4 text-center">詳細</th>
+                        </tr>
+                    </thead>
+                    <tbody id="groupTableBody" class="bg-white divide-y divide-gray-100"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ページネーション（下部） -->
+        <div id="groupPaginationBottom" class="mt-6"></div>
     </div>
-    <!-- ページネーション（下部） -->
-    <div id="groupPaginationBottom" class="mt-4"></div>
 </div>
-
-
-    </div>
 <!-- 同等品詳細モーダル -->
-<div id="groupDetailModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 hidden z-50" onclick="closeGroupDetailModal()">
+<div id="groupDetailModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 backdrop-blur-sm" onclick="closeGroupDetailModal()">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
-            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div class="glass-card rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+            <div class="px-8 py-6 bg-gradient-to-r from-blue-50 to-indigo-50 flex items-center justify-between rounded-t-3xl">
                 <div>
                     <p id="groupDetailTag" class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full mr-3"></p>
-                    <h3 id="groupDetailTitle" class="text-xl font-semibold text-gray-900"></h3>
-                    <p id="groupDetailSubtitle" class="text-sm text-gray-500 mt-1"></p>
+                    <h3 id="groupDetailTitle" class="text-2xl font-black text-gray-900"></h3>
+                    <p id="groupDetailSubtitle" class="text-sm text-gray-600 font-medium mt-1"></p>
                 </div>
-                <button id="closeGroupDetail" class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <i class="fas fa-times text-lg"></i>
+                <button id="closeGroupDetail" class="p-3 rounded-2xl hover:bg-white hover:shadow-lg transition-all text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-            <div class="p-6 space-y-6">
-                <section>
-                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">概要</h4>
-                    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                        <div>
-                            <dt class="text-gray-500">登録材料数</dt>
-                            <dd id="detailMaterialCount" class="text-gray-900 font-medium">-</dd>
+            <div class="p-8 space-y-8">
+                <!-- 概要セクション -->
+                <section class="glass-card rounded-2xl p-6 shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-md mr-3">
+                            <i class="fas fa-info-circle text-white text-lg"></i>
                         </div>
-                        <div>
-                            <dt class="text-gray-500">在庫ありロット数</dt>
-                            <dd id="detailLotCount" class="text-gray-900 font-medium">-</dd>
+                        <h4 class="text-lg font-black text-gray-900">概要</h4>
+                    </div>
+                    <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4">
+                            <dt class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">登録材料数</dt>
+                            <dd id="detailMaterialCount" class="text-2xl font-black text-gray-900">-</dd>
                         </div>
-                        <div>
-                            <dt class="text-gray-500">合計在庫数</dt>
-                            <dd id="detailTotalQuantity" class="text-gray-900 font-medium">-</dd>
+                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-4">
+                            <dt class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">在庫ありロット数</dt>
+                            <dd id="detailLotCount" class="text-2xl font-black text-gray-900">-</dd>
                         </div>
-                        <div>
-                            <dt class="text-gray-500">合計在庫重量</dt>
-                            <dd id="detailTotalWeight" class="text-gray-900 font-medium">-</dd>
+                        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4">
+                            <dt class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">合計在庫数</dt>
+                            <dd id="detailTotalQuantity" class="text-2xl font-black text-gray-900">-</dd>
                         </div>
-                        <div>
-                            <dt class="text-gray-500">長さバリエーション</dt>
-                            <dd id="detailLengthVariations" class="text-gray-900 font-medium">-</dd>
+                        <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-4">
+                            <dt class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">合計在庫重量</dt>
+                            <dd id="detailTotalWeight" class="text-2xl font-black text-gray-900">-</dd>
                         </div>
-                        <div>
-                            <!-- 専用品番・追加情報は廃止 -->
+                        <div class="bg-gradient-to-r from-cyan-50 to-blue-50 rounded-xl p-4">
+                            <dt class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">長さバリエーション</dt>
+                            <dd id="detailLengthVariations" class="text-lg font-black text-gray-900">-</dd>
                         </div>
-                        <div>
-                            <dt class="text-gray-500">材料グループ</dt>
-                            <dd id="detailGroupNames" class="text-gray-900 font-medium">-</dd>
+                        <div class="bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl p-4">
+                            <dt class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">材料グループ</dt>
+                            <dd id="detailGroupNames" class="text-lg font-black text-gray-900">-</dd>
                         </div>
-                        <!-- 詳細情報は廃止 -->
                     </dl>
                 </section>
 
-                <section>
-                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">材料マスター登録</h4>
-                    <div id="detailMaterials" class="border border-gray-200 rounded-lg divide-y divide-gray-200">
+                <!-- 材料マスター登録 -->
+                <section class="glass-card rounded-2xl p-6 shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-md mr-3">
+                            <i class="fas fa-database text-white text-lg"></i>
+                        </div>
+                        <h4 class="text-lg font-black text-gray-900">材料マスター登録</h4>
+                    </div>
+                    <div id="detailMaterials" class="border-2 border-gray-200 rounded-xl divide-y-2 divide-gray-100 overflow-hidden">
                     </div>
                 </section>
 
-                <section>
-                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">在庫ロット</h4>
-                    <div id="detailLots" class="border border-gray-200 rounded-lg overflow-hidden">
+                <!-- 在庫ロット -->
+                <section class="glass-card rounded-2xl p-6 shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="p-2 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-md mr-3">
+                            <i class="fas fa-boxes text-white text-lg"></i>
+                        </div>
+                        <h4 class="text-lg font-black text-gray-900">在庫ロット</h4>
+                    </div>
+                    <div id="detailLots" class="border-2 border-gray-200 rounded-xl overflow-hidden">
                     </div>
                 </section>
-                
             </div>
-            <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
-                <button class="bg-white hover:bg-gray-100 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-colors" onclick="Utils.modal.close('groupDetailModal')">閉じる</button>
+
+            <!-- フッター -->
+            <div class="px-8 py-6 bg-gradient-to-r from-gray-50 to-slate-50 flex justify-end rounded-b-3xl border-t-2 border-gray-200">
+                <button class="glass-card hover:shadow-xl text-gray-700 font-bold py-3 px-8 rounded-2xl transition-all hover:scale-105" onclick="Utils.modal.close('groupDetailModal')">
+                    <i class="fas fa-times mr-2"></i>閉じる
+                </button>
             </div>
         </div>
     </div>
 </div>
 <!-- グループ管理モーダル -->
-<div id="groupManagerModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 hidden z-50" onclick="Utils.modal.close('groupManagerModal')">
+<div id="groupManagerModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 backdrop-blur-sm" onclick="Utils.modal.close('groupManagerModal')">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
-            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div class="glass-card rounded-3xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+            <div class="px-8 py-6 bg-gradient-to-r from-purple-50 to-pink-50 flex items-center justify-between rounded-t-3xl">
                 <div>
-                    <h3 class="text-xl font-semibold text-gray-900">グループ管理</h3>
-                    <p class="text-sm text-gray-500 mt-1">材料グループの作成・名称変更・削除を在庫ページから行えます。</p>
+                    <h3 class="text-2xl font-black text-gray-900">グループ管理</h3>
+                    <p class="text-sm text-gray-600 font-medium mt-1">材料グループの作成・名称変更・削除を在庫ページから行えます</p>
                 </div>
-                <button id="closeGroupManager" class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <i class="fas fa-times text-lg"></i>
+                <button id="closeGroupManager" class="p-3 rounded-2xl hover:bg-white hover:shadow-lg transition-all text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-            <div class="p-6 space-y-6">
-                <section class="space-y-3">
-                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">新規グループ作成</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <input type="text" id="groupManagerName" placeholder="グループ名" class="md:col-span-1 w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                        <input type="text" id="groupManagerDescription" placeholder="説明（任意）" class="md:col-span-2 w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+            <div class="p-8 space-y-8">
+                <!-- 新規グループ作成 -->
+                <section class="glass-card rounded-2xl p-6 shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-md mr-3">
+                            <i class="fas fa-plus-circle text-white text-lg"></i>
+                        </div>
+                        <h4 class="text-lg font-black text-gray-900">新規グループ作成</h4>
                     </div>
-                    <div class="flex justify-end">
-                        <button id="createGroupBtn" class="inline-flex items-center px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                            <i class="fas fa-plus mr-2"></i>作成
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input type="text" id="groupManagerName" placeholder="グループ名" class="md:col-span-1 w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm" />
+                        <input type="text" id="groupManagerDescription" placeholder="説明（任意）" class="md:col-span-2 w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm" />
+                    </div>
+                    <div class="flex justify-end mt-4">
+                        <button id="createGroupBtn" class="btn-primary relative inline-flex items-center px-6 py-3 text-sm font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl shadow-lg hover:shadow-xl transition-all">
+                            <i class="fas fa-plus mr-2 relative z-10"></i>
+                            <span class="relative z-10">作成</span>
                         </button>
                     </div>
                 </section>
 
-                <section class="space-y-3">
-                    <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">グループ一覧</h4>
-                    <div id="groupManagerList" class="border border-gray-200 rounded-lg divide-y divide-gray-200"></div>
+                <!-- グループ一覧 -->
+                <section class="glass-card rounded-2xl p-6 shadow-lg">
+                    <div class="flex items-center mb-4">
+                        <div class="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-md mr-3">
+                            <i class="fas fa-list text-white text-lg"></i>
+                        </div>
+                        <h4 class="text-lg font-black text-gray-900">グループ一覧</h4>
+                    </div>
+                    <div id="groupManagerList" class="border-2 border-gray-200 rounded-xl divide-y-2 divide-gray-100 overflow-hidden"></div>
                 </section>
 
-                <!-- 所属材料管理（選択したグループ） -->
-                <section id="groupMembershipSection" class="space-y-3 hidden">
-                    <div class="flex items-center justify-between">
-                        <h4 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">所属材料管理</h4>
-                        <div class="text-xs text-gray-500">対象グループ: <span id="groupMembershipTargetName" class="font-medium text-gray-800">-</span></div>
+                <!-- 所属材料管理 -->
+                <section id="groupMembershipSection" class="glass-card rounded-2xl p-6 shadow-lg hidden">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center">
+                            <div class="p-2 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl shadow-md mr-3">
+                                <i class="fas fa-users text-white text-lg"></i>
+                            </div>
+                            <h4 class="text-lg font-black text-gray-900">所属材料管理</h4>
+                        </div>
+                        <div class="text-xs font-bold text-gray-500">
+                            対象グループ: <span id="groupMembershipTargetName" class="text-gray-900 font-black">-</span>
+                        </div>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <input type="text" id="groupMemberSearchInput" placeholder="材料名・品番・詳細などで検索" class="md:col-span-2 w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-                        <button id="groupMemberSearchBtn" class="px-4 py-2.5 text-sm font-medium bg-gray-800 hover:bg-gray-900 text-white rounded-lg transition-colors">検索</button>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <input type="text" id="groupMemberSearchInput" placeholder="材料名・品番・詳細などで検索" class="md:col-span-2 w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm" />
+                        <button id="groupMemberSearchBtn" class="px-4 py-3 text-sm font-bold bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-900 hover:to-black text-white rounded-xl transition-all shadow-lg hover:shadow-xl">
+                            <i class="fas fa-search mr-2"></i>検索
+                        </button>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <p class="text-xs font-semibold text-gray-600 mb-2">検索結果</p>
-                            <div id="groupMemberSearchResults" class="border border-gray-200 rounded-lg divide-y divide-gray-200"></div>
+                            <div class="flex items-center mb-3">
+                                <i class="fas fa-search text-blue-500 mr-2"></i>
+                                <p class="text-sm font-black text-gray-700">検索結果</p>
+                            </div>
+                            <div id="groupMemberSearchResults" class="border-2 border-gray-200 rounded-xl divide-y-2 divide-gray-100 overflow-hidden max-h-80 overflow-y-auto"></div>
                         </div>
                         <div>
-                            <p class="text-xs font-semibold text-gray-600 mb-2">現在の所属</p>
-                            <div id="groupMemberList" class="border border-gray-200 rounded-lg divide-y divide-gray-200"></div>
+                            <div class="flex items-center mb-3">
+                                <i class="fas fa-check-circle text-green-500 mr-2"></i>
+                                <p class="text-sm font-black text-gray-700">現在の所属</p>
+                            </div>
+                            <div id="groupMemberList" class="border-2 border-gray-200 rounded-xl divide-y-2 divide-gray-100 overflow-hidden max-h-80 overflow-y-auto"></div>
                         </div>
                     </div>
                 </section>
             </div>
-            <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
-                <button class="bg-white hover:bg-gray-100 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-colors" onclick="Utils.modal.close('groupManagerModal')">閉じる</button>
+
+            <!-- フッター -->
+            <div class="px-8 py-6 bg-gradient-to-r from-gray-50 to-slate-50 flex justify-end rounded-b-3xl border-t-2 border-gray-200">
+                <button class="glass-card hover:shadow-xl text-gray-700 font-bold py-3 px-8 rounded-2xl transition-all hover:scale-105" onclick="Utils.modal.close('groupManagerModal')">
+                    <i class="fas fa-times mr-2"></i>閉じる
+                </button>
             </div>
         </div>
     </div>
@@ -779,19 +994,19 @@ function createGroupRow(group) {
     const groupNamesText = formatGroupNamesList(group.material_group_names);
 
     return `
-        <tr>
-            <td class="px-4 py-3">
-                <p class="text-sm font-medium text-gray-900">${escapeHtml(group.display_label)}</p>
+        <tr class="hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 transition-all duration-200">
+            <td class="px-6 py-4">
+                <p class="text-sm font-bold text-gray-900">${escapeHtml(group.display_label)}</p>
             </td>
-            <td class="px-4 py-3 text-sm text-gray-600">${groupNamesText}</td>
-            <td class="px-4 py-3 text-sm text-gray-600">${escapeHtml(lengthText)}</td>
-            <td class="px-4 py-3 text-sm text-right text-gray-900">${materialCount}</td>
-            <td class="px-4 py-3 text-sm text-right text-gray-900">${lotCount}</td>
-            <td class="px-4 py-3 text-sm text-right text-gray-900">${totalQuantity}</td>
-            <td class="px-4 py-3 text-sm text-right text-gray-900">${totalWeight}</td>
-            <td class="px-4 py-3 text-center">
-                <button type="button" data-group-key="${group.key}" class="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700">
-                    詳細
+            <td class="px-6 py-4 text-sm font-medium text-gray-600">${groupNamesText}</td>
+            <td class="px-6 py-4 text-sm font-medium text-gray-600">${escapeHtml(lengthText)}</td>
+            <td class="px-6 py-4 text-sm text-right font-bold text-gray-900">${materialCount}</td>
+            <td class="px-6 py-4 text-sm text-right font-bold text-gray-900">${lotCount}</td>
+            <td class="px-6 py-4 text-sm text-right font-bold text-gray-900">${totalQuantity}</td>
+            <td class="px-6 py-4 text-sm text-right font-bold text-gray-900">${totalWeight}</td>
+            <td class="px-6 py-4 text-center">
+                <button type="button" data-group-key="${group.key}" class="inline-flex items-center px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-xl shadow-md hover:shadow-lg transition-all">
+                    <i class="fas fa-eye mr-2"></i>詳細
                 </button>
             </td>
         </tr>

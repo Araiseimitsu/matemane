@@ -49,17 +49,10 @@ python -m src.scripts.excel_po_import --excel "材料管理.xlsx" --sheet "材�
 python -m src.scripts.excel_po_import --excel "材料管理.xlsx" --sheet "材料管理表"
 ```
 
-### 開発時の重要な注意事項
-```bash
-# 【重要】APIエンドポイントURLには必ず末尾にスラッシュを付ける
-# 例: '/api/inventory/' (正) vs '/api/inventory' (307リダイレクトエラー)
-
-# データベーススキーマ変更後は必ずリセット
-# python reset_db.py でデータベース完全リセット（※データは全て消去されます）
-
-# Pydanticスキーマとモデル定義の整合性を必ず確認
-# 特に削除したカラムがレスポンススキーマに残っていないか注意
-```
+### 重要な注意事項
+- **APIエンドポイントURLには必ず末尾にスラッシュを付ける**（例: `/api/inventory/`）
+- **データベーススキーマ変更後は必ず `python reset_db.py` で完全リセット**
+- **Pydanticスキーマとモデル定義の整合性を必ず確認**（削除したカラムがレスポンススキーマに残っていないか注意）
 
 ### テストコマンド
 ```bash
@@ -117,12 +110,11 @@ pytest --cov=src --cov-report=html
   - Enumクラス: UserRole, MaterialShape, MovementType, PurchaseOrderStatus, PurchaseOrderItemStatus, OrderType, InspectionStatus
 
 ### API層（2025-01 リファクタリング済み）
-- `src/api/purchase_orders.py`: **Excel取込専用**
-  - **削除済み**: 手動発注作成API (`POST /api/purchase-orders/`)
-  - **削除済み**: 発注編集API (`PUT /api/purchase-orders/{order_id}`)
-  - **削除済み**: 発注削除API (`DELETE /api/purchase-orders/{order_id}`)
-  - **削除済み**: 重量⇔本数換算API (`POST /api/purchase-orders/calculate-conversion/`)
-  - **保持**: Excel取込、一覧取得、詳細取得、入庫確認API
+- `src/api/purchase_orders.py`: 発注管理
+  - **実装済み**: Excel取込、一覧取得、詳細取得、入庫確認API
+  - **追加済み（2025-10-09）**: 発注ヘッダー編集 (`PUT /api/purchase-orders/{order_id}`)
+  - **追加済み（2025-10-09）**: 発注アイテム編集 (`PUT /api/purchase-orders/items/{item_id}`)
+  - **追加済み（2025-10-09）**: 発注削除 (`DELETE /api/purchase-orders/{order_id}`)
 
 - `src/api/materials.py`: 材料マスタ管理（2025-01-06 完全リファクタリング）
   - **修正済み**: 欠落していたCRUD実装（POST/GET/PUT）
@@ -130,9 +122,12 @@ pytest --cov=src --cov-report=html
   - **削除済み**: 未使用ユーティリティ関数（parse_material_specification等）
   - **保持**: 材料CRUD、別名管理、材料検索、総件数取得（`/count`）
 
-- `src/api/movements.py`: 入出庫管理（2025-01完全実装）
-  - **削除済み**: 指示書番号関連のエンドポイント (`GET /api/movements/by-instruction/{instruction_number}`)
+- `src/api/movements.py`: 入出庫管理（2025-01完全実装、2025-10-09編集機能追加）
+  - **削除済み**: 指示書番号関連のエンドポイント
   - **実装済み**: 入庫（戻し）処理、出庫処理、履歴取得
+  - **追加済み（2025-10-09）**: 履歴編集 (`PUT /api/movements/{movement_id}`)
+  - **追加済み（2025-10-09）**: 履歴削除 (`DELETE /api/movements/{movement_id}`)
+  - **重要**: 編集・削除時は在庫数を自動再計算、監査ログに記録
 
 - `src/api/analytics.py`: 集計・分析（2025-01実装）
   - 材料別・日付別の在庫数、入出庫数、金額を集計
@@ -168,10 +163,11 @@ pytest --cov=src --cov-report=html
   - 材料グループ名の集約ロジック
   - QRコード連携
 
-- `src/templates/movements.html`: 入出庫管理画面（統合フォーム）
+- `src/templates/movements.html`: 入出庫管理画面（統合フォーム、2025-10-09編集機能追加）
   - **削除済み**: 重複した入庫/出庫フォーム（約200行）
   - **削除済み**: 重複したJavaScript関数（約300行）
   - **保持**: 統合フォーム（出庫/戻し切替）、在庫一覧、履歴表示、QRスキャン
+  - **追加済み（2025-10-09）**: 履歴編集モーダル、削除ボタン
   - 数量⇔重量の自動相互換算
 
 - `src/templates/analytics.html`: 集計・分析画面
@@ -180,10 +176,11 @@ pytest --cov=src --cov-report=html
   - Chart.js v4によるグラフ表示（時系列、円グラフ、棒グラフ）
   - CSV/Excel出力ボタン
 
-## 実装状況（2025-01更新）
+## 実装状況（2025-10更新）
 
 ### 完全実装済み
 - ✅ **Excel取込による発注管理**: 自動発注作成、一覧表示、詳細確認
+- ✅ **発注編集・削除機能**: 発注ヘッダー・アイテム編集、未入庫発注の削除（2025-10-09追加）
 - ✅ **入庫確認機能**: ロット登録、材料マスタ自動登録、在庫生成
 - ✅ **検品機能**: 検品ステータス管理、再編集機能
 - ✅ **在庫管理API**: 一覧取得、検索、サマリー、低在庫検知
@@ -191,6 +188,7 @@ pytest --cov=src --cov-report=html
 - ✅ **生産スケジュール管理**: Excel解析、材料引当
 - ✅ **Excel照合ビューア**: 直接Excel読込、在庫照合
 - ✅ **入出庫管理**: 統合フォーム（出庫/戻し）、在庫一覧表示、履歴管理、QRスキャン、数量⇔重量換算
+- ✅ **入出庫履歴編集・削除**: 履歴の編集・削除機能、在庫数の自動再計算（2025-10-09追加）
 - ✅ **集計・分析機能**: 材料別集計、時系列グラフ、CSV/Excel出力
 
 ### 実装待ち
@@ -204,8 +202,8 @@ pytest --cov=src --cov-report=html
 | `/` | ダッシュボード | KPI表示、クイックアクション、在庫アラート、最近の入出庫 |
 | `/order-flow` | 発注フロー統合 | Excel取込→入庫確認→検品→ラベル印刷の一連の流れ |
 | `/materials` | 材料マスタ管理 | 材料CRUD、別名管理、CSV一括インポート |
-| `/inventory` | 在庫管理（同等品ビュー） | グループ別在庫表示、検索、フィルタ |
-| `/movements` | 入出庫管理 | 統合フォーム（出庫/戻し）、履歴表示、QRスキャン |
+| `/inventory` | 在庫管理 | グループ別在庫表示、検索、フィルタ |
+| `/movements` | 入出庫管理 | 統合フォーム（出庫/戻し）、履歴表示・編集・削除、QRスキャン |
 | `/production-schedule` | 生産中一覧 | Excel解析、材料引当、在庫切れ予測 |
 | `/excel-viewer` | Excel照合ビューア | 直接Excel読込、在庫照合 |
 | `/analytics` | 集計・分析 | 材料別集計、入出庫推移、金額分析、CSV/Excel出力 |
@@ -226,12 +224,13 @@ pytest --cov=src --cov-report=html
 5. 入庫実行 → 材料マスタに`display_name`として登録（新規時）
 6. 検品タブで検品ステータスを管理（PENDING/PASSED/FAILED）
 
-### 入出庫管理（2025-01実装完了）
+### 入出庫管理（2025-10更新）
 1. `/movements` で統合フォームから出庫/戻しを選択
 2. 在庫一覧で対象アイテムを検索または直接選択ボタンをクリック
 3. 数量または重量を入力（自動相互換算）
 4. 備考を入力して実行
 5. 履歴は自動記録され、下部に表示
+6. 履歴の編集・削除は各行の「編集」「削除」ボタンから実行可能
 
 ## データベース設計（2025-01更新）
 
@@ -253,6 +252,7 @@ pytest --cov=src --cov-report=html
 - `purchase_order_items`: 発注アイテム（材料仕様文字列、数量）
   - **削除**: `management_code`（入庫時にItem側で生成）
   - `item_name`: Excelから取得した材料名フルネーム（入庫時に`Material.display_name`として登録）
+- `audit_logs`: 監査ログ（全ての編集・削除操作を記録）
 
 ### データフロー
 1. **Excel取込**: 材料管理.xlsx → PurchaseOrder + PurchaseOrderItem（`item_name`にフルネームを保存）
@@ -264,6 +264,7 @@ pytest --cov=src --cov-report=html
 3. **検品**: Lot.inspection_status 更新
 4. **在庫管理**: Item（UUID管理コード、現在本数、置き場）
 5. **入出庫**: Item.current_quantity 更新 → Movement履歴記録 → AuditLog記録
+6. **履歴編集・削除（2025-10-09追加）**: Movement更新/削除 → Item.current_quantity 再計算 → AuditLog記録
 
 ### フロントエンド技術
 - **テンプレートエンジン**: Jinja2（サーバーサイドレンダリング）
@@ -276,12 +277,15 @@ pytest --cov=src --cov-report=html
   - `MovementManager`: 入出庫処理（統合フォーム）
 - **QRコード**: getUserMedia API（カメラスキャン）、jsQR ライブラリ
 
-## API設計（2025-01更新）
+## API設計（2025-10更新）
 
-### 発注管理（Excel取込専用）
+### 発注管理
 - `GET /api/purchase-orders/` - 発注一覧取得（ページネーション対応）
 - `GET /api/purchase-orders/{order_id}` - 発注詳細取得
 - `POST /api/purchase-orders/external-import-test` - Excel取込
+- `PUT /api/purchase-orders/{order_id}` - 発注ヘッダー編集（仕入先・納期・備考）
+- `PUT /api/purchase-orders/items/{item_id}` - 発注アイテム編集（数量・単価・金額、未入庫のみ）
+- `DELETE /api/purchase-orders/{order_id}` - 発注削除（未入庫のみ）
 - `GET /api/purchase-orders/pending-or-inspection/items/` - 入庫待ち・検品未完了アイテム取得
 - `POST /api/purchase-orders/items/{item_id}/receive/` - 入庫確認
 - `PUT /api/purchase-orders/items/{item_id}/receive/` - 入庫内容再編集
@@ -306,10 +310,12 @@ pytest --cov=src --cov-report=html
 - `GET /api/materials/aliases/` - 別名一覧取得
 - `POST /api/materials/aliases/` - 別名作成
 
-### 入出庫管理（2025-01完全実装）
+### 入出庫管理（2025-10更新）
 - `GET /api/movements/` - 入出庫履歴取得（フィルタ: movement_type, item_id）
 - `POST /api/movements/in/{item_id}` - 入庫（戻し）処理
 - `POST /api/movements/out/{item_id}` - 出庫処理
+- `PUT /api/movements/{movement_id}` - 履歴編集（数量・重量・備考、在庫数も再計算）
+- `DELETE /api/movements/{movement_id}` - 履歴削除（在庫数を巻き戻し）
   - 数量または重量を指定（相互換算対応）
   - 備考記入可能
   - 自動的にMovementとAuditLog記録
@@ -349,7 +355,7 @@ pytest --cov=src --cov-report=html
    - materials.product_id, usage_type, dedicated_part_number → detail_info に統一
    - purchase_order_items.management_code
    - movements.instruction_number
-3. ✅ **発注管理API簡素化**: 手動作成/編集/削除API削除、Excel取込専用化
+3. ✅ **発注管理API簡素化**: 手動作成API削除、Excel取込専用化
 4. ✅ **発注管理UI簡素化**: モーダル1500行削除、Excel取込+一覧表示のみ
 5. ✅ **materials.py完全リファクタリング** (2025-01-06):
    - 欠落CRUD実装（POST/GET/PUT）
@@ -358,6 +364,11 @@ pytest --cov=src --cov-report=html
    - `/count` エンドポイント追加
 6. ✅ **入出庫管理完全実装**: 統合フォーム実装、重複コード約500行削除
 7. ✅ **入庫確認ページ最適化**: N+1問題解消（API呼び出し95%削減）
+8. ✅ **履歴編集・削除機能追加** (2025-10-09):
+   - 発注ヘッダー・アイテム編集API追加
+   - 発注削除API追加（未入庫のみ）
+   - 入出庫履歴編集・削除API追加（在庫数自動再計算）
+   - movements.html に編集・削除UI追加
 
 ### 削除理由
 - **MaterialStandard/Grade/Product**: 未実装の3層構造、実運用で不要
@@ -366,9 +377,6 @@ pytest --cov=src --cov-report=html
 - **手動発注作成API**: Excel取込のみ使用、UI削除済みのため不要
 - **instruction_number**: 指示書機能は未実装で使用されていない
 - **重複フォーム（movements）**: 統合フォームで機能統一、旧フォームは不要
-
-### 詳細ログ
-詳細なリファクタリング履歴は `docs/refactoring_log.md` を参照
 
 ## デフォルトユーザー（reset_db.py実行後）
 ※現在ログイン機能は不要ですが、データベースには以下のユーザーが作成されます：
@@ -427,24 +435,3 @@ pytest --cov=src --cov-report=html
 - **ナビゲーション配置**: 集計・分析機能はユーザーメニュー（右上プロフィールアイコン）内に配置
 - **グラフライブラリ**: Chart.js v4（CDN経由）を使用
 - **ブラウザ拡張エラー**: `chrome-extension://invalid/` エラーは無視（拡張機能の誤動作）
-
-[byterover-mcp]
-
-[byterover-mcp]
-
-You are given two tools from Byterover MCP server, including
-## 1. `byterover-store-knowledge`
-You `MUST` always use this tool when:
-
-+ Learning new patterns, APIs, or architectural decisions from the codebase
-+ Encountering error solutions or debugging techniques
-+ Finding reusable code patterns or utility functions
-+ Completing any significant task or plan implementation
-
-## 2. `byterover-retrieve-knowledge`
-You `MUST` always use this tool when:
-
-+ Starting any new task or implementation to gather relevant context
-+ Before making architectural decisions to understand existing patterns
-+ When debugging issues to check for previous solutions
-+ Working with unfamiliar parts of the codebase

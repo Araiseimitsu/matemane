@@ -1,146 +1,275 @@
-{% extends "base.html" %} {% block title %}材料マスタ - 材料管理システム{%
-endblock %} {% block content %}
-<div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-  <!-- ページヘッダー -->
-      <div class="mb-8">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-3xl font-bold text-gray-900">材料マスタ</h1>
-            <p class="mt-2 text-gray-600">材料マスタの管理を行います</p>
-          </div>
-          <div class="flex space-x-3">
-            <button
-              id="addMaterialBtn"
-              class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-            >
-              <i class="fas fa-plus mr-2"></i>新規材料登録
-            </button>
-          </div>
+{% extends "base.html" %}
+
+{% block title %}材料マスタ - 材料管理システム{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* グラスモーフィズム効果（base.htmlと同期） */
+  .glass-card-enhanced {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .glass-card-enhanced:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 48px 0 rgba(31, 38, 135, 0.25);
+  }
+
+  /* テーブルホバーエフェクト */
+  .table-row-hover {
+    transition: all 0.3s ease;
+  }
+
+  .table-row-hover:hover {
+    background: linear-gradient(90deg, rgba(239, 246, 255, 0.8), rgba(245, 243, 255, 0.8));
+    transform: scale(1.01);
+  }
+
+  /* ボタングラデーション */
+  .btn-gradient-primary {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    transition: all 0.3s ease;
+  }
+
+  .btn-gradient-primary:hover {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+  }
+
+  .btn-gradient-success {
+    background: linear-gradient(135deg, #10b981, #059669);
+    transition: all 0.3s ease;
+  }
+
+  .btn-gradient-success:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+  }
+
+  .btn-gradient-warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    transition: all 0.3s ease;
+  }
+
+  .btn-gradient-warning:hover {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+  }
+
+  .btn-gradient-danger {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    transition: all 0.3s ease;
+  }
+
+  .btn-gradient-danger:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+  }
+
+  /* フォーカスエフェクト */
+  .input-focus {
+    transition: all 0.3s ease;
+  }
+
+  .input-focus:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    transform: translateY(-1px);
+  }
+
+  /* モーダル背景グラスモーフィズム */
+  .modal-backdrop {
+    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .modal-content {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(30px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+  }
+
+  /* ページネーションスタイル */
+  .pagination-btn {
+    transition: all 0.3s ease;
+  }
+
+  .pagination-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  }
+
+  .pagination-btn.active {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: white;
+    font-weight: 700;
+  }
+
+  /* アニメーション */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out both;
+  }
+
+  /* 検索フォーム強化 */
+  .search-container {
+    position: relative;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    pointer-events: none;
+  }
+
+  .search-input {
+    padding-left: 48px;
+  }
+
+  /* テーブルヘッダーグラデーション */
+  .table-header-gradient {
+    background: linear-gradient(135deg, #f9fafb, #f3f4f6);
+    border-bottom: 2px solid #e5e7eb;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen gradient-bg">
+  <div class="max-w-[1600px] mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <!-- ページヘッダー -->
+    <div class="mb-10 animate-fade-in-up">
+      <div class="flex items-center justify-between">
+        <div class="space-y-2">
+          <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
+            材料マスタ
+          </h1>
+          <p class="text-lg text-gray-600 font-medium">材料マスタの登録・編集・管理を行います</p>
+        </div>
+        <div class="flex space-x-4">
+          <button
+            id="addMaterialBtn"
+            class="btn-gradient-primary text-white font-bold py-3 px-8 rounded-2xl shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300"
+          >
+            <i class="fas fa-plus mr-2"></i>新規材料登録
+          </button>
         </div>
       </div>
-
-  <!-- フィルタ・検索バー -->
-  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-    <form id="searchForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2"
-          >材料仕様</label
-        >
-        <input
-          type="text"
-          name="display_name"
-          placeholder="材料仕様で検索..."
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400"
-        />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2"
-          >形状</label
-        >
-        <select
-          name="shape"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400"
-        >
-          <option value="">全て</option>
-          <option value="round">丸棒</option>
-          <option value="hexagon">六角棒</option>
-          <option value="square">角棒</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2"
-          >径(mm)</label
-        >
-        <input
-          type="number"
-          name="diameter_mm"
-          placeholder="径で検索..."
-          step="0.1"
-          min="0"
-          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400"
-        />
-      </div>
-      <div class="flex items-end">
-        <button
-          type="reset"
-          class="w-full bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
-        >
-          リセット
-        </button>
-      </div>
-    </form>
-  </div>
-
-  <!-- 材料一覧 -->
-  <div
-    class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
-  >
-    <!-- ページネーション (上部) -->
-    <div id="materialsPaginationTop" class="px-4 py-3 bg-white border-b border-gray-200"></div>
-
-    <div class="overflow-x-auto">
-      <table id="materialsTable" class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
-          <tr>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              材料仕様
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              形状
-            </th>
-            <th
-              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              径 (mm)
-            </th>
-            <th
-              class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              操作
-            </th>
-          </tr>
-        </thead>
-        <tbody
-          id="materialsTableBody"
-          class="bg-white divide-y divide-gray-200"
-        >
-          <!-- 材料データはJavaScriptで動的生成 -->
-        </tbody>
-      </table>
     </div>
 
-    <!-- ページネーション (下部) -->
-    <div id="materialsPaginationBottom" class="px-4 py-3 bg-white border-t border-gray-200"></div>
-  </div>
+    <!-- フィルタ・検索バー -->
+    <div class="glass-card rounded-3xl p-8 mb-8 shadow-xl animate-fade-in-up" style="animation-delay: 0.1s;">
+      <div class="flex items-center mb-6">
+        <div class="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg mr-4">
+          <i class="fas fa-filter text-2xl text-white"></i>
+        </div>
+        <h3 class="text-2xl font-black text-gray-900">検索・フィルター</h3>
+      </div>
+      <form id="searchForm" class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="search-container">
+          <i class="fas fa-search search-icon"></i>
+          <input
+            type="text"
+            name="display_name"
+            placeholder="材料仕様で検索..."
+            class="search-input input-focus w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 font-medium"
+          />
+        </div>
+        <div>
+          <select
+            name="shape"
+            class="input-focus w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 font-medium"
+          >
+            <option value="">全ての形状</option>
+            <option value="round">丸棒</option>
+            <option value="hexagon">六角棒</option>
+            <option value="square">角棒</option>
+          </select>
+        </div>
+        <div class="search-container">
+          <i class="fas fa-ruler search-icon"></i>
+          <input
+            type="number"
+            name="diameter_mm"
+            placeholder="径(mm)で検索..."
+            step="0.1"
+            min="0"
+            class="search-input input-focus w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 font-medium"
+          />
+        </div>
+        <div class="flex items-end">
+          <button
+            type="reset"
+            class="w-full bg-white hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 text-gray-700 font-bold py-3 px-6 rounded-xl border-2 border-gray-300 transition-all duration-300 shadow-md hover:shadow-xl"
+          >
+            <i class="fas fa-redo mr-2"></i>リセット
+          </button>
+        </div>
+      </form>
+    </div>
 
-  <!-- ローディング表示 -->
-  <div id="loading" class="hidden text-center py-12">
-    <div class="inline-flex items-center">
-      <svg
-        class="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-600"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <circle
-          class="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          stroke-width="4"
-        ></circle>
-        <path
-          class="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        ></path>
-      </svg>
-      <span class="text-gray-600">読み込み中...</span>
+    <!-- 材料一覧テーブル -->
+    <div class="glass-card rounded-3xl shadow-xl overflow-hidden animate-fade-in-up" style="animation-delay: 0.2s;">
+      <!-- ページネーション (上部) -->
+      <div id="materialsPaginationTop" class="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200"></div>
+
+      <div class="overflow-x-auto">
+        <table id="materialsTable" class="min-w-full">
+          <thead class="table-header-gradient">
+            <tr>
+              <th class="px-8 py-5 text-left text-sm font-black text-gray-700 uppercase tracking-wider">
+                <i class="fas fa-tag mr-2 text-blue-500"></i>材料仕様
+              </th>
+              <th class="px-8 py-5 text-left text-sm font-black text-gray-700 uppercase tracking-wider">
+                <i class="fas fa-shapes mr-2 text-green-500"></i>形状
+              </th>
+              <th class="px-8 py-5 text-left text-sm font-black text-gray-700 uppercase tracking-wider">
+                <i class="fas fa-ruler mr-2 text-purple-500"></i>径 (mm)
+              </th>
+              <th class="px-8 py-5 text-right text-sm font-black text-gray-700 uppercase tracking-wider">
+                <i class="fas fa-cog mr-2 text-gray-500"></i>操作
+              </th>
+            </tr>
+          </thead>
+          <tbody id="materialsTableBody" class="bg-white divide-y divide-gray-100">
+            <!-- 材料データはJavaScriptで動的生成 -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ページネーション (下部) -->
+      <div id="materialsPaginationBottom" class="px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-t border-gray-200"></div>
+    </div>
+
+    <!-- ローディング表示 -->
+    <div id="loading" class="hidden text-center py-16">
+      <div class="inline-flex flex-col items-center glass-card rounded-3xl p-12 shadow-xl">
+        <div class="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mb-6"></div>
+        <span class="text-gray-700 font-bold text-lg">読み込み中...</span>
+        <span class="text-gray-500 text-sm mt-2">データを取得しています</span>
+      </div>
     </div>
   </div>
 </div>
@@ -148,43 +277,44 @@ endblock %} {% block content %}
 <!-- 材料登録/編集モーダル -->
 <div
   id="materialModal"
-  class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50"
+  class="fixed inset-0 modal-backdrop hidden z-50"
 >
   <div class="flex items-center justify-center min-h-screen p-4">
-    <div
-      class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
-    >
-      <div class="px-6 py-4 border-b border-gray-200">
-        <h3 id="modalTitle" class="text-lg font-semibold text-gray-900">
+    <div class="modal-content rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
+      <div class="px-8 py-6 border-b border-gray-100">
+        <h3 id="modalTitle" class="text-2xl font-black text-gray-900 flex items-center">
+          <div class="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg mr-3">
+            <i class="fas fa-cube text-white text-lg"></i>
+          </div>
           新規材料登録
         </h3>
       </div>
 
-      <form id="createMaterialForm" class="p-6">
-        <div class="space-y-4">
+      <form id="createMaterialForm" class="p-8">
+        <div class="space-y-6">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2"
-              >材料仕様 *</label
-            >
+            <label class="block text-sm font-black text-gray-700 mb-3 uppercase tracking-wide">
+              <i class="fas fa-tag mr-2 text-blue-500"></i>材料仕様 *
+            </label>
             <input
               type="text"
               id="display_name"
               name="display_name"
               required
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400"
+              class="input-focus w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 font-medium"
               placeholder="例: SUS303 φ10.0 研磨"
             />
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2"
-              >形状 *</label
-            >
+            <label class="block text-sm font-black text-gray-700 mb-3 uppercase tracking-wide">
+              <i class="fas fa-shapes mr-2 text-green-500"></i>形状 *
+            </label>
             <select
               id="shape"
               name="shape"
               required
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400"
+              class="input-focus w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 font-medium"
             >
               <option value="">選択してください</option>
               <option value="round">丸棒</option>
@@ -196,9 +326,10 @@ endblock %} {% block content %}
           <div>
             <label
               id="diameterLabel"
-              class="block text-sm font-medium text-gray-700 mb-2"
-              >径(mm) *</label
+              class="block text-sm font-black text-gray-700 mb-3 uppercase tracking-wide"
             >
+              <i class="fas fa-ruler mr-2 text-purple-500"></i>径(mm) *
+            </label>
             <input
               type="number"
               id="diameter_mm"
@@ -206,19 +337,19 @@ endblock %} {% block content %}
               required
               step="0.1"
               min="0.1"
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400"
+              class="input-focus w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 font-medium"
               placeholder="10.0"
             />
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2"
-              >比重(g/cm³) *</label
-            >
-            <div class="space-y-2">
+            <label class="block text-sm font-black text-gray-700 mb-3 uppercase tracking-wide">
+              <i class="fas fa-weight mr-2 text-orange-500"></i>比重(g/cm³) *
+            </label>
+            <div class="space-y-3">
               <select
                 id="density_preset_select"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400"
+                class="input-focus w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 font-medium"
               >
                 <option value="">プリセットから選択（任意）</option>
               </select>
@@ -229,27 +360,27 @@ endblock %} {% block content %}
                 required
                 step="0.01"
                 min="0.01"
-                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400"
+                class="input-focus w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 font-medium"
                 placeholder="7.85"
               />
             </div>
           </div>
         </div>
 
-        <div class="flex justify-end space-x-3 mt-6">
+        <div class="flex justify-end space-x-4 mt-8">
           <button
             type="button"
             data-dismiss="modal"
-            class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
+            class="bg-white hover:bg-gray-50 text-gray-700 font-bold py-3 px-8 rounded-xl border-2 border-gray-300 transition-all duration-300 shadow-md hover:shadow-xl"
           >
-            キャンセル
+            <i class="fas fa-times mr-2"></i>キャンセル
           </button>
           <button
             type="submit"
             id="submitBtn"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+            class="btn-gradient-primary text-white font-bold py-3 px-8 rounded-xl shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300"
           >
-            登録
+            <i class="fas fa-check mr-2"></i>登録
           </button>
         </div>
       </form>
@@ -260,69 +391,72 @@ endblock %} {% block content %}
 <!-- 重量計算モーダル -->
 <div
   id="weightCalculatorModal"
-  class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50"
+  class="fixed inset-0 modal-backdrop hidden z-50"
 >
   <div class="flex items-center justify-center min-h-screen p-4">
-    <div
-      class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
-    >
-      <div class="px-6 py-4 border-b border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900">重量計算</h3>
-        <p class="text-sm text-gray-600 mt-1">
-          材料: <span id="calcMaterialName"></span>
+    <div class="modal-content rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
+      <div class="px-8 py-6 border-b border-gray-100">
+        <h3 class="text-2xl font-black text-gray-900 flex items-center">
+          <div class="p-2 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg mr-3">
+            <i class="fas fa-calculator text-white text-lg"></i>
+          </div>
+          重量計算
+        </h3>
+        <p class="text-sm text-gray-600 mt-2 font-medium">
+          材料: <span id="calcMaterialName" class="font-bold text-gray-900"></span>
         </p>
       </div>
 
-      <div class="p-6">
+      <div class="p-8">
         <input type="hidden" id="calcMaterialId" />
-        <div class="space-y-4">
+        <div class="space-y-6">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2"
-              >長さ(mm)</label
-            >
+            <label class="block text-sm font-black text-gray-700 mb-3 uppercase tracking-wide">
+              <i class="fas fa-ruler-horizontal mr-2 text-blue-500"></i>長さ(mm)
+            </label>
             <input
               type="number"
               id="calcLength"
               step="1"
               min="1"
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400"
+              class="input-focus w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 font-medium"
               placeholder="2500"
             />
           </div>
 
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2"
-              >本数</label
-            >
+            <label class="block text-sm font-black text-gray-700 mb-3 uppercase tracking-wide">
+              <i class="fas fa-sort-numeric-up mr-2 text-green-500"></i>本数
+            </label>
             <input
               type="number"
               id="calcQuantity"
               step="1"
               min="1"
               value="1"
-              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400"
+              class="input-focus w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white text-gray-900 placeholder-gray-400 font-medium"
             />
           </div>
 
-          <div id="calcResult">
+          <div id="calcResult" class="glass-card-enhanced rounded-2xl p-6">
             <!-- 計算結果はJavaScriptで表示 -->
           </div>
         </div>
 
-        <div class="flex justify-end space-x-3 mt-6">
+        <div class="flex justify-end space-x-4 mt-8">
           <button
             type="button"
             data-dismiss="modal"
-            class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-6 rounded-lg border border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
+            class="bg-white hover:bg-gray-50 text-gray-700 font-bold py-3 px-8 rounded-xl border-2 border-gray-300 transition-all duration-300 shadow-md hover:shadow-xl"
           >
-            閉じる
+            <i class="fas fa-times mr-2"></i>閉じる
           </button>
           <button
             type="button"
             id="calculateWeightBtn"
-            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+            class="btn-gradient-success text-white font-bold py-3 px-8 rounded-xl shadow-xl focus:outline-none focus:ring-4 focus:ring-green-300"
           >
-            計算
+            <i class="fas fa-calculator mr-2"></i>計算
           </button>
         </div>
       </div>
@@ -330,7 +464,9 @@ endblock %} {% block content %}
   </div>
 </div>
 
-{% endblock %} {% block extra_scripts %}
+{% endblock %}
+
+{% block extra_scripts %}
 <script src="{{ url_for('static', path='js/pagination.js') }}"></script>
 <script src="/static/js/materials.js"></script>
 {% endblock %}
