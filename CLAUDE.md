@@ -134,6 +134,12 @@ pytest --cov=src --cov-report=html
   - **削除済み**: 指示書番号関連のエンドポイント (`GET /api/movements/by-instruction/{instruction_number}`)
   - **実装済み**: 入庫（戻し）処理、出庫処理、履歴取得
 
+- `src/api/analytics.py`: 集計・分析（2025-01実装）
+  - 材料別・日付別の在庫数、入出庫数、金額を集計
+  - Chart.js用のグラフデータ生成（時系列、材料別構成比、仕入先別金額）
+  - CSV/Excel出力（openpyxl使用）
+  - **重要**: SQLAlchemyのJOIN条件は明示的に指定（`Material.id == Lot.material_id`）
+
 - `src/scripts/excel_po_import.py`: Excel取込スクリプト
   - 材料管理.xlsxから発注データを自動作成
   - **取込条件**: I列(品番)非空、L列(材料)非空、Z列(指定納期)入力あり、AC列(入荷日)が空
@@ -168,6 +174,12 @@ pytest --cov=src --cov-report=html
   - **保持**: 統合フォーム（出庫/戻し切替）、在庫一覧、履歴表示、QRスキャン
   - 数量⇔重量の自動相互換算
 
+- `src/templates/analytics.html`: 集計・分析画面
+  - 検索フォーム（日付範囲、材料名、購入月、仕入先、入出庫種別）
+  - 集計サマリーカード（在庫数、入出庫数、金額）
+  - Chart.js v4によるグラフ表示（時系列、円グラフ、棒グラフ）
+  - CSV/Excel出力ボタン
+
 ## 実装状況（2025-01更新）
 
 ### 完全実装済み
@@ -179,6 +191,7 @@ pytest --cov=src --cov-report=html
 - ✅ **生産スケジュール管理**: Excel解析、材料引当
 - ✅ **Excel照合ビューア**: 直接Excel読込、在庫照合
 - ✅ **入出庫管理**: 統合フォーム（出庫/戻し）、在庫一覧表示、履歴管理、QRスキャン、数量⇔重量換算
+- ✅ **集計・分析機能**: 材料別集計、時系列グラフ、CSV/Excel出力
 
 ### 実装待ち
 - ⏳ **ラベル印刷機能**: `src/api/labels.py` - スタブのみ
@@ -195,6 +208,7 @@ pytest --cov=src --cov-report=html
 | `/movements` | 入出庫管理 | 統合フォーム（出庫/戻し）、履歴表示、QRスキャン |
 | `/production-schedule` | 生産中一覧 | Excel解析、材料引当、在庫切れ予測 |
 | `/excel-viewer` | Excel照合ビューア | 直接Excel読込、在庫照合 |
+| `/analytics` | 集計・分析 | 材料別集計、入出庫推移、金額分析、CSV/Excel出力 |
 | `/settings` | 設定 | 比重プリセット、システム設定 |
 
 ## 主要ワークフロー
@@ -300,6 +314,14 @@ pytest --cov=src --cov-report=html
   - 備考記入可能
   - 自動的にMovementとAuditLog記録
 
+### 集計・分析（2025-01実装）
+- `GET /api/analytics/summary/` - 集計検索（日付、材料名、購入月、仕入先、入出庫種別で絞り込み）
+- `GET /api/analytics/graph/timeline/` - 時系列推移グラフ（日別入出庫）
+- `GET /api/analytics/graph/material-composition/` - 材料別構成比（円グラフ）
+- `GET /api/analytics/graph/supplier-amount/` - 仕入先別金額（棒グラフ）
+- `GET /api/analytics/export/csv/` - CSV出力（UTF-8 BOM付き）
+- `GET /api/analytics/export/excel/` - Excel出力（openpyxl使用）
+
 ## 重要な制約事項
 
 ### データベース
@@ -401,83 +423,7 @@ pytest --cov=src --cov-report=html
 - **フォーム操作**: 数量⇔重量の相互換算、リアルタイムバリデーション
 - **QRスキャン**: getUserMedia API + jsQR ライブラリ、カメラ選択機能実装済み
 
-## ByteRover MCP ツール活用
-
-プロジェクトでは ByteRover MCP サーバーの2つのツールを使用します：
-
-### 1. `byterover-store-knowledge`
-以下の場合に**必ず**使用:
-- コードベースから新しいパターン、API、アーキテクチャ決定を学習した時
-- エラー解決やデバッグ技術に遭遇した時
-- 再利用可能なコードパターンやユーティリティ関数を発見した時
-- 重要なタスクや計画実装を完了した時
-
-### 2. `byterover-retrieve-knowledge`
-以下の場合に**必ず**使用:
-- 新しいタスクや実装を開始する前に関連コンテキストを収集
-- アーキテクチャ決定前に既存パターンを理解
-- 問題デバッグ時に以前の解決策を確認
-- コードベースの不慣れな部分で作業する時
-
-[byterover-mcp]
-
-[byterover-mcp]
-
-You are given two tools from Byterover MCP server, including
-## 1. `byterover-store-knowledge`
-You `MUST` always use this tool when:
-
-+ Learning new patterns, APIs, or architectural decisions from the codebase
-+ Encountering error solutions or debugging techniques
-+ Finding reusable code patterns or utility functions
-+ Completing any significant task or plan implementation
-
-## 2. `byterover-retrieve-knowledge`
-You `MUST` always use this tool when:
-
-+ Starting any new task or implementation to gather relevant context
-+ Before making architectural decisions to understand existing patterns
-+ When debugging issues to check for previous solutions
-+ Working with unfamiliar parts of the codebase
-
-[byterover-mcp]
-
-[byterover-mcp]
-
-You are given two tools from Byterover MCP server, including
-## 1. `byterover-store-knowledge`
-You `MUST` always use this tool when:
-
-+ Learning new patterns, APIs, or architectural decisions from the codebase
-+ Encountering error solutions or debugging techniques
-+ Finding reusable code patterns or utility functions
-+ Completing any significant task or plan implementation
-
-## 2. `byterover-retrieve-knowledge`
-You `MUST` always use this tool when:
-
-+ Starting any new task or implementation to gather relevant context
-+ Before making architectural decisions to understand existing patterns
-+ When debugging issues to check for previous solutions
-+ Working with unfamiliar parts of the codebase
-
-[byterover-mcp]
-
-[byterover-mcp]
-
-You are given two tools from Byterover MCP server, including
-## 1. `byterover-store-knowledge`
-You `MUST` always use this tool when:
-
-+ Learning new patterns, APIs, or architectural decisions from the codebase
-+ Encountering error solutions or debugging techniques
-+ Finding reusable code patterns or utility functions
-+ Completing any significant task or plan implementation
-
-## 2. `byterover-retrieve-knowledge`
-You `MUST` always use this tool when:
-
-+ Starting any new task or implementation to gather relevant context
-+ Before making architectural decisions to understand existing patterns
-+ When debugging issues to check for previous solutions
-+ Working with unfamiliar parts of the codebase
+### UI/UX特記事項
+- **ナビゲーション配置**: 集計・分析機能はユーザーメニュー（右上プロフィールアイコン）内に配置
+- **グラフライブラリ**: Chart.js v4（CDN経由）を使用
+- **ブラウザ拡張エラー**: `chrome-extension://invalid/` エラーは無視（拡張機能の誤動作）

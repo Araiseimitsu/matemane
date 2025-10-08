@@ -11,7 +11,7 @@ import logging
 from src.config import settings
 from src.db import create_tables, SessionLocal
 from src.db.models import Location, DensityPreset
-from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders, excel_viewer, production_schedule, material_management, material_groups, inspections
+from src.api import auth, materials, inventory, movements, labels, density_presets, purchase_orders, excel_viewer, production_schedule, material_management, material_groups, inspections, analytics
 
 # ログ設定
 logging.basicConfig(
@@ -62,6 +62,7 @@ app.include_router(production_schedule.router, tags=["生産中一覧"])
 app.include_router(material_management.router, tags=["材料管理"])
 app.include_router(material_groups.router, tags=["材料グループ"])
 app.include_router(inspections.router, tags=["検品"])
+app.include_router(analytics.router, prefix="/api/analytics", tags=["集計・分析"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -178,6 +179,11 @@ async def excel_viewer_page(request: Request):
 async def settings_page(request: Request):
     """設定ページ"""
     return templates.TemplateResponse("settings.html", {"request": request})
+
+@app.get("/analytics")
+async def analytics_page(request: Request):
+    """集計・分析ページ"""
+    return templates.TemplateResponse("analytics.html", {"request": request})
 
 # 削除: 旧材料グループ管理画面ルート（在庫ページへ統合済み）
 

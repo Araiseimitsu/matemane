@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     label_height_mm: int = int(os.getenv("LABEL_HEIGHT_MM", "30"))
     qr_size_mm: int = int(os.getenv("QR_SIZE_MM", "20"))
     production_schedule_path: str = os.getenv("PRODUCTION_SCHEDULE_PATH", r"\\192.168.1.200\共有\生産管理課\セット予定表.xlsx")
+    # production_schedule_path: str = os.getenv("PRODUCTION_SCHEDULE_PATH", r"セット予定表.xlsx")
 
     @property
     def database_url(self) -> str:
