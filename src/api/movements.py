@@ -88,7 +88,6 @@ class MovementResponse(BaseModel):
     processed_at: datetime
 
     # 関連情報（JOINで取得）
-    item_management_code: Optional[str] = None
     material_name: Optional[str] = None
     lot_number: Optional[str] = None
     remaining_quantity: Optional[int] = None
@@ -131,8 +130,7 @@ async def get_movements(
             "notes": movement.notes,
             "processed_by": movement.processed_by,
             "processed_at": movement.processed_at,
-            "item_management_code": movement.item.management_code,
-            "material_name": movement.item.lot.material.name,
+            "material_name": movement.item.lot.material.display_name,
             "lot_number": movement.item.lot.lot_number,
             "remaining_quantity": movement.item.current_quantity
         }

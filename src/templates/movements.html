@@ -170,16 +170,19 @@ endblock %} {% block content %}
           <thead class="bg-gray-50">
             <tr>
               <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                管理コード
+                材料仕様
               </th>
               <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                材料名
+                形状
               </th>
               <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
-                形状・寸法
+                径
               </th>
               <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
                 ロット番号
+              </th>
+              <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
+                ロット備考
               </th>
               <th class="px-4 py-3 text-left text-sm font-medium text-gray-500">
                 長さ
@@ -407,11 +410,6 @@ endblock %} {% block content %}
                 <th
                   class="px-4 py-3 text-left text-sm font-medium text-gray-500"
                 >
-                  管理コード
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-medium text-gray-500"
-                >
                   材料情報
                 </th>
                 <th
@@ -568,21 +566,18 @@ endblock %} {% block content %}
 
         return `
             <tr class="${rowClass}">
-                <td class="px-4 py-3">
-                    <div class="font-mono text-xs text-gray-900">${item.lot_number}</div>
-                    <button onclick="copyToClipboard('${item.lot_number}')"
-                            class="text-xs text-blue-600 hover:text-blue-800 mt-1">
-                        コピー
-                    </button>
-                </td>
                 <td class="px-4 py-3 text-sm text-gray-900">${
-                  item.material.name
+                  item.material.display_name || "-"
                 }</td>
-                <td class="px-4 py-3 text-sm text-gray-600">${shapeText} φ${
-          item.material.diameter_mm
-        }mm</td>
+                <td class="px-4 py-3 text-sm text-gray-600">${shapeText}</td>
+                <td class="px-4 py-3 text-sm text-gray-600">${
+                  item.material.diameter_mm
+                }</td>
                 <td class="px-4 py-3 text-sm text-gray-900">${
                   item.lot.lot_number
+                }</td>
+                <td class="px-4 py-3 text-sm text-gray-500">${
+                  item.lot.notes || "-"
                 }</td>
                 <td class="px-4 py-3 text-sm text-gray-600">${
                   item.lot.length_mm
@@ -950,12 +945,8 @@ endblock %} {% block content %}
 
         return `
             <tr class="${rowClass}">
-                <td class="px-4 py-3 font-mono text-xs text-gray-900">${item.management_code.substring(
-                  0,
-                  8
-                )}...</td>
                 <td class="px-4 py-3 text-sm">
-                    <div class="text-gray-900">${item.material.name}</div>
+                    <div class="text-gray-900">${item.material.display_name || "-"}</div>
                     <div class="text-gray-500 text-xs">${shapeText} φ${
           item.material.diameter_mm
         }mm × ${item.lot.length_mm}mm</div>
@@ -1034,9 +1025,9 @@ endblock %} {% block content %}
     }
     const shapeText = getShapeText(selectedItem.material.shape);
     summary.innerHTML = `
-      <div class="text-gray-900 font-medium">${selectedItem.material.name}</div>
+      <div class="text-gray-900 font-medium">${selectedItem.material.display_name || "-"}</div>
       <div class="text-gray-600 text-sm">${shapeText} φ${selectedItem.material.diameter_mm}mm × ${selectedItem.lot.length_mm}mm</div>
-      <div class="text-gray-600 text-sm">ロット: ${selectedItem.lot.lot_number} / 置き場: ${selectedItem.location ? selectedItem.location.name : "未配置"}</div>
+      <div class="text-gray-600 text-sm">ロット: ${selectedItem.lot.lot_number} ${selectedItem.lot.notes ? "(" + selectedItem.lot.notes + ")" : ""} / 置き場: ${selectedItem.location ? selectedItem.location.name : "未配置"}</div>
       <div class="text-gray-600 text-sm">在庫: ${selectedItem.current_quantity}本 / ${(selectedItem.total_weight_kg || 0).toFixed(3)}kg / 1本あたり ${(selectedItem.weight_per_piece_kg || 0).toFixed(3)}kg</div>
     `;
     if (itemIdInput) itemIdInput.value = selectedItem.id;
@@ -1149,17 +1140,11 @@ endblock %} {% block content %}
   // QRスキャン結果処理
   async function handleQRScan(code) {
     try {
-      const result = await APIClient.searchByManagementCode(code);
+      const result = await APIClient.searchByLotNumber(code);
 
       if (result) {
-        // アイテムを自動選択（入庫または出庫の選択ダイアログ表示）
-        const action = confirm(
-          "スキャンしたアイテムを戻しますか？\n「キャンセル」で出庫を選択できます。"
-        );
-
-        // 統合フォームに反映
+        // 統合フォームに反映（対象アイテムに入るのみ）
         selectedItem = result;
-        setMovementType(action ? "in" : "out");
         updateUnifiedSelectedItemDisplay();
         const mfItemId = document.querySelector('#movementForm input[name="item_id"]');
         if (mfItemId) mfItemId.value = result.id;

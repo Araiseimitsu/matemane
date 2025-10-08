@@ -197,7 +197,11 @@ def _get_current_stock_bars(db: Session, display_name: Optional[str]) -> int:
 def _calculate_stockout_forecast(db: Session) -> List[StockoutForecast]:
     """在庫ページに表示される（登録済みで在庫のある）材料を対象に予測を計算"""
     # 既存の材料使用量サマリー（Excel: 生産中）を読み込み
-    usage_summaries: List[MaterialUsageSummary] = _load_material_plan()
+    try:
+        usage_summaries: List[MaterialUsageSummary] = _load_material_plan()
+    except (FileNotFoundError, RuntimeError) as e:
+        logger.warning(f"生産スケジュールExcelの読み込みに失敗しました: {e}")
+        usage_summaries = []
 
     # Excelの仕様文字列（material_spec）ごとに日別使用本数を集約
     usage_by_spec: dict[str, List[DailyUsage]] = {}
