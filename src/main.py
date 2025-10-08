@@ -100,22 +100,17 @@ async def startup_event():
             preset_count = db.query(DensityPreset).count()
             if preset_count == 0:
                 presets = [
-                    {"name": "SUS303/304/316 丸棒", "density": 7.93, "description": "ステンレス丸棒"},
-                    {"name": "SUS303/304/316 六角", "density": 7.93, "description": "ステンレス六角"},
-                    {"name": "SUS416/420/430/K-M31 丸棒", "density": 7.80, "description": "ステンレス丸棒"},
-                    {"name": "SUS416/420/430/K-M31 六角", "density": 7.75, "description": "ステンレス六角"},
-                    {"name": "鉄 全般 丸棒", "density": 7.90, "description": "一般鋼 丸棒"},
-                    {"name": "鉄 全般 六角", "density": 7.90, "description": "一般鋼 六角"},
-                    {"name": "真鍮 丸棒", "density": 8.50, "description": "真鍮 丸棒"},
-                    {"name": "真鍮 六角", "density": 8.50, "description": "真鍮 六角"},
-                    {"name": "真鍮 四角", "density": 8.50, "description": "真鍮 四角"},
-                    {"name": "アルミ A2011/CB156/G23 丸棒", "density": 2.83, "description": "アルミ 丸棒"},
-                    {"name": "アルミ A2017 丸棒", "density": 2.79, "description": "アルミ 丸棒"},
-                    {"name": "アルミ A5056 丸棒", "density": 2.64, "description": "アルミ 丸棒"},
-                    {"name": "アルミ A6061 丸棒", "density": 2.70, "description": "アルミ 丸棒"},
-                    {"name": "アルミ 一般的比重 丸棒", "density": 2.713, "description": "アルミ 一般"},
-                    {"name": "高力黄銅 HB材等 丸棒", "density": 8.43, "description": "黄銅 丸棒"},
-                    {"name": "銅 全般 丸棒", "density": 8.89, "description": "銅 丸棒"},
+                    {"name": "SUS303/304/316", "density": 7.93, "description": "ステンレス丸棒"},
+                    {"name": "SUS416/420/430/K-M31", "density": 7.80, "description": "ステンレス丸棒"},
+                    {"name": "鉄 全般", "density": 7.90, "description": "一般鋼 丸棒"},
+                    {"name": "真鍮", "density": 8.50, "description": "真鍮 丸棒"},
+                    {"name": "アルミ A2011/CB156/G23", "density": 2.83, "description": "アルミ 丸棒"},
+                    {"name": "アルミ A2017", "density": 2.79, "description": "アルミ 丸棒"},
+                    {"name": "アルミ A5056", "density": 2.64, "description": "アルミ 丸棒"},
+                    {"name": "アルミ A6061", "density": 2.70, "description": "アルミ 丸棒"},
+                    {"name": "アルミ 一般的比重", "density": 2.713, "description": "アルミ 一般"},
+                    {"name": "高力黄銅 HB材等", "density": 8.43, "description": "黄銅 丸棒"},
+                    {"name": "銅 全般", "density": 8.89, "description": "銅 丸棒"},
                 ]
 
                 for p in presets:

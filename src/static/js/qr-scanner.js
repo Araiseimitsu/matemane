@@ -90,21 +90,10 @@ class QRScanner {
         }
 
         // 手動入力切り替え
-        const manualInputBtn = document.getElementById('manualInputBtn');
-        if (manualInputBtn) {
-            manualInputBtn.addEventListener('click', () => {
-                this.showManualInput();
-            });
-        }
+        // manual input toggle removed
 
         // 手動入力送信
-        const manualInputForm = document.getElementById('manualInputForm');
-        if (manualInputForm) {
-            manualInputForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.submitManualInput();
-            });
-        }
+        // manual input form removed
     }
 
     // QRスキャンモーダル表示
@@ -202,10 +191,13 @@ class QRScanner {
             } else if (error.name === 'NotFoundError') {
                 this.showToast('カメラが見つかりません。デバイスにカメラが接続されているか確認してください', 'error');
             } else {
-                this.showToast('カメラにアクセスできません。手動入力をご利用ください', 'error');
+                this.showToast('カメラにアクセスできません。設定や権限をご確認ください', 'error');
             }
 
-            this.showManualInput();
+            const videoContainer = document.getElementById('videoContainer');
+            if (videoContainer) {
+                videoContainer.innerHTML = '<div class="absolute inset-0 flex items-center justify-center text-white bg-gray-800"><div class="text-center px-6"><p class="text-lg font-medium">Camera unavailable</p><p class="text-sm mt-2 text-gray-300">Please check browser permissions and device connection.</p></div></div>';
+            }
         }
     }
 
@@ -307,7 +299,7 @@ class QRScanner {
         // 簡易的な検出処理（実際の運用では外部ライブラリを推奨）
         // ここでは定期的に手動入力を促すメッセージを表示
         if (Math.random() < 0.01) { // 1%の確率で表示
-            this.showToast('QRコードが検出されない場合は手動入力をご利用ください', 'info');
+            this.showToast('QRコードが検出されない場合は距離や角度を調整してください', 'info');
         }
     }
 
@@ -385,131 +377,46 @@ class QRScanner {
     }
 
     // 手動入力表示
-    showManualInput() {
-        const manualInputDiv = document.getElementById('manualInputDiv');
-        const videoContainer = document.getElementById('videoContainer');
+        // manual input flow removed
 
-        if (manualInputDiv && videoContainer) {
-            videoContainer.classList.add('hidden');
-            manualInputDiv.classList.remove('hidden');
-        }
-
-        // スキャン停止
-        this.pauseScan();
-    }
-
-    // スキャン一時停止
-    pauseScan() {
-        if (this.scanInterval) {
-            clearInterval(this.scanInterval);
-            this.scanInterval = null;
-        }
-    }
-
-    // 手動入力送信
-    submitManualInput() {
-        const input = document.getElementById('manualCodeInput');
-        const code = input?.value?.trim();
-
-        if (!code) {
-            this.showToast('コードを入力してください', 'error');
-            return;
-        }
-
-        this.onQRCodeDetected(code);
-    }
-
-    // スキャン停止
+    // スキャン停止とクリーンアップ
     stopScan() {
         this.isScanning = false;
-
-        // スキャン間隔停止
         if (this.scanInterval) {
             clearInterval(this.scanInterval);
             this.scanInterval = null;
         }
-
-        // ストリーム停止
         if (this.stream) {
             this.stream.getTracks().forEach(track => track.stop());
             this.stream = null;
         }
-
-        // ビデオ停止
         if (this.video) {
             this.video.srcObject = null;
         }
-
-        // モーダル非表示
         const modal = document.getElementById('qrScanModal');
         if (modal) {
             modal.classList.add('hidden');
         }
-
-        // 手動入力をリセット
-        this.resetManualInput();
     }
 
-    // 手動入力リセット
-    resetManualInput() {
-        const manualInputDiv = document.getElementById('manualInputDiv');
-        const videoContainer = document.getElementById('videoContainer');
-        const manualInput = document.getElementById('manualCodeInput');
-
-        if (manualInputDiv && videoContainer) {
-            manualInputDiv.classList.add('hidden');
-            videoContainer.classList.remove('hidden');
-        }
-
-        if (manualInput) {
-            manualInput.value = '';
-        }
+    // トースト表示
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        const bg = { success: 'bg-green-500', error: 'bg-red-500', warning: 'bg-yellow-500', info: 'bg-blue-500' }[type] || 'bg-blue-500';
+        toast.className = `fixed top-4 right-4 ${bg} text-white px-4 py-2 rounded shadow z-50 transform transition-transform duration-300 translate-x-full`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.classList.remove('translate-x-full'), 50);
+        setTimeout(() => { toast.classList.add('translate-x-full'); setTimeout(() => toast.remove(), 300); }, 2500);
     }
 
-    // 外部から呼び出し用
-    startScanWithCallback(callback) {
-        this.scanCallback = callback;
-        this.openScanModal();
-    }
-
-    // カメラサポート確認
+    // サポート判定
     static isSupported() {
         return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
     }
-
-    // トースト通知
-    showToast(message, type = 'info') {
-        const toast = document.createElement('div');
-        const bgColor = {
-            'success': 'bg-green-500',
-            'error': 'bg-red-500',
-            'warning': 'bg-yellow-500',
-            'info': 'bg-blue-500'
-        }[type] || 'bg-blue-500';
-
-        toast.className = `fixed top-4 right-4 ${bgColor} text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-transform duration-300 translate-x-full`;
-        toast.textContent = message;
-
-        document.body.appendChild(toast);
-
-        // アニメーション
-        setTimeout(() => {
-            toast.classList.remove('translate-x-full');
-        }, 100);
-
-        // 自動削除
-        setTimeout(() => {
-            toast.classList.add('translate-x-full');
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.parentNode.removeChild(toast);
-                }
-            }, 300);
-        }, 3000);
-    }
 }
 
-// QRスキャンモーダルHTML生成
+// QRスキャン用モーダル生成（手動入力なし）
 function createQRScanModal() {
     const modalHTML = `
         <div id="qrScanModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden z-50 flex items-center justify-center">
@@ -524,77 +431,40 @@ function createQRScanModal() {
                         </button>
                     </div>
                 </div>
-
                 <div class="p-6">
-                    <!-- ビデオ表示エリア -->
                     <div id="videoContainer" class="relative bg-black rounded-lg overflow-hidden mb-4 w-full" style="aspect-ratio: 4/3; min-height: 320px;">
-                        <!-- ビデオ要素はJavaScriptで挿入 -->
                         <div class="absolute inset-0 flex items-center justify-center text-white">
                             <div class="text-center">
                                 <svg class="mx-auto h-12 w-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                 </svg>
-                                <p>カメラを起動中...</p>
+                                <p>カメラを起動しています...</p>
                             </div>
                         </div>
                     </div>
-
-                    <!-- 手動入力エリア -->
-                    <div id="manualInputDiv" class="hidden">
-                        <form id="manualInputForm" class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">管理コード</label>
-                                <input type="text" id="manualCodeInput" required
-                                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                       placeholder="管理コードを入力してください">
-                            </div>
-                            <button type="submit"
-                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-6 rounded-lg transition-all duration-200">
-                                検索
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- 操作ボタン -->
-                    <div class="flex space-x-3">
-                        <button id="switchCameraBtn" type="button"
-                                class="flex-1 bg-gray-100 text-gray-700 font-medium py-2.5 px-4 rounded-lg transition-all duration-200 hover:bg-gray-200">
+                    <div class="flex">
+                        <button id="switchCameraBtn" type="button" class="w-full bg-gray-100 text-gray-700 font-medium py-2.5 px-4 rounded-lg transition-all duration-200 hover:bg-gray-200">
                             <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
                             </svg>
                             切替
                         </button>
-                        <button id="manualInputBtn" type="button"
-                                class="flex-1 bg-blue-100 text-blue-700 font-medium py-2.5 px-4 rounded-lg transition-all duration-200 hover:bg-blue-200">
-                            <svg class="w-5 h-5 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                            </svg>
-                            手動入力
-                        </button>
                     </div>
                 </div>
             </div>
-        </div>
-    `;
-
-    // モーダルをbodyに追加
+        </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 }
 
-// グローバル変数として初期化
+// グローバル初期化
 let qrScanner;
-
-// DOM読み込み完了後に初期化
 document.addEventListener('DOMContentLoaded', () => {
-    // QRスキャンモーダル作成
     createQRScanModal();
-
-    // QRスキャナー初期化
     if (QRScanner.isSupported()) {
         qrScanner = new QRScanner();
-        window.qrScanner = qrScanner; // グローバルアクセス用
+        window.qrScanner = qrScanner;
     } else {
-        console.warn('QRスキャナーはこのブラウザではサポートされていません');
+        console.warn('QRスキャナーはこのブラウザでサポートされていません');
     }
 });

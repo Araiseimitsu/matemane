@@ -470,6 +470,8 @@ endblock %} {% block content %}
   let currentItemTarget = null;
   let selectedItem = null;
   let movementType = "out";
+  // 履歴フィルタ状態
+  let movementsFilter = { type: "" };
   // QRScannerはqr-scanner.jsで既に定義されているので削除
 
   // ページネーション用変数
@@ -486,6 +488,15 @@ endblock %} {% block content %}
   // ページ初期化
   async function initializePage() {
     try {
+      // 前回のフィルタ・ページ状態を復元
+      const savedType = localStorage.getItem('movements.filter.type') || '';
+      const typeSelect = document.getElementById('typeFilter');
+      if (typeSelect) typeSelect.value = savedType;
+      movementsFilter.type = savedType;
+
+      const savedPage = parseInt(localStorage.getItem('movements.page') || '1', 10);
+      currentMovementsPage = isNaN(savedPage) || savedPage < 1 ? 1 : savedPage;
+
       await loadInventory();
       await loadMovements();
       await loadLocations();
@@ -658,12 +669,16 @@ endblock %} {% block content %}
   // 履歴テーブルの描画
   function renderMovementsTable() {
     const tableBody = document.getElementById("movementsTableBody");
+    // フィルタ適用
+    const filteredHistory = movementsFilter.type
+      ? movementHistory.filter((m) => m.movement_type === movementsFilter.type)
+      : movementHistory;
 
-    if (movementHistory.length === 0) {
+    if (filteredHistory.length === 0) {
       tableBody.innerHTML = `
             <tr>
                 <td colspan="6" class="px-4 py-8 text-center text-gray-500">
-                    入出庫履歴がありません
+                    該当する入出庫履歴がありません
                 </td>
             </tr>
         `;
@@ -675,12 +690,12 @@ endblock %} {% block content %}
       return;
     }
 
-    // ページネーション処理
-    const totalPages = Math.ceil(movementHistory.length / pageSize);
+    // ページネーション処理（フィルタ後の件数で計算）
+    const totalPages = Math.max(1, Math.ceil(filteredHistory.length / pageSize));
     currentMovementsPage = Math.min(currentMovementsPage, totalPages);
     const startIndex = (currentMovementsPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const pageItems = movementHistory.slice(startIndex, endIndex);
+    const pageItems = filteredHistory.slice(startIndex, endIndex);
 
     tableBody.innerHTML = pageItems
       .map((movement) => {
@@ -735,6 +750,7 @@ endblock %} {% block content %}
   // 履歴のページ切り替え
   function loadMovementsPage(page) {
     currentMovementsPage = page;
+    localStorage.setItem('movements.page', String(page));
     renderMovementsTable();
   }
 
@@ -1166,8 +1182,12 @@ endblock %} {% block content %}
   }
 
   function filterMovements() {
-    // TODO: 実装予定
-    console.log("履歴フィルター処理");
+    const select = document.getElementById('typeFilter');
+    const type = select ? select.value : '';
+    movementsFilter.type = type;
+    localStorage.setItem('movements.filter.type', type);
+    currentMovementsPage = 1;
+    renderMovementsTable();
   }
 
   // 検索リセット
