@@ -72,7 +72,6 @@ class Material(Base):
     __tablename__ = "materials"
 
     id = Column(Integer, primary_key=True, index=True)
-    part_number = Column(String(100), nullable=True, comment="品番")
     display_name = Column(String(200), nullable=False, comment="材料名（Excelから取得したフルネーム）")
     description = Column(Text, comment="説明")
     shape = Column(Enum(MaterialShape), nullable=False, comment="断面形状（計算用）")
@@ -149,6 +148,7 @@ class Lot(Base):
     received_date = Column(DateTime(timezone=True), comment="入荷日")
     received_unit_price = Column(Float, comment="入庫時単価")
     received_amount = Column(Float, comment="入庫時金額")
+    purchase_month = Column(String(4), comment="購入月（YYMM形式）")
     notes = Column(Text, comment="備考")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

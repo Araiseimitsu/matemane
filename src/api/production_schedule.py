@@ -233,7 +233,7 @@ def _calculate_stockout_forecast(db: Session) -> List[StockoutForecast]:
                     days_until_stockout=None,
                     daily_usage=[],
                     material_master_found=True,
-                    material_name=m.name,
+                    material_name=m.display_name,
                     diameter_mm=m.diameter_mm,
                 )
             )
@@ -264,7 +264,7 @@ def _calculate_stockout_forecast(db: Session) -> List[StockoutForecast]:
                 days_until_stockout=days_until,
                 daily_usage=daily_sorted,
                 material_master_found=True,
-                material_name=m.name,
+                material_name=m.display_name,
                 diameter_mm=m.diameter_mm,
             )
         )

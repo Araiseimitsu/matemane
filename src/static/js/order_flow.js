@@ -126,7 +126,7 @@ function initializeImportTab() {
 
 // ==== 発注一覧タブ ====
 let currentOrdersPage = 1;
-const ordersPageSize = 50;
+const ordersPageSize = 25;
 
 function initializeOrdersTab() {
     document.getElementById('refreshOrdersBtn')?.addEventListener('click', () => loadOrders(1));
@@ -164,7 +164,9 @@ async function loadOrders(page = 1) {
         });
 
         currentOrdersPage = data.page;
-        // ページネーションは簡易版（必要に応じて拡張可能）
+
+        // ページネーション表示
+        renderPagination('orders', data.page, data.total_pages, loadOrders);
 
     } catch (error) {
         loading.classList.add('hidden');
@@ -424,7 +426,11 @@ function initializeReceivingTab() {
     });
 }
 
-async function loadReceivingItems() {
+let receivingAllItems = [];
+let currentReceivingPage = 1;
+const receivingPageSize = 25;
+
+async function loadReceivingItems(page = 1) {
     const tableBody = document.getElementById('receivingItemsTableBody');
     const loading = document.getElementById('receivingLoading');
     const empty = document.getElementById('receivingEmpty');
@@ -442,6 +448,7 @@ async function loadReceivingItems() {
 
         if (items.length === 0) {
             empty.classList.remove('hidden');
+            receivingAllItems = [];
             return;
         }
 
@@ -469,10 +476,23 @@ async function loadReceivingItems() {
             purchase_order: ordersMap.get(item.purchase_order_id) || null
         }));
 
-        itemsWithOrders.forEach(item => {
+        // 全アイテムを保存
+        receivingAllItems = itemsWithOrders;
+
+        // ページネーション処理
+        const totalPages = Math.ceil(receivingAllItems.length / receivingPageSize);
+        currentReceivingPage = Math.min(page, totalPages);
+        const startIndex = (currentReceivingPage - 1) * receivingPageSize;
+        const endIndex = startIndex + receivingPageSize;
+        const pageItems = receivingAllItems.slice(startIndex, endIndex);
+
+        pageItems.forEach(item => {
             const row = createReceivingItemRow(item);
             tableBody.appendChild(row);
         });
+
+        // ページネーション表示
+        renderPagination('receiving', currentReceivingPage, totalPages, loadReceivingItems);
 
     } catch (error) {
         loading.classList.add('hidden');
@@ -688,6 +708,12 @@ async function showReceiveModal(itemId) {
                         receivedDateField.value = ymd;
                     }
 
+                    // 購入月
+                    const purchaseMonthField = document.querySelector('input[name="purchase_month"]');
+                    if (purchaseMonthField && prev.purchase_month) {
+                        purchaseMonthField.value = prev.purchase_month;
+                    }
+
                     // ロット情報（全ロットを復元）
                     clearLotRows();
 
@@ -703,21 +729,13 @@ async function showReceiveModal(itemId) {
                             );
                         });
                     } else {
-                        // 旧フォーマット対応（後方互換性）
-                        let lotNotes = '';
-                        if (prev.notes) {
-                            const parts = prev.notes.split('|');
-                            if (parts.length > 1) {
-                                lotNotes = parts.slice(1).join('|').trim();
-                            }
-                        }
-
+                        // 旧フォーマット対応は不要（新スキーマのみサポート）
                         addLotRow(
                             prev.received_quantity || null,
                             prev.received_weight_kg || null,
                             prev.lot_number || '',
                             prev.location_id ? String(prev.location_id) : '',
-                            lotNotes
+                            prev.notes || ''
                         );
                     }
 
@@ -1125,16 +1143,11 @@ async function handleReceive(event) {
             return;
         }
 
-        // 備考を構築（購入月 + ロット固有の備考）
-        let notesText = `購入月: ${purchaseMonth}`;
-        if (lotNotes.trim()) {
-            notesText += ` | ${lotNotes.trim()}`;
-        }
-
         const lotData = {
             lot_number: lotNumber.trim(),
             location_id: location && location.trim() !== '' ? parseInt(location) : null,
-            notes: notesText
+            purchase_month: purchaseMonth,
+            notes: lotNotes.trim() || null
         };
 
         // 数量または重量を設定
@@ -1171,6 +1184,7 @@ async function handleReceive(event) {
             const receiveData = {
                 ...commonMaterialData,
                 lot_number: lot.lot_number,
+                purchase_month: lot.purchase_month,  // 購入月を追加
                 notes: lot.notes  // 備考を追加
             };
 
@@ -1289,12 +1303,15 @@ function formatDiameterInputValueForDisplay(shape, diameterMm) {
 
 // ==== 検品タブ ====
 let currentInspectionLotId = null;
+let inspectionAllItems = [];
+let currentInspectionPage = 1;
+const inspectionPageSize = 25;
 
 function initializeInspectionTab() {
     document.getElementById('loadInspectionTargetBtn')?.addEventListener('click', loadInspectionTargetByCode);
     document.getElementById('resetInspectionFormBtn')?.addEventListener('click', resetInspectionForm);
     document.getElementById('inspectionForm')?.addEventListener('submit', submitInspection);
-    document.getElementById('refreshInspectionListBtn')?.addEventListener('click', loadInspectionItemsList);
+    document.getElementById('refreshInspectionListBtn')?.addEventListener('click', () => loadInspectionItemsList(1));
 
     // デフォルト日時を現在に設定
     const now = new Date();
@@ -1305,7 +1322,7 @@ function initializeInspectionTab() {
 }
 
 // 入庫済みアイテム一覧を読み込み
-async function loadInspectionItemsList() {
+async function loadInspectionItemsList(page = 1) {
     const tableBody = document.getElementById('inspectionItemsListBody');
     const loading = document.getElementById('inspectionListLoading');
     const empty = document.getElementById('inspectionListEmpty');
@@ -1345,13 +1362,27 @@ async function loadInspectionItemsList() {
 
         if (validItems.length === 0) {
             empty.classList.remove('hidden');
+            inspectionAllItems = [];
             return;
         }
 
-        validItems.forEach(item => {
+        // 全アイテムを保存
+        inspectionAllItems = validItems;
+
+        // ページネーション処理
+        const totalPages = Math.ceil(inspectionAllItems.length / inspectionPageSize);
+        currentInspectionPage = Math.min(page, totalPages);
+        const startIndex = (currentInspectionPage - 1) * inspectionPageSize;
+        const endIndex = startIndex + inspectionPageSize;
+        const pageItems = inspectionAllItems.slice(startIndex, endIndex);
+
+        pageItems.forEach(item => {
             const row = createInspectionItemRow(item);
             tableBody.appendChild(row);
         });
+
+        // ページネーション表示
+        renderPagination('inspection', currentInspectionPage, totalPages, loadInspectionItemsList);
 
     } catch (error) {
         loading.classList.add('hidden');
@@ -1639,8 +1670,12 @@ async function submitInspection(event) {
 let currentPrintItemCode = null;
 let currentPrintLotId = null;
 
+let printAllItems = [];
+let currentPrintPage = 1;
+const printPageSize = 25;
+
 function initializePrintTab() {
-    document.getElementById('refreshPrintBtn')?.addEventListener('click', loadPrintableItems);
+    document.getElementById('refreshPrintBtn')?.addEventListener('click', () => loadPrintableItems(1));
     document.getElementById('searchPrintBtn')?.addEventListener('click', searchPrintItems);
     document.getElementById('resetPrintFiltersBtn')?.addEventListener('click', resetPrintFilters);
 
@@ -1660,7 +1695,7 @@ function initializePrintTab() {
     });
 }
 
-async function loadPrintableItems() {
+async function loadPrintableItems(page = 1) {
     const tableBody = document.getElementById('printItemsTableBody');
     const loading = document.getElementById('printLoading');
     const empty = document.getElementById('printEmpty');
@@ -1690,13 +1725,27 @@ async function loadPrintableItems() {
 
         if (printableItems.length === 0) {
             empty.classList.remove('hidden');
+            printAllItems = [];
             return;
         }
 
-        printableItems.forEach(item => {
+        // 全アイテムを保存
+        printAllItems = printableItems;
+
+        // ページネーション処理
+        const totalPages = Math.ceil(printAllItems.length / printPageSize);
+        currentPrintPage = Math.min(page, totalPages);
+        const startIndex = (currentPrintPage - 1) * printPageSize;
+        const endIndex = startIndex + printPageSize;
+        const pageItems = printAllItems.slice(startIndex, endIndex);
+
+        pageItems.forEach(item => {
             const row = createPrintItemRow(item);
             tableBody.appendChild(row);
         });
+
+        // ページネーション表示
+        renderPagination('print', currentPrintPage, totalPages, loadPrintableItems);
 
     } catch (error) {
         loading.classList.add('hidden');
@@ -2264,4 +2313,139 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+/**
+ * ページネーションUIを生成して表示
+ * @param {string} prefix - ページネーションの識別子（'orders', 'receiving', 'inspection'）
+ * @param {number} currentPage - 現在のページ番号
+ * @param {number} totalPages - 総ページ数
+ * @param {Function} loadFunc - ページロード関数
+ */
+function renderPagination(prefix, currentPage, totalPages, loadFunc) {
+    const topContainer = document.getElementById(`${prefix}PaginationTop`);
+    const bottomContainer = document.getElementById(`${prefix}PaginationBottom`);
+
+    if (!topContainer || !bottomContainer) {
+        console.warn(`ページネーションコンテナが見つかりません: ${prefix}`);
+        return;
+    }
+
+    // ページネーションHTMLを生成
+    const paginationHTML = createPaginationHTML(currentPage, totalPages, loadFunc);
+
+    // 上部と下部に同じページネーションを表示
+    topContainer.innerHTML = paginationHTML;
+    bottomContainer.innerHTML = paginationHTML;
+}
+
+/**
+ * ページネーションHTMLを生成
+ * @param {number} currentPage - 現在のページ番号
+ * @param {number} totalPages - 総ページ数
+ * @param {Function} loadFunc - ページロード関数
+ * @returns {string} ページネーションHTML
+ */
+function createPaginationHTML(currentPage, totalPages, loadFunc) {
+    if (totalPages <= 1) {
+        return '';
+    }
+
+    const funcName = loadFunc.name;
+    let html = '<div class="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">';
+
+    // ページ情報
+    html += `<div class="text-sm text-gray-700">
+        ページ <span class="font-medium">${currentPage}</span> / <span class="font-medium">${totalPages}</span>
+    </div>`;
+
+    // ページネーションボタン
+    html += '<div class="flex items-center space-x-2">';
+
+    // 最初へ
+    if (currentPage > 1) {
+        html += `<button onclick="${funcName}(1)" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 text-sm">
+            <i class="fas fa-angle-double-left"></i>
+        </button>`;
+    } else {
+        html += `<button disabled class="px-3 py-1 border border-gray-300 rounded bg-gray-100 text-gray-400 cursor-not-allowed text-sm">
+            <i class="fas fa-angle-double-left"></i>
+        </button>`;
+    }
+
+    // 前へ
+    if (currentPage > 1) {
+        html += `<button onclick="${funcName}(${currentPage - 1})" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 text-sm">
+            <i class="fas fa-angle-left"></i>
+        </button>`;
+    } else {
+        html += `<button disabled class="px-3 py-1 border border-gray-300 rounded bg-gray-100 text-gray-400 cursor-not-allowed text-sm">
+            <i class="fas fa-angle-left"></i>
+        </button>`;
+    }
+
+    // ページ番号ボタン（最大7個表示）
+    const pageButtons = getPageNumbers(currentPage, totalPages);
+    pageButtons.forEach(pageNum => {
+        if (pageNum === '...') {
+            html += `<span class="px-2 text-gray-500">...</span>`;
+        } else {
+            if (pageNum === currentPage) {
+                html += `<button class="px-3 py-1 bg-blue-600 text-white rounded font-medium text-sm">${pageNum}</button>`;
+            } else {
+                html += `<button onclick="${funcName}(${pageNum})" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 text-sm">${pageNum}</button>`;
+            }
+        }
+    });
+
+    // 次へ
+    if (currentPage < totalPages) {
+        html += `<button onclick="${funcName}(${currentPage + 1})" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 text-sm">
+            <i class="fas fa-angle-right"></i>
+        </button>`;
+    } else {
+        html += `<button disabled class="px-3 py-1 border border-gray-300 rounded bg-gray-100 text-gray-400 cursor-not-allowed text-sm">
+            <i class="fas fa-angle-right"></i>
+        </button>`;
+    }
+
+    // 最後へ
+    if (currentPage < totalPages) {
+        html += `<button onclick="${funcName}(${totalPages})" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 text-sm">
+            <i class="fas fa-angle-double-right"></i>
+        </button>`;
+    } else {
+        html += `<button disabled class="px-3 py-1 border border-gray-300 rounded bg-gray-100 text-gray-400 cursor-not-allowed text-sm">
+            <i class="fas fa-angle-double-right"></i>
+        </button>`;
+    }
+
+    html += '</div></div>';
+
+    return html;
+}
+
+/**
+ * 表示するページ番号の配列を取得
+ * @param {number} current - 現在のページ
+ * @param {number} total - 総ページ数
+ * @returns {Array} ページ番号配列（'...'を含む）
+ */
+function getPageNumbers(current, total) {
+    if (total <= 7) {
+        return Array.from({ length: total }, (_, i) => i + 1);
+    }
+
+    // 現在ページが先頭付近
+    if (current <= 4) {
+        return [1, 2, 3, 4, 5, '...', total];
+    }
+
+    // 現在ページが末尾付近
+    if (current >= total - 3) {
+        return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+    }
+
+    // 現在ページが中央
+    return [1, '...', current - 1, current, current + 1, '...', total];
 }

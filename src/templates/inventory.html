@@ -29,8 +29,8 @@
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
-                <label for="filterName" class="block text-sm font-medium text-gray-700 mb-2">材料名</label>
-                <input type="text" id="filterName" placeholder="例: SUS303" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+                <label for="filterName" class="block text-sm font-medium text-gray-700 mb-2">材料仕様（display_name）</label>
+                <input type="text" id="filterName" placeholder="例: SUS303 φ10.0D" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
             </div>
             <div>
                 <label for="filterShape" class="block text-sm font-medium text-gray-700 mb-2">形状</label>
@@ -46,8 +46,8 @@
                 <input type="text" id="filterDiameter" placeholder="例: 10 / 12.7" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
             </div>
             <div>
-                <label for="filterDedicated" class="block text-sm font-medium text-gray-700 mb-2">専用品番・追加情報</label>
-                <input type="text" id="filterDedicated" placeholder="例: CM-001" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
+                <label for="filterLotNumber" class="block text-sm font-medium text-gray-700 mb-2">ロット番号</label>
+                <input type="text" id="filterLotNumber" placeholder="例: 2401-001" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent hover:border-gray-400">
             </div>
             <div>
                 <label for="filterGroupName" class="block text-sm font-medium text-gray-700 mb-2">グループ名</label>
@@ -72,7 +72,7 @@
             </div>
         </div>
         <p class="mt-4 text-sm text-gray-500 leading-6">
-            汎用品は「材料名 × 形状 × 寸法」、専用品は「材料名 × 寸法 × 専用品番・追加情報」で同等品グループを構成します。
+            同等品グループは材料の表示名（display_name）をキーに構成します。形状・寸法は表示・絞り込みに利用できます。
             グループを開くと在庫中のロット番号が一覧表示されます。
         </p>
     </div>
@@ -92,14 +92,8 @@
         <p class="text-sm">絞り込み条件を緩めるか、材料マスターの登録内容をご確認ください。</p>
     </div>
 
-        <div id="groupPaginationTop" class="bg-white border border-gray-200 rounded-lg mb-4 px-4 py-3 flex items-center justify-between text-sm text-gray-600 hidden">
-        <div id="groupPaginationTopStatus">表示件数: -</div>
-        <div class="flex items-center space-x-2">
-            <button type="button" id="groupPaginationTopPrev" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">前へ</button>
-            <span id="groupPaginationTopIndicator" class="min-w-[80px] text-center">- / -</span>
-            <button type="button" id="groupPaginationTopNext" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">次へ</button>
-        </div>
-    </div>
+    <!-- ページネーション（上部） -->
+    <div id="groupPaginationTop" class="mb-4"></div>
 
     <div id="groupTableWrapper" class="bg-white rounded-lg shadow-sm border border-gray-200 hidden">
         <div class="overflow-x-auto">
@@ -109,7 +103,7 @@
                         <th scope="col" class="px-4 py-3 text-left">材料情報</th>
                         <th scope="col" class="px-4 py-3 text-left">グループ名</th>
                         <th scope="col" class="px-4 py-3 text-left">長さバリエーション</th>
-                        <th scope="col" class="px-4 py-3 text-left">専用品番・追加情報</th>
+                        
                         <th scope="col" class="px-4 py-3 text-right">登録材料数</th>
                         <th scope="col" class="px-4 py-3 text-right">在庫ロット数</th>
                         <th scope="col" class="px-4 py-3 text-right">在庫合計（本）</th>
@@ -121,22 +115,16 @@
             </table>
         </div>
     </div>
-    <div id="groupPagination" class="bg-white border border-gray-200 rounded-lg mt-4 px-4 py-3 flex items-center justify-between text-sm text-gray-600 hidden">
-        <div id="groupPaginationStatus">表示件数: -</div>
-        <div class="flex items-center space-x-2">
-            <button type="button" id="groupPaginationPrev" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">前へ</button>
-            <span id="groupPaginationIndicator" class="min-w-[80px] text-center">- / -</span>
-            <button type="button" id="groupPaginationNext" class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">次へ</button>
-        </div>
-    </div>
+    <!-- ページネーション（下部） -->
+    <div id="groupPaginationBottom" class="mt-4"></div>
 </div>
 
 
     </div>
 <!-- 同等品詳細モーダル -->
-<div id="groupDetailModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 hidden z-50">
+<div id="groupDetailModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 hidden z-50" onclick="closeGroupDetailModal()">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
             <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                 <div>
                     <p id="groupDetailTag" class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full mr-3"></p>
@@ -172,17 +160,13 @@
                             <dd id="detailLengthVariations" class="text-gray-900 font-medium">-</dd>
                         </div>
                         <div>
-                            <dt class="text-gray-500">専用品番・追加情報</dt>
-                            <dd id="detailDedicatedInfo" class="text-gray-900 font-medium">-</dd>
+                            <!-- 専用品番・追加情報は廃止 -->
                         </div>
                         <div>
                             <dt class="text-gray-500">材料グループ</dt>
                             <dd id="detailGroupNames" class="text-gray-900 font-medium">-</dd>
                         </div>
-                        <div>
-                            <dt class="text-gray-500">詳細情報</dt>
-                            <dd id="detailInfo" class="text-gray-900 font-medium">-</dd>
-                        </div>
+                        <!-- 詳細情報は廃止 -->
                     </dl>
                 </section>
 
@@ -206,9 +190,9 @@
     </div>
 </div>
 <!-- グループ管理モーダル -->
-<div id="groupManagerModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 hidden z-50">
+<div id="groupManagerModal" class="fixed inset-0 bg-gray-800 bg-opacity-50 hidden z-50" onclick="Utils.modal.close('groupManagerModal')">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
             <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
                 <div>
                     <h3 class="text-xl font-semibold text-gray-900">グループ管理</h3>
@@ -268,6 +252,7 @@
 {% endblock %}
 
 {% block extra_scripts %}
+<script src="{{ url_for('static', path='js/pagination.js') }}"></script>
 <script>
 const shapeLabels = {
     round: '丸棒',
@@ -283,23 +268,7 @@ const shapeDimensionPrefixes = {
 
 // 用途区分は廃止（汎用／専用バッジを表示しない）
 
-const ROWS_PER_PAGE = 100;
-const PAGINATION_CONFIGS = [
-    {
-        containerId: 'groupPaginationTop',
-        statusId: 'groupPaginationTopStatus',
-        indicatorId: 'groupPaginationTopIndicator',
-        prevId: 'groupPaginationTopPrev',
-        nextId: 'groupPaginationTopNext'
-    },
-    {
-        containerId: 'groupPagination',
-        statusId: 'groupPaginationStatus',
-        indicatorId: 'groupPaginationIndicator',
-        prevId: 'groupPaginationPrev',
-        nextId: 'groupPaginationNext'
-    }
-];
+const ROWS_PER_PAGE = 25;
 
 let materialMaster = [];
 let inventoryItems = [];
@@ -319,7 +288,6 @@ async function initializeEquivalenceView() {
         await loadMaterialGroupRelations();
         buildGroupStore();
         registerFilterHandlers();
-        registerPaginationHandlers();
         applyFiltersAndRender();
     } catch (error) {
         console.error('同等品ビュー初期化エラー:', error);
@@ -353,24 +321,9 @@ async function loadMaterialGroupRelations() {
     }
 }
 
-function registerPaginationHandlers() {
-    PAGINATION_CONFIGS.forEach(config => {
-        const prev = document.getElementById(config.prevId);
-        const next = document.getElementById(config.nextId);
-
-        if (prev) {
-            prev.addEventListener('click', () => changePage(-1));
-        }
-
-        if (next) {
-            next.addEventListener('click', () => changePage(1));
-        }
-    });
-}
-
-function changePage(delta) {
+function gotoPage(page) {
     const totalPages = Math.max(1, Math.ceil(filteredGroupsCache.length / ROWS_PER_PAGE));
-    const newPage = Math.min(totalPages, Math.max(1, currentPage + delta));
+    const newPage = Math.min(totalPages, Math.max(1, page));
 
     if (newPage !== currentPage) {
         currentPage = newPage;
@@ -391,12 +344,11 @@ function toggleLoading(isLoading) {
             wrapper.classList.add('hidden');
         }
 
-        PAGINATION_CONFIGS.forEach(config => {
-            const container = document.getElementById(config.containerId);
-            if (container) {
-                container.classList.add('hidden');
-            }
-        });
+        // ページネーションを非表示
+        const topContainer = document.getElementById('groupPaginationTop');
+        const bottomContainer = document.getElementById('groupPaginationBottom');
+        if (topContainer) topContainer.innerHTML = '';
+        if (bottomContainer) bottomContainer.innerHTML = '';
 
         hideEmptyState();
     }
@@ -520,7 +472,10 @@ function buildGroupStore() {
                 total_quantity: 0,
                 total_weight_kg: 0,
                 locations: new Set(),
-                lot_numbers: []
+                lot_numbers: [],
+                order_number: item.lot.order_number || null,
+                purchase_month: item.lot.purchase_month || null,
+                notes: item.lot.notes || ''
             });
         }
 
@@ -573,7 +528,10 @@ function finalizeGroup(group) {
             total_quantity: lot.total_quantity,
             total_weight_kg: lot.total_weight_kg,
             locations: Array.from(lot.locations),
-            lot_numbers: lot.lot_numbers
+            lot_numbers: lot.lot_numbers,
+            order_number: lot.order_number || null,
+            purchase_month: lot.purchase_month || null,
+            notes: lot.notes || ''
         })).sort((a, b) => {
             const lotA = a.lot_number || '';
             const lotB = b.lot_number || '';
@@ -623,8 +581,7 @@ function finalizeGroup(group) {
 function buildGroupSubtitle(group) {
     const dimension = formatDimension(group.shape, group.diameter_mm);
     const shapeLabel = shapeLabels[group.shape] || group.shape;
-    const detailSuffix = group.detail_info ? ` / ${group.detail_info}` : '';
-    return `${shapeLabel} / 径 ${dimension}${detailSuffix}`;
+    return `${shapeLabel} / 径 ${dimension}`;
 }
 
 function buildGroupDisplayLabel(group) {
@@ -692,7 +649,7 @@ function formatDimensionCompact(shape, diameter) {
 }
 
 function registerFilterHandlers() {
-    const filterIds = ['filterName', 'filterShape', 'filterDiameter', 'filterDedicated', 'filterGroupName'];
+    const filterIds = ['filterName', 'filterShape', 'filterDiameter', 'filterLotNumber', 'filterGroupName'];
     filterIds.forEach(id => {
         const element = document.getElementById(id);
         if (!element) return;
@@ -722,7 +679,7 @@ function applyFiltersAndRender() {
         name: document.getElementById('filterName')?.value.trim().toLowerCase() || '',
         shape: document.getElementById('filterShape')?.value || '',
         diameter: document.getElementById('filterDiameter')?.value.trim().toLowerCase() || '',
-        dedicated: document.getElementById('filterDedicated')?.value.trim().toLowerCase() || '',
+        lotNumber: document.getElementById('filterLotNumber')?.value.trim().toLowerCase() || '',
         groupName: document.getElementById('filterGroupName')?.value.trim().toLowerCase() || ''
     };
 
@@ -733,15 +690,9 @@ function applyFiltersAndRender() {
         }
 
         if (filters.name) {
-            const matchName = group.material_name.toLowerCase().includes(filters.name);
-            const detailMatch = (group.detail_info || '').toLowerCase().includes(filters.name);
-            const matchMaterials = group.materials.some(material =>
-                (material.display_name || '').toLowerCase().includes(filters.name) ||
-                material.name.toLowerCase().includes(filters.name) ||
-                (material.part_number || '').toLowerCase().includes(filters.name) ||
-                (material.detail_info || '').toLowerCase().includes(filters.name)
-            );
-            if (!matchName && !detailMatch && !matchMaterials) {
+            const nameMatch = (group.display_label || '').toLowerCase().includes(filters.name) ||
+                group.materials.some(material => (material.display_name || '').toLowerCase().includes(filters.name));
+            if (!nameMatch) {
                 return false;
             }
         }
@@ -753,10 +704,9 @@ function applyFiltersAndRender() {
             }
         }
 
-        if (filters.dedicated) {
-            const detailText = (group.detail_info || '').toLowerCase();
-            const materialsDetail = group.materials.some(material => (material.detail_info || '').toLowerCase().includes(filters.dedicated));
-            if (!detailText.includes(filters.dedicated) && !materialsDetail) {
+        if (filters.lotNumber) {
+            const lotMatch = Array.isArray(group.lots) && group.lots.some(lot => (lot.lot_number || '').toLowerCase().includes(filters.lotNumber));
+            if (!lotMatch) {
                 return false;
             }
         }
@@ -821,7 +771,6 @@ function renderGroupTable(groups) {
 
 function createGroupRow(group) {
     const lengthText = formatLengthList(group.length_variations);
-    const detailDisplay = group.detail_info ? escapeHtml(group.detail_info) : '汎用品（共通使用）';
 
     const materialCount = group.material_count.toLocaleString('ja-JP');
     const lotCount = group.lot_count.toLocaleString('ja-JP');
@@ -836,7 +785,6 @@ function createGroupRow(group) {
             </td>
             <td class="px-4 py-3 text-sm text-gray-600">${groupNamesText}</td>
             <td class="px-4 py-3 text-sm text-gray-600">${escapeHtml(lengthText)}</td>
-            <td class="px-4 py-3 text-sm text-gray-600">${detailDisplay}</td>
             <td class="px-4 py-3 text-sm text-right text-gray-900">${materialCount}</td>
             <td class="px-4 py-3 text-sm text-right text-gray-900">${lotCount}</td>
             <td class="px-4 py-3 text-sm text-right text-gray-900">${totalQuantity}</td>
@@ -907,41 +855,17 @@ function updateSummaryTiles(groups) {
 function updatePaginationControls() {
     const totalItems = filteredGroupsCache.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / ROWS_PER_PAGE));
-    const pageStart = totalItems ? (currentPage - 1) * ROWS_PER_PAGE + 1 : 0;
-    const pageEnd = totalItems ? Math.min(totalItems, currentPage * ROWS_PER_PAGE) : 0;
 
-    PAGINATION_CONFIGS.forEach(config => {
-        const container = document.getElementById(config.containerId);
-        const status = document.getElementById(config.statusId);
-        const indicator = document.getElementById(config.indicatorId);
-        const prev = document.getElementById(config.prevId);
-        const next = document.getElementById(config.nextId);
-
-        if (!container || !status || !indicator) {
-            return;
-        }
-
-        if (!totalItems) {
-            container.classList.add('hidden');
-            if (prev) prev.disabled = true;
-            if (next) next.disabled = true;
-            status.textContent = '表示件数: 0件';
-            indicator.textContent = '0 / 0';
-            return;
-        }
-
-        status.textContent = `表示件数: ${totalItems.toLocaleString('ja-JP')}件中 ${pageStart.toLocaleString('ja-JP')}件目〜${pageEnd.toLocaleString('ja-JP')}件目`;
-        indicator.textContent = `${currentPage} / ${totalPages}`;
-
-        if (prev) {
-            prev.disabled = currentPage <= 1;
-        }
-        if (next) {
-            next.disabled = currentPage >= totalPages;
-        }
-
-        container.classList.remove('hidden');
-    });
+    // 新しいページネーション関数を使用
+    if (totalItems > 0) {
+        renderPagination('group', currentPage, totalPages, gotoPage);
+    } else {
+        // データがない場合はページネーションを非表示
+        const topContainer = document.getElementById('groupPaginationTop');
+        const bottomContainer = document.getElementById('groupPaginationBottom');
+        if (topContainer) topContainer.innerHTML = '';
+        if (bottomContainer) bottomContainer.innerHTML = '';
+    }
 }
 
 function showEmptyState() {
@@ -950,12 +874,11 @@ function showEmptyState() {
         empty.classList.remove('hidden');
     }
 
-    PAGINATION_CONFIGS.forEach(config => {
-        const container = document.getElementById(config.containerId);
-        if (container) {
-            container.classList.add('hidden');
-        }
-    });
+    // ページネーションを非表示
+    const topContainer = document.getElementById('groupPaginationTop');
+    const bottomContainer = document.getElementById('groupPaginationBottom');
+    if (topContainer) topContainer.innerHTML = '';
+    if (bottomContainer) bottomContainer.innerHTML = '';
 }
 
 function hideEmptyState() {
@@ -986,6 +909,7 @@ function escapeHtml(value) {
 }
 
 const detailModal = document.getElementById('groupDetailModal');
+const managerModal = document.getElementById('groupManagerModal');
 
 function closeGroupDetailModal() {
     Utils.modal.close('groupDetailModal');
@@ -993,15 +917,14 @@ function closeGroupDetailModal() {
 
 document.getElementById('closeGroupDetail')?.addEventListener('click', closeGroupDetailModal);
 
-detailModal?.addEventListener('click', (event) => {
-    if (event.target === detailModal) {
-        closeGroupDetailModal();
-    }
-});
 
 document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && detailModal && !detailModal.classList.contains('hidden')) {
-        closeGroupDetailModal();
+    if (event.key === 'Escape') {
+        if (detailModal && !detailModal.classList.contains('hidden')) {
+            closeGroupDetailModal();
+        } else if (managerModal && !managerModal.classList.contains('hidden')) {
+            Utils.modal.close('groupManagerModal');
+        }
     }
 });
 
@@ -1013,8 +936,6 @@ function openGroupDetailModal(group) {
     document.getElementById('detailTotalQuantity').textContent = `${group.total_quantity.toLocaleString('ja-JP')} 本`;
     document.getElementById('detailTotalWeight').textContent = `${formatWeight(group.total_weight_kg)} kg`;
     document.getElementById('detailLengthVariations').textContent = formatLengthList(group.length_variations);
-    document.getElementById('detailDedicatedInfo').textContent = group.detail_info || '汎用品（共通使用）';
-    document.getElementById('detailInfo').textContent = group.detail_info || '詳細情報なし';
     const groupNamesEl = document.getElementById('detailGroupNames');
     if (groupNamesEl) {
         const names = Array.isArray(group.material_group_names) ? group.material_group_names : [];
@@ -1052,13 +973,11 @@ function renderDetailMaterials(group) {
         .map(material => {
             const displayLabel = escapeHtml(buildMaterialDisplayLabel(material));
             const updated = material.updated_at ? new Date(material.updated_at).toLocaleString('ja-JP') : '―';
-            const detailText = material.detail_info ? `<p class="text-xs text-gray-500">追加情報: ${escapeHtml(material.detail_info)}</p>` : '';
 
             return `
                 <div class="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                         <p class="text-sm font-medium text-gray-900">${displayLabel}</p>
-                        ${detailText}
                     </div>
                     <div class="flex flex-col items-start md:items-end text-xs text-gray-500 space-y-1">
                         <span>最終更新: ${updated}</span>
@@ -1090,6 +1009,9 @@ function renderDetailLots(group) {
                     <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">在庫数</th>
                     <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">在庫重量</th>
                     <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">保管場所</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">発注番号</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">購入月</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">備考</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -1100,6 +1022,9 @@ function renderDetailLots(group) {
                         <td class="px-4 py-3 text-gray-900">${lot.total_quantity.toLocaleString('ja-JP')} 本</td>
                         <td class="px-4 py-3 text-gray-900">${formatWeight(lot.total_weight_kg)} kg</td>
                         <td class="px-4 py-3 text-gray-600">${lot.locations.length ? lot.locations.map(loc => escapeHtml(loc)).join('<br>') : '―'}</td>
+                        <td class="px-4 py-3 text-gray-600">${lot.order_number ? escapeHtml(lot.order_number) : '―'}</td>
+                        <td class="px-4 py-3 text-gray-600">${lot.purchase_month ? escapeHtml(lot.purchase_month) : '―'}</td>
+                        <td class="px-4 py-3 text-gray-600">${lot.notes ? escapeHtml(lot.notes) : '―'}</td>
                     </tr>
                 `).join('')}
             </tbody>

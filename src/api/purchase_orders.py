@@ -121,6 +121,7 @@ class ReceivingConfirmation(BaseModel):
     received_weight_kg: Optional[float] = Field(None, gt=0, description="入庫重量（重量指定時、kg）")
     unit_price: Optional[float] = Field(None, ge=0, description="単価")
     amount: Optional[float] = Field(None, ge=0, description="金額")
+    purchase_month: Optional[str] = Field(None, max_length=4, description="購入月（YYMM形式）")
     # 置き場
     location_id: Optional[int] = Field(None, description="置き場ID")
     location_ids: Optional[List[int]] = Field(None, description="置き場IDの配列（複数指定時）")
@@ -444,6 +445,7 @@ async def receive_item(
             received_date=receiving.received_date,
             received_unit_price=receiving.unit_price,
             received_amount=receiving.amount,
+            purchase_month=receiving.purchase_month,
             notes=receiving.notes
         )
         db.add(lot)
@@ -618,6 +620,7 @@ async def update_received_item(
     lot.received_date = receiving.received_date
     lot.received_unit_price = receiving.unit_price
     lot.received_amount = receiving.amount
+    lot.purchase_month = receiving.purchase_month
     lot.notes = receiving.notes
     db.flush()
 
@@ -711,19 +714,13 @@ async def get_previous_receiving_values(
         items_for_lot = db.query(Item).filter(Item.lot_id == lot.id).all()
         location_id = items_for_lot[0].location_id if items_for_lot and items_for_lot[0].location_id else None
 
-        # 備考から購入月とロット固有備考を分離
-        lot_notes = ''
-        if lot.notes:
-            parts = lot.notes.split('|')
-            if len(parts) > 1:
-                lot_notes = '|'.join(parts[1:]).strip()
-
         lots_data.append({
             'lot_number': lot.lot_number,
             'received_quantity': received_quantity,
             'received_weight_kg': received_weight_kg,
             'location_id': location_id,
-            'notes': lot_notes
+            'purchase_month': lot.purchase_month,
+            'notes': lot.notes
         })
 
     # レスポンス
@@ -733,6 +730,7 @@ async def get_previous_receiving_values(
         'density': material.current_density,
         'length_mm': first_lot.length_mm,
         'received_date': first_lot.received_date.isoformat() if first_lot.received_date else None,
+        'purchase_month': first_lot.purchase_month,
         'lots': lots_data
     }
 

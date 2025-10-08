@@ -161,6 +161,10 @@ endblock %} {% block content %}
           </div>
         </div>
       </div>
+
+      <!-- ページネーション（上部） -->
+      <div id="inventoryPaginationTop" class="mb-4"></div>
+
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-gray-50">
@@ -214,6 +218,9 @@ endblock %} {% block content %}
       <div id="inventoryEmpty" class="text-center py-8 hidden">
         <p class="text-gray-500">該当するアイテムがありません</p>
       </div>
+
+      <!-- ページネーション（下部） -->
+      <div id="inventoryPaginationBottom" class="mt-4"></div>
     </div>
 
     <!-- 入出庫履歴 -->
@@ -233,6 +240,10 @@ endblock %} {% block content %}
           </div>
         </div>
       </div>
+
+      <!-- ページネーション（上部） -->
+      <div id="movementsPaginationTop" class="mb-4"></div>
+
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-gray-50">
@@ -273,6 +284,9 @@ endblock %} {% block content %}
       <div id="movementsEmpty" class="text-center py-8 hidden">
         <p class="text-gray-500">入出庫履歴がありません</p>
       </div>
+
+      <!-- ページネーション（下部） -->
+      <div id="movementsPaginationBottom" class="mt-4"></div>
     </div>
   </div>
 </div>
@@ -450,6 +464,7 @@ endblock %} {% block content %}
 
 <!-- QRスキャンモーダルは qr-scanner.js で動的に作成されます -->
 
+<script src="{{ url_for('static', path='js/pagination.js') }}"></script>
 <script>
   // グローバル変数
   let inventoryItems = [];
@@ -458,6 +473,11 @@ endblock %} {% block content %}
   let selectedItem = null;
   let movementType = "out";
   // QRScannerはqr-scanner.jsで既に定義されているので削除
+
+  // ページネーション用変数
+  let currentInventoryPage = 1;
+  let currentMovementsPage = 1;
+  const pageSize = 25;
 
   // ページ読み込み時の初期化
   document.addEventListener("DOMContentLoaded", function () {
@@ -518,10 +538,22 @@ endblock %} {% block content %}
                 </td>
             </tr>
         `;
+      // ページネーションを非表示
+      const topContainer = document.getElementById('inventoryPaginationTop');
+      const bottomContainer = document.getElementById('inventoryPaginationBottom');
+      if (topContainer) topContainer.innerHTML = '';
+      if (bottomContainer) bottomContainer.innerHTML = '';
       return;
     }
 
-    tableBody.innerHTML = inventoryItems
+    // ページネーション処理
+    const totalPages = Math.ceil(inventoryItems.length / pageSize);
+    currentInventoryPage = Math.min(currentInventoryPage, totalPages);
+    const startIndex = (currentInventoryPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const pageItems = inventoryItems.slice(startIndex, endIndex);
+
+    tableBody.innerHTML = pageItems
       .map((item) => {
         const shapeText = getShapeText(item.material.shape);
         const isOutOfStock = item.current_quantity === 0;
@@ -593,6 +625,15 @@ endblock %} {% block content %}
         `;
       })
       .join("");
+
+    // ページネーション表示
+    renderPagination('inventory', currentInventoryPage, totalPages, loadInventoryPage);
+  }
+
+  // 在庫一覧のページ切り替え
+  function loadInventoryPage(page) {
+    currentInventoryPage = page;
+    renderInventoryTable();
   }
 
   // 入出庫履歴読み込み
@@ -631,10 +672,22 @@ endblock %} {% block content %}
                 </td>
             </tr>
         `;
+      // ページネーションを非表示
+      const topContainer = document.getElementById('movementsPaginationTop');
+      const bottomContainer = document.getElementById('movementsPaginationBottom');
+      if (topContainer) topContainer.innerHTML = '';
+      if (bottomContainer) bottomContainer.innerHTML = '';
       return;
     }
 
-    tableBody.innerHTML = movementHistory
+    // ページネーション処理
+    const totalPages = Math.ceil(movementHistory.length / pageSize);
+    currentMovementsPage = Math.min(currentMovementsPage, totalPages);
+    const startIndex = (currentMovementsPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const pageItems = movementHistory.slice(startIndex, endIndex);
+
+    tableBody.innerHTML = pageItems
       .map((movement) => {
         const typeClass =
           movement.movement_type === "in" ? "text-green-600" : "text-red-600";
@@ -679,6 +732,15 @@ endblock %} {% block content %}
         `;
       })
       .join("");
+
+    // ページネーション表示
+    renderPagination('movements', currentMovementsPage, totalPages, loadMovementsPage);
+  }
+
+  // 履歴のページ切り替え
+  function loadMovementsPage(page) {
+    currentMovementsPage = page;
+    renderMovementsTable();
   }
 
   // 置き場一覧読み込み

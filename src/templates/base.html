@@ -58,6 +58,19 @@
     ::-webkit-scrollbar-thumb:hover {
       background: #6b7280;
     }
+
+    /* ロゴリンクのフォーカスリング削除 */
+    nav a[href="/"]:focus,
+    nav a[href="/"]:focus-visible {
+      outline: none !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+
+    /* すべてのナビゲーションリンクとクイックアクションのフォーカスリング制御 */
+    a:focus:not(:focus-visible) {
+      outline: none !important;
+    }
   </style>
 
   {% block extra_head %}{% endblock %}
@@ -70,7 +83,7 @@
       <div class="flex justify-between h-16">
         <div class="flex items-center">
           <!-- ロゴ -->
-          <a href="/" class="flex items-center">
+          <a href="/" class="flex items-center focus:outline-none" tabindex="-1" style="outline: none !important; box-shadow: none !important;">
             <div class="p-2 bg-blue-600 rounded-lg mr-3">
               <i class="fas fa-industry text-white text-lg"></i>
             </div>
@@ -98,7 +111,7 @@
             <i class="fas fa-exchange-alt mr-2"></i>入出庫
           </a>
           <a href="/excel-viewer" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
-            <i class="fas fa-file-excel mr-2"></i>Excel照合
+            <i class="fas fa-file-excel mr-2"></i>セット予定読み込み
           </a>
           <a href="/production-schedule"
             class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">
@@ -152,7 +165,7 @@
         </a>
         <a href="/excel-viewer"
           class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
-          <i class="fas fa-file-excel mr-2"></i>Excel照合
+          <i class="fas fa-file-excel mr-2"></i>セット予定読み込み
         </a>
         <a href="/production-schedule"
           class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">
@@ -334,7 +347,8 @@
     // ナビゲーションのアクティブ状態を設定
     document.addEventListener('DOMContentLoaded', function() {
       const currentPath = window.location.pathname;
-      const navLinks = document.querySelectorAll('nav a[href]');
+      // ロゴリンクを除外し、メインナビゲーションのみを対象にする
+      const navLinks = document.querySelectorAll('nav a[href]:not([tabindex="-1"])');
 
       navLinks.forEach(link => {
         const href = link.getAttribute('href');

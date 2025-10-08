@@ -9,7 +9,7 @@ import json
 
 from src.db import get_db
 from src.db.models import (
-    Material, MaterialShape, MaterialAlias
+    Material, MaterialShape, MaterialAlias, Lot
 )
 
 router = APIRouter()
@@ -36,7 +36,6 @@ class MaterialAliasResponse(MaterialAliasBase):
 # ========================================
 
 class MaterialBase(BaseModel):
-    part_number: Optional[str] = Field(None, max_length=100, description="品番")
     display_name: str = Field(..., max_length=200, description="材料名（Excelから取得したフルネーム）")
     description: Optional[str] = Field(None, description="説明")
     shape: MaterialShape = Field(..., description="断面形状（計算用）")
@@ -47,7 +46,6 @@ class MaterialCreate(MaterialBase):
     pass
 
 class MaterialUpdate(BaseModel):
-    part_number: Optional[str] = Field(None, max_length=100, description="品番")
     display_name: Optional[str] = Field(None, max_length=200, description="材料名（Excelから取得したフルネーム）")
     description: Optional[str] = Field(None, description="説明")
     shape: Optional[MaterialShape] = Field(None, description="断面形状（計算用）")
@@ -68,7 +66,8 @@ class MaterialResponse(MaterialBase):
 async def get_materials_count(
     is_active: Optional[bool] = None,
     display_name: Optional[str] = None,
-    part_number: Optional[str] = None,
+    diameter_mm: Optional[float] = None,
+    shape: Optional[MaterialShape] = None,
     db: Session = Depends(get_db)
 ):
     """材料総件数取得（フィルタ対応）"""
@@ -80,8 +79,11 @@ async def get_materials_count(
     if display_name is not None:
         query = query.filter(Material.display_name.contains(display_name))
 
-    if part_number is not None:
-        query = query.filter(Material.part_number == part_number)
+    if diameter_mm is not None:
+        query = query.filter(Material.diameter_mm == diameter_mm)
+
+    if shape is not None:
+        query = query.filter(Material.shape == shape)
 
     total = query.count()
     return {"total": total}
@@ -93,7 +95,8 @@ async def get_materials(
     limit: int = 100,  # ページネーション用に100件制限
     is_active: Optional[bool] = None,
     display_name: Optional[str] = None,
-    part_number: Optional[str] = None,
+    diameter_mm: Optional[float] = None,
+    shape: Optional[MaterialShape] = None,
     db: Session = Depends(get_db)
 ):
     """材料一覧取得"""
@@ -105,8 +108,11 @@ async def get_materials(
     if display_name is not None:
         query = query.filter(Material.display_name.contains(display_name))
 
-    if part_number is not None:
-        query = query.filter(Material.part_number == part_number)
+    if diameter_mm is not None:
+        query = query.filter(Material.diameter_mm == diameter_mm)
+
+    if shape is not None:
+        query = query.filter(Material.shape == shape)
 
     materials = query.offset(skip).limit(limit).all()
     return materials
@@ -146,6 +152,24 @@ async def update_material(
         )
 
     update_data = material.model_dump(exclude_unset=True)
+
+    # ロットが存在する場合、重要な計算用属性の変更を禁止
+    critical_keys = {"shape", "diameter_mm", "current_density"}
+    will_change_critical = any(
+        key in update_data and update_data[key] != getattr(db_material, key)
+        for key in critical_keys
+    )
+    if will_change_critical:
+        lot_exists = db.query(Lot).filter(Lot.material_id == material_id).first() is not None
+        if lot_exists:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "この材料に紐づくロットが存在するため、形状・寸法・比重の変更はできません。"
+                    "新しい材料を作成し、必要に応じてロットを再割り当てしてください。"
+                )
+            )
+
     for key, value in update_data.items():
         setattr(db_material, key, value)
 
@@ -211,7 +235,7 @@ async def calculate_weight(
 
     return {
         "material_id": material_id,
-        "material_name": material.name,
+        "material_name": material.display_name,
         "shape": material.shape.value,
         "diameter_mm": material.diameter_mm,
         "length_mm": length_mm,
@@ -289,10 +313,7 @@ async def search_materials(
         base_query = base_query.filter(Material.id.in_(stock_mat_ids))
 
     materials = base_query.filter(
-        (Material.name.ilike(f"%{q_upper}%")) |
-        (Material.display_name.ilike(f"%{q}%")) |
-        (Material.detail_info.ilike(f"%{q}%")) |
-        (Material.part_number.ilike(f"%{q}%"))
+        Material.display_name.ilike(f"%{q}%")
     ).limit(100).all()
 
     # 径・形状キーワードからの検索も対応（例: "φ10", "10mm", "六角 8"）
@@ -335,9 +356,7 @@ async def search_materials(
         existing_ids = {m.id for m in materials}
         for t in tokens:
             extra = db.query(Material).filter(
-                (Material.name.ilike(f"%{t}%")) |
-                (Material.display_name.ilike(f"%{t}%")) |
-                (Material.part_number.ilike(f"%{t}%"))
+                Material.display_name.ilike(f"%{t}%")
             ).limit(100).all()
             for m in extra:
                 if m.id not in existing_ids:
@@ -365,12 +384,9 @@ async def search_materials(
     for material in materials:
         result = {
             "material_id": material.id,
-            "name": material.name,
             "display_name": material.display_name,
-            "part_number": material.part_number,
             "shape": material.shape.value,
-            "diameter_mm": material.diameter_mm,
-            "detail_info": material.detail_info
+            "diameter_mm": material.diameter_mm
         }
         results.append(result)
 

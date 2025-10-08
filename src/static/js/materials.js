@@ -234,7 +234,7 @@ class MaterialManager {
     if (this.materials.length === 0) {
       tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                    <td colspan="4" class="px-6 py-12 text-center text-gray-500">
                         <p class="text-lg mb-4">登録された材料がありません</p>
                         <button onclick="materialManager.showCreateForm()"
                                 class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
@@ -344,30 +344,22 @@ class MaterialManager {
       square: "角棒",
     };
 
-    // 表示名を優先して表示（なければnameを表示）
-    const materialNameText = material.display_name || material.name;
+    // 材料仕様名（display_nameを表示）
+    const materialSpec = material.display_name || "（未設定）";
 
-    // 追加情報（detail_info）
-    const detailInfoHtml = material.detail_info
-      ? `<div class="text-sm text-gray-900">${material.detail_info}</div>`
-      : '<span class="text-xs text-gray-400">なし</span>';
+    // 形状表示
+    const shapeText = shapeNames[material.shape] || material.shape || "（未設定）";
 
     return `
             <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm font-medium text-gray-900">${materialNameText}</div>
+                    <div class="text-sm font-medium text-gray-900">${materialSpec}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">${material.name || "（未設定）"}</div>
+                    <div class="text-sm text-gray-900">${shapeText}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm text-gray-900">${material.diameter_mm}</div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="text-sm text-gray-900">${material.current_density}</div>
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    ${detailInfoHtml}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div class="flex justify-end space-x-2">
@@ -416,6 +408,13 @@ class MaterialManager {
       }
 
       this.editingMaterial = await response.json();
+      // 変更検知用の元値を保持
+      this._editingOriginal = {
+        display_name: this.editingMaterial.display_name,
+        shape: this.editingMaterial.shape,
+        diameter_mm: this.editingMaterial.diameter_mm,
+        current_density: this.editingMaterial.current_density,
+      };
       this.populateEditForm(this.editingMaterial);
       document.getElementById("modalTitle").textContent = "材料を編集";
       document.getElementById("submitBtn").textContent = "更新";
@@ -427,17 +426,10 @@ class MaterialManager {
 
   // 編集フォームにデータ設定
   populateEditForm(material) {
-    document.getElementById("part_number").value = material.part_number || "";
-    document.getElementById("name").value = material.name;
     document.getElementById("display_name").value = material.display_name || "";
-    document.getElementById("description").value =
-      !material.description || material.description === ""
-        ? ""
-        : material.description;
     document.getElementById("shape").value = material.shape;
     document.getElementById("diameter_mm").value = material.diameter_mm;
     document.getElementById("current_density").value = material.current_density;
-    document.getElementById("detail_info").value = material.detail_info || "";
 
     this.updateShapeLabel();
   }
@@ -486,6 +478,37 @@ class MaterialManager {
         : "/api/materials";
 
       const method = this.editingMaterial ? "PUT" : "POST";
+
+      // 重要項目変更時の警告確認（編集時のみ）
+      if (this.editingMaterial && this._editingOriginal) {
+        const changes = [];
+        const shapeOld = this._editingOriginal.shape;
+        const shapeNew = document.getElementById("shape").value;
+        if (String(shapeOld) !== String(shapeNew)) {
+          changes.push(`・形状: ${shapeOld} → ${shapeNew}`);
+        }
+        const diaOld = Number(this._editingOriginal.diameter_mm);
+        const diaNew = Number(data.diameter_mm);
+        if (!Number.isNaN(diaNew) && diaOld !== diaNew) {
+          changes.push(`・寸法(mm): ${diaOld} → ${diaNew}`);
+        }
+        const denOld = Number(this._editingOriginal.current_density);
+        const denNew = Number(data.current_density);
+        if (!Number.isNaN(denNew) && denOld !== denNew) {
+          changes.push(`・比重(g/cm³): ${denOld} → ${denNew}`);
+        }
+
+        if (changes.length > 0) {
+          const msg =
+            "この材料の寸法・形状・比重の変更は在庫の重量計算や集計に即時影響します。\n" +
+            changes.join("\n") +
+            "\n\n変更を続行しますか？";
+          const ok = confirm(msg);
+          if (!ok) {
+            return; // ユーザーがキャンセル
+          }
+        }
+      }
 
       const response = await fetch(url, {
         method: method,
@@ -552,7 +575,7 @@ class MaterialManager {
     const material = this.materials.find((m) => m.id === materialId);
     if (!material) return;
 
-    document.getElementById("calcMaterialName").textContent = material.name;
+    document.getElementById("calcMaterialName").textContent = material.display_name || "（未設定）";
     document.getElementById("calcMaterialId").value = materialId;
     document.getElementById("calcLength").value = "";
     document.getElementById("calcQuantity").value = "1";
@@ -777,171 +800,19 @@ class MaterialManager {
       return;
     }
 
-    // ページ情報更新
-    const pageInfo = document.getElementById("pageInfo");
-    const pageInfoMobile = document.getElementById("pageInfoMobile");
-    // 上部ページネーション情報
-    const pageInfoTop = document.getElementById("pageInfoTop");
-    const pageInfoMobileTop = document.getElementById("pageInfoMobileTop");
-
-    const startItem = (this.currentPage - 1) * this.itemsPerPage + 1;
-    const endItem = Math.min(
-      this.currentPage * this.itemsPerPage,
-      this.totalItems
-    );
-    const infoText = `${startItem.toLocaleString()} - ${endItem.toLocaleString()} / ${this.totalItems.toLocaleString()} 件`;
-
-    if (pageInfo) {
-      pageInfo.textContent = infoText;
+    // 新しいページネーション関数を使用
+    if (this.totalItems > 0) {
+      renderPagination('materials', this.currentPage, this.totalPages, (page) => {
+        this.currentPage = page;
+        this.fetchMaterials();
+      });
+    } else {
+      // データがない場合はページネーションを非表示
+      const topContainer = document.getElementById('materialsPaginationTop');
+      const bottomContainer = document.getElementById('materialsPaginationBottom');
+      if (topContainer) topContainer.innerHTML = '';
+      if (bottomContainer) bottomContainer.innerHTML = '';
     }
-    if (pageInfoMobile) {
-      pageInfoMobile.textContent = infoText;
-    }
-    // 上部ページネーション情報更新
-    if (pageInfoTop) {
-      pageInfoTop.textContent = infoText;
-    }
-    if (pageInfoMobileTop) {
-      pageInfoMobileTop.textContent = infoText;
-    }
-
-    // ボタン状態更新
-    this.updatePaginationButtons();
-
-    // ページ番号ボタン更新
-    this.updatePageNumbers();
-  }
-
-  // ページネーションボタンの状態更新
-  updatePaginationButtons() {
-    const prevButtons = ["prevPage", "prevPageMobile"];
-    const nextButtons = ["nextPage", "nextPageMobile"];
-    // 上部ページネーションボタン
-    const prevButtonsTop = ["prevPageTop", "prevPageMobileTop"];
-    const nextButtonsTop = ["nextPageTop", "nextPageMobileTop"];
-
-    prevButtons.forEach((id) => {
-      const btn = document.getElementById(id);
-      if (btn) {
-        btn.disabled = this.currentPage <= 1;
-        btn.classList.toggle("text-gray-400", this.currentPage <= 1);
-        btn.classList.toggle("cursor-not-allowed", this.currentPage <= 1);
-      }
-    });
-
-    nextButtons.forEach((id) => {
-      const btn = document.getElementById(id);
-      if (btn) {
-        btn.disabled = this.currentPage >= this.totalPages;
-        btn.classList.toggle(
-          "text-gray-400",
-          this.currentPage >= this.totalPages
-        );
-        btn.classList.toggle(
-          "cursor-not-allowed",
-          this.currentPage >= this.totalPages
-        );
-      }
-    });
-
-    // 上部ページネーションボタン状態更新
-    prevButtonsTop.forEach((id) => {
-      const btn = document.getElementById(id);
-      if (btn) {
-        btn.disabled = this.currentPage <= 1;
-        btn.classList.toggle("text-gray-400", this.currentPage <= 1);
-        btn.classList.toggle("cursor-not-allowed", this.currentPage <= 1);
-      }
-    });
-
-    nextButtonsTop.forEach((id) => {
-      const btn = document.getElementById(id);
-      if (btn) {
-        btn.disabled = this.currentPage >= this.totalPages;
-        btn.classList.toggle(
-          "text-gray-400",
-          this.currentPage >= this.totalPages
-        );
-        btn.classList.toggle(
-          "cursor-not-allowed",
-          this.currentPage >= this.totalPages
-        );
-      }
-    });
-  }
-
-  // ページ番号ボタン更新
-  updatePageNumbers() {
-    const pageNumbers = document.getElementById("pageNumbers");
-    // 上部ページ番号要素
-    const pageNumbersTop = document.getElementById("pageNumbersTop");
-
-    if (!pageNumbers && !pageNumbersTop) return;
-
-    // 総ページ数が未定義の場合はスキップ
-    if (
-      this.totalPages === undefined ||
-      this.totalPages === null ||
-      this.totalPages <= 0
-    ) {
-      if (pageNumbers) pageNumbers.innerHTML = "";
-      if (pageNumbersTop) pageNumbersTop.innerHTML = "";
-      return;
-    }
-
-    // 表示するページ番号の範囲を計算
-    const maxVisible = 5; // 最大表示ページ数
-    let startPage = Math.max(1, this.currentPage - Math.floor(maxVisible / 2));
-    let endPage = Math.min(this.totalPages, startPage + maxVisible - 1);
-
-    // 最後の方で調整
-    if (endPage - startPage < maxVisible - 1) {
-      startPage = Math.max(1, endPage - maxVisible + 1);
-    }
-
-    let html = "";
-
-    // 「最初」ボタン
-    if (startPage > 1) {
-      html += `
-        <button onclick="materialManager.goToPage(1)"
-                class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700">
-          1
-        </button>`;
-      if (startPage > 2) {
-        html += `<span class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300">...</span>`;
-      }
-    }
-
-    // ページ番号ボタン
-    for (let i = startPage; i <= endPage; i++) {
-      const isActive = i === this.currentPage;
-      html += `
-        <button onclick="materialManager.goToPage(${i})"
-                class="px-3 py-2 text-sm leading-tight ${
-                  isActive
-                    ? "text-blue-600 bg-blue-50 border border-blue-300"
-                    : "text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700"
-                }">
-          ${i}
-        </button>`;
-    }
-
-    // 「最後」ボタン
-    if (endPage < this.totalPages) {
-      if (endPage < this.totalPages - 1) {
-        html += `<span class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300">...</span>`;
-      }
-      html += `
-        <button onclick="materialManager.goToPage(${this.totalPages})"
-                class="px-3 py-2 text-sm leading-tight text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700">
-          ${this.totalPages}
-        </button>`;
-    }
-
-    // ページ番号ボタンを更新
-    if (pageNumbers) pageNumbers.innerHTML = html;
-    if (pageNumbersTop) pageNumbersTop.innerHTML = html;
   }
 
 }

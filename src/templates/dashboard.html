@@ -109,41 +109,35 @@
                         <h3 class="text-lg font-semibold text-gray-900">クイックアクション</h3>
                     </div>
                     <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-4" id="quickActions">
+                        <a href="/inventory"
+                            class="flex flex-col items-center p-4 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors duration-200 text-center border border-yellow-200">
+                            <i class="fas fa-boxes text-2xl text-yellow-600 mb-2"></i>
+                            <div class="text-sm font-medium text-yellow-800">在庫管理</div>
+                        </a>
+                        <a href="/materials"
+                            class="flex flex-col items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200 text-center border border-gray-200">
+                            <i class="fas fa-cubes text-2xl text-gray-600 mb-2"></i>
+                            <div class="text-sm font-medium text-gray-800">材料マスター</div>
+                        </a>
                         <a href="/order-flow"
                             class="flex flex-col items-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 rounded-lg transition-colors duration-200 text-center border-2 border-blue-300">
                             <i class="fas fa-stream text-2xl text-blue-700 mb-2"></i>
-                            <div class="text-sm font-bold text-blue-900">発注フロー統合</div>
-                            <div class="text-xs text-blue-600 mt-1">NEW!</div>
+                            <div class="text-sm font-bold text-blue-900">発注フロー</div>
                         </a>
-                        <a href="/receiving"
-                            class="flex flex-col items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors duration-200 text-center border border-green-200">
-                            <i class="fas fa-truck-loading text-2xl text-green-600 mb-2"></i>
-                            <div class="text-sm font-medium text-green-800">入庫確認</div>
+                        <a href="/movements"
+                            class="flex flex-col items-center p-4 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200 text-center border border-red-200">
+                            <i class="fas fa-exchange-alt text-2xl text-red-600 mb-2"></i>
+                            <div class="text-sm font-medium text-red-800">入出庫</div>
                         </a>
-                        <a href="/inventory"
-                            class="flex flex-col items-center p-4 bg-yellow-50 hover:bg-yellow-100 rounded-lg transition-colors duration-200 text-center border border-yellow-200">
-                            <i class="fas fa-box-open text-2xl text-yellow-600 mb-2"></i>
-                            <div class="text-sm font-medium text-yellow-800">同等品ビュー</div>
+                        <a href="/excel-viewer"
+                            class="flex flex-col items-center p-4 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors duration-200 text-center border border-teal-200">
+                            <i class="fas fa-file-excel text-2xl text-teal-600 mb-2"></i>
+                            <div class="text-sm font-medium text-teal-800">Excel照合</div>
                         </a>
                         <a href="/production-schedule"
                             class="flex flex-col items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors duration-200 text-center border border-blue-200">
                             <i class="fas fa-chart-line text-2xl text-blue-600 mb-2"></i>
                             <div class="text-sm font-medium text-blue-800">生産中一覧</div>
-                        </a>
-                        <a href="/movements"
-                            class="flex flex-col items-center p-4 bg-red-50 hover:bg-red-100 rounded-lg transition-colors duration-200 text-center border border-red-200">
-                            <i class="fas fa-exchange-alt text-2xl text-red-600 mb-2"></i>
-                            <div class="text-sm font-medium text-red-800">持ち出し・戻し</div>
-                        </a>
-                        <a href="/materials"
-                            class="flex flex-col items-center p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200 text-center border border-gray-200">
-                            <i class="fas fa-layer-group text-2xl text-gray-600 mb-2"></i>
-                            <div class="text-sm font-medium text-gray-800">材料マスター</div>
-                        </a>
-                        <a href="/excel-viewer"
-                            class="flex flex-col items-center p-4 bg-teal-50 hover:bg-teal-100 rounded-lg transition-colors duration-200 text-center border border-teal-200">
-                            <i class="fas fa-file-excel text-2xl text-teal-600 mb-2"></i>
-                            <div class="text-sm font-medium text-teal-800">Excel 照合</div>
                         </a>
                         <a href="/settings"
                             class="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors duration-200 text-center border border-purple-200">

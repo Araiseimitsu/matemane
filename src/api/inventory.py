@@ -109,6 +109,10 @@ class LotInfo(BaseModel):
     received_date: Optional[datetime] = None
     inspection_status: Optional[InspectionStatus] = None
     inspected_at: Optional[datetime] = None
+    purchase_month: Optional[str] = None
+    notes: Optional[str] = None
+    purchase_order_item_id: Optional[int] = None
+    order_number: Optional[str] = None
     
     @field_serializer('inspection_status')
     def serialize_inspection_status(self, value: Optional[InspectionStatus], _info):
@@ -225,6 +229,12 @@ async def get_inventory(
         total_weight_kg = weight_per_piece_kg * item.current_quantity
 
         # アイテムを辞書に変換して重量情報を追加
+        # 発注番号の取得（存在する場合）
+        po_item = item.lot.purchase_order_item if hasattr(item.lot, "purchase_order_item") else None
+        order_number = None
+        if po_item and getattr(po_item, "purchase_order", None):
+            order_number = po_item.purchase_order.order_number
+
         item_dict = {
             "id": item.id,
             "lot_id": item.lot_id,
@@ -240,7 +250,11 @@ async def get_inventory(
                 "supplier": item.lot.supplier,
                 "received_date": item.lot.received_date,
                 "inspection_status": item.lot.inspection_status,
-                "inspected_at": item.lot.inspected_at
+                "inspected_at": item.lot.inspected_at,
+                "notes": item.lot.notes,
+                "purchase_order_item_id": item.lot.purchase_order_item_id,
+                "order_number": order_number,
+                "purchase_month": item.lot.purchase_month
             },
             "material": {
                 "id": material.id,
@@ -460,7 +474,8 @@ async def search_by_lot_number(lot_number: str, db: Session = Depends(get_db)):
             "supplier": item.lot.supplier,
             "received_date": item.lot.received_date,
             "inspection_status": item.lot.inspection_status,
-            "inspected_at": item.lot.inspected_at
+            "inspected_at": item.lot.inspected_at,
+            "purchase_month": item.lot.purchase_month
         },
         "material": {
             "id": material.id,
@@ -499,10 +514,10 @@ async def search_inventory_items(
         query_obj = query_obj.filter(Item.current_quantity > 0)
 
     # 検索条件（複数のフィールドで検索）
+    # display_name と lot_number のみに限定
     search_filter = (
         Lot.lot_number.ilike(f"%{query}%") |
-        Material.display_name.ilike(f"%{query}%") |
-        Material.part_number.ilike(f"%{query}%")
+        Material.display_name.ilike(f"%{query}%")
     )
 
     query_obj = query_obj.join(Lot).join(Material).filter(search_filter)
@@ -534,6 +549,12 @@ async def search_inventory_items(
         total_weight_kg = weight_per_piece_kg * item.current_quantity
 
         # アイテムを辞書に変換して重量情報を追加
+        # 発注番号の取得（存在する場合）
+        po_item = item.lot.purchase_order_item if hasattr(item.lot, "purchase_order_item") else None
+        order_number = None
+        if po_item and getattr(po_item, "purchase_order", None):
+            order_number = po_item.purchase_order.order_number
+
         item_dict = {
             "id": item.id,
             "lot_id": item.lot_id,
@@ -549,7 +570,11 @@ async def search_inventory_items(
                 "supplier": item.lot.supplier,
                 "received_date": item.lot.received_date,
                 "inspection_status": item.lot.inspection_status,
-                "inspected_at": item.lot.inspected_at
+                "inspected_at": item.lot.inspected_at,
+                "notes": item.lot.notes,
+                "purchase_order_item_id": item.lot.purchase_order_item_id,
+                "order_number": order_number,
+                "purchase_month": item.lot.purchase_month
             },
             "material": {
                 "id": material.id,
@@ -609,8 +634,7 @@ async def get_low_stock_items(
 
         result.append({
             "lot_number": item.lot.lot_number,
-            "material_name": material.name,
-            "lot_number": item.lot.lot_number,
+            "material_name": material.display_name,
             "length_mm": item.lot.length_mm,
             "current_quantity": item.current_quantity,
             "location_name": item.location.name if item.location else "未配置",
@@ -706,7 +730,7 @@ async def get_inventory_groups(
             is_active=group.is_active,
             total_stock=int(total_stock or 0),
             lot_count=int(lot_count or 0),
-            materials=[GroupMaterialBrief(id=m.id, name=m.name, diameter_mm=m.diameter_mm) for m in member_materials]
+            materials=[GroupMaterialBrief(id=m.id, name=m.display_name, diameter_mm=m.diameter_mm) for m in member_materials]
         ))
 
     return summaries
