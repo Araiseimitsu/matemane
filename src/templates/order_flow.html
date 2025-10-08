@@ -94,30 +94,39 @@
                 </div>
 
                 <!-- フィルター -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-gray-50 rounded-lg p-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">状態</label>
-                        <select id="orderStatusFilter" class="w-full p-2 border border-gray-300 rounded-md">
-                            <option value="">全て</option>
-                            <option value="pending">発注済み</option>
-                            <option value="partial">一部入庫</option>
-                            <option value="completed">完了</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">仕入先</label>
-                        <input type="text" id="orderSupplierFilter" placeholder="仕入先名で絞り込み"
-                            class="w-full p-2 border border-gray-300 rounded-md">
-                    </div>
-                    <div class="col-span-2 flex items-end space-x-2">
-                        <button id="searchOrdersBtn"
-                            class="flex-1 bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors">
-                            <i class="fas fa-search mr-1"></i>検索
-                        </button>
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-medium text-gray-700">検索フィルター（リアルタイム検索）</h3>
                         <button id="resetOrderFiltersBtn"
-                            class="flex-1 bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600 transition-colors">
+                            class="text-sm text-gray-600 hover:text-gray-900 flex items-center">
                             <i class="fas fa-redo mr-1"></i>リセット
                         </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">発注番号</label>
+                            <input type="text" id="orderNumberFilter" placeholder="発注番号で絞り込み"
+                                class="w-full p-2 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">材料仕様</label>
+                            <input type="text" id="orderMaterialFilter" placeholder="材料仕様で絞り込み"
+                                class="w-full p-2 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">状態</label>
+                            <select id="orderStatusFilter" class="w-full p-2 border border-gray-300 rounded-md">
+                                <option value="">全て</option>
+                                <option value="pending">発注済み</option>
+                                <option value="partial">一部入庫</option>
+                                <option value="completed">完了</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">仕入先</label>
+                            <input type="text" id="orderSupplierFilter" placeholder="仕入先名で絞り込み"
+                                class="w-full p-2 border border-gray-300 rounded-md">
+                        </div>
                     </div>
                 </div>
 
@@ -174,31 +183,30 @@
                 </div>
 
                 <!-- フィルター -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 bg-gray-50 rounded-lg p-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">発注番号</label>
-                        <input type="text" id="receivingOrderNumberFilter" placeholder="発注番号で絞り込み"
-                            class="w-full p-2 border border-gray-300 rounded-md">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">仕入先</label>
-                        <input type="text" id="receivingSupplierFilter" placeholder="仕入先名で絞り込み"
-                            class="w-full p-2 border border-gray-300 rounded-md">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">材料仕様</label>
-                        <input type="text" id="receivingMaterialFilter" placeholder="材料仕様で絞り込み"
-                            class="w-full p-2 border border-gray-300 rounded-md">
-                    </div>
-                    <div class="col-span-2 flex items-end space-x-2">
-                        <button id="searchReceivingBtn"
-                            class="flex-1 bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors">
-                            <i class="fas fa-search mr-1"></i>検索
-                        </button>
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-medium text-gray-700">検索フィルター（リアルタイム検索）</h3>
                         <button id="resetReceivingFiltersBtn"
-                            class="flex-1 bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600 transition-colors">
+                            class="text-sm text-gray-600 hover:text-gray-900 flex items-center">
                             <i class="fas fa-redo mr-1"></i>リセット
                         </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">発注番号</label>
+                            <input type="text" id="receivingOrderNumberFilter" placeholder="発注番号で絞り込み"
+                                class="w-full p-2 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">仕入先</label>
+                            <input type="text" id="receivingSupplierFilter" placeholder="仕入先名で絞り込み"
+                                class="w-full p-2 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">材料仕様</label>
+                            <input type="text" id="receivingMaterialFilter" placeholder="材料仕様で絞り込み"
+                                class="w-full p-2 border border-gray-300 rounded-md">
+                        </div>
                     </div>
                 </div>
 
@@ -264,6 +272,7 @@
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">ロット番号</th>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">本数</th>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">重量</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">ロット備考</th>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">検品状態</th>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500">操作</th>
                                 </tr>
@@ -372,26 +381,25 @@
                 </div>
 
                 <!-- フィルター -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-gray-50 rounded-lg p-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">材料名</label>
-                        <input type="text" id="printMaterialFilter" placeholder="材料名で絞り込み"
-                            class="w-full p-2 border border-gray-300 rounded-md">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">ロット番号</label>
-                        <input type="text" id="printLotFilter" placeholder="ロット番号で絞り込み"
-                            class="w-full p-2 border border-gray-300 rounded-md">
-                    </div>
-                    <div class="flex items-end space-x-2">
-                        <button id="searchPrintBtn"
-                            class="flex-1 bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors">
-                            <i class="fas fa-search mr-1"></i>検索
-                        </button>
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-medium text-gray-700">検索フィルター（リアルタイム検索）</h3>
                         <button id="resetPrintFiltersBtn"
-                            class="flex-1 bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600 transition-colors">
+                            class="text-sm text-gray-600 hover:text-gray-900 flex items-center">
                             <i class="fas fa-redo mr-1"></i>リセット
                         </button>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">材料名</label>
+                            <input type="text" id="printMaterialFilter" placeholder="材料名で絞り込み"
+                                class="w-full p-2 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">ロット番号</label>
+                            <input type="text" id="printLotFilter" placeholder="ロット番号で絞り込み"
+                                class="w-full p-2 border border-gray-300 rounded-md">
+                        </div>
                     </div>
                 </div>
 

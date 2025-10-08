@@ -130,12 +130,13 @@ const ordersPageSize = 25;
 
 function initializeOrdersTab() {
     document.getElementById('refreshOrdersBtn')?.addEventListener('click', () => loadOrders(1));
-    document.getElementById('searchOrdersBtn')?.addEventListener('click', () => searchOrders());
     document.getElementById('resetOrderFiltersBtn')?.addEventListener('click', resetOrderFilters);
 
-    // フィルター変更時の自動検索
+    // リアルタイム検索（入力時にdebounceで検索実行）
+    document.getElementById('orderNumberFilter')?.addEventListener('input', debounce(() => searchOrders(), 300));
+    document.getElementById('orderMaterialFilter')?.addEventListener('input', debounce(() => searchOrders(), 300));
     document.getElementById('orderStatusFilter')?.addEventListener('change', () => searchOrders());
-    document.getElementById('orderSupplierFilter')?.addEventListener('input', debounce(() => searchOrders(), 500));
+    document.getElementById('orderSupplierFilter')?.addEventListener('input', debounce(() => searchOrders(), 300));
 }
 
 async function loadOrders(page = 1) {
@@ -225,20 +226,26 @@ function getStatusBadge(status) {
 }
 
 function searchOrders() {
+    const orderNumber = document.getElementById('orderNumberFilter')?.value.toLowerCase() || '';
+    const material = document.getElementById('orderMaterialFilter')?.value.toLowerCase() || '';
     const status = document.getElementById('orderStatusFilter')?.value;
-    const supplier = document.getElementById('orderSupplierFilter')?.value;
+    const supplier = document.getElementById('orderSupplierFilter')?.value.toLowerCase() || '';
 
     const rows = document.querySelectorAll('#ordersTableBody tr');
     let visibleCount = 0;
 
     rows.forEach(row => {
+        const rowOrderNumber = row.cells[0].textContent.toLowerCase();
         const rowSupplier = row.cells[1].textContent.toLowerCase();
         const rowStatus = row.cells[4].textContent.trim();
+        const rowMaterial = row.cells[5].textContent.toLowerCase();
 
-        const matchSupplier = !supplier || rowSupplier.includes(supplier.toLowerCase());
+        const matchOrderNumber = !orderNumber || rowOrderNumber.includes(orderNumber);
+        const matchMaterial = !material || rowMaterial.includes(material);
+        const matchSupplier = !supplier || rowSupplier.includes(supplier);
         const matchStatus = !status || rowStatus.includes(getStatusText(status));
 
-        if (matchSupplier && matchStatus) {
+        if (matchOrderNumber && matchMaterial && matchSupplier && matchStatus) {
             row.style.display = '';
             visibleCount++;
         } else {
@@ -258,9 +265,11 @@ function getStatusText(status) {
 }
 
 function resetOrderFilters() {
+    document.getElementById('orderNumberFilter').value = '';
+    document.getElementById('orderMaterialFilter').value = '';
     document.getElementById('orderStatusFilter').value = '';
     document.getElementById('orderSupplierFilter').value = '';
-    loadOrders(1);
+    searchOrders();
 }
 
 async function viewOrderDetail(orderId) {
@@ -396,9 +405,13 @@ function closeDetailModal() {
 // ==== 入庫確認タブ ====
 function initializeReceivingTab() {
     document.getElementById('refreshReceivingBtn')?.addEventListener('click', loadReceivingItems);
-    document.getElementById('searchReceivingBtn')?.addEventListener('click', searchReceivingItems);
     document.getElementById('resetReceivingFiltersBtn')?.addEventListener('click', resetReceivingFilters);
     document.getElementById('includeInspectedFilter')?.addEventListener('change', loadReceivingItems);
+
+    // リアルタイム検索（入力時にdebounceで検索実行）
+    document.getElementById('receivingOrderNumberFilter')?.addEventListener('input', debounce(() => searchReceivingItems(), 300));
+    document.getElementById('receivingSupplierFilter')?.addEventListener('input', debounce(() => searchReceivingItems(), 300));
+    document.getElementById('receivingMaterialFilter')?.addEventListener('input', debounce(() => searchReceivingItems(), 300));
 
     // 入庫確認モーダル
     document.getElementById('closeReceiveModal')?.addEventListener('click', hideReceiveModal);
@@ -594,11 +607,10 @@ function searchReceivingItems() {
 }
 
 function resetReceivingFilters() {
+    document.getElementById('receivingOrderNumberFilter').value = '';
     document.getElementById('receivingSupplierFilter').value = '';
-    const orderNumberInput = document.getElementById('receivingOrderNumberFilter');
-    if (orderNumberInput) orderNumberInput.value = '';
     document.getElementById('receivingMaterialFilter').value = '';
-    loadReceivingItems();
+    searchReceivingItems();
 }
 
 // 入庫確認モーダル（receiving.jsから移植・簡略化）
@@ -1402,6 +1414,7 @@ function createInspectionItemRow(item) {
 
     const lotNumber = item.lot?.lot_number || '-';
     const managementCode = item.management_code || '';
+    const lotNotes = item.lot?.notes || '-';
 
     // 重量計算
     const totalWeight = item.total_weight_kg || 0;
@@ -1436,6 +1449,7 @@ function createInspectionItemRow(item) {
         <td class="px-3 py-2 text-xs text-gray-600">${lotNumber}</td>
         <td class="px-3 py-2 text-xs text-gray-600">${item.current_quantity}本</td>
         <td class="px-3 py-2 text-xs text-gray-600">${weightDisplay}</td>
+        <td class="px-3 py-2 text-xs text-gray-600">${lotNotes}</td>
         <td class="px-3 py-2">
             <span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass}">${statusText}</span>
         </td>
@@ -1508,6 +1522,9 @@ async function loadInspectionTargetByCode() {
             const materialName = item?.material?.display_name || item?.material?.name || '-';
             const length = item?.lot?.length_mm || '-';
             const weight = item?.total_weight_kg ? `${item.total_weight_kg.toFixed(3)}kg` : '-';
+            const lotNotes = item?.lot?.notes || '';
+
+            console.log('ロット備考データ:', lotNotes); // デバッグ用
 
             // 検品ステータスを取得
             const inspectionStatus = (item?.lot?.inspection_status || 'pending').toLowerCase();
@@ -1547,6 +1564,12 @@ async function loadInspectionTargetByCode() {
                             <span class="text-blue-600 font-medium">長さ:</span>
                             <span class="text-gray-900 ml-2">${length}mm</span>
                         </div>
+                        ${lotNotes ? `
+                        <div class="col-span-2">
+                            <span class="text-blue-600 font-medium">ロット備考:</span>
+                            <span class="text-gray-900 ml-2">${lotNotes}</span>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -1676,8 +1699,11 @@ const printPageSize = 25;
 
 function initializePrintTab() {
     document.getElementById('refreshPrintBtn')?.addEventListener('click', () => loadPrintableItems(1));
-    document.getElementById('searchPrintBtn')?.addEventListener('click', searchPrintItems);
     document.getElementById('resetPrintFiltersBtn')?.addEventListener('click', resetPrintFilters);
+
+    // リアルタイム検索（入力時にdebounceで検索実行）
+    document.getElementById('printMaterialFilter')?.addEventListener('input', debounce(() => searchPrintItems(), 300));
+    document.getElementById('printLotFilter')?.addEventListener('input', debounce(() => searchPrintItems(), 300));
 
     // 印刷モーダル
     document.getElementById('closePrintModal')?.addEventListener('click', hidePrintModal);
@@ -1808,7 +1834,7 @@ function searchPrintItems() {
 function resetPrintFilters() {
     document.getElementById('printMaterialFilter').value = '';
     document.getElementById('printLotFilter').value = '';
-    loadPrintableItems();
+    searchPrintItems();
 }
 
 async function showPrintModal(lotNumber) {

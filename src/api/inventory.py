@@ -475,7 +475,10 @@ async def search_by_lot_number(lot_number: str, db: Session = Depends(get_db)):
             "received_date": item.lot.received_date,
             "inspection_status": item.lot.inspection_status,
             "inspected_at": item.lot.inspected_at,
-            "purchase_month": item.lot.purchase_month
+            "purchase_month": item.lot.purchase_month,
+            "notes": item.lot.notes,
+            "purchase_order_item_id": item.lot.purchase_order_item_id,
+            "order_number": None
         },
         "material": {
             "id": material.id,
