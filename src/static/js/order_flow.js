@@ -418,6 +418,19 @@ function initializeReceivingTab() {
     document.getElementById('cancelReceive')?.addEventListener('click', hideReceiveModal);
     document.getElementById('receiveForm')?.addEventListener('submit', handleReceive);
 
+    // フォーム内のEnterキー制御（submitボタン以外でEnter押下時は送信を防ぐ）
+    const receiveFormElement = document.getElementById('receiveForm');
+    if (receiveFormElement) {
+        receiveFormElement.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                // submitボタン以外でEnterキーが押された場合は送信を防ぐ
+                if (e.target.type !== 'submit' && e.target.tagName !== 'BUTTON') {
+                    e.preventDefault();
+                }
+            }
+        });
+    }
+
     // モーダル背景クリックで閉じる
     const receiveModal = document.getElementById('receiveModal');
     if (receiveModal) {
@@ -1123,17 +1136,24 @@ async function handleReceive(event) {
         commonMaterialData.amount = parseFloat(amount);
     }
 
-    // 各ロット情報を収集
+    // 各ロット情報を収集（DOM要素から直接取得）
     const lots = [];
     for (let i = 1; i <= lotRowCounter; i++) {
         const lotRow = document.getElementById(`lot-row-${i}`);
-        if (!lotRow) continue;
+        if (!lotRow) continue; // 削除されたロット行はスキップ
 
-        const lotNumber = formData.get(`lot_number_${i}`);
-        const quantityStr = formData.get(`lot_quantity_${i}`);
-        const weightStr = formData.get(`lot_weight_${i}`);
-        const location = formData.get(`lot_location_${i}`);
-        const lotNotes = formData.get(`lot_notes_${i}`) || '';
+        // DOM要素から直接値を取得（FormDataではなく）
+        const lotNumberInput = lotRow.querySelector(`input[name="lot_number_${i}"]`);
+        const quantityInput = lotRow.querySelector(`input[name="lot_quantity_${i}"]`);
+        const weightInput = lotRow.querySelector(`input[name="lot_weight_${i}"]`);
+        const locationSelect = lotRow.querySelector(`select[name="lot_location_${i}"]`);
+        const notesInput = lotRow.querySelector(`input[name="lot_notes_${i}"]`);
+
+        const lotNumber = lotNumberInput?.value || '';
+        const quantityStr = quantityInput?.value || '';
+        const weightStr = weightInput?.value || '';
+        const location = locationSelect?.value || '';
+        const lotNotes = notesInput?.value || '';
 
         console.log(`ロット ${i}:`, { lotNumber, quantityStr, weightStr, location, lotNotes }); // デバッグ
 
