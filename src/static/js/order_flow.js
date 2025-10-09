@@ -421,7 +421,7 @@ function initializeReceivingTab() {
     // フォーム内のEnterキー制御（submitボタン以外でEnter押下時は送信を防ぐ）
     const receiveFormElement = document.getElementById('receiveForm');
     if (receiveFormElement) {
-        receiveFormElement.addEventListener('keydown', function(e) {
+        receiveFormElement.addEventListener('keydown', function (e) {
             if (e.key === 'Enter') {
                 // submitボタン以外でEnterキーが押された場合は送信を防ぐ
                 if (e.target.type !== 'submit' && e.target.tagName !== 'BUTTON') {
@@ -1057,6 +1057,7 @@ async function handleReceive(event) {
     const isEdit = (formData.get('is_edit') || '') === 'true';
 
     // 既存のロット番号リストを取得
+    const removedLotNumbers = [];
     let previousLotNumbers = [];
     try {
         const prevLotsStr = formData.get('previous_lot_numbers');
@@ -1146,13 +1147,13 @@ async function handleReceive(event) {
         const lotNumberInput = lotRow.querySelector(`input[name="lot_number_${i}"]`);
         const quantityInput = lotRow.querySelector(`input[name="lot_quantity_${i}"]`);
         const weightInput = lotRow.querySelector(`input[name="lot_weight_${i}"]`);
-        const locationSelect = lotRow.querySelector(`select[name="lot_location_${i}"]`);
+        const locationElement = lotRow.querySelector(`select[name="lot_location_${i}"]`) || lotRow.querySelector(`input[name="lot_location_${i}"]`);
         const notesInput = lotRow.querySelector(`input[name="lot_notes_${i}"]`);
 
         const lotNumber = lotNumberInput?.value || '';
         const quantityStr = quantityInput?.value || '';
         const weightStr = weightInput?.value || '';
-        const location = locationSelect?.value || '';
+        const location = locationElement?.value || '';
         const lotNotes = notesInput?.value || '';
 
         console.log(`ロット ${i}:`, { lotNumber, quantityStr, weightStr, location, lotNotes }); // デバッグ
@@ -1192,6 +1193,14 @@ async function handleReceive(event) {
         lots.push(lotData);
     }
 
+    // 削除されたロット番号を特定（既存ロットリストとの差分）
+    previousLotNumbers.forEach(prevLotNumber => {
+        const stillExists = lots.some(lot => lot.lot_number === prevLotNumber);
+        if (!stillExists) {
+            removedLotNumbers.push(prevLotNumber);
+        }
+    });
+
     if (lots.length === 0) {
         if (typeof showToast === 'function') {
             showToast('少なくとも1つのロットを入力してください', 'error');
@@ -1210,7 +1219,7 @@ async function handleReceive(event) {
 
     // 各ロットに対してAPI呼び出し
     try {
-        let successCount = 0;
+        let appliedCount = 0;
 
         for (const lot of lots) {
             const receiveData = {
@@ -1263,11 +1272,48 @@ async function handleReceive(event) {
                 throw new Error(`ロット ${lot.lot_number}: ${errorMsg}`);
             }
 
-            successCount++;
+            appliedCount++;
+        }
+
+        let deletedCount = 0;
+        const deletionErrors = [];
+
+        for (const deletedLotNumber of removedLotNumbers) {
+            try {
+                const deleteRes = await fetch(`/api/purchase-orders/items/${itemId}/receive/${encodeURIComponent(deletedLotNumber)}/`, {
+                    method: 'DELETE'
+                });
+
+                if (!deleteRes.ok) {
+                    const deleteText = await deleteRes.text();
+                    let deleteMsg = deleteText;
+                    try {
+                        const parsed = JSON.parse(deleteText);
+                        deleteMsg = parsed.detail || deleteMsg;
+                    } catch (parseErr) {
+                        deleteMsg = deleteMsg?.substring(0, 200) || `ステータス ${deleteRes.status}`;
+                    }
+                    deletionErrors.push(`ロット ${deletedLotNumber}: ${deleteMsg}`);
+                } else {
+                    deletedCount++;
+                }
+            } catch (deleteError) {
+                deletionErrors.push(`ロット ${deletedLotNumber}: ${deleteError.message || deleteError}`);
+            }
         }
 
         if (typeof showToast === 'function') {
-            showToast(`${successCount}件のロットの入庫確認が完了しました`, 'success');
+            let message = `${appliedCount}件のロットを登録・更新しました`;
+            if (removedLotNumbers.length > 0) {
+                message += `（削除 ${deletedCount}/${removedLotNumbers.length}件）`;
+            }
+
+            if (deletionErrors.length > 0) {
+                showToast(`${message}。一部ロットの削除に失敗しました。`, 'warning');
+                deletionErrors.slice(0, 3).forEach(errMsg => showToast(errMsg, 'error'));
+            } else {
+                showToast(message, 'success');
+            }
         }
         hideReceiveModal();
         loadReceivingItems();

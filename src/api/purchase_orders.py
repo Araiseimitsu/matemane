@@ -11,7 +11,7 @@ from src.db import get_db
 from src.db.models import (
     PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus, PurchaseOrderItemStatus,
     Material, MaterialShape, Lot, Item, Location, OrderType, User,
-    MaterialGroup, MaterialGroupMember, InspectionStatus, AuditLog
+    MaterialGroup, MaterialGroupMember, InspectionStatus, AuditLog, Movement
 )
 from src.utils.auth import get_password_hash
 
@@ -676,8 +676,108 @@ async def update_received_item(
         "message": "入庫内容を更新しました",
         "lot_id": lot.id,
         "item_id": inv_item.id,
-        "management_code": inv_item.management_code,
         "material_id": material.id
+    }
+
+
+@router.delete("/items/{item_id}/receive/{lot_number}/", response_model=dict)
+async def delete_received_lot(
+    item_id: int,
+    lot_number: str,
+    db: Session = Depends(get_db)
+):
+    """入庫済みロットの削除
+
+    - 指定した発注アイテムに紐づくロットを物理削除
+    - 削除前に入出庫履歴の有無を確認（存在する場合は削除不可）
+    - ロット削除後に入庫数量・重量、発注ステータスを再計算
+    """
+
+    if not lot_number:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="ロット番号を指定してください")
+
+    item = db.query(PurchaseOrderItem).options(joinedload(PurchaseOrderItem.lots)).filter(
+        PurchaseOrderItem.id == item_id
+    ).first()
+
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="発注アイテムが見つかりません")
+
+    lot = db.query(Lot).options(joinedload(Lot.material), joinedload(Lot.items)).filter(
+        Lot.lot_number == lot_number
+    ).first()
+
+    if not lot or lot.purchase_order_item_id != item.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定されたロットが見つかりません")
+
+    # ひも付く在庫アイテムを取得
+    inventory_item = db.query(Item).options(joinedload(Item.movements)).filter(Item.lot_id == lot.id).first()
+
+    if inventory_item:
+        # 入出庫履歴が存在する場合は削除を禁止
+        movement_exists = db.query(Movement).filter(Movement.item_id == inventory_item.id).first() is not None
+        if movement_exists:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="このロットには入出庫履歴が存在するため削除できません"
+            )
+
+    # ロットと在庫アイテムを削除
+    if inventory_item:
+        db.delete(inventory_item)
+    db.delete(lot)
+    db.flush()
+
+    # 残存ロットから入庫数量と重量を再計算
+    remaining_lots = db.query(Lot).options(joinedload(Lot.material)).filter(
+        Lot.purchase_order_item_id == item.id
+    ).all()
+
+    total_quantity = 0
+    total_weight_kg = 0.0
+
+    for remaining_lot in remaining_lots:
+        total_quantity += remaining_lot.initial_quantity or 0
+
+        material = remaining_lot.material
+        if material and remaining_lot.initial_quantity:
+            try:
+                lot_weight = calculate_weight_from_quantity(
+                    remaining_lot.initial_quantity,
+                    material.shape,
+                    material.diameter_mm,
+                    remaining_lot.length_mm,
+                    material.current_density
+                )
+            except Exception:
+                lot_weight = 0.0
+            total_weight_kg += lot_weight
+
+    item.received_quantity = total_quantity if total_quantity > 0 else 0
+    item.received_weight_kg = round(total_weight_kg, 3) if total_weight_kg > 0 else None
+
+    if total_quantity > 0:
+        item.status = PurchaseOrderItemStatus.RECEIVED
+    else:
+        item.status = PurchaseOrderItemStatus.PENDING
+
+    # 発注ステータスを再計算
+    order = item.purchase_order
+    if order:
+        received_items = [i for i in order.items if i.status == PurchaseOrderItemStatus.RECEIVED]
+        if len(received_items) == len(order.items) and len(order.items) > 0:
+            order.status = PurchaseOrderStatus.COMPLETED
+        elif len(received_items) > 0:
+            order.status = PurchaseOrderStatus.PARTIAL
+        else:
+            order.status = PurchaseOrderStatus.PENDING
+
+    db.commit()
+
+    return {
+        "message": "ロットを削除しました",
+        "deleted_lot_number": lot_number,
+        "remaining_lot_count": len(remaining_lots)
     }
 
 
