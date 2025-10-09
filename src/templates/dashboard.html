@@ -1,392 +1,586 @@
-{% extends "base.html" %}
-
-{% block title %}ダッシュボード - 材料管理システム{% endblock %}
-
-{% block extra_head %}
+{% extends "base.html" %} {% block title %}ダッシュボード - 材料管理システム{%
+endblock %} {% block extra_head %}
 <style>
-    /* カスタムアニメーション定義 */
-    @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
+  /* カスタムアニメーション定義 */
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0px);
     }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
 
-    @keyframes shimmer {
-        0% { background-position: -1000px 0; }
-        100% { background-position: 1000px 0; }
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
     }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
 
-    @keyframes pulse-glow {
-        0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
-        50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.6); }
+  @keyframes pulse-glow {
+    0%,
+    100% {
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
     }
+    50% {
+      box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
+    }
+  }
 
-    @keyframes gradient-shift {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
+  @keyframes gradient-shift {
+    0% {
+      background-position: 0% 50%;
     }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
 
-    /* グラスモーフィズム効果 */
-    .glass-card {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-    }
+  /* グラスモーフィズム効果 */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+  }
 
-    /* グラデーション背景 */
-    .gradient-bg {
-        background: linear-gradient(-45deg, #f0f9ff, #dbeafe, #e0e7ff, #f5f3ff);
-        background-size: 400% 400%;
-        animation: gradient-shift 15s ease infinite;
-    }
+  /* グラデーション背景 */
+  .gradient-bg {
+    background: linear-gradient(-45deg, #f0f9ff, #dbeafe, #e0e7ff, #f5f3ff);
+    background-size: 400% 400%;
+    animation: gradient-shift 15s ease infinite;
+  }
 
-    /* KPIカードのホバーエフェクト */
-    .kpi-card {
-        position: relative;
-        overflow: hidden;
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
+  /* KPIカードのホバーエフェクト */
+  .kpi-card {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
 
-    .kpi-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-        transition: left 0.5s;
-    }
+  .kpi-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
+    transition: left 0.5s;
+  }
 
-    .kpi-card:hover::before {
-        left: 100%;
-    }
+  .kpi-card:hover::before {
+    left: 100%;
+  }
 
-    .kpi-card:hover {
-        transform: translateY(-8px) scale(1.02);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
-    }
+  .kpi-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+  }
 
-    /* アイコンアニメーション */
-    .icon-float {
-        animation: float 3s ease-in-out infinite;
-    }
+  /* アイコンアニメーション */
+  .icon-float {
+    animation: float 3s ease-in-out infinite;
+  }
 
-    /* プログレスバー */
-    .progress-bar {
-        height: 6px;
-        border-radius: 10px;
-        background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
-        background-size: 200% 100%;
-        animation: shimmer 2s linear infinite;
-    }
+  /* プログレスバー */
+  .progress-bar {
+    height: 6px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
+    background-size: 200% 100%;
+    animation: shimmer 2s linear infinite;
+  }
 
-    /* クイックアクションカード */
-    .action-card {
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
+  /* クイックアクションカード */
+  .action-card {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
 
-    .action-card::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 0;
-        height: 0;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.5);
-        transform: translate(-50%, -50%);
-        transition: width 0.6s, height 0.6s;
-    }
+  .action-card::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
 
-    .action-card:hover::after {
-        width: 300px;
-        height: 300px;
-    }
+  .action-card:hover::after {
+    width: 300px;
+    height: 300px;
+  }
 
-    .action-card:hover {
-        transform: scale(1.05) rotate(-1deg);
-    }
+  .action-card:hover {
+    transform: scale(1.05) rotate(-1deg);
+  }
 
-    /* データカウンターアニメーション */
-    .counter {
-        font-variant-numeric: tabular-nums;
-        transition: all 0.3s ease;
-    }
+  /* データカウンターアニメーション */
+  .counter {
+    font-variant-numeric: tabular-nums;
+    transition: all 0.3s ease;
+  }
 
-    /* リアルタイムステータス */
-    .status-dot {
-        animation: pulse-glow 2s ease-in-out infinite;
-    }
+  /* リアルタイムステータス */
+  .status-dot {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
 </style>
-{% endblock %}
-
-{% block content %}
+{% endblock %} {% block content %}
 <div class="min-h-screen gradient-bg">
-    <div class="max-w-[1600px] mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <!-- ヘッダーセクション -->
-        <div class="mb-10">
-            <div class="flex items-center justify-between">
-                <div class="space-y-2">
-                    <h1 class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600">
-                        ダッシュボード
-                    </h1>
-                    <p class="text-lg text-gray-600 font-medium">生産状況と在庫の全体像をリアルタイムで把握</p>
-                </div>
-                <div class="hidden md:flex items-center space-x-4">
-                    <div class="glass-card flex items-center px-5 py-3 rounded-2xl shadow-lg">
-                        <div class="status-dot w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                        <span class="text-sm font-semibold text-gray-700" id="refresh-status">システム稼働中</span>
-                    </div>
-                    <button id="refreshDashboard"
-                        class="glass-card p-4 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-110 group"
-                        title="ダッシュボードを再取得">
-                        <i class="fas fa-sync-alt text-gray-600 group-hover:rotate-180 transition-transform duration-500"></i>
-                    </button>
-                </div>
-            </div>
+  <div class="max-w-[1600px] mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <!-- ヘッダーセクション -->
+    <div class="mb-10">
+      <div class="flex items-center justify-between">
+        <div class="space-y-2">
+          <h1
+            class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600"
+          >
+            ダッシュボード
+          </h1>
+          <p class="text-lg text-gray-600 font-medium">
+            生産状況と在庫の全体像をリアルタイムで把握
+          </p>
         </div>
-
-        <!-- KPIカードセクション -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8 mb-10" id="kpiCards">
-            <!-- 在庫総数カード -->
-            <div class="kpi-card glass-card rounded-3xl p-8 shadow-xl">
-                <div class="flex items-start justify-between mb-6">
-                    <div class="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg icon-float">
-                        <i class="fas fa-boxes text-3xl text-white"></i>
-                    </div>
-                    <div class="text-right flex-1 ml-4">
-                        <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">同等品グループ本数</div>
-                        <div class="counter text-4xl font-black text-gray-900 mb-1" id="total-inventory">-</div>
-                        <div class="text-sm font-semibold text-blue-600">本</div>
-                    </div>
-                </div>
-                <div class="progress-bar mb-4"></div>
-                <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-600 font-medium">在庫ありグループ</span>
-                    <span class="font-bold text-gray-900" id="group-count">- グループ</span>
-                </div>
-            </div>
-
-            <!-- アクティブ材料カード -->
-            <div class="kpi-card glass-card rounded-3xl p-8 shadow-xl">
-                <div class="flex items-start justify-between mb-6">
-                    <div class="p-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg icon-float" style="animation-delay: 0.2s;">
-                        <i class="fas fa-cubes text-3xl text-white"></i>
-                    </div>
-                    <div class="text-right flex-1 ml-4">
-                        <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">アクティブ材料件数</div>
-                        <div class="counter text-4xl font-black text-gray-900 mb-1" id="material-types">-</div>
-                        <div class="text-sm font-semibold text-green-600">種類</div>
-                    </div>
-                </div>
-                <div class="progress-bar mb-4" style="background: linear-gradient(90deg, #10b981, #059669);"></div>
-                <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-600 font-medium">最終在庫更新</span>
-                    <span class="font-bold text-gray-900" id="last-inventory-refresh">-</span>
-                </div>
-            </div>
-
-            <!-- 入庫待ちカード -->
-            <div class="kpi-card glass-card rounded-3xl p-8 shadow-xl">
-                <div class="flex items-start justify-between mb-6">
-                    <div class="p-4 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg icon-float" style="animation-delay: 0.4s;">
-                        <i class="fas fa-clipboard-list text-3xl text-white"></i>
-                    </div>
-                    <div class="text-right flex-1 ml-4">
-                        <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">入庫待ち・検品待ち</div>
-                        <div class="counter text-4xl font-black text-gray-900 mb-1" id="pending-po-count">-</div>
-                        <div class="text-sm font-semibold text-amber-600">アイテム</div>
-                    </div>
-                </div>
-                <div class="progress-bar mb-4" style="background: linear-gradient(90deg, #f59e0b, #ea580c);"></div>
-                <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-600 font-medium">見込み総重量</span>
-                    <span class="font-bold text-gray-900" id="pending-po-weight">- kg</span>
-                </div>
-            </div>
-
-            <!-- 在庫切れ予測カード -->
-            <div class="kpi-card glass-card rounded-3xl p-8 shadow-xl">
-                <div class="flex items-start justify-between mb-6">
-                    <div class="p-4 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl shadow-lg icon-float" style="animation-delay: 0.6s;">
-                        <i class="fas fa-exclamation-triangle text-3xl text-white"></i>
-                    </div>
-                    <div class="text-right flex-1 ml-4">
-                        <div class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">在庫切れ予測</div>
-                        <div class="counter text-4xl font-black text-gray-900 mb-1" id="forecast-risk-count">-</div>
-                        <div class="text-sm font-semibold text-red-600">材料</div>
-                    </div>
-                </div>
-                <div class="progress-bar mb-4" style="background: linear-gradient(90deg, #ef4444, #f43f5e);"></div>
-                <div class="flex items-center justify-between text-sm">
-                    <span class="text-gray-600 font-medium">最短枯渇予定</span>
-                    <span class="font-bold text-gray-900" id="nearest-stockout">-</span>
-                </div>
-            </div>
+        <div class="hidden md:flex items-center space-x-4">
+          <div
+            class="glass-card flex items-center px-5 py-3 rounded-2xl shadow-lg"
+          >
+            <div
+              class="status-dot w-3 h-3 bg-green-500 rounded-full mr-3"
+            ></div>
+            <span
+              class="text-sm font-semibold text-gray-700"
+              id="refresh-status"
+              >システム稼働中</span
+            >
+          </div>
+          <button
+            id="refreshDashboard"
+            class="glass-card p-4 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-110 group"
+            title="ダッシュボードを再取得"
+          >
+            <i
+              class="fas fa-sync-alt text-gray-600 group-hover:rotate-180 transition-transform duration-500"
+            ></i>
+          </button>
         </div>
-
-        <!-- メインコンテンツグリッド -->
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-10">
-            <!-- クイックアクション -->
-            <div class="xl:col-span-2">
-                <div class="glass-card rounded-3xl p-8 shadow-xl">
-                    <div class="flex items-center mb-8">
-                        <div class="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg mr-4">
-                            <i class="fas fa-bolt text-2xl text-white"></i>
-                        </div>
-                        <h3 class="text-2xl font-black text-gray-900">クイックアクション</h3>
-                    </div>
-                    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-6" id="quickActions">
-                        <a href="/inventory"
-                            class="action-card relative flex flex-col items-center p-6 bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 rounded-2xl shadow-lg text-center transform transition-all duration-300">
-                            <i class="fas fa-boxes text-4xl text-white mb-3 relative z-10"></i>
-                            <div class="text-base font-black text-white relative z-10">在庫管理</div>
-                        </a>
-                        <a href="/materials"
-                            class="action-card relative flex flex-col items-center p-6 bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 rounded-2xl shadow-lg text-center transform transition-all duration-300">
-                            <i class="fas fa-cubes text-4xl text-white mb-3 relative z-10"></i>
-                            <div class="text-base font-black text-white relative z-10">材料マスター</div>
-                        </a>
-                        <a href="/order-flow"
-                            class="action-card relative flex flex-col items-center p-6 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-2xl shadow-2xl text-center transform transition-all duration-300 ring-4 ring-blue-300 ring-opacity-50">
-                            <i class="fas fa-stream text-4xl text-white mb-3 relative z-10"></i>
-                            <div class="text-base font-black text-white relative z-10">発注フロー</div>
-                        </a>
-                        <a href="/movements"
-                            class="action-card relative flex flex-col items-center p-6 bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 rounded-2xl shadow-lg text-center transform transition-all duration-300">
-                            <i class="fas fa-exchange-alt text-4xl text-white mb-3 relative z-10"></i>
-                            <div class="text-base font-black text-white relative z-10">入出庫</div>
-                        </a>
-                        <a href="/excel-viewer"
-                            class="action-card relative flex flex-col items-center p-6 bg-gradient-to-br from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 rounded-2xl shadow-lg text-center transform transition-all duration-300">
-                            <i class="fas fa-file-excel text-4xl text-white mb-3 relative z-10"></i>
-                            <div class="text-base font-black text-white relative z-10">Excel照合</div>
-                        </a>
-                        <a href="/production-schedule"
-                            class="action-card relative flex flex-col items-center p-6 bg-gradient-to-br from-blue-400 to-sky-500 hover:from-blue-500 hover:to-sky-600 rounded-2xl shadow-lg text-center transform transition-all duration-300">
-                            <i class="fas fa-chart-line text-4xl text-white mb-3 relative z-10"></i>
-                            <div class="text-base font-black text-white relative z-10">生産中一覧</div>
-                        </a>
-                        <a href="/settings"
-                            class="action-card relative flex flex-col items-center p-6 bg-gradient-to-br from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 rounded-2xl shadow-lg text-center transform transition-all duration-300">
-                            <i class="fas fa-sliders-h text-4xl text-white mb-3 relative z-10"></i>
-                            <div class="text-base font-black text-white relative z-10">設定</div>
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 在庫アラート -->
-            <div class="glass-card rounded-3xl p-8 shadow-xl">
-                <div class="flex items-center mb-8">
-                    <div class="p-3 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl shadow-lg mr-4">
-                        <i class="fas fa-exclamation-triangle text-2xl text-white"></i>
-                    </div>
-                    <h3 class="text-2xl font-black text-gray-900">在庫アラート</h3>
-                </div>
-                <div id="stock-alerts" class="space-y-4">
-                    <div class="text-center py-12">
-                        <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mb-6 shadow-lg">
-                            <i class="fas fa-check-circle text-4xl text-white"></i>
-                        </div>
-                        <p class="text-gray-800 font-bold text-lg">現在アラートはありません</p>
-                        <p class="text-sm text-gray-600 mt-2 font-medium">在庫状況は正常です</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 下部グリッド -->
-        <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-10">
-            <!-- 最近の入出庫 -->
-            <div class="xl:col-span-2">
-                <div class="glass-card rounded-3xl p-8 shadow-xl">
-                    <div class="flex items-center justify-between mb-8">
-                        <div class="flex items-center">
-                            <div class="p-3 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl shadow-lg mr-4">
-                                <i class="fas fa-history text-2xl text-white"></i>
-                            </div>
-                            <h3 class="text-2xl font-black text-gray-900">最近の入出庫</h3>
-                        </div>
-                        <a href="/movements" class="text-sm text-blue-600 hover:text-blue-700 font-bold hover:underline transition-all">入出庫一覧へ →</a>
-                    </div>
-                    <div id="recent-activities" class="space-y-4">
-                        <div class="text-center py-16">
-                            <div class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-6 shadow-inner">
-                                <i class="fas fa-clock text-3xl text-gray-400"></i>
-                            </div>
-                            <p class="text-gray-700 font-bold text-lg">活動履歴を取得中...</p>
-                            <p class="text-sm text-gray-500 mt-2 font-medium">データが読み込まれるまでお待ちください</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 生産・在庫リスク -->
-            <div class="glass-card rounded-3xl p-8 shadow-xl">
-                <div class="flex items-center mb-8">
-                    <div class="p-3 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-2xl shadow-lg mr-4">
-                        <i class="fas fa-bolt text-2xl text-white"></i>
-                    </div>
-                    <h3 class="text-2xl font-black text-gray-900">生産・在庫リスク</h3>
-                </div>
-                <div id="stockout-forecast" class="space-y-4">
-                    <div class="text-center py-12">
-                        <div class="animate-spin rounded-full h-12 w-12 border-4 border-purple-200 border-t-purple-600 mx-auto mb-6"></div>
-                        <p class="text-sm font-semibold text-gray-600">在庫切れ予測を集計中...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 最下部グリッド -->
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            <!-- 同等品グループ スナップショット -->
-            <div class="glass-card rounded-3xl p-8 shadow-xl">
-                <div class="flex items-center justify-between mb-8">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl shadow-lg mr-4">
-                            <i class="fas fa-boxes text-2xl text-white"></i>
-                        </div>
-                        <h3 class="text-2xl font-black text-gray-900">同等品グループ</h3>
-                    </div>
-                    <a href="/inventory" class="text-sm text-indigo-600 hover:text-indigo-700 font-bold hover:underline transition-all">在庫管理へ →</a>
-                </div>
-                <div class="space-y-4" id="groupSnapshot">
-                    <div class="text-center py-12">
-                        <div class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 mx-auto mb-6"></div>
-                        <p class="text-sm font-semibold text-gray-600">グループ在庫を読み込んでいます...</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 入庫待ち / 検品待ち -->
-            <div class="glass-card rounded-3xl p-8 shadow-xl">
-                <div class="flex items-center justify-between mb-8">
-                    <div class="flex items-center">
-                        <div class="p-3 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-2xl shadow-lg mr-4">
-                            <i class="fas fa-clipboard-check text-2xl text-white"></i>
-                        </div>
-                        <h3 class="text-2xl font-black text-gray-900">入庫待ち / 検品待ち</h3>
-                    </div>
-                    <a href="/order-flow" class="text-sm text-amber-600 hover:text-amber-700 font-bold hover:underline transition-all">発注フローへ →</a>
-                </div>
-                <div class="space-y-4" id="pendingPOList">
-                    <div class="text-center py-12">
-                        <div class="animate-spin rounded-full h-12 w-12 border-4 border-amber-200 border-t-amber-600 mx-auto mb-6"></div>
-                        <p class="text-sm font-semibold text-gray-600">入庫待ち一覧を取得中...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
-</div>
-{% endblock %}
 
-{% block extra_scripts %}
+    <!-- KPIカードセクション -->
+    <div
+      class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-8 mb-10"
+      id="kpiCards"
+    >
+      <!-- 在庫総数カード -->
+      <div class="kpi-card glass-card rounded-3xl p-8 shadow-xl">
+        <div class="flex items-start justify-between mb-6">
+          <div
+            class="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg icon-float"
+          >
+            <i class="fas fa-boxes text-3xl text-white"></i>
+          </div>
+          <div class="text-right flex-1 ml-4">
+            <div
+              class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+            >
+              同等品グループ本数
+            </div>
+            <div
+              class="counter text-4xl font-black text-gray-900 mb-1"
+              id="total-inventory"
+            >
+              -
+            </div>
+            <div class="text-sm font-semibold text-blue-600">本</div>
+          </div>
+        </div>
+        <div class="progress-bar mb-4"></div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-600 font-medium">在庫ありグループ</span>
+          <span class="font-bold text-gray-900" id="group-count"
+            >- グループ</span
+          >
+        </div>
+      </div>
+
+      <!-- アクティブ材料カード -->
+      <div class="kpi-card glass-card rounded-3xl p-8 shadow-xl">
+        <div class="flex items-start justify-between mb-6">
+          <div
+            class="p-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg icon-float"
+            style="animation-delay: 0.2s"
+          >
+            <i class="fas fa-cubes text-3xl text-white"></i>
+          </div>
+          <div class="text-right flex-1 ml-4">
+            <div
+              class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+            >
+              アクティブ材料件数
+            </div>
+            <div
+              class="counter text-4xl font-black text-gray-900 mb-1"
+              id="material-types"
+            >
+              -
+            </div>
+            <div class="text-sm font-semibold text-green-600">種類</div>
+          </div>
+        </div>
+        <div
+          class="progress-bar mb-4"
+          style="background: linear-gradient(90deg, #10b981, #059669)"
+        ></div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-600 font-medium">最終在庫更新</span>
+          <span class="font-bold text-gray-900" id="last-inventory-refresh"
+            >-</span
+          >
+        </div>
+      </div>
+
+      <!-- 入庫待ちカード -->
+      <div class="kpi-card glass-card rounded-3xl p-8 shadow-xl">
+        <div class="flex items-start justify-between mb-6">
+          <div
+            class="p-4 bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-lg icon-float"
+            style="animation-delay: 0.4s"
+          >
+            <i class="fas fa-clipboard-list text-3xl text-white"></i>
+          </div>
+          <div class="text-right flex-1 ml-4">
+            <div
+              class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+            >
+              入庫待ち・検品待ち
+            </div>
+            <div
+              class="counter text-4xl font-black text-gray-900 mb-1"
+              id="pending-po-count"
+            >
+              -
+            </div>
+            <div class="text-sm font-semibold text-amber-600">アイテム</div>
+          </div>
+        </div>
+        <div
+          class="progress-bar mb-4"
+          style="background: linear-gradient(90deg, #f59e0b, #ea580c)"
+        ></div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-600 font-medium">見込み総重量</span>
+          <span class="font-bold text-gray-900" id="pending-po-weight"
+            >- kg</span
+          >
+        </div>
+      </div>
+
+      <!-- 在庫切れ予測カード -->
+      <div class="kpi-card glass-card rounded-3xl p-8 shadow-xl">
+        <div class="flex items-start justify-between mb-6">
+          <div
+            class="p-4 bg-gradient-to-br from-red-500 to-rose-600 rounded-2xl shadow-lg icon-float"
+            style="animation-delay: 0.6s"
+          >
+            <i class="fas fa-exclamation-triangle text-3xl text-white"></i>
+          </div>
+          <div class="text-right flex-1 ml-4">
+            <div
+              class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2"
+            >
+              在庫切れ予測
+            </div>
+            <div
+              class="counter text-4xl font-black text-gray-900 mb-1"
+              id="forecast-risk-count"
+            >
+              -
+            </div>
+            <div class="text-sm font-semibold text-red-600">材料</div>
+          </div>
+        </div>
+        <div
+          class="progress-bar mb-4"
+          style="background: linear-gradient(90deg, #ef4444, #f43f5e)"
+        ></div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-600 font-medium">最短枯渇予定</span>
+          <span class="font-bold text-gray-900" id="nearest-stockout">-</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- メインコンテンツグリッド -->
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-10">
+      <!-- クイックアクション -->
+      <div class="xl:col-span-2">
+        <div class="glass-card rounded-3xl p-8 shadow-xl">
+          <div class="flex items-center mb-8">
+            <div
+              class="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg mr-4"
+            >
+              <i class="fas fa-bolt text-2xl text-white"></i>
+            </div>
+            <h3 class="text-2xl font-black text-gray-900">
+              クイックアクション
+            </h3>
+          </div>
+          <div
+            class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-6"
+            id="quickActions"
+          >
+            <a
+              href="/inventory"
+              class="action-card relative flex flex-col items-center p-6 bg-gradient-to-br from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 rounded-2xl shadow-lg text-center transform transition-all duration-300"
+            >
+              <i
+                class="fas fa-boxes text-4xl text-white mb-3 relative z-10"
+              ></i>
+              <div class="text-base font-black text-white relative z-10">
+                在庫管理
+              </div>
+            </a>
+            <a
+              href="/materials"
+              class="action-card relative flex flex-col items-center p-6 bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 rounded-2xl shadow-lg text-center transform transition-all duration-300"
+            >
+              <i
+                class="fas fa-cubes text-4xl text-white mb-3 relative z-10"
+              ></i>
+              <div class="text-base font-black text-white relative z-10">
+                材料マスター
+              </div>
+            </a>
+            <a
+              href="/order-flow"
+              class="action-card relative flex flex-col items-center p-6 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 rounded-2xl shadow-2xl text-center transform transition-all duration-300 ring-4 ring-blue-300 ring-opacity-50"
+            >
+              <i
+                class="fas fa-stream text-4xl text-white mb-3 relative z-10"
+              ></i>
+              <div class="text-base font-black text-white relative z-10">
+                発注フロー
+              </div>
+            </a>
+            <a
+              href="/movements"
+              class="action-card relative flex flex-col items-center p-6 bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 rounded-2xl shadow-lg text-center transform transition-all duration-300"
+            >
+              <i
+                class="fas fa-exchange-alt text-4xl text-white mb-3 relative z-10"
+              ></i>
+              <div class="text-base font-black text-white relative z-10">
+                入出庫
+              </div>
+            </a>
+            <a
+              href="/excel-viewer"
+              class="action-card relative flex flex-col items-center p-6 bg-gradient-to-br from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 rounded-2xl shadow-lg text-center transform transition-all duration-300"
+            >
+              <i
+                class="fas fa-file-excel text-4xl text-white mb-3 relative z-10"
+              ></i>
+              <div class="text-base font-black text-white relative z-10">
+                Excel照合
+              </div>
+            </a>
+            <a
+              href="/production-schedule"
+              class="action-card relative flex flex-col items-center p-6 bg-gradient-to-br from-blue-400 to-sky-500 hover:from-blue-500 hover:to-sky-600 rounded-2xl shadow-lg text-center transform transition-all duration-300"
+            >
+              <i
+                class="fas fa-chart-line text-4xl text-white mb-3 relative z-10"
+              ></i>
+              <div class="text-base font-black text-white relative z-10">
+                生産中一覧
+              </div>
+            </a>
+            <a
+              href="/settings"
+              class="action-card relative flex flex-col items-center p-6 bg-gradient-to-br from-purple-500 to-violet-600 hover:from-purple-600 hover:to-violet-700 rounded-2xl shadow-lg text-center transform transition-all duration-300"
+            >
+              <i
+                class="fas fa-sliders-h text-4xl text-white mb-3 relative z-10"
+              ></i>
+              <div class="text-base font-black text-white relative z-10">
+                設定
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- 在庫アラート -->
+      <div class="glass-card rounded-3xl p-8 shadow-xl">
+        <div class="flex items-center mb-8">
+          <div
+            class="p-3 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl shadow-lg mr-4"
+          >
+            <i class="fas fa-exclamation-triangle text-2xl text-white"></i>
+          </div>
+          <h3 class="text-2xl font-black text-gray-900">在庫アラート</h3>
+        </div>
+        <div id="stock-alerts" class="space-y-4">
+          <div class="text-center py-12">
+            <div
+              class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mb-6 shadow-lg"
+            >
+              <i class="fas fa-check-circle text-4xl text-white"></i>
+            </div>
+            <p class="text-gray-800 font-bold text-lg">
+              現在アラートはありません
+            </p>
+            <p class="text-sm text-gray-600 mt-2 font-medium">
+              在庫状況は正常です
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 下部グリッド -->
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-10">
+      <!-- 最近の入出庫 -->
+      <div class="xl:col-span-2">
+        <div class="glass-card rounded-3xl p-8 shadow-xl">
+          <div class="flex items-center justify-between mb-8">
+            <div class="flex items-center">
+              <div
+                class="p-3 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl shadow-lg mr-4"
+              >
+                <i class="fas fa-history text-2xl text-white"></i>
+              </div>
+              <h3 class="text-2xl font-black text-gray-900">最近の入出庫</h3>
+            </div>
+            <a
+              href="/movements"
+              class="text-sm text-blue-600 hover:text-blue-700 font-bold hover:underline transition-all"
+              >入出庫一覧へ →</a
+            >
+          </div>
+          <div id="recent-activities" class="space-y-4">
+            <div class="text-center py-16">
+              <div
+                class="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-6 shadow-inner"
+              >
+                <i class="fas fa-clock text-3xl text-gray-400"></i>
+              </div>
+              <p class="text-gray-700 font-bold text-lg">活動履歴を取得中...</p>
+              <p class="text-sm text-gray-500 mt-2 font-medium">
+                データが読み込まれるまでお待ちください
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 生産・在庫リスク -->
+      <div class="glass-card rounded-3xl p-8 shadow-xl">
+        <div class="flex items-center mb-8">
+          <div
+            class="p-3 bg-gradient-to-br from-purple-500 to-fuchsia-600 rounded-2xl shadow-lg mr-4"
+          >
+            <i class="fas fa-bolt text-2xl text-white"></i>
+          </div>
+          <h3 class="text-2xl font-black text-gray-900">生産・在庫リスク</h3>
+        </div>
+        <div id="stockout-forecast" class="space-y-4">
+          <div class="text-center py-12">
+            <div
+              class="animate-spin rounded-full h-12 w-12 border-4 border-purple-200 border-t-purple-600 mx-auto mb-6"
+            ></div>
+            <p class="text-sm font-semibold text-gray-600">
+              在庫切れ予測を集計中...
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 最下部グリッド -->
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      <!-- 同等品グループ スナップショット -->
+      <div class="glass-card rounded-3xl p-8 shadow-xl">
+        <div class="flex items-center justify-between mb-8">
+          <div class="flex items-center">
+            <div
+              class="p-3 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl shadow-lg mr-4"
+            >
+              <i class="fas fa-boxes text-2xl text-white"></i>
+            </div>
+            <h3 class="text-2xl font-black text-gray-900">同等品グループ</h3>
+          </div>
+          <a
+            href="/inventory"
+            class="text-sm text-indigo-600 hover:text-indigo-700 font-bold hover:underline transition-all"
+            >在庫管理へ →</a
+          >
+        </div>
+        <div class="space-y-4" id="groupSnapshot">
+          <div class="text-center py-12">
+            <div
+              class="animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 mx-auto mb-6"
+            ></div>
+            <p class="text-sm font-semibold text-gray-600">
+              グループ在庫を読み込んでいます...
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 入庫待ち / 検品待ち -->
+      <div class="glass-card rounded-3xl p-8 shadow-xl">
+        <div class="flex items-center justify-between mb-8">
+          <div class="flex items-center">
+            <div
+              class="p-3 bg-gradient-to-br from-amber-500 to-yellow-600 rounded-2xl shadow-lg mr-4"
+            >
+              <i class="fas fa-clipboard-check text-2xl text-white"></i>
+            </div>
+            <h3 class="text-2xl font-black text-gray-900">
+              入庫待ち / 検品待ち
+            </h3>
+          </div>
+          <a
+            href="/order-flow"
+            class="text-sm text-amber-600 hover:text-amber-700 font-bold hover:underline transition-all"
+            >発注フローへ →</a
+          >
+        </div>
+        <div class="space-y-4" id="pendingPOList">
+          <div class="text-center py-12">
+            <div
+              class="animate-spin rounded-full h-12 w-12 border-4 border-amber-200 border-t-amber-600 mx-auto mb-6"
+            ></div>
+            <p class="text-sm font-semibold text-gray-600">
+              入庫待ち一覧を取得中...
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_scripts %}
 <script src="{{ url_for('static', path='/js/dashboard.js') }}"></script>
 {% endblock %}

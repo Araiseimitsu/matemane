@@ -65,7 +65,6 @@ class SettingsManager {
             // モーダルを表示
             const modal = document.getElementById('densityPresetModal');
             modal.classList.remove('hidden');
-            modal.classList.add('flex');
 
             this.currentPresetId = presetId;
         } catch (error) {
@@ -123,7 +122,6 @@ class SettingsManager {
 
         const modal = document.getElementById('deleteConfirmModal');
         modal.classList.remove('hidden');
-        modal.classList.add('flex');
     }
 
     async deleteDensityPreset() {
@@ -137,7 +135,6 @@ class SettingsManager {
             // モーダルを閉じる
             const modal = document.getElementById('deleteConfirmModal');
             modal.classList.add('hidden');
-            modal.classList.remove('flex');
         } catch (error) {
             console.error('比重プリセット削除エラー:', error);
             this.showAlert('比重プリセットの削除に失敗しました', 'danger');
