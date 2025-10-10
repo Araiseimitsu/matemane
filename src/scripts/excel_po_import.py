@@ -277,8 +277,8 @@ def main():
     parser.add_argument(
         "--excel",
         type=str,
-        # default="\\\\192.168.1.200\\共有\\生産管理課\\材料管理.xlsx",
-        default="材料管理.xlsx",
+        default="\\\\192.168.1.200\\共有\\生産管理課\\材料管理.xlsx",
+        # default="材料管理.xlsx",
         help="Excelファイルパス",
     )
     parser.add_argument("--sheet", type=str, default="材料管理表", help="シート名")
