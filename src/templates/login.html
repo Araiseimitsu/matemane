@@ -8,13 +8,31 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- 最小限のカスタムCSS（login.htmlのみ） -->
+    <style>
+        .logo-rotate {
+            transition: all 0.3s ease;
+        }
+
+        .logo-rotate:hover {
+            animation: logoRotateOnce 0.5s ease-out;
+        }
+
+        @keyframes logoRotateOnce {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="max-w-md w-full space-y-8 p-8">
         <!-- ロゴとタイトル -->
         <div class="text-center">
-            <div class="mx-auto h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center">
-                <i class="fas fa-industry text-white text-xl"></i>
+            <div class="mx-auto h-16 w-16 bg-white rounded-full flex items-center justify-center shadow-lg border border-gray-200">
+                <img src="{{ url_for('static', path='/img/matemane.png') }}" alt="Matemane Logo" class="w-12 h-12 object-contain logo-rotate">
             </div>
             <h2 class="mt-6 text-3xl font-bold text-gray-900">材料管理システム</h2>
             <p class="mt-2 text-sm text-gray-600">アカウントにログインしてください</p>

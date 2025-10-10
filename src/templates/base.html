@@ -13,9 +13,12 @@
   <!-- Font Awesome for icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-  <!-- Favicon (SVG data URL to avoid /favicon.ico 404) -->
-  <link rel="icon" type="image/svg+xml"
-    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%231e40af'/%3E%3Ctext x='8' y='12' text-anchor='middle' font-size='12' font-family='Arial' fill='white'%3EM%3C/text%3E%3C/svg%3E" />
+  <!-- Favicon and App Icons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='/img/matemane.png') }}" />
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='/img/matemane.png') }}" />
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', path='/img/matemane.png') }}" />
+  <link rel="manifest" href="{{ url_for('static', path='/manifest.json') }}" />
+  <meta name="theme-color" content="#1e40af" />
 
   <!-- Custom CSS -->
   <link rel="stylesheet" href="{{ url_for('static', path='/css/mobile.css') }}" />
@@ -136,11 +139,30 @@
 
     /* ロゴアニメーション */
     .logo-icon {
-      transition: all 0.4s ease;
+      transition: all 0.3s ease;
+      transform: scale(1);
     }
 
     .logo-icon:hover {
-      transform: rotate(360deg) scale(1.1);
+      transform: scale(1.05);
+      box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.2);
+    }
+
+    .logo-icon img {
+      transition: all 0.3s ease;
+    }
+
+    .logo-icon:hover img {
+      animation: logoRotateOnce 0.5s ease-out;
+    }
+
+    @keyframes logoRotateOnce {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
     }
 
     /* トースト改善 */
@@ -187,8 +209,8 @@
         <div class="flex items-center">
           <!-- ロゴ -->
           <a href="/" class="flex items-center focus:outline-none group" tabindex="-1">
-            <div class="logo-icon p-3 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl mr-4 shadow-lg">
-              <i class="fas fa-industry text-white text-2xl"></i>
+            <div class="logo-icon p-2 bg-white rounded-2xl mr-4 shadow-lg border border-gray-200">
+              <img src="{{ url_for('static', path='/img/matemane.png') }}" alt="Matemane Logo" class="w-12 h-12 object-contain">
             </div>
             <span class="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
               材料管理システム

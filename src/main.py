@@ -46,6 +46,13 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="src/static"), name="static")
 templates = Jinja2Templates(directory="src/templates")
 
+# Favicon用の特別なルート
+@app.get("/favicon.ico")
+async def favicon():
+    """ブラウザのfavicon.icoリクエストに対応"""
+    from fastapi.responses import FileResponse
+    return FileResponse("src/static/img/matemane.png", media_type="image/png")
+
 # セキュリティスキーム
 security = HTTPBearer()
 

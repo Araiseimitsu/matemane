@@ -1,0 +1,26 @@
+{
+  "name": "材料管理システム (Matemane)",
+  "short_name": "Matemane",
+  "description": "材料管理システム - 在庫管理、発注管理、生産スケジュール管理",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e40af",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/static/img/matemane.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/img/matemane.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "utilities"],
+  "lang": "ja"
+}

@@ -86,7 +86,7 @@ temp/
 
 # Generated files
 *.pdf
-*.png
+# *.png
 *.jpg
 *.jpeg
 *.gif
