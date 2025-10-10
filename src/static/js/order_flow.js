@@ -1391,6 +1391,31 @@ function initializeInspectionTab() {
     document.getElementById('inspectionForm')?.addEventListener('submit', submitInspection);
     document.getElementById('refreshInspectionListBtn')?.addEventListener('click', () => loadInspectionItemsList(1));
 
+    // 検品済み一覧（検索）のイベント設定
+    document.getElementById('resetInspectedLotsFiltersBtn')?.addEventListener('click', resetInspectedLotsFilters);
+    // 入力時点でのリアルタイム検索（debounce）
+    const debouncedLoadInspected = debounce(() => loadInspectedLotsList(1), 300);
+    ['inspectedMaterialFilter','inspectedLotFilter','inspectedOrderNumberFilter'].forEach((id)=>{
+        const el = document.getElementById(id);
+        el?.addEventListener('input', debouncedLoadInspected);
+        el?.addEventListener('keyup', (e)=>{ if (e.key === 'Enter') loadInspectedLotsList(1); });
+        el?.addEventListener('change', () => loadInspectedLotsList(1));
+    });
+
+    // 入庫済みアイテムから選択のリアルタイム検索
+    const debouncedRenderInspection = debounce(() => renderInspectionItemsList(1), 300);
+    ['inspectionMaterialFilter','inspectionLotFilter','inspectionOrderNumberFilter'].forEach((id)=>{
+        const el = document.getElementById(id);
+        el?.addEventListener('input', debouncedRenderInspection);
+        el?.addEventListener('change', () => renderInspectionItemsList(1));
+    });
+    document.getElementById('resetInspectionSelectionFiltersBtn')?.addEventListener('click', resetInspectionSelectionFilters);
+
+    // 検品済み一覧トグル
+    document.getElementById('toggleInspectedSectionBtn')?.addEventListener('click', toggleInspectedSection);
+
+    // 初期は非表示（ロードしない）
+
     // デフォルト日時を現在に設定
     const now = new Date();
     const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
@@ -1436,31 +1461,26 @@ async function loadInspectionItemsList(page = 1) {
             })
             : [];
 
-        console.log('有効なアイテム数:', validItems.length); // デバッグ用
+        // 検品「合格」済みは選択一覧から除外
+        const filteredItems = validItems.filter(item => {
+            const status = (item?.lot?.inspection_status || 'pending').toLowerCase();
+            return status !== 'passed';
+        });
 
-        if (validItems.length === 0) {
+        console.log('有効なアイテム数:', validItems.length); // デバッグ用
+        console.log('選択対象アイテム数（合格除外後）:', filteredItems.length); // デバッグ用
+
+        if (filteredItems.length === 0) {
             empty.classList.remove('hidden');
             inspectionAllItems = [];
             return;
         }
 
-        // 全アイテムを保存
-        inspectionAllItems = validItems;
+        // 全アイテムを保存（合格済み除外後）
+        inspectionAllItems = filteredItems;
 
-        // ページネーション処理
-        const totalPages = Math.ceil(inspectionAllItems.length / inspectionPageSize);
-        currentInspectionPage = Math.min(page, totalPages);
-        const startIndex = (currentInspectionPage - 1) * inspectionPageSize;
-        const endIndex = startIndex + inspectionPageSize;
-        const pageItems = inspectionAllItems.slice(startIndex, endIndex);
-
-        pageItems.forEach(item => {
-            const row = createInspectionItemRow(item);
-            tableBody.appendChild(row);
-        });
-
-        // ページネーション表示
-        renderPagination('inspection', currentInspectionPage, totalPages, loadInspectionItemsList);
+        // フィルタを適用してレンダリング（クライアントサイド）
+        renderInspectionItemsList(page);
 
     } catch (error) {
         loading.classList.add('hidden');
@@ -1469,6 +1489,72 @@ async function loadInspectionItemsList(page = 1) {
             showToast('入庫済みアイテムの読み込みに失敗しました: ' + error.message, 'error');
         }
     }
+}
+
+// 入庫済みアイテム一覧（クライアントサイドフィルタ適用後のレンダリング）
+function renderInspectionItemsList(page = 1) {
+    const tableBody = document.getElementById('inspectionItemsListBody');
+    const empty = document.getElementById('inspectionListEmpty');
+
+    if (!tableBody || !empty) return;
+
+    tableBody.innerHTML = '';
+    empty.classList.add('hidden');
+
+    // テキストフィルタ取得
+    const materialSpec = (document.getElementById('inspectionMaterialFilter')?.value || '').trim().toLowerCase();
+    const lotNumber = (document.getElementById('inspectionLotFilter')?.value || '').trim().toLowerCase();
+    const orderNumber = (document.getElementById('inspectionOrderNumberFilter')?.value || '').trim().toLowerCase();
+
+    // フィルタ適用
+    let filtered = inspectionAllItems;
+    if (materialSpec) {
+        filtered = filtered.filter(item => (item.material?.display_name || item.material?.name || '').toLowerCase().includes(materialSpec));
+    }
+    if (lotNumber) {
+        filtered = filtered.filter(item => (item.lot?.lot_number || '').toLowerCase().includes(lotNumber));
+    }
+    if (orderNumber) {
+        filtered = filtered.filter(item => (item.lot?.order_number || '').toLowerCase().includes(orderNumber));
+    }
+
+    if (!filtered || filtered.length === 0) {
+        empty.classList.remove('hidden');
+        renderPagination('inspection', 1, 1, renderInspectionItemsList);
+        return;
+    }
+
+    // ページネーション処理
+    const totalPages = Math.ceil(filtered.length / inspectionPageSize);
+    currentInspectionPage = Math.min(page, totalPages);
+    const startIndex = (currentInspectionPage - 1) * inspectionPageSize;
+    const endIndex = startIndex + inspectionPageSize;
+    const pageItems = filtered.slice(startIndex, endIndex);
+
+    pageItems.forEach(item => {
+        const row = createInspectionItemRow(item);
+        tableBody.appendChild(row);
+    });
+
+    // ページネーション表示（クライアントサイドのレンダラを渡す）
+    renderPagination('inspection', currentInspectionPage, totalPages, renderInspectionItemsList);
+}
+
+function resetInspectionSelectionFilters() {
+    ['inspectionMaterialFilter','inspectionLotFilter','inspectionOrderNumberFilter'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    renderInspectionItemsList(1);
+}
+
+// 検品済み一覧のフィルタをリセット
+function resetInspectedLotsFilters() {
+    ['inspectedOrderNumberFilter','inspectedMaterialFilter','inspectedLotFilter'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    loadInspectedLotsList(1);
 }
 
 function createInspectionItemRow(item) {
@@ -1646,6 +1732,11 @@ async function loadInspectionTargetByCode() {
         if (typeof showToast === 'function') {
             showToast('検品対象を読み込みました', 'success');
         }
+
+        // 保存済みの検品詳細があればフォームへ反映
+        if (currentInspectionLotId) {
+            await populateInspectionFormFromSaved(currentInspectionLotId);
+        }
     } catch (e) {
         console.error('ロット番号読み込みエラー:', e);
         if (typeof showToast === 'function') {
@@ -1677,6 +1768,78 @@ function resetInspectionForm() {
     if (dtEl) dtEl.value = local;
 }
 
+async function populateInspectionFormFromSaved(lotId) {
+    try {
+        const res = await fetch(`/api/inventory/lots/${lotId}/inspection/`);
+        if (!res.ok) {
+            console.warn('検品詳細の取得に失敗:', res.status);
+            return;
+        }
+        const detail = await res.json();
+
+        // 日時（ローカル）
+        if (detail.inspected_at) {
+            const dt = new Date(detail.inspected_at);
+            const local = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            const dtEl = document.getElementById('inspectedAtInput');
+            if (dtEl) dtEl.value = local;
+        }
+
+        // セレクト・テキスト
+        const setSelectBool = (id, val) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (val === null || typeof val === 'undefined') {
+                el.value = '';
+            } else {
+                el.value = val ? 'true' : 'false';
+            }
+        };
+
+        setSelectBool('bendingOkSelect', detail.bending_ok);
+        setSelectBool('scratchOkSelect', detail.scratch_ok);
+        setSelectBool('dirtOkSelect', detail.dirt_ok);
+
+        const judgementEl = document.getElementById('inspectionJudgementSelect');
+        if (judgementEl) judgementEl.value = detail.inspection_judgement || '';
+
+        const byEl = document.getElementById('inspectedByInput');
+        if (byEl) byEl.value = detail.inspected_by_name || '';
+
+        const notesEl = document.getElementById('inspectionNotesInput');
+        if (notesEl) notesEl.value = detail.inspection_notes || '';
+
+        // 寸法入力
+        const numMap = [
+            ['dim1LeftMax', 'dim1_left_max'],
+            ['dim1LeftMin', 'dim1_left_min'],
+            ['dim1CenterMax', 'dim1_center_max'],
+            ['dim1CenterMin', 'dim1_center_min'],
+            ['dim1RightMax', 'dim1_right_max'],
+            ['dim1RightMin', 'dim1_right_min'],
+            ['dim2LeftMax', 'dim2_left_max'],
+            ['dim2LeftMin', 'dim2_left_min'],
+            ['dim2CenterMax', 'dim2_center_max'],
+            ['dim2CenterMin', 'dim2_center_min'],
+            ['dim2RightMax', 'dim2_right_max'],
+            ['dim2RightMin', 'dim2_right_min']
+        ];
+
+        numMap.forEach(([id, key]) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const val = detail[key];
+            el.value = (val === null || typeof val === 'undefined') ? '' : String(val);
+        });
+
+        if (typeof showToast === 'function') {
+            showToast('保存済み検品データをフォームに反映しました', 'success');
+        }
+    } catch (e) {
+        console.error('検品詳細取得エラー:', e);
+    }
+}
+
 async function submitInspection(event) {
     event.preventDefault();
 
@@ -1690,21 +1853,65 @@ async function submitInspection(event) {
     }
 
     const inspectedAtStr = document.getElementById('inspectedAtInput').value;
-    const measuredValStr = document.getElementById('measuredValueInput').value;
-    const appearanceOk = document.getElementById('appearanceOkInput').checked;
-    const bendingOk = document.getElementById('bendingOkInput').checked;
+    // 実測値は廃止
+    // 外観は廃止。曲がりはセレクトに統一
+    const bendingOk = document.getElementById('bendingOkSelect') ? (document.getElementById('bendingOkSelect').value === 'true') : true;
     const inspectedBy = document.getElementById('inspectedByInput').value.trim();
     const notes = document.getElementById('inspectionNotesInput').value.trim();
 
-    // 検品ステータスを判定（両方OKなら合格、それ以外は不合格）
-    const inspectionStatus = appearanceOk && bendingOk ? 'passed' : 'failed';
+    // 追加項目
+    const judgementVal = document.getElementById('inspectionJudgementSelect') ? document.getElementById('inspectionJudgementSelect').value : '';
+    const scratchOk = document.getElementById('scratchOkSelect') ? (document.getElementById('scratchOkSelect').value === 'true') : true;
+    const dirtOk = document.getElementById('dirtOkSelect') ? (document.getElementById('dirtOkSelect').value === 'true') : true;
+
+    const getNum = (id) => {
+        const el = document.getElementById(id);
+        if (!el || el.value === '') return null;
+        const n = parseFloat(el.value);
+        return isNaN(n) ? null : n;
+    };
+    const dim1LeftMax = getNum('dim1LeftMax');
+    const dim1LeftMin = getNum('dim1LeftMin');
+    const dim1CenterMax = getNum('dim1CenterMax');
+    const dim1CenterMin = getNum('dim1CenterMin');
+    const dim1RightMax = getNum('dim1RightMax');
+    const dim1RightMin = getNum('dim1RightMin');
+    const dim2LeftMax = getNum('dim2LeftMax');
+    const dim2LeftMin = getNum('dim2LeftMin');
+    const dim2CenterMax = getNum('dim2CenterMax');
+    const dim2CenterMin = getNum('dim2CenterMin');
+    const dim2RightMax = getNum('dim2RightMax');
+    const dim2RightMin = getNum('dim2RightMin');
+
+    // 判定優先度: 手動選択があればそれを優先、なければ自動（AND）
+    let inspectionStatus = 'failed';
+    if (judgementVal === 'pass') {
+        inspectionStatus = 'passed';
+    } else if (judgementVal === 'fail') {
+        inspectionStatus = 'failed';
+    } else {
+        inspectionStatus = (bendingOk && scratchOk && dirtOk) ? 'passed' : 'failed';
+    }
 
     const payload = {
         inspection_status: inspectionStatus,
         inspected_at: inspectedAtStr ? new Date(inspectedAtStr).toISOString() : new Date().toISOString(),
-        measured_value: measuredValStr ? parseFloat(measuredValStr) : null,
-        appearance_ok: appearanceOk,
         bending_ok: bendingOk,
+        scratch_ok: scratchOk,
+        dirt_ok: dirtOk,
+        inspection_judgement: judgementVal || null,
+        dim1_left_max: dim1LeftMax,
+        dim1_left_min: dim1LeftMin,
+        dim1_center_max: dim1CenterMax,
+        dim1_center_min: dim1CenterMin,
+        dim1_right_max: dim1RightMax,
+        dim1_right_min: dim1RightMin,
+        dim2_left_max: dim2LeftMax,
+        dim2_left_min: dim2LeftMin,
+        dim2_center_max: dim2CenterMax,
+        dim2_center_min: dim2CenterMin,
+        dim2_right_max: dim2RightMax,
+        dim2_right_min: dim2RightMin,
         inspected_by_name: inspectedBy || null,
         inspection_notes: notes || null
     };
@@ -2405,6 +2612,132 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+// ================================
+// 検品済みロット一覧（検索＋再編集）
+// ================================
+let inspectedLotsAll = [];
+let currentInspectedPage = 1;
+const inspectedLotsPageSize = 25;
+let inspectedSectionLoaded = false;
+
+async function loadInspectedLotsList(page = 1) {
+    const tableBody = document.getElementById('inspectedLotsTableBody');
+    const loading = document.getElementById('inspectedLotsLoading');
+    const empty = document.getElementById('inspectedLotsEmpty');
+
+    if (!tableBody || !loading || !empty) return;
+
+    loading.classList.remove('hidden');
+    tableBody.innerHTML = '';
+    empty.classList.add('hidden');
+
+    try {
+        const materialSpec = encodeURIComponent((document.getElementById('inspectedMaterialFilter')?.value || '').trim());
+        const lotNumber = encodeURIComponent((document.getElementById('inspectedLotFilter')?.value || '').trim());
+        const orderNumber = encodeURIComponent((document.getElementById('inspectedOrderNumberFilter')?.value || '').trim());
+
+        const params = [];
+        if (materialSpec) params.push(`material_spec=${materialSpec}`);
+        if (lotNumber) params.push(`lot_number=${lotNumber}`);
+        if (orderNumber) params.push(`order_number=${orderNumber}`);
+        params.push('skip=0');
+        params.push('limit=1000');
+
+        const url = `/api/inventory/lots/inspected/?${params.join('&')}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        const lots = await res.json();
+
+        loading.classList.add('hidden');
+
+        if (!lots || lots.length === 0) {
+            empty.classList.remove('hidden');
+            inspectedLotsAll = [];
+            renderPagination('inspectedLots', 1, 1, loadInspectedLotsList);
+            return;
+        }
+
+        inspectedLotsAll = lots;
+        const totalPages = Math.ceil(inspectedLotsAll.length / inspectedLotsPageSize);
+        currentInspectedPage = Math.min(page, totalPages);
+        const startIndex = (currentInspectedPage - 1) * inspectedLotsPageSize;
+        const endIndex = startIndex + inspectedLotsPageSize;
+        const pageItems = inspectedLotsAll.slice(startIndex, endIndex);
+
+        pageItems.forEach(lot => {
+            const row = createInspectedLotRow(lot);
+            tableBody.appendChild(row);
+        });
+
+        renderPagination('inspectedLots', currentInspectedPage, totalPages, loadInspectedLotsList);
+    } catch (error) {
+        console.error('検品済み一覧の読み込みに失敗:', error);
+        loading.classList.add('hidden');
+        if (typeof showToast === 'function') showToast('検品済み一覧の読み込みに失敗しました', 'error');
+    }
+}
+
+function createInspectedLotRow(lot) {
+    const row = document.createElement('tr');
+    row.className = 'hover:bg-gray-50';
+
+    const orderNumber = lot.order_number || '-';
+    const materialSpec = lot.material_name || '-';
+    const lotNumber = lot.lot_number || '-';
+    const qty = lot.total_quantity ?? '-';
+    const weightDisplay = lot.total_weight_kg > 0 ? `${(lot.total_weight_kg || 0).toFixed(3)}kg` : '-';
+    const inspectedAt = lot.inspected_at ? new Date(lot.inspected_at).toLocaleString() : '-';
+
+    const status = (lot.inspection_status || 'pending').toLowerCase();
+    let statusText = '未検品';
+    let statusClass = 'bg-amber-100 text-amber-700';
+    if (status === 'passed') { statusText = '合格'; statusClass = 'bg-green-100 text-green-700'; }
+    else if (status === 'failed') { statusText = '不合格'; statusClass = 'bg-red-100 text-red-700'; }
+
+    const btnClass = 'bg-indigo-600 text-white px-2 py-1 rounded text-xs hover:bg-indigo-700';
+
+    row.innerHTML = `
+        <td class="px-3 py-2 text-xs text-gray-900">${orderNumber}</td>
+        <td class="px-3 py-2 text-xs text-gray-900">${materialSpec}</td>
+        <td class="px-3 py-2 text-xs text-gray-900">${lotNumber}</td>
+        <td class="px-3 py-2 text-xs text-gray-600">${qty}本</td>
+        <td class="px-3 py-2 text-xs text-gray-600">${weightDisplay}</td>
+        <td class="px-3 py-2">
+            <span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass}">${statusText}</span>
+        </td>
+        <td class="px-3 py-2 text-xs text-gray-600">${inspectedAt}</td>
+        <td class="px-3 py-2">
+            <button class="${btnClass}" onclick="editInspectedLot('${lotNumber}')">再編集</button>
+        </td>
+    `;
+    return row;
+}
+
+function editInspectedLot(lotNumber) {
+    const codeInput = document.getElementById('inspectionCodeInput');
+    if (codeInput) codeInput.value = lotNumber;
+    loadInspectionTargetByCode();
+    const form = document.getElementById('inspectionForm');
+    form?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function toggleInspectedSection() {
+    const section = document.getElementById('inspectedLotsSection');
+    const btn = document.getElementById('toggleInspectedSectionBtn');
+    if (!section || !btn) return;
+    if (section.classList.contains('hidden')) {
+        section.classList.remove('hidden');
+        btn.textContent = '閉じる';
+        if (!inspectedSectionLoaded) {
+            loadInspectedLotsList(1);
+            inspectedSectionLoaded = true;
+        }
+    } else {
+        section.classList.add('hidden');
+        btn.textContent = '開く';
+    }
 }
 
 /**

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Text, ForeignKey, Enum, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, Text, ForeignKey, Enum, UniqueConstraint, Index
 from sqlalchemy.dialects.mysql import CHAR
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -39,6 +39,12 @@ class InspectionStatus(enum.Enum):
     PENDING = "pending"
     PASSED = "passed"
     FAILED = "failed"
+
+
+# 手動判定（合否のみ）
+class InspectionJudgement(enum.Enum):
+    PASS = "pass"
+    FAIL = "fail"
 
 
 
@@ -137,6 +143,9 @@ class Location(Base):
 
 class Lot(Base):
     __tablename__ = "lots"
+    __table_args__ = (
+        Index('idx_lots_po_inspection', 'purchase_order_item_id', 'inspection_status'),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     lot_number = Column(String(100), unique=True, nullable=False, comment="ロット番号")
@@ -161,11 +170,28 @@ class Lot(Base):
     # 検品関連（追加）
     inspection_status = Column(Enum(InspectionStatus), nullable=False, default=InspectionStatus.PENDING, comment="検品ステータス")
     inspected_at = Column(DateTime(timezone=True), comment="検品日時")
-    measured_value = Column(Float, comment="実測値")
-    appearance_ok = Column(Boolean, comment="外観問題なし")
     bending_ok = Column(Boolean, comment="曲がり問題なし")
     inspected_by_name = Column(String(100), comment="検品作業者名")
     inspection_notes = Column(Text, comment="検品備考")
+
+    # 追加項目
+    scratch_ok = Column(Boolean, comment="キズ問題なし")
+    dirt_ok = Column(Boolean, comment="汚れ問題なし")
+    inspection_judgement = Column(Enum(InspectionJudgement), nullable=True, comment="判定結果（手動）")
+
+    # 寸法1/寸法2（左端/中央/右端） 最大・最小
+    dim1_left_max = Column(Float, comment="寸法1 左端 最大")
+    dim1_left_min = Column(Float, comment="寸法1 左端 最小")
+    dim1_center_max = Column(Float, comment="寸法1 中央 最大")
+    dim1_center_min = Column(Float, comment="寸法1 中央 最小")
+    dim1_right_max = Column(Float, comment="寸法1 右端 最大")
+    dim1_right_min = Column(Float, comment="寸法1 右端 最小")
+    dim2_left_max = Column(Float, comment="寸法2 左端 最大")
+    dim2_left_min = Column(Float, comment="寸法2 左端 最小")
+    dim2_center_max = Column(Float, comment="寸法2 中央 最大")
+    dim2_center_min = Column(Float, comment="寸法2 中央 最小")
+    dim2_right_max = Column(Float, comment="寸法2 右端 最大")
+    dim2_right_min = Column(Float, comment="寸法2 右端 最小")
 
 class Item(Base):
     __tablename__ = "items"

@@ -39,7 +39,7 @@
                 </button>
                 <button id="tab-inspection" role="tab" aria-selected="false" aria-controls="panel-inspection"
                     class="tab-button px-6 py-3 text-sm font-bold rounded-xl transition-all duration-300 focus:outline-none whitespace-nowrap">
-                    <i class="fas fa-clipboard-check mr-2"></i>検品タブ1
+                    <i class="fas fa-clipboard-check mr-2"></i>検品タブ
                 </button>
                 <button id="tab-print" role="tab" aria-selected="false" aria-controls="panel-print"
                     class="tab-button px-6 py-3 text-sm font-bold rounded-xl transition-all duration-300 focus:outline-none whitespace-nowrap">
@@ -292,6 +292,31 @@
                         <i class="fas fa-list-check mr-2"></i>入庫済みアイテムから選択
                     </h3>
 
+                    <!-- フィルター（リアルタイム検索） -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">発注番号</label>
+                            <input id="inspectionOrderNumberFilter" type="text" placeholder="例: PO-000123"
+                                   class="w-full p-2 border border-gray-300 rounded-md" />
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">機械使用</label>
+                            <input id="inspectionMaterialFilter" type="text" placeholder="例: STKM13A φ19"
+                                   class="w-full p-2 border border-gray-300 rounded-md" />
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">ロット番号</label>
+                            <input id="inspectionLotFilter" type="text" placeholder="例: 2409-001"
+                                   class="w-full p-2 border border-gray-300 rounded-md" />
+                        </div>
+                        <div class="flex items-end">
+                            <button type="button" id="resetInspectionSelectionFiltersBtn"
+                                    class="w-full bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors">
+                                <i class="fas fa-redo mr-2"></i>リセット
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- ページネーション（上部） -->
                     <div id="inspectionPaginationTop" class="mb-4"></div>
 
@@ -325,6 +350,80 @@
                     <div id="inspectionPaginationBottom" class="mt-4"></div>
                 </div>
 
+                <!-- 検品済み一覧（検索＋再編集） -->
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 mb-8 border border-blue-200 shadow-inner">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-bold text-indigo-900 flex items-center">
+                            <i class="fas fa-clipboard-check mr-2"></i>検品済み一覧
+                        </h3>
+                        <button type="button" id="toggleInspectedSectionBtn"
+                                class="text-xs px-3 py-1 rounded-md bg-indigo-100 text-indigo-700 hover:bg-indigo-200">
+                            開く
+                        </button>
+                    </div>
+
+                    <div id="inspectedLotsSection" class="hidden">
+
+                    <!-- フィルター -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">発注番号</label>
+                            <input id="inspectedOrderNumberFilter" type="text" placeholder="例: PO-000123"
+                                   class="w-full p-2 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">機械使用</label>
+                            <input id="inspectedMaterialFilter" type="text" placeholder="例: STKM13A φ19"
+                                   class="w-full p-2 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-600 mb-1">ロット番号</label>
+                            <input id="inspectedLotFilter" type="text" placeholder="例: 2409-001"
+                                   class="w-full p-2 border border-gray-300 rounded-md">
+                        </div>
+                        <div class="flex items-end">
+                            <button type="button" id="resetInspectedLotsFiltersBtn" onclick="resetInspectedLotsFilters()"
+                                    class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors">
+                                <i class="fas fa-redo mr-2"></i>リセット
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ページネーション（上部） -->
+                    <div id="inspectedLotsPaginationTop" class="mb-4"></div>
+
+                    <div class="overflow-x-auto bg-white rounded-2xl border-2 border-indigo-200 shadow-lg">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gradient-to-r from-indigo-500 to-blue-600">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">発注番号</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">材料仕様</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">ロット番号</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">本数</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">重量</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">検品状態</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">検品日時</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inspectedLotsTableBody" class="divide-y divide-gray-200">
+                                <!-- 動的に生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="inspectedLotsLoading" class="text-center py-4 hidden">
+                        <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+                        <p class="mt-2 text-sm text-indigo-700">読み込み中...</p>
+                    </div>
+                    <div id="inspectedLotsEmpty" class="text-center py-4 hidden">
+                        <p class="text-sm text-gray-500">検品済みのロットがありません</p>
+                    </div>
+
+                    <!-- ページネーション（下部） -->
+                    <div id="inspectedLotsPaginationBottom" class="mt-4"></div>
+                    </div>
+                </div>
+
                 <!-- 検品フォーム -->
                 <form id="inspectionForm" class="space-y-6">
                     <!-- 検品対象情報表示 -->
@@ -350,30 +449,116 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">確認日時 *</label>
                             <input type="datetime-local" id="inspectedAtInput" name="inspected_at" required
                                 class="w-full p-3 border border-gray-300 rounded-md">
                         </div>
+                    </div>
+
+                    <!-- 旧: 外観OK/曲がりOK チェックボックス は廃止 -->
+
+                    <!-- 追加判定項目（手動判定・曲がり・キズ・汚れ） -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">実測値（mm）</label>
-                            <input type="number" step="0.001" id="measuredValueInput" name="measured_value"
-                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 7.985">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">判定結果</label>
+                            <select id="inspectionJudgementSelect" class="w-full p-3 border border-gray-300 rounded-md">
+                                <option value="">自動判定</option>
+                                <option value="pass">合格</option>
+                                <option value="fail">不合格</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">曲がり</label>
+                            <select id="bendingOkSelect" class="w-full p-3 border border-gray-300 rounded-md">
+                                <option value="true">OK</option>
+                                <option value="false">NG</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">キズ</label>
+                            <select id="scratchOkSelect" class="w-full p-3 border border-gray-300 rounded-md">
+                                <option value="true">OK</option>
+                                <option value="false">NG</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">汚れ</label>
+                            <select id="dirtOkSelect" class="w-full p-3 border border-gray-300 rounded-md">
+                                <option value="true">OK</option>
+                                <option value="false">NG</option>
+                            </select>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="flex items-center space-x-3">
-                            <input type="checkbox" id="appearanceOkInput" name="appearance_ok" class="rounded h-5 w-5">
-                            <label for="appearanceOkInput" class="text-sm font-medium text-gray-700">外観OK</label>
+                    <!-- 寸法入力（簡易）: 左端/中央/右端 最大・最小 → 寸法1/寸法2 -->
+                    <div class="bg-gray-50 rounded-lg p-4 space-y-4">
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-900 mb-2">寸法1</h3>
+                            <div class="grid grid-cols-3 gap-3 mb-2">
+                                <div>
+                                    <label class="block text-xs text-gray-600">左端 最大</label>
+                                    <input type="number" step="0.001" id="dim1LeftMax" class="w-full p-2 border border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-600">中央 最大</label>
+                                    <input type="number" step="0.001" id="dim1CenterMax" class="w-full p-2 border border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-600">右端 最大</label>
+                                    <input type="number" step="0.001" id="dim1RightMax" class="w-full p-2 border border-gray-300 rounded-md">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs text-gray-600">左端 最小</label>
+                                    <input type="number" step="0.001" id="dim1LeftMin" class="w-full p-2 border border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-600">中央 最小</label>
+                                    <input type="number" step="0.001" id="dim1CenterMin" class="w-full p-2 border border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-600">右端 最小</label>
+                                    <input type="number" step="0.001" id="dim1RightMin" class="w-full p-2 border border-gray-300 rounded-md">
+                                </div>
+                            </div>
                         </div>
-                        <div class="flex items-center space-x-3">
-                            <input type="checkbox" id="bendingOkInput" name="bending_ok" class="rounded h-5 w-5">
-                            <label for="bendingOkInput" class="text-sm font-medium text-gray-700">曲がりOK</label>
+                        <div>
+                            <h3 class="text-sm font-medium text-gray-900 mb-2">寸法2</h3>
+                            <div class="grid grid-cols-3 gap-3 mb-2">
+                                <div>
+                                    <label class="block text-xs text-gray-600">左端 最大</label>
+                                    <input type="number" step="0.001" id="dim2LeftMax" class="w-full p-2 border border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-600">中央 最大</label>
+                                    <input type="number" step="0.001" id="dim2CenterMax" class="w-full p-2 border border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-600">右端 最大</label>
+                                    <input type="number" step="0.001" id="dim2RightMax" class="w-full p-2 border border-gray-300 rounded-md">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs text-gray-600">左端 最小</label>
+                                    <input type="number" step="0.001" id="dim2LeftMin" class="w-full p-2 border border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-600">中央 最小</label>
+                                    <input type="number" step="0.001" id="dim2CenterMin" class="w-full p-2 border border-gray-300 rounded-md">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-600">右端 最小</label>
+                                    <input type="number" step="0.001" id="dim2RightMin" class="w-full p-2 border border-gray-300 rounded-md">
+                                </div>
+                            </div>
                         </div>
                     </div>
 
+                    <!-- フォーム最下部: 作業者・備考 -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">作業者</label>
                         <input type="text" id="inspectedByInput" name="inspected_by_name" list="inspectorNameList"

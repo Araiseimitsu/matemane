@@ -11,8 +11,6 @@ router = APIRouter(prefix="/api/inspections", tags=["検品"])
 
 class InspectionRequest(BaseModel):
     inspection_date: datetime = Field(..., description="確認日")
-    measured_value: float | None = Field(None, description="実測値")
-    appearance_ok: bool = Field(..., description="外観")
     bending_ok: bool = Field(..., description="曲がり")
     inspector_name: str = Field(..., max_length=100, description="作業者名")
     notes: str | None = Field(None, description="備考")
@@ -25,14 +23,12 @@ async def submit_inspection(lot_id: int, body: InspectionRequest, db: Session = 
         raise HTTPException(status_code=404, detail="ロットが見つかりません")
 
     lot.inspected_at = body.inspection_date
-    lot.measured_value = body.measured_value
-    lot.appearance_ok = body.appearance_ok
     lot.bending_ok = body.bending_ok
     lot.inspected_by_name = body.inspector_name
     lot.inspection_notes = body.notes
 
     lot.inspection_status = (
-        InspectionStatus.PASSED if (body.appearance_ok and body.bending_ok) else InspectionStatus.FAILED
+        InspectionStatus.PASSED if body.bending_ok else InspectionStatus.FAILED
     )
 
     db.commit()

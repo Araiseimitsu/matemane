@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, case
 from typing import List, Optional
 from pydantic import BaseModel, Field, ConfigDict, field_serializer
 from datetime import datetime
 
 from src.db import get_db
-from src.db.models import Item, Lot, Material, Location, MaterialShape, MaterialGroup, MaterialGroupMember, InspectionStatus
+from src.db.models import Item, Lot, Material, Location, MaterialShape, MaterialGroup, MaterialGroupMember, InspectionStatus, InspectionJudgement, PurchaseOrderItem, PurchaseOrder
 
 router = APIRouter()
 
@@ -758,6 +758,7 @@ class InspectionLotResponse(BaseModel):
     inspection_status: InspectionStatus
     inspected_at: Optional[datetime] = None
     received_date: datetime
+    order_number: Optional[str] = None
 
     @field_serializer('inspection_status')
     def serialize_inspection_status(self, value: InspectionStatus, _info):
@@ -791,7 +792,7 @@ def get_lots_for_inspection(
         Material.shape,
         Material.diameter_mm,
         func.sum(Item.current_quantity).label("total_quantity"),
-        func.sum(Item.total_weight_kg).label("total_weight_kg")
+        Material.current_density.label("current_density")
     ).select_from(Lot).join(
         Item, Item.lot_id == Lot.id
     ).join(
@@ -819,8 +820,30 @@ def get_lots_for_inspection(
 
     results = query.all()
 
-    return [
-        InspectionLotResponse(
+    inspected_list: List[InspectionLotResponse] = []
+    for row in results:
+        # 重量計算（材質密度 × 体積）
+        if row.shape == MaterialShape.ROUND:
+            radius_cm = (row.diameter_mm / 2) / 10
+            length_cm = row.length_mm / 10
+            volume_cm3 = 3.14159 * (radius_cm ** 2) * length_cm
+        elif row.shape == MaterialShape.HEXAGON:
+            side_cm = (row.diameter_mm / 2) / 10
+            length_cm = row.length_mm / 10
+            volume_cm3 = (3 * (3 ** 0.5) / 2) * (side_cm ** 2) * length_cm
+        elif row.shape == MaterialShape.SQUARE:
+            side_cm = row.diameter_mm / 10
+            length_cm = row.length_mm / 10
+            volume_cm3 = (side_cm ** 2) * length_cm
+        else:
+            volume_cm3 = 0
+
+        density = float(row.current_density or 0.0)
+        qty = int(row.total_quantity or 0)
+        weight_per_piece_kg = (volume_cm3 * density) / 1000
+        total_weight_kg = weight_per_piece_kg * qty
+
+        inspected_list.append(InspectionLotResponse(
             lot_id=row.lot_id,
             lot_number=row.lot_number,
             material_name=row.material_name,
@@ -828,25 +851,78 @@ def get_lots_for_inspection(
             diameter_mm=row.diameter_mm,
             length_mm=row.length_mm,
             total_quantity=row.total_quantity or 0,
-            total_weight_kg=row.total_weight_kg or 0.0,
+            total_weight_kg=round(total_weight_kg, 3),
             inspection_status=row.inspection_status,
             inspected_at=row.inspected_at,
-            received_date=row.received_date
-        )
-        for row in results
-    ]
+            received_date=row.received_date,
+            order_number=None
+        ))
+
+    return inspected_list
 
 
 class UpdateInspectionRequest(BaseModel):
     """検品情報更新リクエスト"""
     inspection_status: InspectionStatus
     inspected_at: datetime
-    measured_value: Optional[float] = None
-    appearance_ok: Optional[bool] = None
     bending_ok: Optional[bool] = None
     inspected_by_name: Optional[str] = None
     inspection_notes: Optional[str] = None
+    scratch_ok: Optional[bool] = None
+    dirt_ok: Optional[bool] = None
+    inspection_judgement: Optional[InspectionJudgement] = None
 
+    # 寸法1/寸法2 最大・最小（左端/中央/右端）
+    dim1_left_max: Optional[float] = None
+    dim1_left_min: Optional[float] = None
+    dim1_center_max: Optional[float] = None
+    dim1_center_min: Optional[float] = None
+    dim1_right_max: Optional[float] = None
+    dim1_right_min: Optional[float] = None
+    dim2_left_max: Optional[float] = None
+    dim2_left_min: Optional[float] = None
+    dim2_center_max: Optional[float] = None
+    dim2_center_min: Optional[float] = None
+    dim2_right_max: Optional[float] = None
+    dim2_right_min: Optional[float] = None
+
+
+class InspectionDetailResponse(BaseModel):
+    """検品詳細（再編集用）レスポンス"""
+    model_config = ConfigDict(from_attributes=True)
+
+    lot_id: int
+    lot_number: str
+    inspection_status: Optional[InspectionStatus] = None
+    inspected_at: Optional[datetime] = None
+    bending_ok: Optional[bool] = None
+    scratch_ok: Optional[bool] = None
+    dirt_ok: Optional[bool] = None
+    inspected_by_name: Optional[str] = None
+    inspection_notes: Optional[str] = None
+    inspection_judgement: Optional[InspectionJudgement] = None
+
+    # 寸法1/寸法2 最大・最小（左端/中央/右端）
+    dim1_left_max: Optional[float] = None
+    dim1_left_min: Optional[float] = None
+    dim1_center_max: Optional[float] = None
+    dim1_center_min: Optional[float] = None
+    dim1_right_max: Optional[float] = None
+    dim1_right_min: Optional[float] = None
+    dim2_left_max: Optional[float] = None
+    dim2_left_min: Optional[float] = None
+    dim2_center_max: Optional[float] = None
+    dim2_center_min: Optional[float] = None
+    dim2_right_max: Optional[float] = None
+    dim2_right_min: Optional[float] = None
+
+    @field_serializer('inspection_status')
+    def serialize_inspection_status(self, value: Optional[InspectionStatus], _info):
+        return value.value if value else None
+
+    @field_serializer('inspection_judgement')
+    def serialize_inspection_judgement(self, value: Optional[InspectionJudgement], _info):
+        return value.value if value else None
 
 @router.put("/lots/{lot_id}/inspection/")
 def update_lot_inspection(
@@ -864,11 +940,26 @@ def update_lot_inspection(
     # 検品情報を更新
     lot.inspection_status = request.inspection_status
     lot.inspected_at = request.inspected_at
-    lot.measured_value = request.measured_value
-    lot.appearance_ok = request.appearance_ok
     lot.bending_ok = request.bending_ok
+    lot.scratch_ok = request.scratch_ok
+    lot.dirt_ok = request.dirt_ok
     lot.inspected_by_name = request.inspected_by_name
     lot.inspection_notes = request.inspection_notes
+    lot.inspection_judgement = request.inspection_judgement
+
+    # 寸法の保存
+    lot.dim1_left_max = request.dim1_left_max
+    lot.dim1_left_min = request.dim1_left_min
+    lot.dim1_center_max = request.dim1_center_max
+    lot.dim1_center_min = request.dim1_center_min
+    lot.dim1_right_max = request.dim1_right_max
+    lot.dim1_right_min = request.dim1_right_min
+    lot.dim2_left_max = request.dim2_left_max
+    lot.dim2_left_min = request.dim2_left_min
+    lot.dim2_center_max = request.dim2_center_max
+    lot.dim2_center_min = request.dim2_center_min
+    lot.dim2_right_max = request.dim2_right_max
+    lot.dim2_right_min = request.dim2_right_min
 
     db.commit()
     db.refresh(lot)
@@ -879,3 +970,170 @@ def update_lot_inspection(
         "lot_number": lot.lot_number,
         "inspection_status": lot.inspection_status.value
     }
+
+
+@router.get("/lots/{lot_id}/inspection/", response_model=InspectionDetailResponse)
+def get_lot_inspection_detail(
+    lot_id: int,
+    db: Session = Depends(get_db)
+):
+    """再編集用に、ロットの検品詳細を取得"""
+    lot = db.query(Lot).filter(Lot.id == lot_id).first()
+    if not lot:
+        raise HTTPException(status_code=404, detail="ロットが見つかりません")
+
+    return InspectionDetailResponse(
+        lot_id=lot.id,
+        lot_number=lot.lot_number,
+        inspection_status=lot.inspection_status,
+        inspected_at=lot.inspected_at,
+        bending_ok=lot.bending_ok,
+        scratch_ok=lot.scratch_ok,
+        dirt_ok=lot.dirt_ok,
+        inspected_by_name=lot.inspected_by_name,
+        inspection_notes=lot.inspection_notes,
+        inspection_judgement=lot.inspection_judgement,
+        dim1_left_max=lot.dim1_left_max,
+        dim1_left_min=lot.dim1_left_min,
+        dim1_center_max=lot.dim1_center_max,
+        dim1_center_min=lot.dim1_center_min,
+        dim1_right_max=lot.dim1_right_max,
+        dim1_right_min=lot.dim1_right_min,
+        dim2_left_max=lot.dim2_left_max,
+        dim2_left_min=lot.dim2_left_min,
+        dim2_center_max=lot.dim2_center_max,
+        dim2_center_min=lot.dim2_center_min,
+        dim2_right_max=lot.dim2_right_max,
+        dim2_right_min=lot.dim2_right_min,
+    )
+
+# ========================================
+# 検品済みロット一覧（検索フィルタ付き）
+# ========================================
+
+class InspectedLotResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    lot_id: int
+    lot_number: str
+    material_name: str
+    shape: MaterialShape
+    diameter_mm: float
+    length_mm: int
+    total_quantity: int
+    total_weight_kg: float
+    inspection_status: InspectionStatus
+    inspected_at: Optional[datetime] = None
+    received_date: datetime
+    order_number: Optional[str] = None
+
+    @field_serializer('inspection_status')
+    def serialize_inspection_status(self, value: InspectionStatus, _info):
+        return value.value if value else None
+
+    @field_serializer('shape')
+    def serialize_shape(self, value: MaterialShape, _info):
+        return value.value if value else None
+
+
+@router.get("/lots/inspected/", response_model=List[InspectedLotResponse])
+def get_inspected_lots(
+    material_spec: Optional[str] = Query(None, description="材料仕様（display_nameに部分一致）"),
+    lot_number: Optional[str] = Query(None, description="ロット番号に部分一致"),
+    order_number: Optional[str] = Query(None, description="発注番号に部分一致"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(200, ge=1, le=1000),
+    db: Session = Depends(get_db)
+):
+    """検品済みロット一覧（検索フィルタ付き）"""
+
+    # 基本集計クエリ（ロット単位）
+    query = db.query(
+        Lot.id.label("lot_id"),
+        Lot.lot_number,
+        Lot.length_mm,
+        Lot.inspection_status,
+        Lot.inspected_at,
+        Lot.received_date,
+        Material.display_name.label("material_name"),
+        Material.shape,
+        Material.diameter_mm,
+        func.sum(Item.current_quantity).label("total_quantity"),
+        Material.current_density.label("current_density"),
+        PurchaseOrder.order_number.label("order_number")
+    ).select_from(Lot).join(
+        Item, Item.lot_id == Lot.id
+    ).join(
+        Material, Lot.material_id == Material.id
+    ).outerjoin(
+        PurchaseOrderItem, PurchaseOrderItem.id == Lot.purchase_order_item_id
+    ).outerjoin(
+        PurchaseOrder, PurchaseOrder.id == PurchaseOrderItem.purchase_order_id
+    ).filter(
+        Item.is_active == True,
+        Lot.inspection_status != InspectionStatus.PENDING
+    ).group_by(
+        Lot.id,
+        Lot.lot_number,
+        Lot.length_mm,
+        Lot.inspection_status,
+        Lot.inspected_at,
+        Lot.received_date,
+        Material.display_name,
+        Material.shape,
+        Material.diameter_mm,
+        PurchaseOrder.order_number
+    ).order_by(
+        case((Lot.inspected_at.is_(None), 1), else_=0),
+        Lot.inspected_at.desc()
+    )
+
+    # フィルタ
+    if material_spec:
+        query = query.filter(Material.display_name.ilike(f"%{material_spec}%"))
+    if lot_number:
+        query = query.filter(Lot.lot_number.ilike(f"%{lot_number}%"))
+    if order_number:
+        query = query.filter(PurchaseOrder.order_number.ilike(f"%{order_number}%"))
+
+    rows = query.offset(skip).limit(limit).all()
+
+    responses: List[InspectedLotResponse] = []
+    for row in rows:
+        # 重量計算（材質密度 × 体積）
+        if row.shape == MaterialShape.ROUND:
+            radius_cm = (row.diameter_mm / 2) / 10
+            length_cm = row.length_mm / 10
+            volume_cm3 = 3.14159 * (radius_cm ** 2) * length_cm
+        elif row.shape == MaterialShape.HEXAGON:
+            side_cm = (row.diameter_mm / 2) / 10
+            length_cm = row.length_mm / 10
+            volume_cm3 = (3 * (3 ** 0.5) / 2) * (side_cm ** 2) * length_cm
+        elif row.shape == MaterialShape.SQUARE:
+            side_cm = row.diameter_mm / 10
+            length_cm = row.length_mm / 10
+            volume_cm3 = (side_cm ** 2) * length_cm
+        else:
+            volume_cm3 = 0
+
+        density = float(row.current_density or 0.0)
+        qty = int(row.total_quantity or 0)
+        weight_per_piece_kg = (volume_cm3 * density) / 1000
+        total_weight_kg = weight_per_piece_kg * qty
+
+        responses.append(InspectedLotResponse(
+            lot_id=row.lot_id,
+            lot_number=row.lot_number,
+            material_name=row.material_name,
+            shape=row.shape,
+            diameter_mm=row.diameter_mm,
+            length_mm=row.length_mm,
+            total_quantity=row.total_quantity or 0,
+            total_weight_kg=round(total_weight_kg, 3),
+            inspection_status=row.inspection_status,
+            inspected_at=row.inspected_at,
+            received_date=row.received_date,
+            order_number=row.order_number
+        ))
+
+    return responses

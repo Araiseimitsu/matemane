@@ -25,8 +25,9 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "src.main:app",
+        # host="localhost",
         host="0.0.0.0",
-        port=8000,
+        port=8003,
         reload=True,
         log_level="info",
         ssl_certfile=ssl_certfile if ssl_certfile else None,
