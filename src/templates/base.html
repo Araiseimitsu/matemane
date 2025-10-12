@@ -41,9 +41,17 @@
     }
 
     @keyframes gradient-shift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
     }
 
     /* アニメーション */
@@ -56,6 +64,7 @@
         opacity: 0;
         transform: translateY(20px);
       }
+
       to {
         opacity: 1;
         transform: translateY(0);
@@ -67,6 +76,7 @@
         opacity: 0;
         transform: translateY(-20px);
       }
+
       to {
         opacity: 1;
         transform: translateY(0);
@@ -74,8 +84,15 @@
     }
 
     @keyframes pulse-glow {
-      0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
-      50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.6); }
+
+      0%,
+      100% {
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+      }
+
+      50% {
+        box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
+      }
     }
 
     /* ナビゲーションスタイル */
@@ -160,6 +177,7 @@
       from {
         transform: rotate(0deg);
       }
+
       to {
         transform: rotate(360deg);
       }
@@ -210,9 +228,11 @@
           <!-- ロゴ -->
           <a href="/" class="flex items-center focus:outline-none group" tabindex="-1">
             <div class="logo-icon p-2 bg-white rounded-2xl mr-4 shadow-lg border border-gray-200">
-              <img src="{{ url_for('static', path='/img/matemane.png') }}" alt="Matemane Logo" class="w-12 h-12 object-contain">
+              <img src="{{ url_for('static', path='/img/matemane.png') }}" alt="Matemane Logo"
+                class="w-12 h-12 object-contain">
             </div>
-            <span class="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <span
+              class="text-2xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
               材料管理システム
             </span>
           </a>
@@ -223,16 +243,20 @@
           <a href="/" class="nav-link text-gray-700 hover:text-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">
             <i class="fas fa-tachometer-alt mr-2"></i>ダッシュボード
           </a>
-          <a href="/inventory" class="nav-link text-gray-700 hover:text-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">
+          <a href="/inventory"
+            class="nav-link text-gray-700 hover:text-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">
             <i class="fas fa-boxes mr-2"></i>在庫管理
           </a>
-          <a href="/materials" class="nav-link text-gray-700 hover:text-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">
+          <a href="/materials"
+            class="nav-link text-gray-700 hover:text-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">
             <i class="fas fa-cubes mr-2"></i>材料マスタ
           </a>
-          <a href="/order-flow" class="nav-link text-gray-700 hover:text-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">
+          <a href="/order-flow"
+            class="nav-link text-gray-700 hover:text-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">
             <i class="fas fa-stream mr-2"></i>発注フロー
           </a>
-          <a href="/movements" class="nav-link text-gray-700 hover:text-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">
+          <a href="/movements"
+            class="nav-link text-gray-700 hover:text-blue-600 px-4 py-2 rounded-xl text-sm font-semibold">
             <i class="fas fa-exchange-alt mr-2"></i>入出庫
           </a>
         </div>
@@ -252,24 +276,29 @@
               <span class="hidden md:block text-sm font-semibold text-gray-700">メニュー</span>
               <i class="fas fa-chevron-down text-xs text-gray-500"></i>
             </button>
-            <div id="user-menu" class="hidden absolute right-0 mt-3 w-56 glass-card rounded-2xl shadow-2xl py-2 z-50 border border-gray-200">
+            <div id="user-menu"
+              class="hidden absolute right-0 mt-3 w-56 glass-card rounded-2xl shadow-2xl py-2 z-50 border border-gray-200">
               <a href="/analytics" class="user-menu-item flex items-center px-5 py-3 text-sm text-gray-700 font-medium">
                 <i class="fas fa-chart-line mr-3 text-green-500"></i>集計・分析
               </a>
-              <a href="/excel-viewer" class="user-menu-item flex items-center px-5 py-3 text-sm text-gray-700 font-medium">
+              <a href="/excel-viewer"
+                class="user-menu-item flex items-center px-5 py-3 text-sm text-gray-700 font-medium">
                 <i class="fas fa-file-excel mr-3 text-teal-500"></i>セット予定読み込み
               </a>
-              <a href="/production-schedule" class="user-menu-item flex items-center px-5 py-3 text-sm text-gray-700 font-medium">
+              <a href="/production-schedule"
+                class="user-menu-item flex items-center px-5 py-3 text-sm text-gray-700 font-medium">
                 <i class="fas fa-list-check mr-3 text-purple-500"></i>生産中一覧
               </a>
-              <a href="/settings#density-presets" class="user-menu-item flex items-center px-5 py-3 text-sm text-gray-700 font-medium">
+              <a href="/settings#density-presets"
+                class="user-menu-item flex items-center px-5 py-3 text-sm text-gray-700 font-medium">
                 <i class="fas fa-cog mr-3 text-gray-500"></i>比重管理
               </a>
               <hr class="my-2 border-gray-200" />
               <a href="#" class="user-menu-item flex items-center px-5 py-3 text-sm text-gray-700 font-medium">
                 <i class="fas fa-user-circle mr-3 text-blue-500"></i>プロフィール
               </a>
-              <a href="#" onclick="logout()" class="user-menu-item flex items-center px-5 py-3 text-sm text-red-600 font-medium">
+              <a href="#" onclick="logout()"
+                class="user-menu-item flex items-center px-5 py-3 text-sm text-red-600 font-medium">
                 <i class="fas fa-sign-out-alt mr-3"></i>ログアウト
               </a>
             </div>
@@ -282,39 +311,50 @@
     <div id="mobile-menu"
       class="lg:hidden hidden absolute top-20 left-0 right-0 nav-glass border-b border-gray-200 shadow-2xl z-50 max-h-[calc(100vh-5rem)] overflow-y-auto">
       <div class="px-4 pt-4 pb-6 space-y-2">
-        <a href="/" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+        <a href="/"
+          class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
           <i class="fas fa-tachometer-alt mr-3 w-5"></i>ダッシュボード
         </a>
-        <a href="/inventory" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+        <a href="/inventory"
+          class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
           <i class="fas fa-boxes mr-3 w-5"></i>在庫管理
         </a>
-        <a href="/materials" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+        <a href="/materials"
+          class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
           <i class="fas fa-cubes mr-3 w-5"></i>材料マスタ
         </a>
-        <a href="/order-flow" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+        <a href="/order-flow"
+          class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
           <i class="fas fa-stream mr-3 w-5"></i>発注フロー
         </a>
-        <a href="/movements" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+        <a href="/movements"
+          class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
           <i class="fas fa-exchange-alt mr-3 w-5"></i>入出庫
         </a>
         <hr class="my-3 border-gray-200" />
-        <a href="/analytics" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+        <a href="/analytics"
+          class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
           <i class="fas fa-chart-line mr-3 w-5"></i>集計・分析
         </a>
-        <a href="/excel-viewer" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+        <a href="/excel-viewer"
+          class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
           <i class="fas fa-file-excel mr-3 w-5"></i>セット予定読み込み
         </a>
-        <a href="/production-schedule" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+        <a href="/production-schedule"
+          class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
           <i class="fas fa-list-check mr-3 w-5"></i>生産中一覧
         </a>
-        <a href="/settings#density-presets" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+        <a href="/settings#density-presets"
+          class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
           <i class="fas fa-cog mr-3 w-5"></i>比重管理
         </a>
         <hr class="my-3 border-gray-200" />
-        <a href="#" class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+        <a href="#"
+          class="nav-link text-gray-700 hover:text-blue-600 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
           <i class="fas fa-user-circle mr-3 w-5"></i>プロフィール
         </a>
-        <a href="#" onclick="logout()" class="nav-link text-red-600 hover:text-red-700 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
+        <a href="#" onclick="logout()"
+          class="nav-link text-red-600 hover:text-red-700 flex items-center px-4 py-3 rounded-xl text-base font-semibold">
           <i class="fas fa-sign-out-alt mr-3 w-5"></i>ログアウト
         </a>
       </div>
@@ -332,7 +372,9 @@
     <div class="max-w-[1600px] mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <div class="text-center">
         <p class="text-gray-600 text-sm font-medium">
-          © 2025 <span class="font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">材料管理システム</span> (matemane)
+          © 2025 <span
+            class="font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">材料管理システム</span>
+          (matemane)
         </p>
         <p class="text-gray-400 text-xs mt-1">Powered by FastAPI & Modern Web Technologies</p>
       </div>
@@ -479,7 +521,7 @@
     }
 
     // ナビゲーションのアクティブ状態を設定
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       const currentPath = window.location.pathname;
       const navLinks = document.querySelectorAll('.nav-link');
 
