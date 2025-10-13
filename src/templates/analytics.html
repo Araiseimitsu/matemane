@@ -3,13 +3,18 @@ endblock %} {% block extra_head %}
 <!-- Chart.js v4 CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-  /* エンプティステート */
-  .empty-state {
-    transition: all 0.3s ease;
-  }
-
-  .empty-state:hover {
-    transform: translateY(-4px);
+  :root {
+    --primary-navy: #1e3a5f;
+    --primary-blue: #2563eb;
+    --accent-blue: #3b82f6;
+    --success-green: #10b981;
+    --warning-amber: #f59e0b;
+    --danger-red: #ef4444;
+    --neutral-50: #f8fafc;
+    --neutral-100: #f1f5f9;
+    --neutral-200: #e2e8f0;
+    --neutral-700: #334155;
+    --neutral-800: #1e293b;
   }
 
   /* チャートコンテナ */
@@ -17,184 +22,140 @@ endblock %} {% block extra_head %}
     position: relative;
     height: 300px;
   }
-
-  /* 検索フォーム入力フィールド */
-  .form-input {
-    transition: all 0.3s ease;
-  }
-
-  .form-input:focus {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.15);
-  }
-
-  /* エクスポートボタン */
-  .export-btn {
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-  }
-
-  .export-btn::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-  }
-
-  .export-btn:hover::before {
-    width: 300px;
-    height: 300px;
-  }
-
-  .export-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-  }
 </style>
 {% endblock %} {% block content %}
-<div class="min-h-screen gradient-bg">
-  <div class="max-w-[1600px] mx-auto py-8 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-neutral-50">
+  <div class="max-w-[1600px] mx-auto py-4 px-4 sm:px-6 lg:px-8">
     <!-- ヘッダー -->
-    <div class="mb-10">
+    <div class="mb-4">
       <div class="flex items-center justify-between">
         <div class="space-y-2">
-          <h1
-            class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600"
-          >
+          <h1 class="text-2xl font-bold text-neutral-800">
             集計・分析
           </h1>
-          <p class="text-lg text-gray-600 font-medium">
+          <p class="text-sm text-neutral-600">
             入出庫履歴、在庫、金額を多角的に分析
           </p>
         </div>
         <div class="hidden md:flex items-center space-x-4">
           <button
             id="quick-search-today"
-            class="glass-card px-6 py-3 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            class="bg-white border border-neutral-200 px-4 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all duration-200"
             title="今日のデータを表示"
           >
-            <i class="fas fa-calendar-day mr-2 text-blue-600"></i>
-            <span class="text-sm font-semibold text-gray-700">今日</span>
+            <i class="fas fa-calendar-day mr-2 text-primary-blue"></i>
+            <span class="text-sm">今日</span>
           </button>
           <button
             id="quick-search-week"
-            class="glass-card px-6 py-3 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            class="bg-white border border-neutral-200 px-4 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all duration-200"
             title="今週のデータを表示"
           >
-            <i class="fas fa-calendar-week mr-2 text-green-600"></i>
-            <span class="text-sm font-semibold text-gray-700">今週</span>
+            <i class="fas fa-calendar-week mr-2 text-success-green"></i>
+            <span class="text-sm">今週</span>
           </button>
           <button
             id="quick-search-month"
-            class="glass-card px-6 py-3 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105"
+            class="bg-white border border-neutral-200 px-4 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all duration-200"
             title="今月のデータを表示"
           >
-            <i class="fas fa-calendar-alt mr-2 text-purple-600"></i>
-            <span class="text-sm font-semibold text-gray-700">今月</span>
+            <i class="fas fa-calendar-alt mr-2 text-warning-amber"></i>
+            <span class="text-sm">今月</span>
           </button>
         </div>
       </div>
     </div>
 
     <!-- 検索フォーム -->
-    <div class="glass-card rounded-3xl p-8 shadow-xl mb-8">
-      <div class="flex items-center mb-6">
-        <div
-          class="p-3 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl shadow-lg mr-4"
-        >
-          <i class="fas fa-filter text-2xl text-white"></i>
+    <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm mb-4">
+      <div class="flex items-center mb-4">
+        <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-4">
+          <i class="fas fa-filter text-primary-blue text-xl"></i>
         </div>
-        <h2 class="text-2xl font-black text-gray-900">検索条件</h2>
+        <h2 class="text-xl font-bold text-neutral-800">検索条件</h2>
       </div>
       <form
         id="search-form"
-        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
       >
         <!-- 開始日 -->
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">
-            <i class="fas fa-calendar-alt mr-1 text-blue-500"></i>開始日
+          <label class="block text-sm font-semibold text-neutral-700 mb-2">
+            <i class="fas fa-calendar-alt mr-1 text-primary-blue"></i>開始日
           </label>
           <input
             type="date"
             id="start-date"
             name="start_date"
-            class="form-input w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium"
+            class="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 focus:border-primary-blue"
           />
         </div>
 
         <!-- 終了日 -->
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">
-            <i class="fas fa-calendar-check mr-1 text-blue-500"></i>終了日
+          <label class="block text-sm font-semibold text-neutral-700 mb-2">
+            <i class="fas fa-calendar-check mr-1 text-primary-blue"></i>終了日
           </label>
           <input
             type="date"
             id="end-date"
             name="end_date"
-            class="form-input w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium"
+            class="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 focus:border-primary-blue"
           />
         </div>
 
         <!-- 材料名 -->
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">
-            <i class="fas fa-cubes mr-1 text-green-500"></i>材料名
+          <label class="block text-sm font-semibold text-neutral-700 mb-2">
+            <i class="fas fa-cubes mr-1 text-success-green"></i>材料名
           </label>
           <input
             type="text"
             id="material-name"
             name="material_name"
             placeholder="部分一致で検索"
-            class="form-input w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium"
+            class="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 focus:border-primary-blue"
           />
         </div>
 
         <!-- 購入月 -->
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">
-            <i class="fas fa-calendar mr-1 text-purple-500"></i>購入月（YYMM）
+          <label class="block text-sm font-semibold text-neutral-700 mb-2">
+            <i class="fas fa-calendar mr-1 text-warning-amber"></i>購入月（YYMM）
           </label>
           <input
             type="text"
             id="purchase-month"
             name="purchase_month"
             placeholder="例: 2501"
-            class="form-input w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium"
+            class="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 focus:border-primary-blue"
             maxlength="4"
           />
         </div>
 
         <!-- 仕入先 -->
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">
-            <i class="fas fa-truck mr-1 text-orange-500"></i>仕入先
+          <label class="block text-sm font-semibold text-neutral-700 mb-2">
+            <i class="fas fa-truck mr-1 text-warning-amber"></i>仕入先
           </label>
           <input
             type="text"
             id="supplier"
             name="supplier"
             placeholder="部分一致で検索"
-            class="form-input w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium"
+            class="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 focus:border-primary-blue"
           />
         </div>
 
         <!-- 入出庫種別 -->
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">
-            <i class="fas fa-exchange-alt mr-1 text-red-500"></i>入出庫種別
+          <label class="block text-sm font-semibold text-neutral-700 mb-2">
+            <i class="fas fa-exchange-alt mr-1 text-danger-red"></i>入出庫種別
           </label>
           <select
             id="movement-type"
             name="movement_type"
-            class="form-input w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium"
+            class="w-full px-3 py-2 border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 focus:border-primary-blue"
           >
             <option value="">全て</option>
             <option value="in">入庫のみ</option>
@@ -207,32 +168,30 @@ endblock %} {% block extra_head %}
           <button
             type="button"
             id="search-btn"
-            class="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-300 shadow-lg font-bold transition-all duration-300 hover:scale-105"
+            class="bg-primary-blue text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-200"
           >
             <i class="fas fa-search mr-2"></i>検索
           </button>
           <button
             type="button"
             id="reset-btn"
-            class="px-8 py-3 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-xl hover:from-gray-500 hover:to-gray-600 focus:ring-4 focus:ring-gray-300 shadow-lg font-bold transition-all duration-300 hover:scale-105"
+            class="bg-white border border-neutral-200 px-6 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all duration-200"
           >
             <i class="fas fa-redo mr-2"></i>リセット
           </button>
           <button
             type="button"
             id="export-csv-btn"
-            class="export-btn px-8 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 focus:ring-4 focus:ring-green-300 shadow-lg font-bold relative overflow-hidden"
+            class="bg-success-green text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-200"
           >
-            <i class="fas fa-file-csv mr-2 relative z-10"></i
-            ><span class="relative z-10">CSV出力</span>
+            <i class="fas fa-file-csv mr-2"></i>CSV出力
           </button>
           <button
             type="button"
             id="export-excel-btn"
-            class="export-btn px-8 py-3 bg-gradient-to-r from-teal-500 to-cyan-600 text-white rounded-xl hover:from-teal-600 hover:to-cyan-700 focus:ring-4 focus:ring-teal-300 shadow-lg font-bold relative overflow-hidden"
+            class="bg-success-green text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-200"
           >
-            <i class="fas fa-file-excel mr-2 relative z-10"></i
-            ><span class="relative z-10">Excel出力</span>
+            <i class="fas fa-file-excel mr-2"></i>Excel出力
           </button>
         </div>
       </form>

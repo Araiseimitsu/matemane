@@ -25,6 +25,40 @@
 
   <!-- グローバルスタイル -->
   <style>
+    /* カスタムプライマリカラー（Tailwind互換ユーティリティ） */
+    :root {
+      /* 既定のプライマリブルー（Tailwind blue-600 相当） */
+      --primary-blue: #2563eb;
+    }
+
+    /* 背景色：bg-primary-blue + bg-opacity-* に対応 */
+    .bg-primary-blue {
+      --tw-bg-opacity: 1;
+      background-color: rgb(37 99 235 / var(--tw-bg-opacity));
+    }
+
+    /* 文字色：text-primary-blue */
+    .text-primary-blue {
+      --tw-text-opacity: 1;
+      color: rgb(37 99 235 / var(--tw-text-opacity));
+    }
+
+    /* 枠線色：border-primary-blue */
+    .border-primary-blue {
+      --tw-border-opacity: 1;
+      border-color: rgb(37 99 235 / var(--tw-border-opacity));
+    }
+
+    /* ホバー文字色：hover:text-primary-blue */
+    .hover\:text-primary-blue:hover {
+      color: rgb(37 99 235);
+    }
+
+    /* フォーカスリング色：focus:ring-primary-blue（Tailwindのringユーティリティに色だけ適用） */
+    .focus\:ring-primary-blue:focus {
+      --tw-ring-color: rgb(37 99 235 / var(--tw-ring-opacity, 0.25));
+    }
+
     /* グラスモーフィズム共通クラス */
     .glass-card {
       background: rgba(255, 255, 255, 0.85);

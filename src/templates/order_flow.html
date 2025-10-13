@@ -3,46 +3,46 @@
 {% block title %}発注フロー統合 - 材料管理システム{% endblock %}
 
 {% block content %}
-<div class="min-h-screen gradient-bg">
+<div class="min-h-screen bg-neutral-50">
     <!-- ヘッダー -->
-    <div class="glass-card shadow-lg border-b animate-fade-in-up">
-        <div class="max-w-[1600px] mx-auto px-6 py-8">
-            <div class="flex items-center space-x-4">
-                <div class="p-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg">
-                    <i class="fas fa-stream text-white text-3xl"></i>
+    <div class="bg-white shadow-sm border-b border-neutral-200">
+        <div class="max-w-[1600px] mx-auto px-4 py-4">
+            <div class="flex items-center space-x-3">
+                <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg">
+                    <i class="fas fa-stream text-primary-blue text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-3xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    <h1 class="text-2xl font-bold text-neutral-800">
                         発注フロー統合
                     </h1>
-                    <p class="text-gray-600 mt-1 font-medium">Excel取込 → 入庫確認 → 検品 → 印刷までを一括管理</p>
+                    <p class="text-sm text-neutral-600 mt-1">Excel取込 → 入庫確認 → 検品 → 印刷までを一括管理</p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- タブナビゲーション -->
-    <div class="glass-card shadow-md border-b sticky top-20 z-40 animate-fade-in-up" style="animation-delay: 0.1s;">
-        <div class="max-w-[1600px] mx-auto px-6">
+    <div class="bg-white shadow-sm border-b border-neutral-200 sticky top-20 z-40">
+        <div class="max-w-[1600px] mx-auto px-4">
             <nav class="flex space-x-2 overflow-x-auto py-2" role="tablist">
                 <button id="tab-import" role="tab" aria-selected="true" aria-controls="panel-import"
-                    class="tab-button active px-6 py-3 text-sm font-bold rounded-xl transition-all duration-300 focus:outline-none whitespace-nowrap">
+                    class="tab-button active px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap">
                     <i class="fas fa-file-excel mr-2"></i>Excel取込
                 </button>
                 <button id="tab-orders" role="tab" aria-selected="false" aria-controls="panel-orders"
-                    class="tab-button px-6 py-3 text-sm font-bold rounded-xl transition-all duration-300 focus:outline-none whitespace-nowrap">
+                    class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap">
                     <i class="fas fa-list mr-2"></i>発注一覧
                 </button>
                 <button id="tab-receiving" role="tab" aria-selected="false" aria-controls="panel-receiving"
-                    class="tab-button px-6 py-3 text-sm font-bold rounded-xl transition-all duration-300 focus:outline-none whitespace-nowrap">
+                    class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap">
                     <i class="fas fa-truck mr-2"></i>入庫確認
                 </button>
                 <button id="tab-inspection" role="tab" aria-selected="false" aria-controls="panel-inspection"
-                    class="tab-button px-6 py-3 text-sm font-bold rounded-xl transition-all duration-300 focus:outline-none whitespace-nowrap">
+                    class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap">
                     <i class="fas fa-clipboard-check mr-2"></i>検品タブ
                 </button>
                 <button id="tab-print" role="tab" aria-selected="false" aria-controls="panel-print"
-                    class="tab-button px-6 py-3 text-sm font-bold rounded-xl transition-all duration-300 focus:outline-none whitespace-nowrap">
+                    class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap">
                     <i class="fas fa-print mr-2"></i>印刷
                 </button>
             </nav>
@@ -50,46 +50,43 @@
     </div>
 
     <!-- タブコンテンツ -->
-    <div class="max-w-[1600px] mx-auto px-6 py-8">
+    <div class="max-w-[1600px] mx-auto px-4 py-4">
         <!-- Excel取込タブ -->
         <div id="panel-import" role="tabpanel" aria-labelledby="tab-import" class="tab-panel">
-            <div class="glass-card rounded-2xl shadow-xl p-8 animate-fade-in-up" style="animation-delay: 0.2s;">
-                <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-8 space-y-4 lg:space-y-0">
+            <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
+                <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-4 space-y-4 lg:space-y-0">
                     <div>
-                        <h2 class="text-2xl font-black text-gray-900 flex items-center">
-                            <div class="w-2 h-8 bg-gradient-to-b from-yellow-400 to-orange-500 rounded-full mr-3"></div>
-                            Excel取込
-                        </h2>
-                        <p class="text-gray-600 mt-2 ml-5">材料管理.xlsx から発注データを自動取り込み</p>
+                        <h2 class="text-xl font-semibold text-neutral-800">Excel取込</h2>
+                        <p class="text-sm text-neutral-600 mt-1">材料管理.xlsx から発注データを自動取り込み</p>
                     </div>
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-                        <label class="flex items-center space-x-2 px-4 py-2 bg-white rounded-xl border-2 border-gray-300 cursor-pointer hover:border-yellow-500 transition-all duration-300">
-                            <input type="checkbox" id="externalDryRunToggle" class="rounded text-yellow-500 focus:ring-yellow-500" checked />
-                            <span class="text-sm font-semibold text-gray-700">DRY-RUN（検証のみ）</span>
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+                        <label class="flex items-center space-x-2 px-3 py-2 bg-white rounded-lg border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition-all">
+                            <input type="checkbox" id="externalDryRunToggle" class="rounded text-primary-blue focus:ring-primary-blue" checked />
+                            <span class="text-sm font-medium text-neutral-700">DRY-RUN（検証のみ）</span>
                         </label>
                         <button id="runExternalScriptBtn"
-                            class="bg-gradient-to-r from-yellow-500 to-orange-600 text-white px-8 py-3 rounded-xl font-bold hover:from-yellow-600 hover:to-orange-700 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center">
+                            class="bg-primary-blue text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all flex items-center justify-center">
                             <i class="fas fa-file-excel mr-2"></i>Excel取込実行
                         </button>
                     </div>
                 </div>
 
                 <!-- 実行結果表示エリア -->
-                <div id="importResultArea" class="hidden mt-8">
-                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-2xl p-6 shadow-inner">
-                        <h3 class="font-bold text-blue-900 mb-3 text-lg flex items-center">
+                <div id="importResultArea" class="hidden mt-4">
+                    <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
+                        <h3 class="font-semibold text-neutral-800 mb-2 text-sm flex items-center">
                             <i class="fas fa-check-circle mr-2"></i>実行結果
                         </h3>
-                        <div id="importResultContent" class="text-sm text-blue-800 font-medium"></div>
+                        <div id="importResultContent" class="text-sm text-neutral-700"></div>
                     </div>
                 </div>
 
                 <!-- 使い方説明 -->
-                <div class="mt-8 bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 shadow-inner">
-                    <h3 class="font-bold text-gray-900 mb-4 text-lg flex items-center">
-                        <i class="fas fa-info-circle mr-2 text-blue-500"></i>使い方
+                <div class="mt-4 bg-neutral-50 rounded-lg p-4 border border-neutral-200">
+                    <h3 class="font-semibold text-neutral-800 mb-3 text-sm flex items-center">
+                        <i class="fas fa-info-circle mr-2 text-primary-blue"></i>使い方
                     </h3>
-                    <ol class="list-decimal list-inside text-sm text-gray-700 space-y-2 font-medium">
+                    <ol class="list-decimal list-inside text-sm text-neutral-700 space-y-2">
                         <li class="pl-2">DRY-RUNモードで検証を実行してエラーがないか確認</li>
                         <li class="pl-2">問題なければDRY-RUNのチェックを外して本実行</li>
                         <li class="pl-2">実行後、「発注一覧」タブで取り込まれた発注を確認</li>
@@ -100,43 +97,40 @@
 
         <!-- 発注一覧タブ -->
         <div id="panel-orders" role="tabpanel" aria-labelledby="tab-orders" class="tab-panel hidden">
-            <div class="glass-card rounded-2xl shadow-xl p-8 animate-fade-in-up" style="animation-delay: 0.2s;">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">
-                    <h2 class="text-2xl font-black text-gray-900 flex items-center">
-                        <div class="w-2 h-8 bg-gradient-to-b from-blue-400 to-indigo-500 rounded-full mr-3"></div>
-                        発注一覧
-                    </h2>
+            <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0">
+                    <h2 class="text-xl font-semibold text-neutral-800">発注一覧</h2>
                     <button id="refreshOrdersBtn"
-                        class="bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl font-bold hover:from-gray-700 hover:to-gray-800 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center">
+                        class="bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all flex items-center">
                         <i class="fas fa-sync-alt mr-2"></i>更新
                     </button>
                 </div>
 
                 <!-- フィルター -->
-                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 mb-8 border border-blue-200 shadow-inner">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-bold text-gray-800 flex items-center">
-                            <i class="fas fa-filter mr-2 text-blue-500"></i>検索フィルター（リアルタイム検索）
+                <div class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-semibold text-neutral-800 flex items-center">
+                            <i class="fas fa-filter mr-2 text-primary-blue"></i>検索フィルター（リアルタイム検索）
                         </h3>
                         <button id="resetOrderFiltersBtn"
-                            class="text-sm text-gray-600 hover:text-blue-600 font-semibold flex items-center transition-colors">
+                            class="text-sm text-neutral-600 hover:text-primary-blue font-medium flex items-center transition-colors">
                             <i class="fas fa-redo mr-1"></i>リセット
                         </button>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">発注番号</label>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">発注番号</label>
                             <input type="text" id="orderNumberFilter" placeholder="発注番号で絞り込み"
-                                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">材料仕様</label>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">材料仕様</label>
                             <input type="text" id="orderMaterialFilter" placeholder="材料仕様で絞り込み"
-                                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">状態</label>
-                            <select id="orderStatusFilter" class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all bg-white">
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">状態</label>
+                            <select id="orderStatusFilter" class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all bg-white">
                                 <option value="">全て</option>
                                 <option value="pending">発注済み</option>
                                 <option value="partial">一部入庫</option>
@@ -144,9 +138,9 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">仕入先</label>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">仕入先</label>
                             <input type="text" id="orderSupplierFilter" placeholder="仕入先名で絞り込み"
-                                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
                         </div>
                     </div>
                 </div>
@@ -155,20 +149,20 @@
                 <div id="ordersPaginationTop" class="mb-4"></div>
 
                 <!-- 発注テーブル -->
-                <div class="overflow-x-auto rounded-2xl border-2 border-gray-200 shadow-lg">
+                <div class="overflow-x-auto rounded-lg border border-neutral-200">
                     <table class="w-full">
-                        <thead class="bg-gradient-to-r from-blue-500 to-indigo-600">
+                        <thead class="bg-neutral-50">
                             <tr>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">発注番号</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">仕入先</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">発注日</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">納期予定</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">状態</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">材料仕様</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">操作</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">発注番号</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">仕入先</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">発注日</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">納期予定</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">状態</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">材料仕様</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">操作</th>
                             </tr>
                         </thead>
-                        <tbody id="ordersTableBody" class="divide-y divide-gray-200 bg-white">
+                        <tbody id="ordersTableBody" class="divide-y divide-neutral-200 bg-white">
                             <!-- 動的に生成 -->
                         </tbody>
                     </table>
@@ -188,50 +182,47 @@
 
         <!-- 入庫確認タブ -->
         <div id="panel-receiving" role="tabpanel" aria-labelledby="tab-receiving" class="tab-panel hidden">
-            <div class="glass-card rounded-2xl shadow-xl p-8 animate-fade-in-up" style="animation-delay: 0.2s;">
-                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 space-y-4 lg:space-y-0">
-                    <h2 class="text-2xl font-black text-gray-900 flex items-center">
-                        <div class="w-2 h-8 bg-gradient-to-b from-green-400 to-emerald-500 rounded-full mr-3"></div>
-                        入庫確認
-                    </h2>
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-                        <label class="flex items-center space-x-2 px-4 py-2 bg-white rounded-xl border-2 border-gray-300 cursor-pointer hover:border-green-500 transition-all duration-300">
-                            <input type="checkbox" id="includeInspectedFilter" class="rounded text-green-500 focus:ring-green-500">
-                            <span class="text-sm font-semibold text-gray-700">検品完了も表示</span>
+            <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 space-y-4 lg:space-y-0">
+                    <h2 class="text-xl font-semibold text-neutral-800">入庫確認</h2>
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+                        <label class="flex items-center space-x-2 px-3 py-2 bg-white rounded-lg border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition-all">
+                            <input type="checkbox" id="includeInspectedFilter" class="rounded text-success-green focus:ring-success-green">
+                            <span class="text-sm font-medium text-neutral-700">検品完了も表示</span>
                         </label>
                         <button id="refreshReceivingBtn"
-                            class="bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl font-bold hover:from-gray-700 hover:to-gray-800 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center">
+                            class="bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all flex items-center">
                             <i class="fas fa-sync-alt mr-2"></i>更新
                         </button>
                     </div>
                 </div>
 
                 <!-- フィルター -->
-                <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 mb-8 border border-green-200 shadow-inner">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-bold text-gray-800 flex items-center">
-                            <i class="fas fa-filter mr-2 text-green-500"></i>検索フィルター（リアルタイム検索）
+                <div class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-semibold text-neutral-800 flex items-center">
+                            <i class="fas fa-filter mr-2 text-primary-blue"></i>検索フィルター（リアルタイム検索）
                         </h3>
                         <button id="resetReceivingFiltersBtn"
-                            class="text-sm text-gray-600 hover:text-green-600 font-semibold flex items-center transition-colors">
+                            class="text-sm text-neutral-600 hover:text-primary-blue font-medium flex items-center transition-colors">
                             <i class="fas fa-redo mr-1"></i>リセット
                         </button>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">発注番号</label>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">発注番号</label>
                             <input type="text" id="receivingOrderNumberFilter" placeholder="発注番号で絞り込み"
-                                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all">
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">仕入先</label>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">仕入先</label>
                             <input type="text" id="receivingSupplierFilter" placeholder="仕入先名で絞り込み"
-                                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all">
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">材料仕様</label>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">材料仕様</label>
                             <input type="text" id="receivingMaterialFilter" placeholder="材料仕様で絞り込み"
-                                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all">
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
                         </div>
                     </div>
                 </div>
@@ -240,21 +231,21 @@
                 <div id="receivingPaginationTop" class="mb-4"></div>
 
                 <!-- 入庫待ちアイテムテーブル -->
-                <div class="overflow-x-auto rounded-2xl border-2 border-gray-200 shadow-lg">
+                <div class="overflow-x-auto rounded-lg border border-neutral-200">
                     <table class="w-full">
-                        <thead class="bg-gradient-to-r from-green-500 to-emerald-600">
+                        <thead class="bg-neutral-50">
                             <tr>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">発注番号</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">仕入先</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">発注日</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">納期予定</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">材料仕様</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">発注数量/重量</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">検品状態</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">操作</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">発注番号</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">仕入先</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">発注日</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">納期予定</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">材料仕様</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">発注数量/重量</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">検品状態</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">操作</th>
                             </tr>
                         </thead>
-                        <tbody id="receivingItemsTableBody" class="divide-y divide-gray-200 bg-white">
+                        <tbody id="receivingItemsTableBody" class="divide-y divide-neutral-200 bg-white">
                             <!-- 動的に生成 -->
                         </tbody>
                     </table>
@@ -274,44 +265,41 @@
 
         <!-- 検品タブ -->
         <div id="panel-inspection" role="tabpanel" aria-labelledby="tab-inspection" class="tab-panel hidden">
-            <div class="glass-card rounded-2xl shadow-xl p-8 animate-fade-in-up" style="animation-delay: 0.2s;">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">
-                    <h2 class="text-2xl font-black text-gray-900 flex items-center">
-                        <div class="w-2 h-8 bg-gradient-to-b from-purple-400 to-indigo-500 rounded-full mr-3"></div>
-                        検品
-                    </h2>
+            <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0">
+                    <h2 class="text-xl font-semibold text-neutral-800">検品</h2>
                     <button id="refreshInspectionListBtn"
-                        class="bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl font-bold hover:from-gray-700 hover:to-gray-800 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center">
+                        class="bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all flex items-center">
                         <i class="fas fa-sync-alt mr-2"></i>更新
                     </button>
                 </div>
 
                 <!-- 入庫済みアイテム一覧から選択 -->
-                <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-6 mb-8 border border-purple-200 shadow-inner">
-                    <h3 class="text-sm font-bold text-purple-900 mb-4 flex items-center">
+                <div class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200">
+                    <h3 class="text-sm font-semibold text-neutral-800 mb-3 flex items-center">
                         <i class="fas fa-list-check mr-2"></i>入庫済みアイテムから選択
                     </h3>
 
                     <!-- フィルター（リアルタイム検索） -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
                         <div>
-                            <label class="block text-xs text-gray-600 mb-1">発注番号</label>
+                            <label class="block text-xs text-neutral-600 mb-1">発注番号</label>
                             <input id="inspectionOrderNumberFilter" type="text" placeholder="例: PO-000123"
-                                   class="w-full p-2 border border-gray-300 rounded-md" />
+                                   class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20" />
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-600 mb-1">機械使用</label>
+                            <label class="block text-xs text-neutral-600 mb-1">機械使用</label>
                             <input id="inspectionMaterialFilter" type="text" placeholder="例: STKM13A φ19"
-                                   class="w-full p-2 border border-gray-300 rounded-md" />
+                                   class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20" />
                         </div>
                         <div>
-                            <label class="block text-xs text-gray-600 mb-1">ロット番号</label>
+                            <label class="block text-xs text-neutral-600 mb-1">ロット番号</label>
                             <input id="inspectionLotFilter" type="text" placeholder="例: 2409-001"
-                                   class="w-full p-2 border border-gray-300 rounded-md" />
+                                   class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20" />
                         </div>
                         <div class="flex items-end">
                             <button type="button" id="resetInspectionSelectionFiltersBtn"
-                                    class="w-full bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors">
+                                    class="w-full bg-primary-blue text-white px-3 py-2 rounded-lg hover:bg-opacity-90 transition-colors">
                                 <i class="fas fa-redo mr-2"></i>リセット
                             </button>
                         </div>
@@ -320,20 +308,20 @@
                     <!-- ページネーション（上部） -->
                     <div id="inspectionPaginationTop" class="mb-4"></div>
 
-                    <div class="overflow-x-auto bg-white rounded-2xl border-2 border-purple-200 shadow-lg">
+                    <div class="overflow-x-auto bg-white rounded-lg border border-neutral-200">
                         <table class="w-full text-sm">
-                            <thead class="bg-gradient-to-r from-purple-500 to-indigo-600">
+                            <thead class="bg-neutral-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">材料仕様</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">ロット番号</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">本数</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">重量</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">ロット備考</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">検品状態</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">操作</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">材料仕様</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">ロット番号</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">本数</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">重量</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">ロット備考</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">検品状態</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">操作</th>
                                 </tr>
                             </thead>
-                            <tbody id="inspectionItemsListBody" class="divide-y divide-gray-200">
+                            <tbody id="inspectionItemsListBody" class="divide-y divide-neutral-200">
                                 <!-- 動的に生成 -->
                             </tbody>
                         </table>
@@ -351,13 +339,13 @@
                 </div>
 
                 <!-- 検品済み一覧（検索＋再編集） -->
-                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 mb-8 border border-blue-200 shadow-inner">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-sm font-bold text-indigo-900 flex items-center">
+                <div class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-sm font-semibold text-neutral-800 flex items-center">
                             <i class="fas fa-clipboard-check mr-2"></i>検品済み一覧
                         </h3>
                         <button type="button" id="toggleInspectedSectionBtn"
-                                class="text-xs px-3 py-1 rounded-md bg-indigo-100 text-indigo-700 hover:bg-indigo-200">
+                                class="text-xs px-3 py-1 rounded-lg bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-100">
                             開く
                         </button>
                     </div>
@@ -392,21 +380,21 @@
                     <!-- ページネーション（上部） -->
                     <div id="inspectedLotsPaginationTop" class="mb-4"></div>
 
-                    <div class="overflow-x-auto bg-white rounded-2xl border-2 border-indigo-200 shadow-lg">
+                    <div class="overflow-x-auto bg-white rounded-lg border border-neutral-200">
                         <table class="w-full text-sm">
-                            <thead class="bg-gradient-to-r from-indigo-500 to-blue-600">
+                            <thead class="bg-neutral-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">発注番号</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">材料仕様</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">ロット番号</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">本数</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">重量</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">検品状態</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">検品日時</th>
-                                    <th class="px-4 py-3 text-left text-xs font-bold text-white">操作</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">発注番号</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">材料仕様</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">ロット番号</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">本数</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">重量</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">検品状態</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">検品日時</th>
+                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">操作</th>
                                 </tr>
                             </thead>
-                            <tbody id="inspectedLotsTableBody" class="divide-y divide-gray-200">
+                            <tbody id="inspectedLotsTableBody" class="divide-y divide-neutral-200">
                                 <!-- 動的に生成 -->
                             </tbody>
                         </table>
@@ -587,39 +575,36 @@
 
         <!-- 印刷タブ -->
         <div id="panel-print" role="tabpanel" aria-labelledby="tab-print" class="tab-panel hidden">
-            <div class="glass-card rounded-2xl shadow-xl p-8 animate-fade-in-up" style="animation-delay: 0.2s;">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">
-                    <h2 class="text-2xl font-black text-gray-900 flex items-center">
-                        <div class="w-2 h-8 bg-gradient-to-b from-pink-400 to-rose-500 rounded-full mr-3"></div>
-                        ラベル印刷（検品完了済み）
-                    </h2>
+            <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0">
+                    <h2 class="text-xl font-semibold text-neutral-800">ラベル印刷（検品完了済み）</h2>
                     <button id="refreshPrintBtn"
-                        class="bg-gradient-to-r from-gray-600 to-gray-700 text-white px-6 py-3 rounded-xl font-bold hover:from-gray-700 hover:to-gray-800 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center">
+                        class="bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all flex items-center">
                         <i class="fas fa-sync-alt mr-2"></i>更新
                     </button>
                 </div>
 
                 <!-- フィルター -->
-                <div class="bg-gradient-to-br from-pink-50 to-rose-50 rounded-2xl p-6 mb-8 border border-pink-200 shadow-inner">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-sm font-bold text-gray-800 flex items-center">
-                            <i class="fas fa-filter mr-2 text-pink-500"></i>検索フィルター（リアルタイム検索）
+                <div class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-sm font-semibold text-neutral-800 flex items-center">
+                            <i class="fas fa-filter mr-2 text-primary-blue"></i>検索フィルター（リアルタイム検索）
                         </h3>
                         <button id="resetPrintFiltersBtn"
-                            class="text-sm text-gray-600 hover:text-pink-600 font-semibold flex items-center transition-colors">
+                            class="text-sm text-neutral-600 hover:text-primary-blue font-medium flex items-center transition-colors">
                             <i class="fas fa-redo mr-1"></i>リセット
                         </button>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">材料名</label>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">材料名</label>
                             <input type="text" id="printMaterialFilter" placeholder="材料名で絞り込み"
-                                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all">
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">ロット番号</label>
+                            <label class="block text-sm font-medium text-neutral-700 mb-1">ロット番号</label>
                             <input type="text" id="printLotFilter" placeholder="ロット番号で絞り込み"
-                                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all">
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
                         </div>
                     </div>
                 </div>
@@ -628,18 +613,18 @@
                 <div id="printPaginationTop" class="mb-4"></div>
 
                 <!-- 検品完了アイテムテーブル -->
-                <div class="overflow-x-auto rounded-2xl border-2 border-gray-200 shadow-lg">
+                <div class="overflow-x-auto rounded-lg border border-neutral-200">
                     <table class="w-full">
-                        <thead class="bg-gradient-to-r from-pink-500 to-rose-600">
+                        <thead class="bg-neutral-50">
                             <tr>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">ロット番号</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">材料名</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">現在本数</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">検品日</th>
-                                <th class="px-6 py-4 text-left text-sm font-bold text-white">操作</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">ロット番号</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">材料名</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">現在本数</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">検品日</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">操作</th>
                             </tr>
                         </thead>
-                        <tbody id="printItemsTableBody" class="divide-y divide-gray-200 bg-white">
+                        <tbody id="printItemsTableBody" class="divide-y divide-neutral-200 bg-white">
                             <!-- 動的に生成 -->
                         </tbody>
                     </table>
@@ -660,16 +645,16 @@
 </div>
 
 <!-- 印刷確認モーダル -->
-<div id="printModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 backdrop-blur-sm">
-    <div class="flex items-center justify-center min-h-screen p-4 modal-overlay">
-        <div class="glass-card rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
-            <div class="p-6 border-b border-gray-200">
+<div id="printModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg">
+            <div class="p-4 bg-neutral-50 border-b border-neutral-200">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-2xl font-black bg-gradient-to-r from-pink-600 to-rose-600 bg-clip-text text-transparent flex items-center">
-                        <i class="fas fa-print mr-3 text-pink-600"></i>
+                    <h2 class="text-xl font-bold text-neutral-800 flex items-center">
+                        <i class="fas fa-print mr-2 text-primary-blue"></i>
                         ラベル印刷確認
                     </h2>
-                    <button id="closePrintModal" class="text-gray-400 hover:text-pink-600 transition-colors p-2 rounded-xl hover:bg-pink-50">
+                    <button id="closePrintModal" class="text-neutral-400 hover:text-neutral-600 transition-colors p-2 rounded-lg hover:bg-neutral-100">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M6 18L18 6M6 6l12 12" />
@@ -729,16 +714,16 @@
 </div>
 
 <!-- 入庫確認モーダル（既存のreceiving.htmlから流用） -->
-<div id="receiveModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50 backdrop-blur-sm">
-    <div class="flex items-center justify-center min-h-screen p-4 modal-overlay">
-        <div class="glass-card rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in-up">
-            <div class="p-6 border-b border-gray-200">
+<div id="receiveModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg">
+            <div class="p-4 bg-neutral-50 border-b border-neutral-200">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-2xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent flex items-center">
-                        <i class="fas fa-truck mr-3 text-green-600"></i>
+                    <h2 class="text-xl font-bold text-neutral-800 flex items-center">
+                        <i class="fas fa-truck mr-2 text-success-green"></i>
                         入庫確認
                     </h2>
-                    <button id="closeReceiveModal" class="text-gray-400 hover:text-green-600 transition-colors p-2 rounded-xl hover:bg-green-50">
+                    <button id="closeReceiveModal" class="text-neutral-400 hover:text-neutral-600 transition-colors p-2 rounded-lg hover:bg-neutral-100">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M6 18L18 6M6 6l12 12" />
@@ -905,68 +890,39 @@
 </div>
 
 <style>
-    /* タブスタイル */
-    .tab-button {
-        position: relative;
-        overflow: hidden;
+    :root {
+        --primary-navy: #1e3a5f;
+        --primary-blue: #2563eb;
+        --accent-blue: #3b82f6;
+        --success-green: #10b981;
+        --warning-amber: #f59e0b;
+        --danger-red: #ef4444;
+        --neutral-50: #f8fafc;
+        --neutral-100: #f1f5f9;
+        --neutral-200: #e2e8f0;
+        --neutral-700: #334155;
+        --neutral-800: #1e293b;
     }
 
+    /* タブスタイル */
     .tab-button.active {
-        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        background: var(--primary-blue);
         color: white;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-        transform: translateY(-2px);
     }
 
     .tab-button:not(.active) {
         background: white;
-        color: #6b7280;
-        border: 1px solid #e5e7eb;
+        color: var(--neutral-700);
+        border: 1px solid var(--neutral-200);
     }
 
     .tab-button:not(.active):hover {
-        background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
-        color: #374151;
-        transform: translateY(-1px);
-    }
-
-    .tab-panel {
-        animation: fadeInUp 0.4s ease-out both;
-    }
-
-    @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* ボタンホバーエフェクト */
-    button:hover {
-        transform: translateY(-2px);
-    }
-
-    button:active {
-        transform: translateY(0);
+        background: var(--neutral-50);
     }
 
     /* テーブル行ホバー */
-    tbody tr {
-        transition: all 0.3s ease;
-    }
-
     tbody tr:hover {
-        background: linear-gradient(90deg, #f0f9ff, #f5f3ff);
-        transform: scale(1.01);
-    }
-
-    /* モーダルアニメーション */
-    .modal-overlay {
-        animation: fadeIn 0.3s ease-out;
+        background: var(--neutral-50);
     }
 
     /* ローディングスピナー */

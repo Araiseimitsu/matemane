@@ -236,13 +236,13 @@ class MaterialManager {
                 <tr>
                     <td colspan="4" class="px-6 py-16 text-center">
                         <div class="inline-flex flex-col items-center">
-                            <div class="p-6 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-6 shadow-inner">
-                                <i class="fas fa-box-open text-5xl text-gray-400"></i>
+                            <div class="p-6 bg-neutral-100 rounded-full mb-6">
+                                <i class="fas fa-box-open text-5xl text-neutral-400"></i>
                             </div>
-                            <p class="text-xl font-bold text-gray-700 mb-3">登録された材料がありません</p>
-                            <p class="text-sm text-gray-500 mb-6">最初の材料を登録してください</p>
+                            <p class="text-xl font-semibold text-neutral-700 mb-3">登録された材料がありません</p>
+                            <p class="text-sm text-neutral-500 mb-6">最初の材料を登録してください</p>
                             <button onclick="materialManager.showCreateForm()"
-                                    class="btn-gradient-primary text-white font-bold py-3 px-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300">
+                                    class="bg-primary-blue text-white font-semibold py-2 px-6 rounded-lg hover:bg-opacity-90">
                                 <i class="fas fa-plus mr-2"></i>最初の材料を登録
                             </button>
                         </div>
@@ -258,7 +258,7 @@ class MaterialManager {
     tbody.innerHTML = html;
   }
 
-  // 材料カード描画
+  // 材料カード描画（現在は未使用）
   renderMaterialCard(material) {
     const shapeNames = {
       round: "丸棒",
@@ -267,13 +267,13 @@ class MaterialManager {
     };
 
     return `
-            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+            <div class="bg-white rounded-lg border border-neutral-200 shadow-sm p-6 hover:shadow-md transition-shadow">
                 <div class="flex justify-between items-start mb-4">
                     <div>
-                        <h3 class="text-lg font-semibold text-gray-800">${
-                          material.name
+                        <h3 class="text-lg font-semibold text-neutral-800">${
+                          material.display_name || material.name
                         }</h3>
-                        <p class="text-sm text-gray-600">${
+                        <p class="text-sm text-neutral-600">${
                           material.description || "説明なし"
                         }</p>
                     </div>
@@ -281,7 +281,7 @@ class MaterialManager {
                         <button onclick="materialManager.editMaterial(${
                           material.id
                         })"
-                                class="text-blue-600 hover:text-blue-800">
+                                class="text-primary-blue hover:text-primary-blue">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                       d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -290,7 +290,7 @@ class MaterialManager {
                         <button onclick="materialManager.deleteMaterial(${
                           material.id
                         })"
-                                class="text-red-600 hover:text-red-800">
+                                class="text-danger-red hover:text-danger-red">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                       d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -301,40 +301,40 @@ class MaterialManager {
 
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                        <span class="text-gray-600">形状:</span>
-                        <span class="font-medium">${
+                        <span class="text-neutral-600">形状:</span>
+                        <span class="font-medium text-neutral-800">${
                           shapeNames[material.shape] || material.shape
                         }</span>
                     </div>
                     <div>
-                        <span class="text-gray-600">寸法:</span>
-                        <span class="font-medium">${
+                        <span class="text-neutral-600">寸法:</span>
+                        <span class="font-medium text-neutral-800">${
                           material.diameter_mm
                         }mm</span>
                     </div>
                     <div>
-                        <span class="text-gray-600">比重:</span>
-                        <span class="font-medium">${
+                        <span class="text-neutral-600">比重:</span>
+                        <span class="font-medium text-neutral-800">${
                           material.current_density
                         } g/cm³</span>
                     </div>
                     <div>
-                        <span class="text-gray-600">状態:</span>
+                        <span class="text-neutral-600">状態:</span>
                         <span class="inline-block px-2 py-1 text-xs rounded-full ${
                           material.is_active
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
+                            ? "bg-success-green bg-opacity-10 text-success-green"
+                            : "bg-danger-red bg-opacity-10 text-danger-red"
                         }">
                             ${material.is_active ? "有効" : "無効"}
                         </span>
                     </div>
                 </div>
 
-                <div class="mt-4 pt-4 border-t border-gray-200">
+                <div class="mt-4 pt-4 border-t border-neutral-200">
                     <button onclick="materialManager.showWeightCalculator(${
                       material.id
                     })"
-                            class="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded hover:bg-gray-200 transition-colors">
+                            class="w-full bg-neutral-100 text-neutral-700 py-2 px-4 rounded-lg hover:bg-neutral-200 transition-colors">
                         重量計算
                     </button>
                 </div>
@@ -366,33 +366,33 @@ class MaterialManager {
 
     return `
             <tr class="table-row-hover">
-                <td class="px-8 py-5">
-                    <div class="text-sm font-bold text-gray-900">${materialSpec}</div>
+                <td class="px-4 py-3">
+                    <div class="text-sm font-semibold text-neutral-900">${materialSpec}</div>
                 </td>
-                <td class="px-8 py-5">
-                    <div class="text-sm font-semibold text-gray-700 flex items-center">
+                <td class="px-4 py-3">
+                    <div class="text-sm font-medium text-neutral-700 flex items-center">
                         ${shapeIcon}${shapeText}
                     </div>
                 </td>
-                <td class="px-8 py-5">
-                    <div class="text-sm font-semibold text-gray-900">${material.diameter_mm}</div>
+                <td class="px-4 py-3">
+                    <div class="text-sm font-medium text-neutral-900">${material.diameter_mm}</div>
                 </td>
-                <td class="px-8 py-5 text-right">
+                <td class="px-4 py-3 text-right">
                     <div class="flex justify-end space-x-2">
                         <button onclick="materialManager.editMaterial(${material.id})"
-                                class="p-3 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600 hover:from-blue-100 hover:to-blue-200 hover:scale-110 transition-all duration-300 shadow-sm hover:shadow-md"
+                                class="p-2 rounded-lg bg-primary-blue bg-opacity-10 text-primary-blue hover:bg-opacity-20 transition-colors"
                                 title="編集">
-                            <i class="fas fa-edit text-lg"></i>
+                            <i class="fas fa-edit"></i>
                         </button>
                         <button onclick="materialManager.deleteMaterial(${material.id})"
-                                class="p-3 rounded-xl bg-gradient-to-br from-red-50 to-red-100 text-red-600 hover:from-red-100 hover:to-red-200 hover:scale-110 transition-all duration-300 shadow-sm hover:shadow-md"
+                                class="p-2 rounded-lg bg-danger-red bg-opacity-10 text-danger-red hover:bg-opacity-20 transition-colors"
                                 title="削除">
-                            <i class="fas fa-trash text-lg"></i>
+                            <i class="fas fa-trash"></i>
                         </button>
                         <button onclick="materialManager.showWeightCalculator(${material.id})"
-                                class="p-3 rounded-xl bg-gradient-to-br from-green-50 to-emerald-100 text-green-600 hover:from-green-100 hover:to-emerald-200 hover:scale-110 transition-all duration-300 shadow-sm hover:shadow-md"
+                                class="p-2 rounded-lg bg-success-green bg-opacity-10 text-success-green hover:bg-opacity-20 transition-colors"
                                 title="重量計算">
-                            <i class="fas fa-calculator text-lg"></i>
+                            <i class="fas fa-calculator"></i>
                         </button>
                     </div>
                 </td>
@@ -630,24 +630,24 @@ class MaterialManager {
     const html = `
             <div>
                 <div class="flex items-center mb-4">
-                    <div class="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg mr-3">
-                        <i class="fas fa-check-circle text-white text-lg"></i>
+                    <div class="p-2 bg-success-green bg-opacity-10 rounded-lg mr-3">
+                        <i class="fas fa-check-circle text-success-green text-lg"></i>
                     </div>
-                    <h4 class="text-lg font-black text-gray-900">計算結果</h4>
+                    <h4 class="text-lg font-semibold text-neutral-900">計算結果</h4>
                 </div>
                 <div class="space-y-4">
-                    <div class="flex justify-between items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-                        <span class="text-sm font-bold text-gray-700">体積（1本）</span>
-                        <span class="text-base font-black text-blue-600">${result.volume_per_piece_cm3} cm³</span>
+                    <div class="flex justify-between items-center p-4 bg-primary-blue bg-opacity-5 rounded-lg border border-primary-blue border-opacity-20">
+                        <span class="text-sm font-medium text-neutral-700">体積（1本）</span>
+                        <span class="text-base font-semibold text-primary-blue">${result.volume_per_piece_cm3} cm³</span>
                     </div>
-                    <div class="flex justify-between items-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-                        <span class="text-sm font-bold text-gray-700">重量（1本）</span>
-                        <span class="text-base font-black text-green-600">${result.weight_per_piece_kg} kg</span>
+                    <div class="flex justify-between items-center p-4 bg-success-green bg-opacity-5 rounded-lg border border-success-green border-opacity-20">
+                        <span class="text-sm font-medium text-neutral-700">重量（1本）</span>
+                        <span class="text-base font-semibold text-success-green">${result.weight_per_piece_kg} kg</span>
                     </div>
-                    <div class="p-5 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-xl">
-                        <div class="text-white">
-                            <div class="text-sm font-semibold mb-2 opacity-90">総重量（${result.quantity}本）</div>
-                            <div class="text-3xl font-black">${result.total_weight_kg} kg</div>
+                    <div class="p-5 bg-primary-blue rounded-lg">
+                        <div class="text-white text-center">
+                            <div class="text-sm font-medium mb-2 opacity-90">総重量（${result.quantity}本）</div>
+                            <div class="text-2xl font-semibold">${result.total_weight_kg} kg</div>
                         </div>
                     </div>
                 </div>

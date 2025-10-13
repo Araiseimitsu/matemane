@@ -1,195 +1,113 @@
 {% extends "base.html" %} {% block title %}入出庫管理 - 材料管理システム{%
 endblock %} {% block extra_head %}
 <style>
-  /* グラデーション背景アニメーション */
-  @keyframes gradient-shift {
-    0% {
-      background-position: 0% 50%;
-    }
-    50% {
-      background-position: 100% 50%;
-    }
-    100% {
-      background-position: 0% 50%;
-    }
+  :root {
+    --primary-navy: #1e3a8a;
+    --primary-blue: #3b82f6;
+    --success-green: #10b981;
+    --warning-amber: #f59e0b;
+    --danger-red: #ef4444;
+    --neutral-50: #f9fafb;
+    --neutral-100: #f3f4f6;
+    --neutral-200: #e5e7eb;
+    --neutral-600: #4b5563;
+    --neutral-700: #374151;
+    --neutral-800: #1f2937;
   }
 
-  /* フローティングアニメーション */
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
-  }
-
-  .icon-float {
-    animation: float 3s ease-in-out infinite;
-  }
-
-  /* 入庫・出庫のグラデーション */
+  /* 入庫・出庫ボタン用 */
   .movement-in-gradient {
-    background: linear-gradient(135deg, #10b981, #059669, #047857);
-    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+    background-color: var(--success-green);
   }
 
   .movement-out-gradient {
-    background: linear-gradient(135deg, #ef4444, #dc2626, #b91c1c);
-    box-shadow: 0 10px 30px rgba(239, 68, 68, 0.3);
+    background-color: var(--danger-red);
   }
 
-  /* ホバーエフェクト */
-  .action-btn {
-    position: relative;
-    overflow: hidden;
-    transition: all 0.3s ease;
-  }
-
-  .action-btn::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255, 255, 255, 0.3),
-      transparent
-    );
-    transition: left 0.5s;
-  }
-
-  .action-btn:hover::before {
-    left: 100%;
-  }
-
-  .action-btn:hover {
-    transform: translateY(-2px) scale(1.02);
+  .movement-in-gradient:hover,
+  .movement-out-gradient:hover {
+    opacity: 0.9;
   }
 
   /* テーブル行のホバーエフェクト */
-  .table-row-hover {
-    transition: all 0.2s ease;
-  }
-
   .table-row-hover:hover {
-    background: linear-gradient(90deg, #f0f9ff, #dbeafe);
-    transform: translateX(4px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+    background: var(--neutral-50);
   }
 
-  /* 履歴カードのグラデーション */
+  /* 履歴カードのボーダー */
   .history-card-in {
-    background: linear-gradient(
-      135deg,
-      rgba(16, 185, 129, 0.1),
-      rgba(5, 150, 105, 0.05)
-    );
-    border-left: 4px solid #10b981;
+    border-left: 3px solid var(--success-green);
   }
 
   .history-card-out {
-    background: linear-gradient(
-      135deg,
-      rgba(239, 68, 68, 0.1),
-      rgba(220, 38, 38, 0.05)
-    );
-    border-left: 4px solid #ef4444;
-  }
-
-  /* プログレスバー */
-  .progress-shimmer {
-    height: 4px;
-    border-radius: 10px;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899);
-    background-size: 200% 100%;
-    animation: shimmer 2s linear infinite;
-  }
-
-  @keyframes shimmer {
-    0% {
-      background-position: -100% 0;
-    }
-    100% {
-      background-position: 200% 0;
-    }
+    border-left: 3px solid var(--danger-red);
   }
 </style>
 {% endblock %} {% block content %}
-<div class="min-h-screen gradient-bg">
-  <div class="max-w-[1600px] mx-auto py-8 px-4 sm:px-6 lg:px-8">
+<div class="min-h-screen bg-neutral-50">
+  <div class="max-w-[1600px] mx-auto py-4 px-4">
     <!-- ヘッダーセクション -->
-    <div class="mb-10">
+    <div class="mb-4">
       <div class="flex items-center justify-between">
-        <div class="space-y-2">
-          <h1
-            class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-orange-600 to-pink-600"
-          >
-            入出庫管理
-          </h1>
-          <p class="text-lg text-gray-600 font-medium">
-            在庫の持ち出し・戻しをリアルタイムで管理
-          </p>
+        <div class="flex items-center space-x-3">
+          <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg">
+            <i class="fas fa-exchange-alt text-xl text-primary-blue"></i>
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold text-neutral-800">入出庫管理</h1>
+            <p class="text-sm text-neutral-600 mt-1">在庫の持ち出し・戻しをリアルタイムで管理</p>
+          </div>
         </div>
-        <div class="hidden md:flex items-center space-x-4">
+        <div class="hidden md:flex items-center space-x-2">
           <button
             id="qrScanBtn"
-            class="action-btn glass-card flex items-center px-6 py-4 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300"
+            class="bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 flex items-center px-4 py-2 rounded-lg font-semibold transition-colors"
           >
-            <i class="fas fa-qrcode text-2xl text-indigo-600 mr-3"></i>
-            <span class="font-bold text-gray-700">QRスキャン</span>
+            <i class="fas fa-qrcode text-primary-blue mr-2"></i>
+            <span>QRスキャン</span>
           </button>
           <button
             id="refreshBtn"
-            class="action-btn glass-card p-4 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 group"
+            class="bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 p-2 rounded-lg transition-colors"
             title="データを再取得"
           >
-            <i
-              class="fas fa-sync-alt text-2xl text-gray-600 group-hover:rotate-180 transition-transform duration-500"
-            ></i>
+            <i class="fas fa-sync-alt text-neutral-600"></i>
           </button>
         </div>
       </div>
     </div>
 
     <!-- コンテンツエリア -->
-    <div class="space-y-8">
+    <div class="space-y-4">
       <!-- 統合ムーブメントフォーム -->
-      <div class="glass-card rounded-3xl p-8 shadow-xl">
-        <div class="flex items-center mb-8">
-          <div
-            class="p-4 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg mr-4 icon-float"
-          >
-            <i class="fas fa-exchange-alt text-3xl text-white"></i>
+      <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
+        <div class="flex items-center mb-4">
+          <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3">
+            <i class="fas fa-exchange-alt text-xl text-primary-blue"></i>
           </div>
-          <h3 class="text-2xl font-black text-gray-900">入出庫フォーム</h3>
+          <h3 class="text-lg font-bold text-neutral-800">入出庫フォーム</h3>
         </div>
-        <div class="progress-shimmer mb-6"></div>
 
-        <form id="movementForm" class="space-y-6">
+        <form id="movementForm" class="space-y-4">
           <input type="hidden" name="item_id" />
 
           <!-- 種別トグル -->
           <div>
-            <label class="block text-sm font-bold text-gray-700 mb-3"
+            <label class="block text-sm font-semibold text-neutral-700 mb-2"
               >処理種別</label
             >
-            <div class="flex space-x-4">
+            <div class="flex space-x-3">
               <button
                 type="button"
                 id="typeOutBtn"
-                class="action-btn flex-1 movement-out-gradient text-white px-6 py-4 rounded-2xl font-bold text-lg transition-all duration-300"
+                class="flex-1 movement-out-gradient text-white px-4 py-3 rounded-lg font-semibold transition-opacity"
               >
                 <i class="fas fa-arrow-right mr-2"></i>出庫
               </button>
               <button
                 type="button"
                 id="typeInBtn"
-                class="action-btn flex-1 bg-gradient-to-br from-gray-400 to-gray-500 text-white px-6 py-4 rounded-2xl font-bold text-lg transition-all duration-300"
+                class="flex-1 bg-neutral-400 text-white px-4 py-3 rounded-lg font-semibold transition-opacity"
               >
                 <i class="fas fa-arrow-left mr-2"></i>戻し
               </button>
@@ -204,28 +122,28 @@ endblock %} {% block extra_head %}
 
           <!-- アイテム選択 -->
           <div>
-            <label class="block text-sm font-bold text-gray-700 mb-3"
+            <label class="block text-sm font-semibold text-neutral-700 mb-2"
               >対象アイテム</label
             >
-            <div class="space-y-3">
+            <div class="space-y-2">
               <div
                 id="selectedItemSummary"
-                class="glass-card p-5 border-2 border-dashed border-gray-300 rounded-2xl text-sm text-gray-500 font-medium"
+                class="bg-neutral-50 p-4 border border-dashed border-neutral-300 rounded-lg text-sm text-neutral-500"
               >
                 アイテムが選択されていません
               </div>
-              <div class="flex space-x-3">
+              <div class="flex space-x-2">
                 <button
                   type="button"
                   id="selectItemBtn"
-                  class="action-btn flex-1 bg-gradient-to-br from-blue-500 to-indigo-600 text-white px-6 py-3 rounded-2xl hover:shadow-xl transition-all duration-300 flex items-center justify-center font-bold"
+                  class="flex-1 bg-primary-blue text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-opacity flex items-center justify-center font-semibold"
                 >
                   <i class="fas fa-search mr-2"></i>在庫一覧で検索
                 </button>
                 <button
                   type="button"
                   id="clearItemBtn"
-                  class="action-btn bg-gradient-to-br from-gray-500 to-gray-600 text-white px-6 py-3 rounded-2xl hover:shadow-xl transition-all duration-300 font-bold"
+                  class="bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 px-4 py-2 rounded-lg font-semibold transition-colors"
                 >
                   <i class="fas fa-times mr-2"></i>クリア
                 </button>
@@ -234,10 +152,10 @@ endblock %} {% block extra_head %}
           </div>
 
           <!-- 数量・重量入力 -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label class="block text-sm font-bold text-gray-700 mb-3">
-                <i class="fas fa-list-ol mr-2 text-blue-500"></i>数量（本）
+              <label class="block text-sm font-semibold text-neutral-700 mb-2">
+                <i class="fas fa-list-ol mr-1 text-primary-blue"></i>数量（本）
               </label>
               <input
                 type="number"
@@ -245,13 +163,13 @@ endblock %} {% block extra_head %}
                 name="quantity"
                 min="1"
                 step="1"
-                class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-blue-300 focus:border-blue-500 transition-all duration-300 font-semibold text-lg"
+                class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
                 placeholder="本数を入力"
               />
             </div>
             <div>
-              <label class="block text-sm font-bold text-gray-700 mb-3">
-                <i class="fas fa-weight mr-2 text-green-500"></i>重量（kg）
+              <label class="block text-sm font-semibold text-neutral-700 mb-2">
+                <i class="fas fa-weight mr-1 text-success-green"></i>重量（kg）
               </label>
               <input
                 type="number"
@@ -259,27 +177,27 @@ endblock %} {% block extra_head %}
                 name="weight_kg"
                 min="0.001"
                 step="0.001"
-                class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-green-300 focus:border-green-500 transition-all duration-300 font-semibold text-lg"
+                class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
                 placeholder="重量を入力"
               />
             </div>
           </div>
-          <div class="glass-card p-4 rounded-2xl border-l-4 border-blue-500">
-            <p class="text-sm text-gray-700 font-medium">
-              <i class="fas fa-info-circle text-blue-500 mr-2"></i>
+          <div class="bg-neutral-50 p-3 rounded-lg border-l-3 border-primary-blue">
+            <p class="text-sm text-neutral-700">
+              <i class="fas fa-info-circle text-primary-blue mr-2"></i>
               数量または重量のいずれかを入力してください（相互換算されます）
             </p>
           </div>
 
           <!-- 備考 -->
           <div>
-            <label class="block text-sm font-bold text-gray-700 mb-3">
-              <i class="fas fa-comment mr-2 text-purple-500"></i>備考
+            <label class="block text-sm font-semibold text-neutral-700 mb-2">
+              <i class="fas fa-comment mr-1 text-neutral-600"></i>備考
             </label>
             <textarea
               name="notes"
               rows="3"
-              class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all duration-300 font-medium"
+              class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
               placeholder="備考を入力してください"
             ></textarea>
           </div>
@@ -287,91 +205,82 @@ endblock %} {% block extra_head %}
           <button
             type="submit"
             id="movementSubmitBtn"
-            class="action-btn w-full movement-out-gradient text-white py-5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center font-black text-xl shadow-2xl"
+            class="w-full movement-out-gradient text-white py-3 px-4 rounded-lg transition-opacity flex items-center justify-center font-semibold text-lg"
           >
-            <i class="fas fa-arrow-right text-2xl mr-3"></i>
+            <i class="fas fa-arrow-right mr-2"></i>
             出庫実行
           </button>
         </form>
 
-        <div
-          class="glass-card p-4 rounded-2xl border-l-4 border-indigo-500 mt-6"
-        >
-          <p class="text-xs text-gray-600 font-medium">
-            <i class="fas fa-lightbulb text-indigo-500 mr-2"></i>
+        <div class="bg-neutral-50 p-3 rounded-lg border-l-3 border-primary-blue mt-4">
+          <p class="text-xs text-neutral-600">
+            <i class="fas fa-lightbulb text-primary-blue mr-2"></i>
             在庫一覧から直接「出庫」または「戻し」ボタンをクリックすることもできます
           </p>
         </div>
       </div>
 
       <!-- 在庫アイテム一覧 -->
-      <div id="inventorySection" class="glass-card rounded-3xl p-8 shadow-xl">
-        <div class="flex items-center justify-between mb-8">
+      <div id="inventorySection" class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
           <div class="flex items-center">
-            <div
-              class="p-4 bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl shadow-lg mr-4 icon-float"
-              style="animation-delay: 0.2s"
-            >
-              <i class="fas fa-warehouse text-3xl text-white"></i>
+            <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3">
+              <i class="fas fa-warehouse text-xl text-primary-blue"></i>
             </div>
-            <h2 class="text-2xl font-black text-gray-900">在庫アイテム一覧</h2>
+            <h2 class="text-lg font-bold text-neutral-800">在庫アイテム一覧</h2>
           </div>
         </div>
-        <div
-          class="progress-shimmer mb-6"
-          style="background: linear-gradient(90deg, #f59e0b, #ea580c)"
-        ></div>
 
         <!-- 検索・フィルターエリア -->
-        <div class="glass-card p-6 rounded-2xl mb-6 border border-gray-200">
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div class="bg-neutral-50 p-4 rounded-lg mb-4 border border-neutral-200">
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
             <div>
-              <label class="block text-xs font-bold text-gray-700 mb-2">
-                <i class="fas fa-search mr-1 text-blue-500"></i>材料名
+              <label class="block text-xs font-semibold text-neutral-700 mb-2">
+                <i class="fas fa-search mr-1 text-primary-blue"></i>材料名
               </label>
               <input
                 type="text"
                 id="materialSearchInput"
                 placeholder="材料名で検索"
-                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-300 focus:border-blue-500 transition-all duration-300 font-medium"
+                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
               />
             </div>
             <div>
-              <label class="block text-xs font-bold text-gray-700 mb-2">
-                <i class="fas fa-barcode mr-1 text-green-500"></i>ロット番号
+              <label class="block text-xs font-semibold text-neutral-700 mb-2">
+                <i class="fas fa-barcode mr-1 text-success-green"></i>ロット番号
               </label>
               <input
                 type="text"
                 id="lotSearchInput"
                 placeholder="ロット番号で検索"
-                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-green-300 focus:border-green-500 transition-all duration-300 font-medium"
+                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
               />
             </div>
             <div>
-              <label class="block text-xs font-bold text-gray-700 mb-2">
-                <i class="fas fa-map-marker-alt mr-1 text-purple-500"></i>置き場
+              <label class="block text-xs font-semibold text-neutral-700 mb-2">
+                <i class="fas fa-map-marker-alt mr-1 text-neutral-600"></i>置き場
               </label>
               <select
                 id="locationFilter"
-                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all duration-300 font-medium"
+                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
               >
                 <option value="">すべて</option>
                 <!-- 動的に生成 -->
               </select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-gray-700 mb-2">
-                <i class="fas fa-filter mr-1 text-gray-500"></i>表示オプション
+              <label class="block text-xs font-semibold text-neutral-700 mb-2">
+                <i class="fas fa-filter mr-1 text-neutral-600"></i>表示オプション
               </label>
               <label
-                class="glass-card flex items-center space-x-3 p-3 rounded-xl cursor-pointer hover:shadow-lg transition-all duration-300 border border-gray-200"
+                class="bg-white flex items-center space-x-2 p-2 rounded-lg cursor-pointer border border-neutral-200 hover:bg-neutral-50 transition-colors"
               >
                 <input
                   type="checkbox"
                   id="includeZeroStock"
-                  class="rounded border-gray-300 w-5 h-5 text-blue-600 focus:ring-blue-500"
+                  class="rounded border-neutral-300 w-4 h-4 text-primary-blue focus:ring-primary-blue"
                 />
-                <span class="text-sm text-gray-700 font-bold"
+                <span class="text-sm text-neutral-700 font-semibold"
                   >在庫切れを含む</span
                 >
               </label>
@@ -382,59 +291,59 @@ endblock %} {% block extra_head %}
         <!-- ページネーション（上部） -->
         <div id="inventoryPaginationTop" class="mb-4"></div>
 
-        <div class="overflow-x-auto rounded-2xl border-2 border-gray-200">
+        <div class="overflow-x-auto rounded-lg border border-neutral-200">
           <table class="w-full">
-            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+            <thead class="bg-neutral-50">
               <tr>
                 <th
-                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-tag mr-2 text-blue-500"></i>材料仕様
+                  <i class="fas fa-tag mr-1 text-primary-blue"></i>材料仕様
                 </th>
                 <th
-                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-shapes mr-2 text-green-500"></i>形状
+                  <i class="fas fa-shapes mr-1 text-success-green"></i>形状
                 </th>
                 <th
-                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-ruler mr-2 text-purple-500"></i>径
+                  <i class="fas fa-ruler mr-1 text-neutral-600"></i>径
                 </th>
                 <th
-                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-barcode mr-2 text-yellow-500"></i>ロット番号
+                  <i class="fas fa-barcode mr-1 text-warning-amber"></i>ロット番号
                 </th>
                 <th
-                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-comment mr-2 text-gray-500"></i>ロット備考
+                  <i class="fas fa-comment mr-1 text-neutral-600"></i>ロット備考
                 </th>
                 <th
-                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-arrows-alt-h mr-2 text-indigo-500"></i>長さ
+                  <i class="fas fa-arrows-alt-h mr-1 text-neutral-600"></i>長さ
                 </th>
                 <th
-                  class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-boxes mr-2 text-blue-600"></i>現在庫
+                  <i class="fas fa-boxes mr-1 text-primary-blue"></i>現在庫
                 </th>
                 <th
-                  class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-weight mr-2 text-green-600"></i>重量
+                  <i class="fas fa-weight mr-1 text-success-green"></i>重量
                 </th>
                 <th
-                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-map-marker-alt mr-2 text-red-500"></i>置き場
+                  <i class="fas fa-map-marker-alt mr-1 text-danger-red"></i>置き場
                 </th>
                 <th
-                  class="px-6 py-4 text-center text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-center text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-cogs mr-2 text-gray-600"></i>操作
+                  <i class="fas fa-cogs mr-1 text-neutral-600"></i>操作
                 </th>
               </tr>
             </thead>
@@ -457,41 +366,36 @@ endblock %} {% block extra_head %}
           <p class="text-sm text-gray-500 mt-2">しばらくお待ちください</p>
         </div>
 
-        <div id="inventoryEmpty" class="text-center py-16 hidden">
-          <div
-            class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-6 shadow-inner"
-          >
-            <i class="fas fa-inbox text-5xl text-gray-400"></i>
+        <div id="inventoryEmpty" class="text-center py-12 hidden">
+          <div class="inline-flex items-center justify-center w-16 h-16 bg-neutral-100 rounded-full mb-4">
+            <i class="fas fa-inbox text-4xl text-neutral-400"></i>
           </div>
-          <p class="text-xl text-gray-700 font-bold">
+          <p class="text-lg text-neutral-700 font-bold">
             該当するアイテムがありません
           </p>
-          <p class="text-sm text-gray-500 mt-2">検索条件を変更してください</p>
+          <p class="text-sm text-neutral-500 mt-2">検索条件を変更してください</p>
         </div>
 
         <!-- ページネーション（下部） -->
-        <div id="inventoryPaginationBottom" class="mt-6"></div>
+        <div id="inventoryPaginationBottom" class="mt-4"></div>
       </div>
 
       <!-- 入出庫履歴 -->
-      <div class="glass-card rounded-3xl p-8 shadow-xl">
-        <div class="flex items-center justify-between mb-8">
+      <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
           <div class="flex items-center">
-            <div
-              class="p-4 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl shadow-lg mr-4 icon-float"
-              style="animation-delay: 0.4s"
-            >
-              <i class="fas fa-history text-3xl text-white"></i>
+            <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3">
+              <i class="fas fa-history text-xl text-primary-blue"></i>
             </div>
-            <h2 class="text-2xl font-black text-gray-900">入出庫履歴</h2>
+            <h2 class="text-lg font-bold text-neutral-800">入出庫履歴</h2>
           </div>
-          <div class="flex items-center space-x-4">
-            <label class="block text-xs font-bold text-gray-700">
-              <i class="fas fa-filter mr-1 text-blue-500"></i>種別フィルター
+          <div class="flex items-center space-x-2">
+            <label class="block text-xs font-semibold text-neutral-700">
+              <i class="fas fa-filter mr-1 text-primary-blue"></i>種別フィルター
             </label>
             <select
               id="typeFilter"
-              class="p-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-300 focus:border-blue-500 transition-all duration-300 font-bold"
+              class="p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all font-semibold"
             >
               <option value="">すべて</option>
               <option value="in">🟢 戻しのみ</option>
@@ -499,53 +403,49 @@ endblock %} {% block extra_head %}
             </select>
           </div>
         </div>
-        <div
-          class="progress-shimmer mb-6"
-          style="background: linear-gradient(90deg, #3b82f6, #06b6d4)"
-        ></div>
 
         <!-- ページネーション（上部） -->
-        <div id="movementsPaginationTop" class="mb-6"></div>
+        <div id="movementsPaginationTop" class="mb-4"></div>
 
-        <div class="overflow-x-auto rounded-2xl border-2 border-gray-200">
+        <div class="overflow-x-auto rounded-lg border border-neutral-200">
           <table class="w-full">
-            <thead class="bg-gradient-to-r from-gray-50 to-gray-100">
+            <thead class="bg-neutral-50">
               <tr>
                 <th
-                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-clock mr-2 text-blue-500"></i>処理日時
+                  <i class="fas fa-clock mr-1 text-primary-blue"></i>処理日時
                 </th>
                 <th
-                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-tag mr-2 text-purple-500"></i>種別
+                  <i class="fas fa-tag mr-1 text-neutral-600"></i>種別
                 </th>
                 <th
-                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-barcode mr-2 text-green-500"></i>管理コード
+                  <i class="fas fa-barcode mr-1 text-success-green"></i>管理コード
                 </th>
                 <th
-                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-box mr-2 text-yellow-500"></i>材料・ロット
+                  <i class="fas fa-box mr-1 text-warning-amber"></i>材料・ロット
                 </th>
                 <th
-                  class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-balance-scale mr-2 text-indigo-500"></i
+                  <i class="fas fa-balance-scale mr-1 text-neutral-600"></i
                   >数量・重量
                 </th>
                 <th
-                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-comment mr-2 text-gray-500"></i>備考
+                  <i class="fas fa-comment mr-1 text-neutral-600"></i>備考
                 </th>
                 <th
-                  class="px-6 py-4 text-center text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-center text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-cog mr-2 text-orange-500"></i>操作
+                  <i class="fas fa-cog mr-1 text-neutral-600"></i>操作
                 </th>
               </tr>
             </thead>
@@ -568,20 +468,18 @@ endblock %} {% block extra_head %}
           <p class="text-sm text-gray-500 mt-2">しばらくお待ちください</p>
         </div>
 
-        <div id="movementsEmpty" class="text-center py-16 hidden">
-          <div
-            class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-6 shadow-inner"
-          >
-            <i class="fas fa-history text-5xl text-gray-400"></i>
+        <div id="movementsEmpty" class="text-center py-12 hidden">
+          <div class="inline-flex items-center justify-center w-16 h-16 bg-neutral-100 rounded-full mb-4">
+            <i class="fas fa-history text-4xl text-neutral-400"></i>
           </div>
-          <p class="text-xl text-gray-700 font-bold">入出庫履歴がありません</p>
-          <p class="text-sm text-gray-500 mt-2">
+          <p class="text-lg text-neutral-700 font-bold">入出庫履歴がありません</p>
+          <p class="text-sm text-neutral-500 mt-2">
             処理を実行すると履歴が表示されます
           </p>
         </div>
 
         <!-- ページネーション（下部） -->
-        <div id="movementsPaginationBottom" class="mt-6"></div>
+        <div id="movementsPaginationBottom" class="mt-4"></div>
       </div>
     </div>
   </div>
@@ -590,103 +488,99 @@ endblock %} {% block extra_head %}
 <!-- アイテム検索モーダル -->
 <div
   id="itemSearchModal"
-  class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm hidden z-50"
+  class="fixed inset-0 bg-black bg-opacity-50 hidden z-50"
 >
   <div class="flex items-center justify-center min-h-screen p-4 modal-backdrop">
     <div
-      class="glass-card rounded-3xl max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-2xl border-2 border-gray-200"
+      class="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-lg border border-neutral-200"
       onclick="event.stopPropagation()"
     >
-      <div
-        class="p-8 border-b-2 border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50"
-      >
+      <div class="p-4 bg-neutral-50 border-b border-neutral-200">
         <div class="flex justify-between items-center">
           <div class="flex items-center">
-            <div
-              class="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg mr-4"
-            >
-              <i class="fas fa-search text-2xl text-white"></i>
+            <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3">
+              <i class="fas fa-search text-xl text-primary-blue"></i>
             </div>
             <h2
               id="itemSearchModalTitle"
-              class="text-3xl font-black text-gray-900"
+              class="text-xl font-bold text-neutral-800"
             >
               アイテムを検索
             </h2>
           </div>
           <button
             id="closeItemSearchModal"
-            class="action-btn p-3 bg-white rounded-xl hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-all duration-300"
+            class="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition-colors"
           >
-            <i class="fas fa-times text-2xl"></i>
+            <i class="fas fa-times text-xl"></i>
           </button>
         </div>
       </div>
 
-      <div class="p-8">
+      <div class="p-4">
         <!-- 検索フィルター -->
         <form
           id="itemSearchForm"
-          class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+          class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4"
         >
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-2">
-              <i class="fas fa-tag mr-1 text-blue-500"></i>材料名
+            <label class="block text-xs font-semibold text-neutral-700 mb-2">
+              <i class="fas fa-tag mr-1 text-primary-blue"></i>材料名
             </label>
             <input
               type="text"
               name="material_name"
               placeholder="材料名を入力"
-              class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-300 focus:border-blue-500 transition-all duration-300 font-medium"
+              class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
             />
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-2">
-              <i class="fas fa-ruler mr-1 text-green-500"></i>径（mm）
+            <label class="block text-xs font-semibold text-neutral-700 mb-2">
+              <i class="fas fa-ruler mr-1 text-success-green"></i>径（mm）
             </label>
             <input
               type="number"
               name="diameter_mm"
               placeholder="径を入力"
-              class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-green-300 focus:border-green-500 transition-all duration-300 font-medium"
+              class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
             />
           </div>
           <div>
-            <label class="block text-xs font-bold text-gray-700 mb-2">
-              <i class="fas fa-barcode mr-1 text-purple-500"></i>ロット番号
+            <label class="block text-xs font-semibold text-neutral-700 mb-2">
+              <i class="fas fa-barcode mr-1 text-neutral-600"></i>ロット番号
             </label>
             <input
               type="text"
               name="lot_number"
               placeholder="ロット番号を入力"
-              class="w-full p-3 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all duration-300 font-medium"
+              class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
             />
           </div>
           <div class="flex items-end">
             <label
-              class="glass-card flex items-center space-x-3 p-3 rounded-xl cursor-pointer hover:shadow-lg transition-all duration-300 border border-gray-200 w-full"
+              class="bg-white flex items-center space-x-2 p-2 rounded-lg cursor-pointer border border-neutral-200 hover:bg-neutral-50 transition-colors w-full"
             >
               <input
                 type="checkbox"
                 name="include_zero_stock"
-                class="rounded border-gray-300 w-5 h-5 text-blue-600 focus:ring-blue-500"
+                class="rounded border-neutral-300 w-4 h-4 text-primary-blue focus:ring-primary-blue"
               />
-              <span class="text-sm text-gray-700 font-bold"
+              <span class="text-sm text-neutral-700 font-semibold"
                 >在庫切れを含む</span
               >
             </label>
           </div>
-          <div class="flex items-end space-x-3 md:col-span-4">
+          <div class="flex items-end space-x-2 md:col-span-4">
             <button
               type="submit"
-              class="action-btn flex-1 bg-gradient-to-br from-blue-500 to-indigo-600 text-white p-4 rounded-2xl hover:shadow-xl transition-all duration-300 font-black text-lg"
+              class="flex-1 bg-primary-blue text-white p-3 rounded-lg hover:bg-opacity-90 transition-opacity font-semibold"
             >
               <i class="fas fa-search mr-2"></i>検索
             </button>
             <button
               type="button"
               id="resetSearchBtn"
-              class="action-btn bg-gradient-to-br from-gray-500 to-gray-600 text-white p-4 rounded-2xl hover:shadow-xl transition-all duration-300 font-bold"
+              class="bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 p-3 rounded-lg font-semibold transition-colors"
             >
               <i class="fas fa-redo mr-2"></i>リセット
             </button>
@@ -696,42 +590,40 @@ endblock %} {% block extra_head %}
         <!-- 検索結果 -->
         <div
           id="searchResultsContainer"
-          class="border-2 border-gray-200 rounded-2xl max-h-96 overflow-y-auto"
+          class="border border-neutral-200 rounded-lg max-h-96 overflow-y-auto"
         >
           <table class="w-full">
-            <thead
-              class="bg-gradient-to-r from-gray-50 to-gray-100 sticky top-0"
-            >
+            <thead class="bg-neutral-50 sticky top-0">
               <tr>
                 <th
-                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-info-circle mr-2 text-blue-500"></i>材料情報
+                  <i class="fas fa-info-circle mr-1 text-primary-blue"></i>材料情報
                 </th>
                 <th
-                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-barcode mr-2 text-green-500"></i>ロット
+                  <i class="fas fa-barcode mr-1 text-success-green"></i>ロット
                 </th>
                 <th
-                  class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-boxes mr-2 text-purple-500"></i>残数量
+                  <i class="fas fa-boxes mr-1 text-neutral-600"></i>残数量
                 </th>
                 <th
-                  class="px-6 py-4 text-right text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-weight mr-2 text-yellow-500"></i>重量
+                  <i class="fas fa-weight mr-1 text-warning-amber"></i>重量
                 </th>
                 <th
-                  class="px-6 py-4 text-left text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-map-marker-alt mr-2 text-red-500"></i>置き場
+                  <i class="fas fa-map-marker-alt mr-1 text-danger-red"></i>置き場
                 </th>
                 <th
-                  class="px-6 py-4 text-center text-xs font-black text-gray-700 uppercase tracking-wider"
+                  class="px-4 py-3 text-center text-sm font-semibold text-neutral-700"
                 >
-                  <i class="fas fa-check-circle mr-2 text-indigo-500"></i>選択
+                  <i class="fas fa-check-circle mr-1 text-primary-blue"></i>選択
                 </th>
               </tr>
             </thead>
@@ -750,16 +642,14 @@ endblock %} {% block extra_head %}
           <p class="text-lg text-gray-700 font-bold">検索中...</p>
           <p class="text-sm text-gray-500 mt-2">しばらくお待ちください</p>
         </div>
-        <div id="searchEmpty" class="text-center py-16 hidden">
-          <div
-            class="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full mb-6 shadow-inner"
-          >
-            <i class="fas fa-search-minus text-5xl text-gray-400"></i>
+        <div id="searchEmpty" class="text-center py-12 hidden">
+          <div class="inline-flex items-center justify-center w-16 h-16 bg-neutral-100 rounded-full mb-4">
+            <i class="fas fa-search-minus text-4xl text-neutral-400"></i>
           </div>
-          <p class="text-xl text-gray-700 font-bold">
+          <p class="text-lg text-neutral-700 font-bold">
             条件に合致するアイテムが見つかりませんでした
           </p>
-          <p class="text-sm text-gray-500 mt-2">
+          <p class="text-sm text-neutral-500 mt-2">
             検索条件を変更して再試行してください
           </p>
         </div>
@@ -771,59 +661,55 @@ endblock %} {% block extra_head %}
 <!-- 置き場変更モーダル -->
 <div
   id="relocationModal"
-  class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm hidden z-50"
+  class="fixed inset-0 bg-black bg-opacity-50 hidden z-50"
 >
   <div class="flex items-center justify-center min-h-screen p-4 modal-backdrop">
     <div
-      class="glass-card rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl border-2 border-gray-200 flex flex-col"
+      class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-lg border border-neutral-200 flex flex-col"
       onclick="event.stopPropagation()"
     >
-      <div
-        class="p-8 border-b-2 border-gray-200 bg-gradient-to-r from-purple-50 to-indigo-50 flex-shrink-0"
-      >
+      <div class="p-4 bg-neutral-50 border-b border-neutral-200 flex-shrink-0">
         <div class="flex justify-between items-center">
           <div class="flex items-center">
-            <div
-              class="p-3 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl shadow-lg mr-4"
-            >
-              <i class="fas fa-map-marked-alt text-2xl text-white"></i>
+            <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3">
+              <i class="fas fa-map-marked-alt text-xl text-primary-blue"></i>
             </div>
-            <h2 class="text-3xl font-black text-gray-900">置き場を変更</h2>
+            <h2 class="text-xl font-bold text-neutral-800">置き場を変更</h2>
           </div>
           <button
             id="closeRelocationModal"
-            class="action-btn p-3 bg-white rounded-xl hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-all duration-300"
+            class="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition-colors"
           >
-            <i class="fas fa-times text-2xl"></i>
+            <i class="fas fa-times text-xl"></i>
           </button>
         </div>
       </div>
 
-      <div class="p-8 overflow-y-auto flex-1">
+      <div class="p-4 overflow-y-auto flex-1">
         <!-- アイテム情報 -->
         <div
           id="relocationItemInfo"
-          class="glass-card p-5 border-2 border-dashed border-purple-300 rounded-2xl mb-6"
+          class="bg-neutral-50 p-4 border border-dashed border-neutral-300 rounded-lg mb-4"
         >
-          <div class="text-sm text-gray-700 font-medium">
+          <div class="text-sm text-neutral-700">
             アイテムを選択してください
           </div>
         </div>
 
         <!-- フォーム -->
-        <form id="relocationForm" class="space-y-6">
+        <form id="relocationForm" class="space-y-4">
           <input type="hidden" id="relocationItemId" name="item_id" />
 
           <div>
-            <label class="block text-sm font-bold text-gray-700 mb-3">
-              <i class="fas fa-map-marker-alt mr-2 text-purple-500"></i
+            <label class="block text-sm font-semibold text-neutral-700 mb-2">
+              <i class="fas fa-map-marker-alt mr-1 text-primary-blue"></i
               >新しい置き場
             </label>
             <select
               id="relocationLocationSelect"
               name="location_id"
               required
-              class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all duration-300 font-semibold text-lg"
+              class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
             >
               <option value="">置き場を選択してください</option>
               <!-- 動的に生成 -->
@@ -831,31 +717,29 @@ endblock %} {% block extra_head %}
           </div>
 
           <div>
-            <label class="block text-sm font-bold text-gray-700 mb-3">
-              <i class="fas fa-comment mr-2 text-gray-500"></i>備考（任意）
+            <label class="block text-sm font-semibold text-neutral-700 mb-2">
+              <i class="fas fa-comment mr-1 text-neutral-600"></i>備考（任意）
             </label>
             <textarea
               name="notes"
               rows="3"
-              class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-gray-300 focus:border-gray-500 transition-all duration-300 font-medium"
+              class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
               placeholder="備考を入力してください（任意）"
             ></textarea>
           </div>
 
           <button
             type="submit"
-            class="action-btn w-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white py-5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center font-black text-xl shadow-2xl hover:shadow-3xl"
+            class="w-full bg-primary-blue text-white py-3 px-4 rounded-lg transition-opacity hover:bg-opacity-90 flex items-center justify-center font-semibold text-lg"
           >
-            <i class="fas fa-map-marked-alt text-2xl mr-3"></i>
+            <i class="fas fa-map-marked-alt mr-2"></i>
             置き場を変更
           </button>
         </form>
 
-        <div
-          class="glass-card p-4 rounded-2xl border-l-4 border-purple-500 mt-6"
-        >
-          <p class="text-xs text-gray-600 font-medium">
-            <i class="fas fa-info-circle text-purple-500 mr-2"></i>
+        <div class="bg-neutral-50 p-3 rounded-lg border-l-3 border-primary-blue mt-4">
+          <p class="text-xs text-neutral-600">
+            <i class="fas fa-info-circle text-primary-blue mr-2"></i>
             この操作では在庫数は変更されません。置き場のみが移動されます。
           </p>
         </div>
@@ -867,55 +751,51 @@ endblock %} {% block extra_head %}
 <!-- 履歴編集モーダル -->
 <div
   id="editMovementModal"
-  class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm hidden z-50"
+  class="fixed inset-0 bg-black bg-opacity-50 hidden z-50"
   onclick="closeEditMovementModal()"
 >
   <div class="flex items-center justify-center min-h-screen p-4">
     <div
-      class="glass-card rounded-3xl max-w-2xl w-full shadow-2xl border-2 border-gray-200"
+      class="bg-white rounded-lg max-w-2xl w-full shadow-lg border border-neutral-200"
       onclick="event.stopPropagation()"
     >
-      <div
-        class="p-8 border-b-2 border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50"
-      >
+      <div class="p-4 bg-neutral-50 border-b border-neutral-200">
         <div class="flex justify-between items-center">
           <div class="flex items-center">
-            <div
-              class="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg mr-4"
-            >
-              <i class="fas fa-edit text-2xl text-white"></i>
+            <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3">
+              <i class="fas fa-edit text-xl text-primary-blue"></i>
             </div>
-            <h2 class="text-3xl font-black text-gray-900">入出庫履歴の編集</h2>
+            <h2 class="text-xl font-bold text-neutral-800">入出庫履歴の編集</h2>
           </div>
           <button
             onclick="closeEditMovementModal()"
-            class="text-gray-500 hover:text-gray-700 transition-colors text-2xl"
+            class="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition-colors"
           >
-            <i class="fas fa-times"></i>
+            <i class="fas fa-times text-xl"></i>
           </button>
         </div>
       </div>
 
-      <form id="editMovementForm" class="p-8 space-y-6">
+      <form id="editMovementForm" class="p-4 space-y-4">
         <input type="hidden" id="editMovementId" />
 
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-3">
-            <i class="fas fa-hashtag mr-2 text-purple-500"></i>数量（本）
+          <label class="block text-sm font-semibold text-neutral-700 mb-2">
+            <i class="fas fa-hashtag mr-1 text-neutral-600"></i>数量（本）
           </label>
           <input
             type="number"
             id="editMovementQuantity"
             min="1"
             step="1"
-            class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-purple-300 focus:border-purple-500 transition-all duration-300 font-bold text-lg"
+            class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
             placeholder="数量を入力"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-3">
-            <i class="fas fa-weight mr-2 text-orange-500"></i
+          <label class="block text-sm font-semibold text-neutral-700 mb-2">
+            <i class="fas fa-weight mr-1 text-neutral-600"></i
             >重量（kg）※数量または重量どちらか入力
           </label>
           <input
@@ -923,28 +803,28 @@ endblock %} {% block extra_head %}
             id="editMovementWeight"
             min="0"
             step="0.001"
-            class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-orange-300 focus:border-orange-500 transition-all duration-300 font-bold text-lg"
+            class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
             placeholder="重量を入力（任意）"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-3">
-            <i class="fas fa-comment mr-2 text-gray-500"></i>備考
+          <label class="block text-sm font-semibold text-neutral-700 mb-2">
+            <i class="fas fa-comment mr-1 text-neutral-600"></i>備考
           </label>
           <textarea
             id="editMovementNotes"
             rows="3"
-            class="w-full p-4 border-2 border-gray-300 rounded-2xl focus:ring-4 focus:ring-gray-300 focus:border-gray-500 transition-all duration-300 font-medium"
+            class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
             placeholder="備考を入力してください（任意）"
           ></textarea>
         </div>
 
         <button
           type="submit"
-          class="action-btn w-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white py-5 px-6 rounded-2xl transition-all duration-300 flex items-center justify-center font-black text-xl shadow-2xl hover:shadow-3xl"
+          class="w-full bg-primary-blue text-white py-3 px-4 rounded-lg transition-opacity hover:bg-opacity-90 flex items-center justify-center font-semibold text-lg"
         >
-          <i class="fas fa-save text-2xl mr-3"></i>
+          <i class="fas fa-save mr-2"></i>
           履歴を更新
         </button>
       </form>
@@ -1064,80 +944,80 @@ endblock %} {% block extra_head %}
         const shapeText = getShapeText(item.material.shape);
         const isOutOfStock = item.current_quantity === 0;
         const stockClass = isOutOfStock
-          ? "text-red-600 font-black"
+          ? "text-danger-red font-bold"
           : item.current_quantity <= 5
-          ? "text-yellow-600 font-bold"
-          : "text-gray-900 font-semibold";
+          ? "text-warning-amber font-semibold"
+          : "text-neutral-800 font-semibold";
         const rowClass = isOutOfStock
           ? "bg-gray-50 opacity-75"
           : "table-row-hover";
 
         return `
             <tr class="${rowClass}">
-                <td class="px-6 py-4 text-sm font-semibold text-gray-900">${
+                <td class="px-4 py-3 text-sm font-semibold text-neutral-800">${
                   item.material.display_name || "-"
                 }</td>
-                <td class="px-6 py-4">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-800">
+                <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-success-green bg-opacity-10 text-success-green">
                         ${shapeText}
                     </span>
                 </td>
-                <td class="px-6 py-4 text-sm font-bold text-purple-700">${
+                <td class="px-4 py-3 text-sm font-semibold text-neutral-700">${
                   item.material.diameter_mm
                 }mm</td>
-                <td class="px-6 py-4">
-                    <span class="inline-flex items-center font-mono text-xs font-bold text-gray-900 bg-yellow-100 px-3 py-1 rounded-lg">
+                <td class="px-4 py-3">
+                    <span class="inline-flex items-center font-mono text-xs font-semibold text-neutral-800 bg-warning-amber bg-opacity-10 px-2 py-1 rounded-lg">
                         ${item.lot.lot_number}
                     </span>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-600 font-medium">${
+                <td class="px-4 py-3 text-sm text-neutral-600">${
                   item.lot.notes || "-"
                 }</td>
-                <td class="px-6 py-4">
-                    <span class="inline-flex items-center text-sm font-bold text-indigo-700">
+                <td class="px-4 py-3">
+                    <span class="inline-flex items-center text-sm font-semibold text-neutral-700">
                         ${item.lot.length_mm}mm
                     </span>
                 </td>
-                <td class="px-6 py-4 text-right text-base ${stockClass}">
+                <td class="px-4 py-3 text-right text-base ${stockClass}">
                     ${item.current_quantity}本
                     ${
                       isOutOfStock
-                        ? '<span class="block text-xs text-red-500 mt-1 font-bold">在庫切れ</span>'
+                        ? '<span class="block text-xs text-danger-red mt-1 font-semibold">在庫切れ</span>'
                         : ""
                     }
                 </td>
-                <td class="px-6 py-4 text-right text-sm font-bold text-green-700">${(
+                <td class="px-4 py-3 text-right text-sm font-semibold text-success-green">${(
                   item.total_weight_kg || 0
                 ).toFixed(3)}kg</td>
-                <td class="px-6 py-4">
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-800">
+                <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-danger-red bg-opacity-10 text-danger-red">
                         <i class="fas fa-map-marker-alt mr-1"></i>${
                           item.location ? item.location.name : "未配置"
                         }
                     </span>
                 </td>
-                <td class="px-6 py-4 text-center">
+                <td class="px-4 py-3 text-center">
                     <div class="flex justify-center space-x-2">
                         <button onclick="selectItemForMovement(${
                           item.id
                         }, 'in')"
-                                class="action-btn movement-in-gradient text-white text-xs px-4 py-2 rounded-xl font-bold transition-all duration-300 hover:shadow-lg"
+                                class="movement-in-gradient text-white text-xs px-3 py-2 rounded-lg font-semibold hover:opacity-90 transition-opacity"
                                 title="在庫へ戻す">
                             <i class="fas fa-arrow-left mr-1"></i>戻し
                         </button>
                         <button onclick="selectItemForMovement(${
                           item.id
                         }, 'out')"
-                                class="action-btn ${
+                                class="${
                                   isOutOfStock
-                                    ? "bg-gray-400 cursor-not-allowed"
-                                    : "movement-out-gradient"
-                                } text-white text-xs px-4 py-2 rounded-xl font-bold transition-all duration-300 hover:shadow-lg"
+                                    ? "bg-neutral-400 cursor-not-allowed"
+                                    : "movement-out-gradient hover:opacity-90"
+                                } text-white text-xs px-3 py-2 rounded-lg font-semibold transition-opacity"
                                 ${isOutOfStock ? "disabled" : ""}>
                             <i class="fas fa-arrow-right mr-1"></i>出庫
                         </button>
                         <button onclick="openRelocationModal(${item.id})"
-                                class="action-btn bg-gradient-to-br from-purple-500 to-indigo-600 text-white text-xs px-4 py-2 rounded-xl font-bold transition-all duration-300 hover:shadow-lg"
+                                class="bg-primary-blue text-white text-xs px-3 py-2 rounded-lg font-semibold hover:opacity-90 transition-opacity"
                                 title="置き場を移動">
                             <i class="fas fa-map-marked-alt mr-1"></i>移動
                         </button>
@@ -1226,51 +1106,51 @@ endblock %} {% block extra_head %}
     tableBody.innerHTML = pageItems
       .map((movement) => {
         const isIn = movement.movement_type === "in";
-        const typeClass = isIn ? "text-green-700" : "text-red-700";
+        const typeClass = isIn ? "text-success-green" : "text-danger-red";
         const typeText = isIn ? "戻し" : "出庫";
         const typeIcon = isIn ? "fa-arrow-left" : "fa-arrow-right";
         const rowClass = isIn ? "history-card-in" : "history-card-out";
         const badgeClass = isIn
-          ? "bg-gradient-to-r from-green-500 to-emerald-600"
-          : "bg-gradient-to-r from-red-500 to-rose-600";
+          ? "bg-success-green"
+          : "bg-danger-red";
 
         return `
             <tr class="table-row-hover ${rowClass}">
-                <td class="px-6 py-4">
+                <td class="px-4 py-3">
                     <div class="flex items-center">
-                        <i class="fas fa-clock text-blue-500 mr-2"></i>
-                        <span class="text-sm font-bold text-gray-900">
+                        <i class="fas fa-clock text-primary-blue mr-2"></i>
+                        <span class="text-sm font-semibold text-neutral-800">
                             ${new Date(movement.processed_at).toLocaleString(
                               "ja-JP"
                             )}
                         </span>
                     </div>
                 </td>
-                <td class="px-6 py-4">
-                    <span class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-black text-white shadow-lg ${badgeClass}">
+                <td class="px-4 py-3">
+                    <span class="inline-flex items-center px-3 py-1 rounded-lg text-xs font-semibold text-white ${badgeClass}">
                         <i class="fas ${typeIcon} mr-2"></i>${typeText}
                     </span>
                 </td>
-                <td class="px-6 py-4">
-                    <span class="inline-flex items-center font-mono text-xs font-bold text-gray-900 bg-gray-100 px-3 py-2 rounded-lg">
+                <td class="px-4 py-3">
+                    <span class="inline-flex items-center font-mono text-xs font-semibold text-neutral-800 bg-neutral-100 px-2 py-1 rounded-lg">
                         ${movement.lot_number || "-"}
                     </span>
                 </td>
-                <td class="px-6 py-4">
-                    <div class="font-semibold text-gray-900 text-sm">${
+                <td class="px-4 py-3">
+                    <div class="font-semibold text-neutral-800 text-sm">${
                       movement.material_name || "-"
                     }</div>
-                    <div class="text-gray-500 text-xs font-medium mt-1">
+                    <div class="text-neutral-600 text-xs mt-1">
                         <i class="fas fa-barcode mr-1"></i>${
                           movement.lot_number || "-"
                         }
                     </div>
                 </td>
-                <td class="px-6 py-4 text-right">
-                    <div class="text-base font-black ${typeClass}">
+                <td class="px-4 py-3 text-right">
+                    <div class="text-base font-bold ${typeClass}">
                         ${isIn ? "+" : "-"}${movement.quantity}本
                     </div>
-                    <div class="text-xs text-gray-600 font-semibold mt-1">
+                    <div class="text-xs text-neutral-600 font-semibold mt-1">
                         ${
                           movement.weight_kg
                             ? movement.weight_kg.toFixed(3) + "kg"
@@ -1278,23 +1158,23 @@ endblock %} {% block extra_head %}
                         }
                     </div>
                 </td>
-                <td class="px-6 py-4">
-                    <div class="text-sm text-gray-700 font-medium">
+                <td class="px-4 py-3">
+                    <div class="text-sm text-neutral-700">
                         ${movement.notes || "-"}
                     </div>
                 </td>
-                <td class="px-6 py-4 text-center">
+                <td class="px-4 py-3 text-center">
                     <div class="flex items-center justify-center space-x-2">
                         <button
                             onclick="openEditMovementModal(${movement.id})"
-                            class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
+                            class="px-3 py-2 bg-primary-blue hover:bg-opacity-90 text-white text-xs font-semibold rounded-lg transition-opacity"
                             title="履歴を編集"
                         >
                             <i class="fas fa-edit mr-1"></i>編集
                         </button>
                         <button
                             onclick="deleteMovement(${movement.id})"
-                            class="px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition-colors duration-200 shadow-md hover:shadow-lg"
+                            class="px-3 py-2 bg-danger-red hover:bg-opacity-90 text-white text-xs font-semibold rounded-lg transition-opacity"
                             title="履歴を削除"
                         >
                             <i class="fas fa-trash mr-1"></i>削除
@@ -1800,45 +1680,33 @@ endblock %} {% block extra_head %}
     // ボタンのアクティブ状態を更新
     if (type === "out") {
       // 出庫ボタンをアクティブに
-      outBtn?.classList.remove(
-        "bg-gradient-to-br",
-        "from-gray-400",
-        "to-gray-500"
-      );
+      outBtn?.classList.remove("bg-neutral-400");
       outBtn?.classList.add("movement-out-gradient");
       // 戻しボタンを非アクティブに
       inBtn?.classList.remove("movement-in-gradient");
-      inBtn?.classList.add("bg-gradient-to-br", "from-gray-400", "to-gray-500");
+      inBtn?.classList.add("bg-neutral-400");
 
       // 送信ボタンを出庫用に
       if (submitBtn) {
         submitBtn.classList.remove("movement-in-gradient");
         submitBtn.classList.add("movement-out-gradient");
         submitBtn.innerHTML =
-          '<i class="fas fa-arrow-right text-2xl mr-3"></i>出庫実行';
+          '<i class="fas fa-arrow-right mr-2"></i>出庫実行';
       }
     } else {
       // 戻しボタンをアクティブに
-      inBtn?.classList.remove(
-        "bg-gradient-to-br",
-        "from-gray-400",
-        "to-gray-500"
-      );
+      inBtn?.classList.remove("bg-neutral-400");
       inBtn?.classList.add("movement-in-gradient");
       // 出庫ボタンを非アクティブに
       outBtn?.classList.remove("movement-out-gradient");
-      outBtn?.classList.add(
-        "bg-gradient-to-br",
-        "from-gray-400",
-        "to-gray-500"
-      );
+      outBtn?.classList.add("bg-neutral-400");
 
       // 送信ボタンを戻し用に
       if (submitBtn) {
         submitBtn.classList.remove("movement-out-gradient");
         submitBtn.classList.add("movement-in-gradient");
         submitBtn.innerHTML =
-          '<i class="fas fa-arrow-left text-2xl mr-3"></i>在庫へ戻す';
+          '<i class="fas fa-arrow-left mr-2"></i>在庫へ戻す';
       }
     }
   }
