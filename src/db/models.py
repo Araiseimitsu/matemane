@@ -148,7 +148,7 @@ class Lot(Base):
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    lot_number = Column(String(100), unique=True, nullable=False, comment="ロット番号")
+    lot_number = Column(String(100), nullable=False, comment="ロット番号")
     material_id = Column(Integer, ForeignKey("materials.id"), nullable=False)
     purchase_order_item_id = Column(Integer, ForeignKey("purchase_order_items.id"), nullable=True, comment="発注アイテムID")
     length_mm = Column(Integer, nullable=False, comment="長さ（mm）")

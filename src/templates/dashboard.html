@@ -39,8 +39,13 @@ endblock %} {% block extra_head %}
   }
 
   @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
   }
 
   /* アクションカード - 控えめなホバー */
@@ -83,32 +88,51 @@ endblock %} {% block extra_head %}
           <p class="text-sm text-neutral-600 mt-0.5">生産状況と在庫の全体像</p>
         </div>
         <div class="hidden md:flex items-center space-x-3">
-          <div class="flex items-center px-3 py-1.5 bg-white border border-neutral-200 rounded-lg">
-            <div class="status-indicator w-2 h-2 bg-success-green rounded-full mr-2"></div>
-            <span class="text-xs font-medium text-neutral-700" id="refresh-status">システム稼働中</span>
+          <div
+            class="flex items-center px-3 py-1.5 bg-white border border-neutral-200 rounded-lg"
+          >
+            <div
+              class="status-indicator w-2 h-2 bg-success-green rounded-full mr-2"
+            ></div>
+            <span
+              class="text-xs font-medium text-neutral-700"
+              id="refresh-status"
+              >システム稼働中</span
+            >
           </div>
           <button
             id="refreshDashboard"
             class="p-2 bg-white border border-neutral-200 rounded-lg hover:border-primary-blue hover:bg-neutral-50 transition-all group"
             title="ダッシュボードを再取得"
           >
-            <i class="fas fa-sync-alt text-neutral-600 text-sm group-hover:text-primary-blue"></i>
+            <i
+              class="fas fa-sync-alt text-neutral-600 text-sm group-hover:text-primary-blue"
+            ></i>
           </button>
         </div>
       </div>
     </div>
 
     <!-- KPIカードセクション - コンパクト化 -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6" id="kpiCards">
-
+    <div
+      class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6"
+      id="kpiCards"
+    >
       <!-- 在庫総数カード -->
       <div class="kpi-card rounded-lg p-4">
         <div class="flex items-start justify-between">
           <div class="flex-1">
-            <div class="text-xs font-medium text-neutral-600 uppercase tracking-wide mb-1">
+            <div
+              class="text-xs font-medium text-neutral-600 uppercase tracking-wide mb-1"
+            >
               同等品グループ本数
             </div>
-            <div class="counter text-3xl font-bold text-neutral-800 mb-0.5" id="total-inventory">-</div>
+            <div
+              class="counter text-3xl font-bold text-neutral-800 mb-0.5"
+              id="total-inventory"
+            >
+              -
+            </div>
             <div class="text-xs text-neutral-600">
               <span id="group-count">-</span> グループ
             </div>
@@ -123,11 +147,20 @@ endblock %} {% block extra_head %}
       <div class="kpi-card rounded-lg p-4">
         <div class="flex items-start justify-between">
           <div class="flex-1">
-            <div class="text-xs font-medium text-neutral-600 uppercase tracking-wide mb-1">
+            <div
+              class="text-xs font-medium text-neutral-600 uppercase tracking-wide mb-1"
+            >
               アクティブ材料件数
             </div>
-            <div class="counter text-3xl font-bold text-neutral-800 mb-0.5" id="material-types">-</div>
-            <div class="text-xs text-neutral-600" id="last-inventory-refresh">-</div>
+            <div
+              class="counter text-3xl font-bold text-neutral-800 mb-0.5"
+              id="material-types"
+            >
+              -
+            </div>
+            <div class="text-xs text-neutral-600" id="last-inventory-refresh">
+              -
+            </div>
           </div>
           <div class="p-3 bg-success-green bg-opacity-10 rounded-lg">
             <i class="fas fa-cubes text-2xl text-success-green"></i>
@@ -139,12 +172,19 @@ endblock %} {% block extra_head %}
       <div class="kpi-card rounded-lg p-4">
         <div class="flex items-start justify-between">
           <div class="flex-1">
-            <div class="text-xs font-medium text-neutral-600 uppercase tracking-wide mb-1">
+            <div
+              class="text-xs font-medium text-neutral-600 uppercase tracking-wide mb-1"
+            >
               入庫待ち・検品待ち
             </div>
-            <div class="counter text-3xl font-bold text-neutral-800 mb-0.5" id="pending-po-count">-</div>
+            <div
+              class="counter text-3xl font-bold text-neutral-800 mb-0.5"
+              id="pending-po-count"
+            >
+              -
+            </div>
             <div class="text-xs text-neutral-600">
-              見込 <span id="pending-po-weight">-</span> kg
+              見込 <span id="pending-po-weight">-</span>
             </div>
           </div>
           <div class="p-3 bg-warning-amber bg-opacity-10 rounded-lg">
@@ -157,10 +197,17 @@ endblock %} {% block extra_head %}
       <div class="kpi-card rounded-lg p-4">
         <div class="flex items-start justify-between">
           <div class="flex-1">
-            <div class="text-xs font-medium text-neutral-600 uppercase tracking-wide mb-1">
+            <div
+              class="text-xs font-medium text-neutral-600 uppercase tracking-wide mb-1"
+            >
               在庫切れ予測
             </div>
-            <div class="counter text-3xl font-bold text-neutral-800 mb-0.5" id="forecast-risk-count">-</div>
+            <div
+              class="counter text-3xl font-bold text-neutral-800 mb-0.5"
+              id="forecast-risk-count"
+            >
+              -
+            </div>
             <div class="text-xs text-neutral-600" id="nearest-stockout">-</div>
           </div>
           <div class="p-3 bg-danger-red bg-opacity-10 rounded-lg">
@@ -172,36 +219,63 @@ endblock %} {% block extra_head %}
 
     <!-- メインコンテンツグリッド - コンパクト化 -->
     <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">
-
       <!-- クイックアクション -->
       <div class="xl:col-span-2">
         <div class="bg-white rounded-lg border border-neutral-200 p-4">
-          <h3 class="text-base font-bold text-neutral-800 mb-3 flex items-center">
+          <h3
+            class="text-base font-bold text-neutral-800 mb-3 flex items-center"
+          >
             <i class="fas fa-bolt text-primary-blue mr-2"></i>
             クイックアクション
           </h3>
           <div class="grid grid-cols-2 md:grid-cols-3 gap-3" id="quickActions">
-            <a href="/inventory" class="action-card flex flex-col items-center p-4 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-lg text-center">
+            <a
+              href="/inventory"
+              class="action-card flex flex-col items-center p-4 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-lg text-center"
+            >
               <i class="fas fa-boxes text-2xl text-primary-blue mb-2"></i>
               <div class="text-sm font-semibold text-neutral-800">在庫管理</div>
             </a>
-            <a href="/order-flow" class="action-card flex flex-col items-center p-4 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-lg text-center">
+            <a
+              href="/order-flow"
+              class="action-card flex flex-col items-center p-4 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-lg text-center"
+            >
               <i class="fas fa-stream text-2xl text-primary-blue mb-2"></i>
-              <div class="text-sm font-semibold text-neutral-800">発注フロー</div>
+              <div class="text-sm font-semibold text-neutral-800">
+                発注フロー
+              </div>
             </a>
-            <a href="/movements" class="action-card flex flex-col items-center p-4 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-lg text-center">
-              <i class="fas fa-exchange-alt text-2xl text-primary-blue mb-2"></i>
+            <a
+              href="/movements"
+              class="action-card flex flex-col items-center p-4 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-lg text-center"
+            >
+              <i
+                class="fas fa-exchange-alt text-2xl text-primary-blue mb-2"
+              ></i>
               <div class="text-sm font-semibold text-neutral-800">入出庫</div>
             </a>
-            <a href="/excel-viewer" class="action-card flex flex-col items-center p-4 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-lg text-center">
+            <a
+              href="/excel-viewer"
+              class="action-card flex flex-col items-center p-4 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-lg text-center"
+            >
               <i class="fas fa-file-excel text-2xl text-primary-blue mb-2"></i>
-              <div class="text-sm font-semibold text-neutral-800">セット予定</div>
+              <div class="text-sm font-semibold text-neutral-800">
+                セット予定
+              </div>
             </a>
-            <a href="/production-schedule" class="action-card flex flex-col items-center p-4 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-lg text-center">
+            <a
+              href="/production-schedule"
+              class="action-card flex flex-col items-center p-4 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-lg text-center"
+            >
               <i class="fas fa-chart-line text-2xl text-primary-blue mb-2"></i>
-              <div class="text-sm font-semibold text-neutral-800">生産中一覧</div>
+              <div class="text-sm font-semibold text-neutral-800">
+                生産中一覧
+              </div>
             </a>
-            <a href="/analytics" class="action-card flex flex-col items-center p-4 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-lg text-center">
+            <a
+              href="/analytics"
+              class="action-card flex flex-col items-center p-4 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-lg text-center"
+            >
               <i class="fas fa-chart-bar text-2xl text-primary-blue mb-2"></i>
               <div class="text-sm font-semibold text-neutral-800">集計分析</div>
             </a>
@@ -217,10 +291,14 @@ endblock %} {% block extra_head %}
         </h3>
         <div id="stock-alerts" class="compact-section">
           <div class="text-center py-8">
-            <div class="inline-flex items-center justify-center w-12 h-12 bg-success-green bg-opacity-10 rounded-full mb-3">
+            <div
+              class="inline-flex items-center justify-center w-12 h-12 bg-success-green bg-opacity-10 rounded-full mb-3"
+            >
               <i class="fas fa-check-circle text-2xl text-success-green"></i>
             </div>
-            <p class="text-sm font-medium text-neutral-800">現在アラートはありません</p>
+            <p class="text-sm font-medium text-neutral-800">
+              現在アラートはありません
+            </p>
             <p class="text-xs text-neutral-600 mt-1">在庫状況は正常です</p>
           </div>
         </div>
@@ -229,7 +307,6 @@ endblock %} {% block extra_head %}
 
     <!-- コンテンツグリッド2段目 -->
     <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-
       <!-- 最近の入出庫 -->
       <div class="bg-white rounded-lg border border-neutral-200 p-4">
         <div class="flex items-center justify-between mb-3">
@@ -237,17 +314,26 @@ endblock %} {% block extra_head %}
             <i class="fas fa-history text-primary-blue mr-2"></i>
             最近の入出庫
           </h3>
-          <a href="/movements" class="text-xs text-primary-blue hover:underline font-medium">
+          <a
+            href="/movements"
+            class="text-xs text-primary-blue hover:underline font-medium"
+          >
             入出庫一覧へ →
           </a>
         </div>
         <div id="recent-activities" class="compact-section">
           <div class="text-center py-8">
-            <div class="inline-flex items-center justify-center w-10 h-10 bg-neutral-100 rounded-full mb-3">
+            <div
+              class="inline-flex items-center justify-center w-10 h-10 bg-neutral-100 rounded-full mb-3"
+            >
               <i class="fas fa-clock text-xl text-neutral-400"></i>
             </div>
-            <p class="text-sm font-medium text-neutral-700">活動履歴を取得中...</p>
-            <p class="text-xs text-neutral-500 mt-1">データが読み込まれるまでお待ちください</p>
+            <p class="text-sm font-medium text-neutral-700">
+              活動履歴を取得中...
+            </p>
+            <p class="text-xs text-neutral-500 mt-1">
+              データが読み込まれるまでお待ちください
+            </p>
           </div>
         </div>
       </div>
@@ -260,8 +346,12 @@ endblock %} {% block extra_head %}
         </h3>
         <div id="stockout-forecast" class="compact-section">
           <div class="text-center py-8">
-            <div class="inline-block w-8 h-8 border-3 border-neutral-200 border-t-primary-blue rounded-full animate-spin mb-3"></div>
-            <p class="text-xs font-medium text-neutral-600">在庫切れ予測を集計中...</p>
+            <div
+              class="inline-block w-8 h-8 border-3 border-neutral-200 border-t-primary-blue rounded-full animate-spin mb-3"
+            ></div>
+            <p class="text-xs font-medium text-neutral-600">
+              在庫切れ予測を集計中...
+            </p>
           </div>
         </div>
       </div>
@@ -273,14 +363,21 @@ endblock %} {% block extra_head %}
             <i class="fas fa-boxes text-neutral-500 mr-2"></i>
             同等品グループ
           </h3>
-          <a href="/inventory" class="text-xs text-primary-blue hover:underline font-medium">
+          <a
+            href="/inventory"
+            class="text-xs text-primary-blue hover:underline font-medium"
+          >
             在庫管理へ →
           </a>
         </div>
         <div class="compact-section" id="groupSnapshot">
           <div class="text-center py-8">
-            <div class="inline-block w-8 h-8 border-3 border-neutral-200 border-t-primary-blue rounded-full animate-spin mb-3"></div>
-            <p class="text-xs font-medium text-neutral-600">グループ在庫を読み込んでいます...</p>
+            <div
+              class="inline-block w-8 h-8 border-3 border-neutral-200 border-t-primary-blue rounded-full animate-spin mb-3"
+            ></div>
+            <p class="text-xs font-medium text-neutral-600">
+              グループ在庫を読み込んでいます...
+            </p>
           </div>
         </div>
       </div>
@@ -292,14 +389,21 @@ endblock %} {% block extra_head %}
             <i class="fas fa-clipboard-check text-warning-amber mr-2"></i>
             入庫待ち / 検品待ち
           </h3>
-          <a href="/order-flow" class="text-xs text-primary-blue hover:underline font-medium">
+          <a
+            href="/order-flow"
+            class="text-xs text-primary-blue hover:underline font-medium"
+          >
             発注フローへ →
           </a>
         </div>
         <div class="compact-section" id="pendingPOList">
           <div class="text-center py-8">
-            <div class="inline-block w-8 h-8 border-3 border-neutral-200 border-t-warning-amber rounded-full animate-spin mb-3"></div>
-            <p class="text-xs font-medium text-neutral-600">入庫待ち一覧を取得中...</p>
+            <div
+              class="inline-block w-8 h-8 border-3 border-neutral-200 border-t-warning-amber rounded-full animate-spin mb-3"
+            ></div>
+            <p class="text-xs font-medium text-neutral-600">
+              入庫待ち一覧を取得中...
+            </p>
           </div>
         </div>
       </div>
