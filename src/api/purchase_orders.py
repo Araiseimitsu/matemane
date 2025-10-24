@@ -55,13 +55,16 @@ def calculate_weight_from_quantity(quantity: int, shape: MaterialShape, diameter
         raise ValueError(f"未対応の形状: {shape}")
 
     weight_kg = volume_cm3 * density / 1000  # g → kg
-    return round(weight_kg * quantity, 3)
+    return weight_kg * quantity
 
 def calculate_quantity_from_weight(weight_kg: float, shape: MaterialShape, diameter_mm: float, length_mm: int, density: float) -> int:
-    """重量から本数を計算"""
+    """重量から本数を計算（切り捨てで整数）"""
     single_piece_weight = calculate_weight_from_quantity(1, shape, diameter_mm, length_mm, density)
+    if single_piece_weight <= 0:
+        return 0
     quantity = weight_kg / single_piece_weight
-    return max(1, round(quantity))  # 最低1本
+    from math import floor
+    return max(0, floor(quantity))
 
 # Pydantic スキーマ（Excel取込専用 - 手動作成は廃止）
 
@@ -143,10 +146,10 @@ class ReceivingConfirmation(BaseModel):
 
     def validate_receiving_data(self):
         """入庫データのバリデーション"""
-        if not self.received_quantity and not self.received_weight_kg:
-            raise ValueError("入庫数量または入庫重量のいずれかが必要です")
-        if self.received_quantity and self.received_weight_kg:
-            raise ValueError("入庫数量と入庫重量は同時に指定できません")
+        if not self.received_weight_kg:
+            raise ValueError("入庫重量（kg）は必須です")
+        if self.received_quantity:
+            raise ValueError("本数入力は不可です。重量のみを入力してください")
 
 class MaterialSuggestionResponse(BaseModel):
     material_id: int
@@ -454,6 +457,7 @@ async def receive_item(
             purchase_order_item_id=item.id,
             length_mm=receiving.length_mm,
             initial_quantity=final_received_quantity,
+            initial_weight_kg=final_received_weight,
             supplier=item.purchase_order.supplier,
             received_date=receiving.received_date,
             received_unit_price=receiving.unit_price,
@@ -630,6 +634,7 @@ async def update_received_item(
     lot.lot_number = receiving.lot_number
     lot.length_mm = receiving.length_mm
     lot.initial_quantity = final_received_quantity
+    lot.initial_weight_kg = final_received_weight
     lot.received_date = receiving.received_date
     lot.received_unit_price = receiving.unit_price
     lot.received_amount = receiving.amount
@@ -667,8 +672,34 @@ async def update_received_item(
                 lot.notes = f"追加置き場: {others}"
 
     # 発注アイテムの数量・重量更新
-    item.received_quantity = final_received_quantity
-    item.received_weight_kg = final_received_weight
+    # 既存ロットも含めた合計を再計算して反映
+    remaining_lots = db.query(Lot).options(joinedload(Lot.material)).filter(
+        Lot.purchase_order_item_id == item.id
+    ).all()
+
+    total_quantity = 0
+    total_weight_kg = 0.0
+
+    for remaining_lot in remaining_lots:
+        total_quantity += remaining_lot.initial_quantity or 0
+        lot_weight = remaining_lot.initial_weight_kg or 0.0
+        if not lot_weight:
+            material_for_lot = remaining_lot.material
+            if material_for_lot and remaining_lot.initial_quantity:
+                try:
+                    lot_weight = calculate_weight_from_quantity(
+                        remaining_lot.initial_quantity,
+                        material_for_lot.shape,
+                        material_for_lot.diameter_mm,
+                        remaining_lot.length_mm,
+                        material_for_lot.current_density
+                    )
+                except Exception:
+                    lot_weight = 0.0
+        total_weight_kg += lot_weight
+
+    item.received_quantity = total_quantity if total_quantity > 0 else 0
+    item.received_weight_kg = total_weight_kg if total_weight_kg > 0 else None
 
     db.commit()
 
@@ -739,22 +770,25 @@ async def delete_received_lot(
     for remaining_lot in remaining_lots:
         total_quantity += remaining_lot.initial_quantity or 0
 
-        material = remaining_lot.material
-        if material and remaining_lot.initial_quantity:
-            try:
-                lot_weight = calculate_weight_from_quantity(
-                    remaining_lot.initial_quantity,
-                    material.shape,
-                    material.diameter_mm,
-                    remaining_lot.length_mm,
-                    material.current_density
-                )
-            except Exception:
-                lot_weight = 0.0
-            total_weight_kg += lot_weight
+        # 重量は保存済みの初期重量を優先、なければ数量から計算
+        lot_weight = remaining_lot.initial_weight_kg or 0.0
+        if not lot_weight:
+            material_for_lot = remaining_lot.material
+            if material_for_lot and remaining_lot.initial_quantity:
+                try:
+                    lot_weight = calculate_weight_from_quantity(
+                        remaining_lot.initial_quantity,
+                        material_for_lot.shape,
+                        material_for_lot.diameter_mm,
+                        remaining_lot.length_mm,
+                        material_for_lot.current_density
+                    )
+                except Exception:
+                    lot_weight = 0.0
+        total_weight_kg += lot_weight
 
     item.received_quantity = total_quantity if total_quantity > 0 else 0
-    item.received_weight_kg = round(total_weight_kg, 3) if total_weight_kg > 0 else None
+    item.received_weight_kg = total_weight_kg if total_weight_kg > 0 else None
 
     if total_quantity > 0:
         item.status = PurchaseOrderItemStatus.RECEIVED
@@ -812,10 +846,10 @@ async def get_previous_receiving_values(
     # 各ロットの情報を構築
     lots_data = []
     for lot in lots:
-        # 重量は数量から計算して補完
+        # 重量は保存された初期重量を使用。なければ数量から計算
         received_quantity = lot.initial_quantity
-        received_weight_kg = None
-        if received_quantity and received_quantity > 0:
+        received_weight_kg = lot.initial_weight_kg
+        if (received_weight_kg is None or received_weight_kg == 0) and received_quantity and received_quantity > 0:
             try:
                 received_weight_kg = calculate_weight_from_quantity(
                     received_quantity, material.shape, material.diameter_mm, lot.length_mm, material.current_density

@@ -1169,9 +1169,9 @@ async function handleReceive(event) {
         const quantity = quantityStr && quantityStr.trim() !== '' ? quantityStr : null;
         const weight = weightStr && weightStr.trim() !== '' ? weightStr : null;
 
-        if (!quantity && !weight) {
+        if (!weight) {
             if (typeof showToast === 'function') {
-                showToast(`ロット ${i}: 数量または重量を入力してください`, 'error');
+                showToast(`ロット ${i}: 入庫重量（kg）は必須です`, 'error');
             }
             return;
         }
@@ -1183,12 +1183,8 @@ async function handleReceive(event) {
             notes: lotNotes.trim() || null
         };
 
-        // 数量または重量を設定
-        if (quantity) {
-            lotData.received_quantity = parseInt(quantity);
-        } else if (weight) {
-            lotData.received_weight_kg = parseFloat(weight);
-        }
+        // 重量のみを設定（本数はサーバーで切り捨て計算）
+        lotData.received_weight_kg = parseFloat(weight);
 
         lots.push(lotData);
     }
@@ -1208,14 +1204,7 @@ async function handleReceive(event) {
         return;
     }
 
-    // 合計数量チェック（本数指定のロットのみ）
-    const totalQuantity = lots.reduce((sum, lot) => sum + (lot.received_quantity || 0), 0);
-    if (currentOrderedQuantity > 0 && totalQuantity > 0 && totalQuantity !== currentOrderedQuantity) {
-        const confirmMsg = `合計数量（${totalQuantity}本）が発注数量（${currentOrderedQuantity}本）と一致しません。このまま登録しますか？`;
-        if (!confirm(confirmMsg)) {
-            return;
-        }
-    }
+    // 重量基準のため合計本数チェックは行いません
 
     // 各ロットに対してAPI呼び出し
     try {
@@ -1229,10 +1218,8 @@ async function handleReceive(event) {
                 notes: lot.notes  // 備考を追加
             };
 
-            // 数量または重量を設定
-            if (lot.received_quantity) {
-                receiveData.received_quantity = lot.received_quantity;
-            } else if (lot.received_weight_kg) {
+            // 重量のみを送信（本数はバックエンドで切り捨て計算）
+            if (lot.received_weight_kg) {
                 receiveData.received_weight_kg = lot.received_weight_kg;
             }
 
@@ -2313,15 +2300,15 @@ function updateConversion() {
             displayQuantity = quantity;
             displayWeight = roundTo3(unitWeight * quantity);
         } else if (method === 'weight' && Number.isFinite(weight) && weight > 0) {
-            displayWeight = roundTo3(weight);
-            const computedQuantity = Math.max(1, Math.round(weight / unitWeight));
+            displayWeight = weight;
+            const computedQuantity = Math.floor(weight / unitWeight);
             displayQuantity = computedQuantity;
         } else if (Number.isFinite(quantity) && quantity > 0) {
             displayQuantity = quantity;
             displayWeight = roundTo3(unitWeight * quantity);
         } else if (Number.isFinite(weight) && weight > 0) {
-            displayWeight = roundTo3(weight);
-            const computedQuantity = Math.max(1, Math.round(weight / unitWeight));
+            displayWeight = weight;
+            const computedQuantity = Math.floor(weight / unitWeight);
             displayQuantity = computedQuantity;
         }
 
@@ -2402,22 +2389,22 @@ function addLotRow(defaultQuantity = null, defaultWeight = null, defaultLotNumbe
                        placeholder="例: L001"${lotNumberValue}>
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">入庫数量（本）</label>
+                <label class="block text-xs font-medium text-gray-700 mb-1">入庫数量（本・参考）</label>
                 <input type="number" name="lot_quantity_${counter}" min="1" step="1"
                        class="lot-quantity-input w-full p-2 border border-gray-300 rounded text-sm"
-                       placeholder="本数"
+                       placeholder="本数（参考）"
                        data-lot-id="${counter}"${quantityValue}
                        oninput="onLotQuantityChange(${counter})">
-                <p class="text-xs text-gray-500 mt-1">または重量</p>
+                <p class="text-xs text-gray-500 mt-1">重量を必ず入力してください</p>
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">入庫重量（kg）</label>
+                <label class="block text-xs font-medium text-gray-700 mb-1">入庫重量（kg） *</label>
                 <input type="number" name="lot_weight_${counter}" min="0.001" step="0.001"
                        class="lot-weight-input w-full p-2 border border-gray-300 rounded text-sm"
-                       placeholder="重量"
+                       placeholder="重量（必須）"
                        data-lot-id="${counter}"${weightValue}
                        oninput="onLotWeightChange(${counter})">
-                <p class="text-xs text-gray-500 mt-1">どちらか入力</p>
+                <p class="text-xs text-gray-500 mt-1">重量は必須。本数は切り捨て自動計算。</p>
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">置き場</label>
@@ -2515,7 +2502,7 @@ function updateTotalQuantity() {
         } else if (weight > 0) {
             totalWeight += weight;
             if (unitWeight > 0) {
-                totalQuantity += Math.round(weight / unitWeight);
+                totalQuantity += Math.floor(weight / unitWeight);
             }
         }
     }

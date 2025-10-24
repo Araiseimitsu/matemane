@@ -153,6 +153,7 @@ class Lot(Base):
     purchase_order_item_id = Column(Integer, ForeignKey("purchase_order_items.id"), nullable=True, comment="発注アイテムID")
     length_mm = Column(Integer, nullable=False, comment="長さ（mm）")
     initial_quantity = Column(Integer, nullable=False, comment="初期本数")
+    initial_weight_kg = Column(Float, comment="初期重量（kg）")
     supplier = Column(String(200), comment="仕入先")
     received_date = Column(DateTime(timezone=True), comment="入荷日")
     received_unit_price = Column(Float, comment="入庫時単価")

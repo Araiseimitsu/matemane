@@ -5,7 +5,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, ConfigDict, field_validator, model_validator
 from datetime import datetime
 import math
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, ROUND_HALF_UP, ROUND_FLOOR
 
 from src.db import get_db
 from src.db.models import (
@@ -43,12 +43,12 @@ def _calculate_weight_per_piece_kg(item: Item) -> float:
 
 
 def _resolve_quantity_from_weight(weight_kg: float, weight_per_piece_kg: float) -> int:
-    """重量から本数を四捨五入で算出"""
+    """重量から本数を切り捨てで算出"""
     if weight_per_piece_kg <= 0:
         raise ValueError("単重情報が不足しているため重量換算ができません")
 
     quantity_decimal = (Decimal(str(weight_kg)) / Decimal(str(weight_per_piece_kg)))
-    quantity = int(quantity_decimal.quantize(Decimal('1'), rounding=ROUND_HALF_UP))
+    quantity = int(quantity_decimal.quantize(Decimal('1'), rounding=ROUND_FLOOR))
 
     if quantity <= 0:
         raise ValueError("重量が小さすぎるため本数を算出できません")

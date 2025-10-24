@@ -355,7 +355,7 @@ class MovementManager {
 
         const weight = parseFloat(weightInput.value);
         if (weight && weight > 0) {
-            const quantity = Math.round(weight / this.selectedItem.weight_per_piece_kg);
+            const quantity = Math.floor(weight / this.selectedItem.weight_per_piece_kg);
             quantityInput.value = quantity;
         }
     }
