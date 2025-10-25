@@ -135,7 +135,11 @@ async def get_movements(
     # レスポンス用に関連情報を追加
     result = []
     for movement in movements:
-        weight_per_piece = _calculate_weight_per_piece_kg(movement.item)
+        lot = movement.item.lot
+        if lot.initial_weight_kg and lot.initial_quantity and lot.initial_quantity > 0:
+            weight_per_piece = lot.initial_weight_kg / lot.initial_quantity
+        else:
+            weight_per_piece = _calculate_weight_per_piece_kg(movement.item)
         weight_kg = round(weight_per_piece * movement.quantity, 3)
 
         movement_dict = {
@@ -177,7 +181,11 @@ async def create_in_movement(
             detail="無効なアイテムには入庫できません"
         )
 
-    weight_per_piece = _calculate_weight_per_piece_kg(item)
+    lot = item.lot
+    if lot.initial_weight_kg and lot.initial_quantity and lot.initial_quantity > 0:
+        weight_per_piece = lot.initial_weight_kg / lot.initial_quantity
+    else:
+        weight_per_piece = _calculate_weight_per_piece_kg(item)
     resolved_quantity = movement_data.quantity
     input_weight = movement_data.weight_kg
 
@@ -271,7 +279,11 @@ async def create_out_movement(
             detail="無効なアイテムからは出庫できません"
         )
 
-    weight_per_piece = _calculate_weight_per_piece_kg(item)
+    lot = item.lot
+    if lot.initial_weight_kg and lot.initial_quantity and lot.initial_quantity > 0:
+        weight_per_piece = lot.initial_weight_kg / lot.initial_quantity
+    else:
+        weight_per_piece = _calculate_weight_per_piece_kg(item)
     resolved_quantity = movement_data.quantity
     input_weight = movement_data.weight_kg
 
@@ -445,7 +457,11 @@ async def update_movement(
     item = movement.item
 
     # 重量計算
-    weight_per_piece = _calculate_weight_per_piece_kg(item)
+    lot = item.lot
+    if lot.initial_weight_kg and lot.initial_quantity and lot.initial_quantity > 0:
+        weight_per_piece = lot.initial_weight_kg / lot.initial_quantity
+    else:
+        weight_per_piece = _calculate_weight_per_piece_kg(item)
 
     # 新しい数量を決定
     new_quantity = movement_data.quantity

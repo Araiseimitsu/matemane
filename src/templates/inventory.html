@@ -633,7 +633,7 @@ function buildGroupStore() {
         const lotEntry = group._lotsMap.get(lotKey);
         lotEntry.total_quantity += item.current_quantity;
         lotEntry.locations.add(locationName);
-        lotEntry.lot_numbers.push(item.lot_number);
+        lotEntry.lot_numbers.push(item.lot.lot_number);
 
         const weightPerPiece = Number(item.weight_per_piece_kg ?? 0);
         const totalWeight = Number(item.total_weight_kg ?? (weightPerPiece * item.current_quantity));
@@ -702,6 +702,17 @@ function finalizeGroup(group) {
     group.length_variations = Array.from(group._lengthSet)
         .filter(length => length !== null && length !== undefined)
         .sort((a, b) => Number(a) - Number(b));
+
+    // Fallback: derive from lots if set is empty
+    if (!Array.isArray(group.length_variations) || group.length_variations.length === 0) {
+        const fromLots = Array.from(new Set(
+            (group.lots || [])
+                .map(l => l.length_mm)
+                .filter(v => v !== null && v !== undefined)
+        ));
+        group.length_variations = fromLots.sort((a, b) => Number(a) - Number(b));
+    }
+
     group.material_count = group._materialIdSet.size || group.materials.length;
 
     // 材料グループ名の集約（material_id -> Set(group_name) から集計）
@@ -732,7 +743,8 @@ function finalizeGroup(group) {
 function buildGroupSubtitle(group) {
     const dimension = formatDimension(group.shape, group.diameter_mm);
     const shapeLabel = shapeLabels[group.shape] || group.shape;
-    return `${shapeLabel} / 径 ${dimension}`;
+    const dimLabel = group.shape === 'round' ? '径' : (group.shape === 'hexagon' ? '対辺距離' : (group.shape === 'square' ? '一辺' : '寸法'));
+    return `${shapeLabel} / ${dimLabel} ${dimension}`;
 }
 
 function buildGroupDisplayLabel(group) {

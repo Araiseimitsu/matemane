@@ -176,6 +176,9 @@ async function loadOrders(page = 1) {
             showToast('発注一覧の読み込みに失敗しました', 'error');
         }
     }
+    if (typeof recalculateAmountFromWeight === 'function') {
+        recalculateAmountFromWeight();
+    }
 }
 
 function createOrderRow(order) {
@@ -404,9 +407,9 @@ function closeDetailModal() {
 
 // ==== 入庫確認タブ ====
 function initializeReceivingTab() {
-    document.getElementById('refreshReceivingBtn')?.addEventListener('click', loadReceivingItems);
+    document.getElementById('refreshReceivingBtn')?.addEventListener('click', () => loadReceivingItems(1));
     document.getElementById('resetReceivingFiltersBtn')?.addEventListener('click', resetReceivingFilters);
-    document.getElementById('includeInspectedFilter')?.addEventListener('change', loadReceivingItems);
+    document.getElementById('includeInspectedFilter')?.addEventListener('change', () => loadReceivingItems(1));
 
     // リアルタイム検索（入力時にdebounceで検索実行）
     document.getElementById('receivingOrderNumberFilter')?.addEventListener('input', debounce(() => searchReceivingItems(), 300));
@@ -457,6 +460,7 @@ let currentReceivingPage = 1;
 const receivingPageSize = 25;
 
 async function loadReceivingItems(page = 1) {
+    page = Number.isFinite(page) ? page : 1;
     const tableBody = document.getElementById('receivingItemsTableBody');
     const loading = document.getElementById('receivingLoading');
     const empty = document.getElementById('receivingEmpty');
@@ -682,26 +686,9 @@ async function showReceiveModal(itemId) {
             amountInput.value = '';
         }
 
-        // 単価×数量で自動計算（単価が入力された場合）
-        // 発注タイプに応じて数量または重量を使用
+        // 単価（円/kg）入力時に、重量ベースで金額を自動計算
         if (unitPriceInput) {
-            const calculateAmount = function () {
-                const unitPrice = parseFloat(unitPriceInput.value);
-                if (isNaN(unitPrice) || unitPrice <= 0) return;
-
-                let calculationBase = 0;
-                if (item.order_type === 'quantity' && item.ordered_quantity) {
-                    calculationBase = item.ordered_quantity;
-                } else if (item.order_type === 'weight' && item.ordered_weight_kg) {
-                    calculationBase = item.ordered_weight_kg;
-                }
-
-                if (calculationBase > 0 && amountInput) {
-                    amountInput.value = (unitPrice * calculationBase).toFixed(2);
-                }
-            };
-
-            unitPriceInput.addEventListener('input', calculateAmount);
+            unitPriceInput.addEventListener('input', recalculateAmountFromWeight);
         }
 
         // 受入済みの再編集時は、登録時の値（最新ロット）をそのまま自動入力
@@ -724,6 +711,20 @@ async function showReceiveModal(itemId) {
                     if (diameterCalcInput && typeof prev.diameter_mm === 'number') diameterCalcInput.value = prev.diameter_mm;
                     if (shapeCalcSelect && prev.shape) shapeCalcSelect.value = prev.shape;
                     if (densityField && typeof prev.density === 'number') densityField.value = prev.density;
+
+                    // 再編集時：比重プリセット選択を復元（値一致で選択）
+                    const densityPresetSelect = document.getElementById('densityPresetSelect');
+                    if (densityPresetSelect && typeof prev.density === 'number') {
+                        const target = prev.density;
+                        for (const opt of densityPresetSelect.options) {
+                            if (!opt.value) continue;
+                            const val = parseFloat(opt.value);
+                            if (Number.isFinite(val) && Math.abs(val - target) < 1e-6) {
+                                densityPresetSelect.value = opt.value;
+                                break;
+                            }
+                        }
+                    }
                     if (lengthField && typeof prev.length_mm === 'number') lengthField.value = prev.length_mm;
 
                     // 入荷日
@@ -888,6 +889,10 @@ async function showReceiveModal(itemId) {
         setupPurchaseMonthAutoUpdate();
 
         document.getElementById('receiveModal').classList.remove('hidden');
+        // 初期表示時に合計・参考値を更新
+        if (typeof updateTotalQuantity === 'function') {
+            updateTotalQuantity();
+        }
     } catch (error) {
         console.error('入庫確認モーダル表示エラー:', error);
         if (typeof showToast === 'function') {
@@ -1169,9 +1174,10 @@ async function handleReceive(event) {
         const quantity = quantityStr && quantityStr.trim() !== '' ? quantityStr : null;
         const weight = weightStr && weightStr.trim() !== '' ? weightStr : null;
 
-        if (!weight) {
+        // 本数・重量のどちらか一方でも入力が必要（両方可）
+        if (!quantity && !weight) {
             if (typeof showToast === 'function') {
-                showToast(`ロット ${i}: 入庫重量（kg）は必須です`, 'error');
+                showToast(`ロット ${i}: 本数または重量のいずれかを入力してください`, 'error');
             }
             return;
         }
@@ -1183,8 +1189,12 @@ async function handleReceive(event) {
             notes: lotNotes.trim() || null
         };
 
-        // 重量のみを設定（本数はサーバーで切り捨て計算）
-        lotData.received_weight_kg = parseFloat(weight);
+        if (quantity) {
+            lotData.received_quantity = parseInt(quantity, 10);
+        }
+        if (weight) {
+            lotData.received_weight_kg = parseFloat(weight);
+        }
 
         lots.push(lotData);
     }
@@ -1218,8 +1228,11 @@ async function handleReceive(event) {
                 notes: lot.notes  // 備考を追加
             };
 
-            // 重量のみを送信（本数はバックエンドで切り捨て計算）
-            if (lot.received_weight_kg) {
+            // 入力された本数・重量をそのまま送信
+            if (typeof lot.received_quantity === 'number') {
+                receiveData.received_quantity = lot.received_quantity;
+            }
+            if (typeof lot.received_weight_kg === 'number') {
                 receiveData.received_weight_kg = lot.received_weight_kg;
             }
 
@@ -1555,9 +1568,10 @@ function createInspectionItemRow(item) {
     const managementCode = item.management_code || '';
     const lotNotes = item.lot?.notes || '-';
 
-    // 重量計算
-    const totalWeight = item.total_weight_kg || 0;
-    const weightDisplay = totalWeight > 0 ? `${totalWeight.toFixed(3)}kg` : '-';
+    // 重量（初期登録値を優先表示）
+    const initialWeight = item.lot?.initial_weight_kg ?? 0;
+    const totalWeight = initialWeight > 0 ? initialWeight : (item.total_weight_kg || 0);
+    const weightDisplay = totalWeight > 0 ? `${Number(totalWeight).toFixed(3)}kg` : '-';
 
     // 検品状態バッジ
     const inspectionStatus = (item.lot?.inspection_status || 'pending').toLowerCase();
@@ -1660,7 +1674,9 @@ async function loadInspectionTargetByCode() {
             const qty = item?.current_quantity ?? '-';
             const materialName = item?.material?.display_name || item?.material?.name || '-';
             const length = item?.lot?.length_mm || '-';
-            const weight = item?.total_weight_kg ? `${item.total_weight_kg.toFixed(3)}kg` : '-';
+            const initialWeight = item?.lot?.initial_weight_kg ?? null;
+            const totalWeightCandidate = (initialWeight != null && initialWeight > 0) ? initialWeight : (item?.total_weight_kg ?? null);
+            const weight = (totalWeightCandidate != null && totalWeightCandidate > 0) ? `${Number(totalWeightCandidate).toFixed(3)}kg` : '-';
             const lotNotes = item?.lot?.notes || '';
 
             console.log('ロット備考データ:', lotNotes); // デバッグ用
@@ -2132,6 +2148,14 @@ async function showPrintModal(lotNumber) {
                 <dd class="text-gray-900">${item.lot.length_mm}mm</dd>
             </div>
             <div>
+                <dt class="font-medium text-gray-500">初期本数</dt>
+                <dd class="text-gray-900">${item.lot.initial_quantity ?? '-'}本</dd>
+            </div>
+            <div>
+                <dt class="font-medium text-gray-500">初期重量</dt>
+                <dd class="text-gray-900">${item.lot.initial_weight_kg != null ? Number(item.lot.initial_weight_kg).toFixed(3) + 'kg' : '-'}</dd>
+            </div>
+            <div>
                 <dt class="font-medium text-gray-500">現在本数</dt>
                 <dd class="text-gray-900">${item.current_quantity}本</dd>
             </div>
@@ -2141,7 +2165,7 @@ async function showPrintModal(lotNumber) {
             </div>
             <div>
                 <dt class="font-medium text-gray-500">総重量</dt>
-                <dd class="text-gray-900">${item.total_weight_kg}kg</dd>
+                <dd class="text-gray-900">${(item.lot.initial_weight_kg != null && item.lot.initial_weight_kg > 0) ? `${Number(item.lot.initial_weight_kg).toFixed(3)}kg` : ((item.total_weight_kg != null && item.total_weight_kg > 0) ? `${Number(item.total_weight_kg).toFixed(3)}kg` : '-')}</dd>
             </div>
             <div>
                 <dt class="font-medium text-gray-500">置き場</dt>
@@ -2429,11 +2453,7 @@ function onLotQuantityChange(lotId) {
     const quantityInput = document.querySelector(`input[name="lot_quantity_${lotId}"]`);
     const weightInput = document.querySelector(`input[name="lot_weight_${lotId}"]`);
 
-    if (quantityInput && quantityInput.value && weightInput) {
-        // 本数入力時は重量をクリア
-        weightInput.value = '';
-    }
-
+    // 同時入力を許可するため、相互クリアを廃止
     updateTotalQuantity();
 }
 
@@ -2441,11 +2461,7 @@ function onLotWeightChange(lotId) {
     const quantityInput = document.querySelector(`input[name="lot_quantity_${lotId}"]`);
     const weightInput = document.querySelector(`input[name="lot_weight_${lotId}"]`);
 
-    if (weightInput && weightInput.value && quantityInput) {
-        // 重量入力時は本数をクリア
-        quantityInput.value = '';
-    }
-
+    // 同時入力を許可するため、相互クリアを廃止
     updateTotalQuantity();
 }
 
@@ -2455,6 +2471,26 @@ function removeLotRow(rowId) {
         row.remove();
         updateTotalQuantity();
     }
+}
+
+function recalculateAmountFromWeight() {
+    const unitPriceInput = document.getElementById('unitPriceInput');
+    const amountInput = document.getElementById('amountInput');
+    if (!unitPriceInput || !amountInput) return;
+
+    const unitPrice = parseFloat(unitPriceInput.value);
+    if (!(unitPrice > 0)) {
+        amountInput.value = '';
+        return;
+    }
+
+    // 計算パラメータは「最終的な合計重量」そのもの（ユーザー入力の集計）
+    const totalWeightText = document.getElementById('totalWeight')?.textContent || '0';
+    const baseWeight = parseFloat(totalWeightText);
+
+    amountInput.value = (Number.isFinite(baseWeight) && baseWeight > 0)
+        ? (unitPrice * baseWeight).toFixed(2)
+        : '';
 }
 
 function updateTotalQuantity() {
@@ -2494,22 +2530,39 @@ function updateTotalQuantity() {
         const quantity = parseInt(quantityInput?.value) || 0;
         const weight = parseFloat(weightInput?.value) || 0;
 
+        // 入力値をそのまま合計に反映（相互換算しない）
         if (quantity > 0) {
             totalQuantity += quantity;
-            if (unitWeight > 0) {
-                totalWeight += quantity * unitWeight;
-            }
-        } else if (weight > 0) {
+        }
+        if (weight > 0) {
             totalWeight += weight;
-            if (unitWeight > 0) {
-                totalQuantity += Math.floor(weight / unitWeight);
-            }
         }
     }
 
-    // 合計表示を更新
+    // 合計表示を更新（重量はユーザー入力の合計のみを反映）
     document.getElementById('totalQuantity').textContent = totalQuantity;
     document.getElementById('totalWeight').textContent = totalWeight > 0 ? totalWeight.toFixed(3) : '0.000';
+
+    // 参考値の表示（入力方式や注文タイプに応じて片側のみ参照値を反映）
+    const qtyRefEl = document.getElementById('totalQuantityRef');
+    const weightRefEl = document.getElementById('totalWeightRef');
+    const selectedRadio = document.querySelector('input[name="input_method"]:checked');
+    const selectedMethod = selectedRadio ? selectedRadio.value : null; // 'quantity' or 'weight'
+
+    if (qtyRefEl) qtyRefEl.textContent = '-';
+    if (weightRefEl) weightRefEl.textContent = '-';
+
+    if (unitWeight > 0) {
+        // 本数入力モード（または発注タイプが本数）→ 重量（参考）を表示
+        if ((selectedMethod === 'quantity' || (!selectedMethod && currentOrderType === 'quantity')) && totalQuantity > 0) {
+            if (weightRefEl) weightRefEl.textContent = (unitWeight * totalQuantity).toFixed(3);
+        }
+        // 重量入力モード（または発注タイプが重量）→ 本数（参考）を表示
+        if ((selectedMethod === 'weight' || (!selectedMethod && currentOrderType === 'weight')) && totalWeight > 0) {
+            const computedQty = Math.floor(totalWeight / unitWeight);
+            if (qtyRefEl) qtyRefEl.textContent = Number.isFinite(computedQty) && computedQty > 0 ? String(computedQty) : '-';
+        }
+    }
 
     // 発注数量と比較して色を変更
     const totalEl = document.getElementById('totalQuantity');
@@ -2524,6 +2577,11 @@ function updateTotalQuantity() {
             totalEl.classList.remove('text-green-600', 'text-red-600');
             totalEl.classList.add('text-purple-600');
         }
+    }
+
+    // 合計重量変更に伴い、即座に金額を再計算（単価×合計重量）
+    if (typeof recalculateAmountFromWeight === 'function') {
+        recalculateAmountFromWeight();
     }
 }
 

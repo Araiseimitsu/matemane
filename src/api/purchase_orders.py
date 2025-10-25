@@ -45,10 +45,11 @@ def calculate_weight_from_quantity(quantity: int, shape: MaterialShape, diameter
         volume_cm3 = 3.14159 * (radius_cm ** 2) * (length_mm / 10)
     elif shape == MaterialShape.HEXAGON:
         # 六角棒: (3√3/2) × (一辺)² × 長さ
-        side_cm = diameter_mm / 10  # mm → cm
+        # 仕様: 径(diameter_mm)は「対辺距離」。一辺 = 対辺距離 / 2
+        side_cm = (diameter_mm / 2) / 10  # mm → cm
         volume_cm3 = (3 * (3 ** 0.5) / 2) * (side_cm ** 2) * (length_mm / 10)
     elif shape == MaterialShape.SQUARE:
-        # 角棒: 一辺² × 長さ
+        # 角棒: 一辺² × 長さ（径は一辺の長さ）
         side_cm = diameter_mm / 10  # mm → cm
         volume_cm3 = (side_cm ** 2) * (length_mm / 10)
     else:
@@ -146,10 +147,10 @@ class ReceivingConfirmation(BaseModel):
 
     def validate_receiving_data(self):
         """入庫データのバリデーション"""
-        if not self.received_weight_kg:
-            raise ValueError("入庫重量（kg）は必須です")
-        if self.received_quantity:
-            raise ValueError("本数入力は不可です。重量のみを入力してください")
+        # 数量・重量のいずれかは必須。両方の同時入力も許可
+        if self.received_quantity is None and self.received_weight_kg is None:
+            raise ValueError("数量または重量のいずれかを入力してください")
+        return
 
 class MaterialSuggestionResponse(BaseModel):
     material_id: int
@@ -389,21 +390,9 @@ async def receive_item(
         effective_diameter = existing_material.diameter_mm if existing_material else receiving.diameter_mm
         effective_density = existing_material.current_density if existing_material else receiving.density
 
-        # ユーザーの入力に応じて最終的な入庫数量と重量を計算
-        if receiving.received_weight_kg:
-            # 重量入力：重量から本数を計算
-            final_received_quantity = calculate_quantity_from_weight(
-                receiving.received_weight_kg, effective_shape, effective_diameter,
-                receiving.length_mm, effective_density
-            )
-            final_received_weight = receiving.received_weight_kg
-        else:
-            # 本数入力：本数から重量を計算
-            final_received_quantity = receiving.received_quantity
-            final_received_weight = calculate_weight_from_quantity(
-                receiving.received_quantity, effective_shape, effective_diameter,
-                receiving.length_mm, effective_density
-            )
+        # ユーザー入力をそのまま採用（換算なし）
+        final_received_quantity = receiving.received_quantity or 0
+        final_received_weight = receiving.received_weight_kg or 0.0
 
         if existing_material:
             material_id = existing_material.id
@@ -601,19 +590,9 @@ async def update_received_item(
     effective_diameter = material.diameter_mm
     effective_density = material.current_density
 
-    # ユーザー入力に応じて数量・重量を再計算
-    if receiving.received_weight_kg:
-        final_received_quantity = calculate_quantity_from_weight(
-            receiving.received_weight_kg, effective_shape, effective_diameter,
-            receiving.length_mm, effective_density
-        )
-        final_received_weight = receiving.received_weight_kg
-    else:
-        final_received_quantity = receiving.received_quantity
-        final_received_weight = calculate_weight_from_quantity(
-            receiving.received_quantity, effective_shape, effective_diameter,
-            receiving.length_mm, effective_density
-        )
+    # ユーザー入力をそのまま採用（換算なし）
+    final_received_quantity = receiving.received_quantity or 0
+    final_received_weight = receiving.received_weight_kg or 0.0
 
     # 置き場の存在チェック
     invalid_locations: List[int] = []

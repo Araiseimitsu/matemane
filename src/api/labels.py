@@ -433,6 +433,8 @@ def create_standard_lot_tag(buffer: BytesIO, lot, material, copies: int):
             ["材質", material.display_name],
             ["形状・寸法", f"{get_shape_name(material.shape.value)} φ{material.diameter_mm}mm" if material.shape.value == "round" else f"{get_shape_name(material.shape.value)} {material.diameter_mm}mm"],
             ["長さ", f"{lot.length_mm}mm"],
+            ["数量", f"{(lot.initial_quantity or 0)}本"],
+            ["重量(初期)", f"{lot.initial_weight_kg:.3f}kg" if lot.initial_weight_kg else "-"],
             ["単重", f"{weight_per_piece_kg:.3f}kg/本"],
             ["仕入先", lot.supplier or "未登録"],
             ["入荷日", lot.received_date.strftime("%Y/%m/%d") if lot.received_date else "未登録"],
@@ -506,6 +508,11 @@ def create_small_lot_tag(buffer: BytesIO, lot, material, copies: int):
         c.drawString(2*mm, 5*mm, lot.supplier[:8] + "..." if lot.supplier and len(lot.supplier) > 8 else lot.supplier or "")
         c.drawString(2*mm, 2*mm, datetime.now().strftime("%m/%d"))
 
+        # 数量・重量（初期）
+        c.setFont('HeiseiKakuGo-W5', 4)
+        c.drawString(20*mm, 10*mm, f"数量 {(lot.initial_quantity or 0)}本")
+        c.drawString(20*mm, 7*mm, f"重量 {lot.initial_weight_kg:.3f}kg" if lot.initial_weight_kg else "重量 -")
+
     c.save()
 
 @router.get("/lot-preview/{lot_id}")
@@ -549,7 +556,9 @@ async def preview_lot_tag(lot_id: int, db: Session = Depends(get_db)):
             "supplier": lot.supplier,
             "received_date": lot.received_date,
             "notes": lot.notes,
-            "created_at": lot.created_at
+            "created_at": lot.created_at,
+            "initial_quantity": lot.initial_quantity,
+            "initial_weight_kg": lot.initial_weight_kg
         },
         "material": {
             "display_name": material.display_name,

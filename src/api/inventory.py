@@ -105,6 +105,7 @@ class LotInfo(BaseModel):
     lot_number: str
     length_mm: int
     initial_quantity: int
+    initial_weight_kg: Optional[float] = None
     supplier: Optional[str] = None
     received_date: Optional[datetime] = None
     inspection_status: Optional[InspectionStatus] = None
@@ -209,23 +210,27 @@ async def get_inventory(
     for item in items:
         material = item.lot.material
 
-        # 体積計算（cm³）
-        if material.shape == MaterialShape.ROUND:
-            radius_cm = (material.diameter_mm / 2) / 10
-            length_cm = item.lot.length_mm / 10
-            volume_cm3 = 3.14159 * (radius_cm ** 2) * length_cm
-        elif material.shape == MaterialShape.HEXAGON:
-            side_cm = (material.diameter_mm / 2) / 10
-            length_cm = item.lot.length_mm / 10
-            volume_cm3 = (3 * (3 ** 0.5) / 2) * (side_cm ** 2) * length_cm
-        elif material.shape == MaterialShape.SQUARE:
-            side_cm = material.diameter_mm / 10
-            length_cm = item.lot.length_mm / 10
-            volume_cm3 = (side_cm ** 2) * length_cm
+        # 単重決定（初期入力重量があれば優先）
+        if item.lot.initial_weight_kg and item.lot.initial_quantity and item.lot.initial_quantity > 0:
+            weight_per_piece_kg = item.lot.initial_weight_kg / item.lot.initial_quantity
         else:
-            volume_cm3 = 0
+            # 体積計算（cm³）
+            if material.shape == MaterialShape.ROUND:
+                radius_cm = (material.diameter_mm / 2) / 10
+                length_cm = item.lot.length_mm / 10
+                volume_cm3 = 3.14159 * (radius_cm ** 2) * length_cm
+            elif material.shape == MaterialShape.HEXAGON:
+                side_cm = (material.diameter_mm / 2) / 10
+                length_cm = item.lot.length_mm / 10
+                volume_cm3 = (3 * (3 ** 0.5) / 2) * (side_cm ** 2) * length_cm
+            elif material.shape == MaterialShape.SQUARE:
+                side_cm = material.diameter_mm / 10
+                length_cm = item.lot.length_mm / 10
+                volume_cm3 = (side_cm ** 2) * length_cm
+            else:
+                volume_cm3 = 0
+            weight_per_piece_kg = (volume_cm3 * material.current_density) / 1000
 
-        weight_per_piece_kg = (volume_cm3 * material.current_density) / 1000
         total_weight_kg = weight_per_piece_kg * item.current_quantity
 
         # アイテムを辞書に変換して重量情報を追加
@@ -247,14 +252,15 @@ async def get_inventory(
                 "lot_number": item.lot.lot_number,
                 "length_mm": item.lot.length_mm,
                 "initial_quantity": item.lot.initial_quantity,
+                "initial_weight_kg": item.lot.initial_weight_kg,
                 "supplier": item.lot.supplier,
                 "received_date": item.lot.received_date,
                 "inspection_status": item.lot.inspection_status,
                 "inspected_at": item.lot.inspected_at,
+                "purchase_month": item.lot.purchase_month,
                 "notes": item.lot.notes,
                 "purchase_order_item_id": item.lot.purchase_order_item_id,
-                "order_number": order_number,
-                "purchase_month": item.lot.purchase_month
+                "order_number": order_number
             },
             "material": {
                 "id": material.id,
@@ -392,22 +398,27 @@ async def get_inventory_summary_by_name(
         total_weight_kg = 0.0
         for item in items:
             material = item.lot.material
-            # 体積計算（cm³）
-            if material.shape == MaterialShape.ROUND:
-                radius_cm = (material.diameter_mm / 2) / 10
-                length_cm = item.lot.length_mm / 10
-                volume_cm3 = 3.14159 * (radius_cm ** 2) * length_cm
-            elif material.shape == MaterialShape.HEXAGON:
-                side_cm = (material.diameter_mm / 2) / 10
-                length_cm = item.lot.length_mm / 10
-                volume_cm3 = (3 * (3 ** 0.5) / 2) * (side_cm ** 2) * length_cm
-            elif material.shape == MaterialShape.SQUARE:
-                side_cm = material.diameter_mm / 10
-                length_cm = item.lot.length_mm / 10
-                volume_cm3 = (side_cm ** 2) * length_cm
+            # 重量計算（初期入力重量があれば優先して単重を決定）
+            if lot.initial_weight_kg and lot.initial_quantity and lot.initial_quantity > 0:
+                weight_per_piece_kg = lot.initial_weight_kg / lot.initial_quantity
+                # 体積計算の代わりに入力値ベースの単重を利用
             else:
-                volume_cm3 = 0
-
+                # 体積計算（cm³）
+                if material.shape == MaterialShape.ROUND:
+                    radius_cm = (material.diameter_mm / 2) / 10
+                    length_cm = item.lot.length_mm / 10
+                    volume_cm3 = 3.14159 * (radius_cm ** 2) * length_cm
+                elif material.shape == MaterialShape.HEXAGON:
+                    side_cm = (material.diameter_mm / 2) / 10
+                    length_cm = item.lot.length_mm / 10
+                    volume_cm3 = (3 * (3 ** 0.5) / 2) * (side_cm ** 2) * length_cm
+                elif material.shape == MaterialShape.SQUARE:
+                    side_cm = material.diameter_mm / 10
+                    length_cm = item.lot.length_mm / 10
+                    volume_cm3 = (side_cm ** 2) * length_cm
+                else:
+                    volume_cm3 = 0
+            
             weight_per_piece_kg = (volume_cm3 * material.current_density) / 1000
             total_weight_kg += weight_per_piece_kg * (item.current_quantity or 0)
 
@@ -471,6 +482,7 @@ async def search_by_lot_number(lot_number: str, db: Session = Depends(get_db)):
             "lot_number": item.lot.lot_number,
             "length_mm": item.lot.length_mm,
             "initial_quantity": item.lot.initial_quantity,
+            "initial_weight_kg": item.lot.initial_weight_kg,
             "supplier": item.lot.supplier,
             "received_date": item.lot.received_date,
             "inspection_status": item.lot.inspection_status,
@@ -532,23 +544,27 @@ async def search_inventory_items(
     for item in items:
         material = item.lot.material
 
-        # 体積計算（cm³）
-        if material.shape == MaterialShape.ROUND:
-            radius_cm = (material.diameter_mm / 2) / 10
-            length_cm = item.lot.length_mm / 10
-            volume_cm3 = 3.14159 * (radius_cm ** 2) * length_cm
-        elif material.shape == MaterialShape.HEXAGON:
-            side_cm = (material.diameter_mm / 2) / 10
-            length_cm = item.lot.length_mm / 10
-            volume_cm3 = (3 * (3 ** 0.5) / 2) * (side_cm ** 2) * length_cm
-        elif material.shape == MaterialShape.SQUARE:
-            side_cm = material.diameter_mm / 10
-            length_cm = item.lot.length_mm / 10
-            volume_cm3 = (side_cm ** 2) * length_cm
+        # 単重決定（初期入力重量があれば優先）
+        if item.lot.initial_weight_kg and item.lot.initial_quantity and item.lot.initial_quantity > 0:
+            weight_per_piece_kg = item.lot.initial_weight_kg / item.lot.initial_quantity
         else:
-            volume_cm3 = 0
+            # 体積計算（cm³）
+            if material.shape == MaterialShape.ROUND:
+                radius_cm = (material.diameter_mm / 2) / 10
+                length_cm = item.lot.length_mm / 10
+                volume_cm3 = 3.14159 * (radius_cm ** 2) * length_cm
+            elif material.shape == MaterialShape.HEXAGON:
+                side_cm = (material.diameter_mm / 2) / 10
+                length_cm = item.lot.length_mm / 10
+                volume_cm3 = (3 * (3 ** 0.5) / 2) * (side_cm ** 2) * length_cm
+            elif material.shape == MaterialShape.SQUARE:
+                side_cm = material.diameter_mm / 10
+                length_cm = item.lot.length_mm / 10
+                volume_cm3 = (side_cm ** 2) * length_cm
+            else:
+                volume_cm3 = 0
+            weight_per_piece_kg = (volume_cm3 * material.current_density) / 1000
 
-        weight_per_piece_kg = (volume_cm3 * material.current_density) / 1000
         total_weight_kg = weight_per_piece_kg * item.current_quantity
 
         # アイテムを辞書に変換して重量情報を追加
@@ -570,6 +586,7 @@ async def search_inventory_items(
                 "lot_number": item.lot.lot_number,
                 "length_mm": item.lot.length_mm,
                 "initial_quantity": item.lot.initial_quantity,
+                "initial_weight_kg": item.lot.initial_weight_kg,
                 "supplier": item.lot.supplier,
                 "received_date": item.lot.received_date,
                 "inspection_status": item.lot.inspection_status,
@@ -792,11 +809,17 @@ def get_lots_for_inspection(
         Material.shape,
         Material.diameter_mm,
         func.sum(Item.current_quantity).label("total_quantity"),
-        Material.current_density.label("current_density")
+        Material.current_density.label("current_density"),
+        PurchaseOrder.order_number.label("order_number"),
+        Lot.initial_weight_kg
     ).select_from(Lot).join(
         Item, Item.lot_id == Lot.id
     ).join(
         Material, Lot.material_id == Material.id
+    ).outerjoin(
+        PurchaseOrderItem, PurchaseOrderItem.id == Lot.purchase_order_item_id
+    ).outerjoin(
+        PurchaseOrder, PurchaseOrder.id == PurchaseOrderItem.purchase_order_id
     ).filter(
         Item.is_active == True
     ).group_by(
@@ -808,7 +831,8 @@ def get_lots_for_inspection(
         Lot.received_date,
         Material.display_name,
         Material.shape,
-        Material.diameter_mm
+        Material.diameter_mm,
+        Lot.initial_weight_kg
     )
 
     # 検品完了済みを含めるかどうか
@@ -841,7 +865,7 @@ def get_lots_for_inspection(
         density = float(row.current_density or 0.0)
         qty = int(row.total_quantity or 0)
         weight_per_piece_kg = (volume_cm3 * density) / 1000
-        total_weight_kg = weight_per_piece_kg * qty
+        total_weight_kg = row.initial_weight_kg if row.initial_weight_kg is not None else (weight_per_piece_kg * qty)
 
         inspected_list.append(InspectionLotResponse(
             lot_id=row.lot_id,
@@ -1060,7 +1084,8 @@ def get_inspected_lots(
         Material.diameter_mm,
         func.sum(Item.current_quantity).label("total_quantity"),
         Material.current_density.label("current_density"),
-        PurchaseOrder.order_number.label("order_number")
+        PurchaseOrder.order_number.label("order_number"),
+        Lot.initial_weight_kg
     ).select_from(Lot).join(
         Item, Item.lot_id == Lot.id
     ).join(
@@ -1082,7 +1107,8 @@ def get_inspected_lots(
         Material.display_name,
         Material.shape,
         Material.diameter_mm,
-        PurchaseOrder.order_number
+        PurchaseOrder.order_number,
+        Lot.initial_weight_kg
     ).order_by(
         case((Lot.inspected_at.is_(None), 1), else_=0),
         Lot.inspected_at.desc()
@@ -1119,7 +1145,7 @@ def get_inspected_lots(
         density = float(row.current_density or 0.0)
         qty = int(row.total_quantity or 0)
         weight_per_piece_kg = (volume_cm3 * density) / 1000
-        total_weight_kg = weight_per_piece_kg * qty
+        total_weight_kg = row.initial_weight_kg if row.initial_weight_kg is not None else (weight_per_piece_kg * qty)
 
         responses.append(InspectedLotResponse(
             lot_id=row.lot_id,

@@ -104,6 +104,9 @@ async def get_analytics_summary(
     material_name: Optional[str] = Query(None),
     material_group_id: Optional[int] = Query(None),
     purchase_month: Optional[str] = Query(None),
+    # 追加: 購入月範囲（YYMM）
+    purchase_month_start: Optional[str] = Query(None),
+    purchase_month_end: Optional[str] = Query(None),
     supplier: Optional[str] = Query(None),
     movement_type: Optional[MovementType] = Query(None),
     db: Session = Depends(get_db)
@@ -142,6 +145,11 @@ async def get_analytics_summary(
 
     if purchase_month:
         lot_filters.append(Lot.purchase_month == purchase_month)
+    # 購入月の範囲指定（文字列YYMMの大小比較でOK）
+    if purchase_month_start:
+        lot_filters.append(Lot.purchase_month >= purchase_month_start)
+    if purchase_month_end:
+        lot_filters.append(Lot.purchase_month <= purchase_month_end)
 
     if supplier:
         lot_filters.append(Lot.supplier.contains(supplier))
@@ -338,6 +346,10 @@ async def get_material_composition_graph(
 async def get_supplier_amount_graph(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
+    # 追加: 購入月の範囲指定（YYMM）
+    purchase_month: Optional[str] = Query(None),
+    purchase_month_start: Optional[str] = Query(None),
+    purchase_month_end: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
     """仕入先別金額グラフデータ（棒グラフ）"""
@@ -351,6 +363,13 @@ async def get_supplier_amount_graph(
 
     if end_date:
         query = query.filter(Lot.received_date <= datetime.combine(end_date, datetime.max.time()))
+
+    if purchase_month:
+        query = query.filter(Lot.purchase_month == purchase_month)
+    if purchase_month_start:
+        query = query.filter(Lot.purchase_month >= purchase_month_start)
+    if purchase_month_end:
+        query = query.filter(Lot.purchase_month <= purchase_month_end)
 
     results = query.group_by(Lot.supplier).order_by(desc('total_amount')).limit(10).all()
 
@@ -366,11 +385,188 @@ async def get_supplier_amount_graph(
         }]
     )
 
+@router.get("/graph/purchase-month-amount/", response_model=GraphDataResponse)
+async def get_purchase_month_amount_graph(
+    purchase_month_start: Optional[str] = Query(None),
+    purchase_month_end: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """購入月別購入費グラフデータ（棒グラフ）"""
+    query = db.query(
+        Lot.purchase_month,
+        func.sum(Lot.received_amount).label('total_amount')
+    ).filter(Lot.purchase_month.isnot(None))
+
+    if purchase_month_start:
+        query = query.filter(Lot.purchase_month >= purchase_month_start)
+    if purchase_month_end:
+        query = query.filter(Lot.purchase_month <= purchase_month_end)
+
+    results = query.group_by(Lot.purchase_month).order_by(Lot.purchase_month).all()
+
+    labels = [r.purchase_month for r in results]
+    data = [float(r.total_amount or 0) for r in results]
+
+    return GraphDataResponse(
+        labels=labels,
+        datasets=[{
+            "label": "購入費（円）",
+            "data": data,
+            "backgroundColor": "rgba(251, 146, 60, 0.8)"
+        }]
+    )
+
+@router.get("/graph/inventory-amount/", response_model=GraphDataResponse)
+async def get_inventory_amount_graph(
+    material_name: Optional[str] = Query(None),
+    material_group_id: Optional[int] = Query(None),
+    purchase_month: Optional[str] = Query(None),
+    purchase_month_start: Optional[str] = Query(None),
+    purchase_month_end: Optional[str] = Query(None),
+    supplier: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """材料別の在庫金額グラフ（棒グラフ）"""
+    # 材料フィルタ
+    material_query = db.query(Material.id).filter(Material.is_active == True)
+    if material_name:
+        material_query = material_query.filter(Material.display_name.contains(material_name))
+    if material_group_id:
+        material_query = material_query.join(MaterialGroupMember).filter(
+            MaterialGroupMember.group_id == material_group_id
+        )
+    material_ids = [m[0] for m in material_query.all()]
+    if not material_ids:
+        return GraphDataResponse(labels=[], datasets=[{"label": "在庫金額（円）", "data": [], "backgroundColor": "rgba(99, 102, 241, 0.8)"}])
+
+    # ロットフィルタ
+    lot_filters = []
+    if purchase_month:
+        lot_filters.append(Lot.purchase_month == purchase_month)
+    if purchase_month_start:
+        lot_filters.append(Lot.purchase_month >= purchase_month_start)
+    if purchase_month_end:
+        lot_filters.append(Lot.purchase_month <= purchase_month_end)
+    if supplier:
+        lot_filters.append(Lot.supplier.contains(supplier))
+
+    labels = []
+    data = []
+
+    for material_id in material_ids:
+        material = db.query(Material).filter(Material.id == material_id).first()
+        if not material:
+            continue
+        # 現在在庫アイテム（条件に一致）
+        items = db.query(Item).join(Lot).filter(
+            and_(Lot.material_id == material_id, Item.is_active == True, *lot_filters)
+        ).all()
+        total_value = 0.0
+        for item in items:
+            lot = item.lot
+            if not lot:
+                continue
+            qty = item.current_quantity or 0
+            if qty <= 0:
+                continue
+            # 単価算出
+            if lot.received_unit_price is not None:
+                unit_price_per_piece = float(lot.received_unit_price)
+                total_value += unit_price_per_piece * qty
+            elif lot.received_amount is not None and lot.initial_quantity and lot.initial_quantity > 0:
+                unit_price_per_piece = float(lot.received_amount) / float(lot.initial_quantity)
+                total_value += unit_price_per_piece * qty
+            elif lot.received_amount is not None and lot.initial_weight_kg and lot.initial_weight_kg > 0:
+                price_per_kg = float(lot.received_amount) / float(lot.initial_weight_kg)
+                weight_kg = _calculate_weight_kg(material, lot.length_mm, qty)
+                total_value += price_per_kg * weight_kg
+            else:
+                # 情報不足時は0評価
+                total_value += 0.0
+        if total_value > 0:
+            labels.append(material.display_name)
+            data.append(round(total_value, 2))
+
+    return GraphDataResponse(
+        labels=labels,
+        datasets=[{
+            "label": "在庫金額（円）",
+            "data": data,
+            "backgroundColor": "rgba(99, 102, 241, 0.8)"
+        }]
+    )
+
+@router.get("/graph/outgoing-amount/", response_model=GraphDataResponse)
+async def get_outgoing_amount_graph(
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
+    material_id: Optional[int] = Query(None),
+    purchase_month: Optional[str] = Query(None),
+    purchase_month_start: Optional[str] = Query(None),
+    purchase_month_end: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """持ち出し量金額（日別合計、棒グラフ）"""
+    # 対象移動抽出
+    query = db.query(Movement).join(Item).join(Lot)
+    query = query.filter(Movement.movement_type == MovementType.OUT)
+    if start_date:
+        query = query.filter(Movement.processed_at >= datetime.combine(start_date, datetime.min.time()))
+    if end_date:
+        query = query.filter(Movement.processed_at <= datetime.combine(end_date, datetime.max.time()))
+    if material_id:
+        query = query.filter(Lot.material_id == material_id)
+    if purchase_month:
+        query = query.filter(Lot.purchase_month == purchase_month)
+    if purchase_month_start:
+        query = query.filter(Lot.purchase_month >= purchase_month_start)
+    if purchase_month_end:
+        query = query.filter(Lot.purchase_month <= purchase_month_end)
+
+    movements = query.order_by(func.date(Movement.processed_at)).all()
+
+    # 日別集計
+    totals_by_date = {}
+    for m in movements:
+        lot = m.item.lot
+        material = lot.material if lot else None
+        date_key = m.processed_at.date()
+        qty = m.quantity or 0
+        if qty <= 0:
+            continue
+        amount = 0.0
+        if lot and lot.received_unit_price is not None:
+            amount = float(lot.received_unit_price) * qty
+        elif lot and lot.received_amount is not None and lot.initial_quantity and lot.initial_quantity > 0:
+            amount = (float(lot.received_amount) / float(lot.initial_quantity)) * qty
+        elif lot and lot.received_amount is not None and lot.initial_weight_kg and lot.initial_weight_kg > 0 and material:
+            price_per_kg = float(lot.received_amount) / float(lot.initial_weight_kg)
+            weight_kg = _calculate_weight_kg(material, lot.length_mm, qty)
+            amount = price_per_kg * weight_kg
+        totals_by_date[date_key] = round(totals_by_date.get(date_key, 0.0) + amount, 2)
+
+    # ラベル・データ生成
+    dates = sorted(totals_by_date.keys())
+    labels = [d.strftime('%Y-%m-%d') for d in dates]
+    data = [totals_by_date[d] for d in dates]
+
+    return GraphDataResponse(
+        labels=labels,
+        datasets=[{
+            "label": "持ち出し金額（円）",
+            "data": data,
+            "backgroundColor": "rgba(20, 184, 166, 0.8)"
+        }]
+    )
+
 @router.get("/export/csv/")
 async def export_csv(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     material_name: Optional[str] = Query(None),
+    purchase_month: Optional[str] = Query(None),
+    purchase_month_start: Optional[str] = Query(None),
+    purchase_month_end: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
     """CSV出力（UTF-8 BOM付き）"""
@@ -379,6 +575,9 @@ async def export_csv(
         start_date=start_date,
         end_date=end_date,
         material_name=material_name,
+        purchase_month=purchase_month,
+        purchase_month_start=purchase_month_start,
+        purchase_month_end=purchase_month_end,
         db=db
     )
 
@@ -434,6 +633,9 @@ async def export_excel(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     material_name: Optional[str] = Query(None),
+    purchase_month: Optional[str] = Query(None),
+    purchase_month_start: Optional[str] = Query(None),
+    purchase_month_end: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
     """Excel出力（openpyxl使用）"""
@@ -448,6 +650,9 @@ async def export_excel(
         start_date=start_date,
         end_date=end_date,
         material_name=material_name,
+        purchase_month=purchase_month,
+        purchase_month_start=purchase_month_start,
+        purchase_month_end=purchase_month_end,
         db=db
     )
 

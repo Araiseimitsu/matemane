@@ -151,6 +151,27 @@ endblock %} {% block extra_head %}
             </div>
           </div>
 
+          <!-- 入力方法と全量出庫 -->
+          <div class="mb-2">
+            <span class="block text-sm font-semibold text-neutral-700 mb-2">
+              <i class="fas fa-sliders-h mr-1 text-neutral-600"></i>入力方法
+            </span>
+            <div class="flex items-center gap-4">
+              <label class="inline-flex items-center">
+                <input type="radio" name="input_mode" id="inputModeQuantity" value="quantity" class="mr-2" checked>
+                <span>数量（本）</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="radio" name="input_mode" id="inputModeWeight" value="weight" class="mr-2">
+                <span>重量（kg）</span>
+              </label>
+              <label class="inline-flex items-center ml-auto">
+                <input type="checkbox" id="fullOutAll" class="mr-2">
+                <span>すべて持ち出す（在庫全量を出庫）</span>
+              </label>
+            </div>
+          </div>
+
           <!-- 数量・重量入力 -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
@@ -179,13 +200,14 @@ endblock %} {% block extra_head %}
                 step="0.001"
                 class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
                 placeholder="重量を入力"
+                disabled
               />
             </div>
           </div>
           <div class="bg-neutral-50 p-3 rounded-lg border-l-3 border-primary-blue">
             <p class="text-sm text-neutral-700">
               <i class="fas fa-info-circle text-primary-blue mr-2"></i>
-              数量または重量のいずれかを入力してください（相互換算されます）
+              数量または重量のいずれか一方のみ入力してください（自動換算は行いません）
             </p>
           </div>
 
@@ -260,13 +282,16 @@ endblock %} {% block extra_head %}
               <label class="block text-xs font-semibold text-neutral-700 mb-2">
                 <i class="fas fa-map-marker-alt mr-1 text-neutral-600"></i>置き場
               </label>
-              <select
-                id="locationFilter"
+              <input
+                type="text"
+                id="locationFilterInput"
+                list="locationOptions"
+                placeholder="置き場名で検索"
                 class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
-              >
-                <option value="">すべて</option>
+              />
+              <datalist id="locationOptions">
                 <!-- 動的に生成 -->
-              </select>
+              </datalist>
             </div>
             <div>
               <label class="block text-xs font-semibold text-neutral-700 mb-2">
@@ -435,7 +460,7 @@ endblock %} {% block extra_head %}
                   class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
                 >
                   <i class="fas fa-balance-scale mr-1 text-neutral-600"></i
-                  >数量・重量
+                  >数量・重量（換算）
                 </th>
                 <th
                   class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
@@ -838,6 +863,7 @@ endblock %} {% block extra_head %}
 <script>
   // グローバル変数
   let inventoryItems = [];
+  let filteredInventoryItems = [];
   let movementHistory = [];
   let currentItemTarget = null;
   let selectedItem = null;
@@ -897,6 +923,7 @@ endblock %} {% block extra_head %}
       inventoryItems = await APIClient.getInventory({
         include_zero_stock: includeZeroStock,
       });
+      filteredInventoryItems = inventoryItems;
       renderInventoryTable();
 
       if (inventoryItems.length === 0) {
@@ -914,7 +941,9 @@ endblock %} {% block extra_head %}
   function renderInventoryTable() {
     const tableBody = document.getElementById("inventoryTableBody");
 
-    if (inventoryItems.length === 0) {
+    const sourceItems = filteredInventoryItems && filteredInventoryItems.length ? filteredInventoryItems : inventoryItems;
+
+    if (sourceItems.length === 0) {
       tableBody.innerHTML = `
             <tr>
                 <td colspan="9" class="px-4 py-8 text-center text-gray-500">
@@ -933,11 +962,11 @@ endblock %} {% block extra_head %}
     }
 
     // ページネーション処理
-    const totalPages = Math.ceil(inventoryItems.length / pageSize);
+    const totalPages = Math.ceil(sourceItems.length / pageSize);
     currentInventoryPage = Math.min(currentInventoryPage, totalPages);
     const startIndex = (currentInventoryPage - 1) * pageSize;
     const endIndex = startIndex + pageSize;
-    const pageItems = inventoryItems.slice(startIndex, endIndex);
+    const pageItems = sourceItems.slice(startIndex, endIndex);
 
     tableBody.innerHTML = pageItems
       .map((item) => {
@@ -949,7 +978,7 @@ endblock %} {% block extra_head %}
           ? "text-warning-amber font-semibold"
           : "text-neutral-800 font-semibold";
         const rowClass = isOutOfStock
-          ? "bg-gray-50 opacity-75"
+          ? "bg-gray-50"
           : "table-row-hover";
 
         return `
@@ -1153,7 +1182,7 @@ endblock %} {% block extra_head %}
                     <div class="text-xs text-neutral-600 font-semibold mt-1">
                         ${
                           movement.weight_kg
-                            ? movement.weight_kg.toFixed(3) + "kg"
+                            ? movement.weight_kg.toFixed(3) + "kg（換算）"
                             : "-"
                         }
                     </div>
@@ -1206,14 +1235,15 @@ endblock %} {% block extra_head %}
   async function loadLocations() {
     try {
       const locations = await APIClient.getLocations();
-      const select = document.getElementById("locationFilter");
+      const datalist = document.getElementById("locationOptions");
+      if (!datalist) return;
 
-      select.innerHTML = '<option value="">すべて</option>';
+      // クリア
+      datalist.innerHTML = "";
       locations.forEach((location) => {
         const option = document.createElement("option");
-        option.value = location.id;
-        option.textContent = location.name;
-        select.appendChild(option);
+        option.value = location.name;
+        datalist.appendChild(option);
       });
     } catch (error) {
       console.error("置き場読み込みエラー:", error);
@@ -1303,9 +1333,10 @@ endblock %} {% block extra_head %}
     document
       .getElementById("lotSearchInput")
       .addEventListener("input", debounce(filterInventory, 300));
-    document
-      .getElementById("locationFilter")
-      .addEventListener("change", filterInventory);
+    const locInput = document.getElementById("locationFilterInput");
+    if (locInput) {
+      locInput.addEventListener("input", debounce(filterInventory, 300));
+    }
     document
       .getElementById("typeFilter")
       .addEventListener("change", filterMovements);
@@ -1352,6 +1383,12 @@ endblock %} {% block extra_head %}
       setTimeout(() => input.classList.remove("ring-2", "ring-blue-500"), 1500);
     }
     showToast("下の在庫一覧で検索してください", "success");
+  }
+
+  // 入出庫フォームへスクロール
+  function scrollToMovementForm() {
+    const form = document.getElementById("movementForm");
+    if (form) form.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   // アイテム検索モーダルを開く
@@ -1619,6 +1656,8 @@ endblock %} {% block extra_head %}
       `${type === "in" ? "戻し" : "出庫"}アイテムを選択しました`,
       "success"
     );
+    // 入出庫フォームへスクロール
+    scrollToMovementForm();
   }
 
   // 統合フォーム: 選択表示更新
@@ -1709,33 +1748,71 @@ endblock %} {% block extra_head %}
           '<i class="fas fa-arrow-left mr-2"></i>在庫へ戻す';
       }
     }
+
+    // 戻し選択時は「在庫切れを含む」を自動ONにして一覧を更新
+    const includeZeroStockChk = document.getElementById("includeZeroStock");
+    if (includeZeroStockChk) {
+      includeZeroStockChk.checked = (type === "in");
+      // リスト更新（戻し対象が一覧に出るように）
+      loadInventory();
+    }
+
+    // 検索モーダルの「在庫切れを含む」を同期
+    const searchZeroChk = document.querySelector('#itemSearchForm input[name="include_zero_stock"]');
+    if (searchZeroChk) {
+      searchZeroChk.checked = (type === "in");
+    }
   }
 
-  // 統合フォーム: 数量⇔重量相互換算
+  // 入力方法と全量出庫のトグル設定（相互換算は行わない）
   function setupUnifiedConverters() {
     const q = document.getElementById("movementQuantity");
     const w = document.getElementById("movementWeight");
-    if (!q || !w) return;
-    q.addEventListener("input", () => {
-      if (!selectedItem || !selectedItem.weight_per_piece_kg) return;
-      const quantity = parseInt(q.value || "0");
-      if (!isNaN(quantity) && quantity > 0) {
-        const weight = quantity * selectedItem.weight_per_piece_kg;
-        w.value = Number(weight).toFixed(3);
-      } else if (q.value === "") {
+    const modeQ = document.getElementById("inputModeQuantity");
+    const modeW = document.getElementById("inputModeWeight");
+    const fullOut = document.getElementById("fullOutAll");
+    if (!q || !w || !modeQ || !modeW) return;
+
+    function applyFullOut() {
+      if (!fullOut || fullOut.disabled) return;
+      if (fullOut.checked && currentMovementType === "out") {
+        if (!selectedItem || typeof selectedItem.current_quantity !== "number") return;
+        // 強制的に数量モードにして数量に在庫全量を設定、重量はクリア
+        modeQ.checked = true;
+        modeW.checked = false;
+        q.disabled = false;
+        w.disabled = true;
         w.value = "";
+        q.value = String(selectedItem.current_quantity || 0);
       }
-    });
-    w.addEventListener("input", () => {
-      if (!selectedItem || !selectedItem.weight_per_piece_kg) return;
-      const weight = parseFloat(w.value || "0");
-      if (!isNaN(weight) && weight > 0) {
-        const quantity = Math.round(weight / selectedItem.weight_per_piece_kg);
-        q.value = String(quantity);
-      } else if (w.value === "") {
+    }
+
+    function applyMode() {
+      const mode = modeQ.checked ? "quantity" : "weight";
+      if (mode === "quantity") {
+        q.disabled = false;
+        w.disabled = true;
+        w.value = "";
+      } else {
+        q.disabled = true;
         q.value = "";
+        w.disabled = false;
       }
-    });
+      // 出庫以外では全量出庫は無効化
+      const isOut = movementType === "out";
+      if (fullOut) {
+        fullOut.disabled = !isOut;
+        if (!isOut) fullOut.checked = false;
+      }
+      applyFullOut();
+    }
+
+    modeQ.addEventListener("change", applyMode);
+    modeW.addEventListener("change", applyMode);
+    if (fullOut) fullOut.addEventListener("change", applyFullOut);
+
+    // 初期適用
+    applyMode();
   }
 
   // 統合フォーム: 送信処理
@@ -1754,13 +1831,35 @@ endblock %} {% block extra_head %}
     const weight = formData.get("weight_kg")
       ? parseFloat(formData.get("weight_kg"))
       : null;
-    if (!quantity && !weight) {
-      showToast("数量または重量を入力してください", "error");
-      return;
+
+    const modeQ = document.getElementById("inputModeQuantity");
+    const modeW = document.getElementById("inputModeWeight");
+    const fullOut = document.getElementById("fullOutAll");
+
+    let data = { notes: formData.get("notes") || null };
+
+    // 全量出庫（出庫のみ有効）
+    if (movementType === "out" && fullOut && fullOut.checked) {
+      if (!selectedItem || typeof selectedItem.current_quantity !== "number") {
+        showToast("在庫がありません", "error");
+        return;
+      }
+      const qty = selectedItem.current_quantity;
+      if (!qty || qty <= 0) {
+        showToast("在庫がありません", "error");
+        return;
+      }
+      data.quantity = qty;
+    } else {
+      const hasQ = quantity !== null && !isNaN(quantity);
+      const hasW = weight !== null && !isNaN(weight);
+      if ((hasQ && hasW) || (!hasQ && !hasW)) {
+        showToast("数量か重量のどちらか一方のみ入力してください", "error");
+        return;
+      }
+      if (hasQ) data.quantity = quantity;
+      if (hasW) data.weight_kg = weight;
     }
-    const data = { notes: formData.get("notes") || null };
-    if (quantity) data.quantity = quantity;
-    if (weight) data.weight_kg = weight;
 
     try {
       const result =
@@ -1821,8 +1920,41 @@ endblock %} {% block extra_head %}
 
   // フィルター処理
   function filterInventory() {
-    // TODO: 実装予定
-    console.log("在庫フィルター処理");
+    const materialInput = document.getElementById("materialSearchInput");
+    const lotInput = document.getElementById("lotSearchInput");
+    const locationInput = document.getElementById("locationFilterInput");
+
+    const materialQuery = (materialInput?.value || "").trim().toLowerCase();
+    const lotQuery = (lotInput?.value || "").trim().toLowerCase();
+    const locationQuery = (locationInput?.value || "").trim().toLowerCase();
+
+    const baseItems = inventoryItems || [];
+
+    filteredInventoryItems = baseItems.filter((item) => {
+      let ok = true;
+
+      if (materialQuery) {
+        const name = (item.material?.display_name || "").toLowerCase();
+        const diameter = String(item.material?.diameter_mm || "");
+        const shapeText = (getShapeText(item.material?.shape) || "").toLowerCase();
+        ok = ok && (name.includes(materialQuery) || diameter.includes(materialQuery) || shapeText.includes(materialQuery));
+      }
+
+      if (lotQuery) {
+        const lotNumber = (item.lot?.lot_number || "").toLowerCase();
+        ok = ok && lotNumber.includes(lotQuery);
+      }
+
+      if (locationQuery) {
+        const locName = (item.location?.name || "").toLowerCase();
+        ok = ok && locName.includes(locationQuery);
+      }
+
+      return ok;
+    });
+
+    currentInventoryPage = 1;
+    renderInventoryTable();
   }
 
   function filterMovements() {
