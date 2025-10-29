@@ -6,8 +6,14 @@ from pydantic import BaseModel
 from typing import Optional
 import subprocess
 import os
+import sys
 
 router = APIRouter()
+
+# Repository metadata constants
+REPOSITORY_NAME = "matemane"
+REPOSITORY_DESCRIPTION = "旋盤用棒材の在庫管理システム（本数・重量のハイブリッド管理）"
+REPOSITORY_VERSION = "1.0.0"
 
 
 class RepositoryInfo(BaseModel):
@@ -37,53 +43,68 @@ async def get_repository_info():
     git_branch = None
     git_commit = None
     
+    # Verify we're in a git repository before running git commands
     try:
-        # Get git remote URL
         result = subprocess.run(
-            ["git", "config", "--get", "remote.origin.url"],
+            ["git", "rev-parse", "--git-dir"],
             capture_output=True,
-            text=True,
-            timeout=2
+            timeout=2,
+            cwd=os.getcwd()
         )
-        if result.returncode == 0:
-            git_remote = result.stdout.strip()
+        is_git_repo = result.returncode == 0
     except Exception:
-        pass
+        is_git_repo = False
     
-    try:
-        # Get current branch
-        result = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            capture_output=True,
-            text=True,
-            timeout=2
-        )
-        if result.returncode == 0:
-            git_branch = result.stdout.strip()
-    except Exception:
-        pass
-    
-    try:
-        # Get current commit hash
-        result = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True,
-            text=True,
-            timeout=2
-        )
-        if result.returncode == 0:
-            git_commit = result.stdout.strip()
-    except Exception:
-        pass
+    if is_git_repo:
+        try:
+            # Get git remote URL
+            result = subprocess.run(
+                ["git", "config", "--get", "remote.origin.url"],
+                capture_output=True,
+                text=True,
+                timeout=2,
+                cwd=os.getcwd()
+            )
+            if result.returncode == 0:
+                git_remote = result.stdout.strip()
+        except Exception:
+            pass
+        
+        try:
+            # Get current branch
+            result = subprocess.run(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                capture_output=True,
+                text=True,
+                timeout=2,
+                cwd=os.getcwd()
+            )
+            if result.returncode == 0:
+                git_branch = result.stdout.strip()
+        except Exception:
+            pass
+        
+        try:
+            # Get current commit hash
+            result = subprocess.run(
+                ["git", "rev-parse", "--short", "HEAD"],
+                capture_output=True,
+                text=True,
+                timeout=2,
+                cwd=os.getcwd()
+            )
+            if result.returncode == 0:
+                git_commit = result.stdout.strip()
+        except Exception:
+            pass
     
     # Get Python version
-    import sys
     python_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     
     return RepositoryInfo(
-        name="matemane",
-        description="旋盤用棒材の在庫管理システム（本数・重量のハイブリッド管理）",
-        version="1.0.0",
+        name=REPOSITORY_NAME,
+        description=REPOSITORY_DESCRIPTION,
+        version=REPOSITORY_VERSION,
         git_remote=git_remote,
         git_branch=git_branch,
         git_commit=git_commit,
