@@ -190,6 +190,7 @@ pytest --cov=src --cov-report=html
 - ✅ **入出庫管理**: 統合フォーム（出庫/戻し）、在庫一覧表示、履歴管理、QRスキャン、数量⇔重量換算
 - ✅ **入出庫履歴編集・削除**: 履歴の編集・削除機能、在庫数の自動再計算（2025-10-09追加）
 - ✅ **集計・分析機能**: 材料別集計、時系列グラフ、CSV/Excel出力
+- ✅ **リポジトリアクセス確認**: ネットワーク共有ファイルのアクセス状態確認、権限チェック（2025-10-29追加）
 
 ### 実装待ち
 - ⏳ **ラベル印刷機能**: `src/api/labels.py` - スタブのみ
@@ -207,7 +208,7 @@ pytest --cov=src --cov-report=html
 | `/production-schedule` | 生産中一覧 | Excel解析、材料引当、在庫切れ予測 |
 | `/excel-viewer` | Excel照合ビューア | 直接Excel読込、在庫照合 |
 | `/analytics` | 集計・分析 | 材料別集計、入出庫推移、金額分析、CSV/Excel出力 |
-| `/settings` | 設定 | 比重プリセット、システム設定 |
+| `/settings` | 設定 | 比重プリセット、システム設定、リポジトリアクセス確認 |
 
 ## 主要ワークフロー
 
@@ -327,6 +328,12 @@ pytest --cov=src --cov-report=html
 - `GET /api/analytics/graph/supplier-amount/` - 仕入先別金額（棒グラフ）
 - `GET /api/analytics/export/csv/` - CSV出力（UTF-8 BOM付き）
 - `GET /api/analytics/export/excel/` - Excel出力（openpyxl使用）
+
+### リポジトリアクセス確認（2025-10実装）
+- `GET /api/repositories/check` - ネットワーク共有ファイルのアクセス状態確認
+  - 生産スケジュール、材料管理Excelへのアクセス可否をチェック
+  - 各リポジトリの存在、読み取り権限、書き込み権限を確認
+  - エラー詳細を返却
 
 ## 重要な制約事項
 

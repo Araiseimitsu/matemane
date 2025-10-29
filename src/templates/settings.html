@@ -59,6 +59,10 @@
                             <i class="fas fa-list mr-3"></i>比重プリセット管理
                         </button>
                         <button class="tab-button w-full text-left px-4 py-2 rounded-lg font-semibold transition-all duration-200"
+                                onclick="showTab('repository-check')">
+                            <i class="fas fa-network-wired mr-3"></i>リポジトリ確認
+                        </button>
+                        <button class="tab-button w-full text-left px-4 py-2 rounded-lg font-semibold transition-all duration-200"
                                 onclick="showTab('system-info')">
                             <i class="fas fa-info-circle mr-3"></i>システム情報
                         </button>
@@ -92,6 +96,46 @@
                                     </thead>
                                     <tbody id="density-presets-table" class="bg-white divide-y divide-neutral-200">
                                         <!-- 動的に生成 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- リポジトリ確認 -->
+                <div id="repository-check-tab" class="tab-content hidden">
+                    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-neutral-200">
+                        <div class="px-4 py-3 border-b border-neutral-200 flex justify-between items-center bg-neutral-50">
+                            <h3 class="text-lg font-bold text-neutral-800">リポジトリアクセス状態</h3>
+                            <button type="button" class="bg-primary-blue text-white px-4 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-200"
+                                    onclick="checkRepositories()">
+                                <i class="fas fa-sync-alt mr-2"></i>再チェック
+                            </button>
+                        </div>
+                        <div class="p-4">
+                            <div id="repository-status-message" class="mb-4 p-4 rounded-lg hidden">
+                                <!-- 動的に生成 -->
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-neutral-200">
+                                    <thead class="bg-neutral-50">
+                                        <tr>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">リポジトリ名</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">パス</th>
+                                            <th class="px-4 py-3 text-center text-sm font-semibold text-neutral-700">状態</th>
+                                            <th class="px-4 py-3 text-center text-sm font-semibold text-neutral-700">存在</th>
+                                            <th class="px-4 py-3 text-center text-sm font-semibold text-neutral-700">読取</th>
+                                            <th class="px-4 py-3 text-center text-sm font-semibold text-neutral-700">書込</th>
+                                            <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">エラー</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="repository-check-table" class="bg-white divide-y divide-neutral-200">
+                                        <tr>
+                                            <td colspan="7" class="px-4 py-8 text-center text-neutral-500">
+                                                <i class="fas fa-spinner fa-spin mr-2"></i>チェック中...
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -300,8 +344,122 @@ document.addEventListener('DOMContentLoaded', function() {
         if (densityBtn) {
             densityBtn.click();
         }
+    } else if (hash === '#repository-check') {
+        const repoBtn = document.querySelector('.tab-button[onclick*="repository-check"]');
+        if (repoBtn) {
+            repoBtn.click();
+        }
     }
+
+    // リポジトリチェックタブが開かれたら自動でチェック
+    const repoTab = document.getElementById('repository-check-tab');
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (!repoTab.classList.contains('hidden')) {
+                checkRepositories();
+            }
+        });
+    });
+    observer.observe(repoTab, { attributes: true, attributeFilter: ['class'] });
 });
+
+// リポジトリチェック機能
+async function checkRepositories() {
+    const table = document.getElementById('repository-check-table');
+    const message = document.getElementById('repository-status-message');
+    
+    // ローディング表示
+    table.innerHTML = `
+        <tr>
+            <td colspan="7" class="px-4 py-8 text-center text-neutral-500">
+                <i class="fas fa-spinner fa-spin mr-2"></i>チェック中...
+            </td>
+        </tr>
+    `;
+    message.classList.add('hidden');
+    
+    try {
+        const response = await fetch('/api/repositories/check');
+        if (!response.ok) {
+            throw new Error('リポジトリチェックに失敗しました');
+        }
+        
+        const data = await response.json();
+        
+        // メッセージ表示
+        if (data.inaccessible_count === 0) {
+            message.className = 'mb-4 p-4 rounded-lg bg-green-50 border border-green-200 text-green-800';
+            message.innerHTML = `
+                <i class="fas fa-check-circle mr-2"></i>
+                すべてのリポジトリにアクセス可能です (${data.accessible_count}/${data.total_count})
+            `;
+        } else {
+            message.className = 'mb-4 p-4 rounded-lg bg-red-50 border border-red-200 text-red-800';
+            message.innerHTML = `
+                <i class="fas fa-exclamation-triangle mr-2"></i>
+                ${data.inaccessible_count} 件のリポジトリにアクセスできません (${data.accessible_count}/${data.total_count})
+            `;
+        }
+        message.classList.remove('hidden');
+        
+        // テーブル更新
+        if (data.repositories.length === 0) {
+            table.innerHTML = `
+                <tr>
+                    <td colspan="7" class="px-4 py-8 text-center text-neutral-500">
+                        チェック対象のリポジトリがありません
+                    </td>
+                </tr>
+            `;
+        } else {
+            table.innerHTML = data.repositories.map(repo => {
+                const statusIcon = repo.accessible 
+                    ? '<i class="fas fa-check-circle text-green-600"></i>' 
+                    : '<i class="fas fa-times-circle text-red-600"></i>';
+                const statusText = repo.accessible ? '正常' : 'エラー';
+                const statusClass = repo.accessible ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold';
+                
+                const checkIcon = (value) => value 
+                    ? '<i class="fas fa-check text-green-600"></i>' 
+                    : '<i class="fas fa-times text-red-600"></i>';
+                
+                return `
+                    <tr class="${repo.accessible ? '' : 'bg-red-50'}">
+                        <td class="px-4 py-3 text-sm font-medium text-neutral-900">${repo.name}</td>
+                        <td class="px-4 py-3 text-sm text-neutral-700 font-mono text-xs">${repo.path}</td>
+                        <td class="px-4 py-3 text-center ${statusClass}">
+                            ${statusIcon} ${statusText}
+                        </td>
+                        <td class="px-4 py-3 text-center">${checkIcon(repo.exists)}</td>
+                        <td class="px-4 py-3 text-center">${checkIcon(repo.readable)}</td>
+                        <td class="px-4 py-3 text-center">${checkIcon(repo.writable)}</td>
+                        <td class="px-4 py-3 text-sm text-red-600">
+                            ${repo.error_message || '-'}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+    } catch (error) {
+        console.error('リポジトリチェックエラー:', error);
+        message.className = 'mb-4 p-4 rounded-lg bg-red-50 border border-red-200 text-red-800';
+        message.innerHTML = `
+            <i class="fas fa-exclamation-triangle mr-2"></i>
+            リポジトリチェック中にエラーが発生しました: ${error.message}
+        `;
+        message.classList.remove('hidden');
+        
+        table.innerHTML = `
+            <tr>
+                <td colspan="7" class="px-4 py-8 text-center text-red-500">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    エラーが発生しました
+                </td>
+            </tr>
+        `;
+    }
+}
+
 </script>
 
 <script src="{{ url_for('static', path='/js/settings.js') }}"></script>
