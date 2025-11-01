@@ -163,6 +163,32 @@ class InventorySummaryByName(BaseModel):
     length_variations: int
 
 # API エンドポイント
+@router.get("/debug/items", response_model=List[dict])
+async def debug_inventory_items(db: Session = Depends(get_db)):
+    """デバッグ用：全在庫アイテムを詳細表示"""
+    items = db.query(Item).options(
+        joinedload(Item.lot).joinedload(Lot.material),
+        joinedload(Item.location)
+    ).all()
+    
+    debug_info = []
+    for item in items:
+        debug_info.append({
+            "item_id": item.id,
+            "lot_id": item.lot_id,
+            "lot_number": item.lot.lot_number if item.lot else None,
+            "material_name": item.lot.material.display_name if item.lot and item.lot.material else None,
+            "current_quantity": item.current_quantity,
+            "is_active": item.is_active,
+            "location_id": item.location_id,
+            "location_name": item.location.name if item.location else None,
+            "lot_inspection_status": item.lot.inspection_status.value if item.lot and item.lot.inspection_status else None,
+            "created_at": item.created_at.isoformat() if item.created_at else None
+        })
+    
+    return debug_info
+
+
 @router.get("/", response_model=List[InventoryItem])
 async def get_inventory(
     skip: int = Query(0, ge=0),
@@ -203,7 +229,15 @@ async def get_inventory(
     if lot_number is not None:
         query = query.join(Lot).filter(Lot.lot_number.ilike(f"%{lot_number}%"))
 
+    # デバッグ：全アイテム数を表示
+    total_items = query.count()
+    print(f"デバッグ: 全在庫アイテム数 = {total_items}")
+
     items = query.offset(skip).limit(limit).all()
+    
+    # デバッグ：取得したアイテムの情報を表示
+    for item in items:
+        print(f"デバッグ: Item ID={item.id}, Lot={item.lot.lot_number if item.lot else 'None'}, Quantity={item.current_quantity}, Active={item.is_active}")
 
     # 重量計算を追加
     result = []

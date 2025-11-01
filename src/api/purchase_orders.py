@@ -6,6 +6,7 @@ from src.db.models import MaterialAlias
 from typing import List, Optional
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from datetime import datetime, date
+import re
 
 from src.db import get_db
 from src.db.models import (
@@ -466,29 +467,20 @@ async def receive_item(
         else:
             target_locations = [None]
 
+        # 在庫アイテムは検品完了時に登録するため、ここでは作成しない
+        # 検品完了まで在庫管理には表示されない
         created_item_ids: List[int] = []
         primary_lot_number: Optional[str] = None
 
-        # 第一置き場へまとめて登録（数量を分けない）
-        primary_location = target_locations[0] if len(target_locations) > 0 else None
-        inventory_item = Item(
-            lot_id=lot.id,
-            location_id=primary_location,
-            current_quantity=final_received_quantity
-        )
-        db.add(inventory_item)
-        db.flush()
-        created_item_ids.append(inventory_item.id)
+        # 置き場情報をロットの備考に保存（検品完了時に在庫登録で使用）
+        location_info = ", ".join(str(loc) for loc in target_locations if loc is not None)
+        if location_info:
+            if lot.notes:
+                lot.notes = f"{lot.notes}\n登録予定置き場: {location_info}"
+            else:
+                lot.notes = f"登録予定置き場: {location_info}"
+        
         primary_lot_number = lot.lot_number
-
-        # 追加の置き場情報は備考へ追記（構造化テーブルなしのため）
-        if len(target_locations) > 1:
-            others = ", ".join(str(loc) for loc in target_locations[1:] if loc is not None)
-            if others:
-                if lot.notes:
-                    lot.notes = f"{lot.notes}\n追加置き場: {others}"
-                else:
-                    lot.notes = f"追加置き場: {others}"
 
         # 発注アイテムの状態更新（複数ロット対応：累積計算）
         item.received_quantity = (item.received_quantity or 0) + final_received_quantity
@@ -517,12 +509,12 @@ async def receive_item(
 
         db.commit()
 
-        # 後方互換：item_id は先頭のIDを返し、複数時は item_ids も返す
+        # 検品完了時に在庫登録するため、item_idはNoneを返す
         return {
-            "message": "入庫処理が完了しました",
+            "message": "入庫処理が完了しました（検品待ち）",
             "lot_id": lot.id,
-            "item_id": created_item_ids[0],
-            "item_ids": created_item_ids,
+            "item_id": None,
+            "item_ids": [],
             "lot_number": primary_lot_number,
             "material_id": material_id
         }
@@ -629,17 +621,31 @@ async def update_received_item(
 
     # 在庫アイテム（第一置き場）の更新
     inv_item = db.query(Item).filter(Item.lot_id == lot.id).order_by(Item.id.asc()).first()
-    if not inv_item:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="ロットに紐づく在庫アイテムが見つかりません")
-
+    
     primary_location = None
     if receiving.location_ids and len(receiving.location_ids) > 0:
         primary_location = receiving.location_ids[0]
     elif receiving.location_id is not None:
         primary_location = receiving.location_id
-    inv_item.location_id = primary_location
-    inv_item.current_quantity = final_received_quantity
-    db.flush()
+    
+    # 在庫アイテムが存在する場合のみ更新（検品済みの場合）
+    if inv_item:
+        inv_item.location_id = primary_location
+        inv_item.current_quantity = final_received_quantity
+        db.flush()
+    else:
+        # 検品前の場合、置き場情報をロットの備考に保存
+        location_info = ", ".join(str(loc) for loc in (receiving.location_ids or [receiving.location_id]) if loc is not None)
+        if location_info:
+            if lot.notes and "登録予定置き場:" in lot.notes:
+                # 既存の登録予定置き場を更新
+                lot.notes = re.sub(r"登録予定置き場:[^\n]*", f"登録予定置き場: {location_info}", lot.notes)
+            else:
+                # 新規に登録予定置き場を追加
+                if lot.notes:
+                    lot.notes = f"{lot.notes}\n登録予定置き場: {location_info}"
+                else:
+                    lot.notes = f"登録予定置き場: {location_info}"
 
     # 追加置き場の表記（備考へ追記）
     if receiving.location_ids and len(receiving.location_ids) > 1:
@@ -685,7 +691,7 @@ async def update_received_item(
     return {
         "message": "入庫内容を更新しました",
         "lot_id": lot.id,
-        "item_id": inv_item.id,
+        "item_id": inv_item.id if inv_item else None,
         "material_id": material.id
     }
 

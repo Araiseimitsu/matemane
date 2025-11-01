@@ -1,0 +1,25 @@
+# Fa
+fastapi
+uvicorn[standard]
+jinja2
+python-multipart
+# デ
+sqlalchemy
+pymysql
+alembic
+pydantic-settings
+# セ
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt
+# ユー
+python-dotenv
+qrcode[pil]
+reportlab
+# 
+pandas
+openpyxl
+# 開
+pytest
+pytest-asyncio
+httpx

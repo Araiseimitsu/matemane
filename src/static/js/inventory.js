@@ -101,6 +101,9 @@ class InventoryManager {
             this.showLoading();
             const params = new URLSearchParams();
 
+            // デフォルトで在庫数0のアイテムも含める
+            params.append('include_zero_stock', 'true');
+
             Object.keys(filters).forEach(key => {
                 if (filters[key] !== null && filters[key] !== '') {
                     params.append(key, filters[key]);

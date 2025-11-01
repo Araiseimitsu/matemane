@@ -7,7 +7,7 @@ from io import BytesIO
 from urllib.parse import quote
 import qrcode
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import A4, letter
+from reportlab.lib.pagesizes import A6
 from reportlab.lib.units import mm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -25,12 +25,10 @@ pdfmetrics.registerFont(UnicodeCIDFont('HeiseiKakuGo-W5'))
 
 class LabelPrintRequest(BaseModel):
     lot_number: str = Field(..., description="LOT番号")
-    label_type: str = Field(default="standard", description="ラベルタイプ: standard | small")
     copies: int = Field(default=1, ge=1, le=10, description="印刷部数")
 
 class LotTagRequest(BaseModel):
     lot_id: int = Field(..., description="ロットID")
-    label_type: str = Field(default="standard", description="ラベルタイプ: standard | small")
     copies: int = Field(default=1, ge=1, le=10, description="印刷部数")
 
 @router.post("/print")
@@ -76,12 +74,8 @@ async def print_label(
     # PDFバッファ作成
     buffer = BytesIO()
 
-    if request.label_type == "small":
-        # 小型ラベル（50×30mm）
-        create_small_label(buffer, item, material, weight_per_piece_kg, total_weight_kg, request.copies)
-    else:
-        # A4標準ラベル
-        create_standard_label(buffer, item, material, weight_per_piece_kg, total_weight_kg, request.copies)
+    # A6ラベル作成
+    create_a6_label(buffer, item, material, weight_per_piece_kg, total_weight_kg, request.copies)
 
     buffer.seek(0)
 
@@ -118,9 +112,9 @@ def create_qr_code(data: str, size_mm: int = 20) -> BytesIO:
 
     return qr_buffer
 
-def create_standard_label(buffer: BytesIO, item, material, weight_per_piece_kg: float, total_weight_kg: float, copies: int):
-    """A4標準ラベル作成"""
-    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=10*mm, bottomMargin=10*mm)
+def create_a6_label(buffer: BytesIO, item, material, weight_per_piece_kg: float, total_weight_kg: float, copies: int):
+    """A6ラベル作成"""
+    doc = SimpleDocTemplate(buffer, pagesize=A6, topMargin=5*mm, bottomMargin=5*mm, leftMargin=5*mm, rightMargin=5*mm)
     styles = getSampleStyleSheet()
 
     # 日本語対応スタイル
@@ -128,16 +122,16 @@ def create_standard_label(buffer: BytesIO, item, material, weight_per_piece_kg: 
         'Japanese',
         parent=styles['Normal'],
         fontName='HeiseiKakuGo-W5',
-        fontSize=12,
-        leading=16
+        fontSize=8,
+        leading=10
     )
 
     title_style = ParagraphStyle(
         'JapaneseTitle',
         parent=styles['Title'],
         fontName='HeiseiKakuGo-W5',
-        fontSize=18,
-        leading=22,
+        fontSize=12,
+        leading=14,
         alignment=1  # 中央揃え
     )
 
@@ -146,45 +140,45 @@ def create_standard_label(buffer: BytesIO, item, material, weight_per_piece_kg: 
 
         # タイトル
         story.append(Paragraph("材料管理ラベル", title_style))
-        story.append(Spacer(1, 10*mm))
+        story.append(Spacer(1, 5*mm))
 
         # QRコード
-        qr_buffer = create_qr_code(item.lot.lot_number, 25)
-        qr_image = Image(qr_buffer, width=25*mm, height=25*mm)
+        qr_buffer = create_qr_code(item.lot.lot_number, 18)
+        qr_image = Image(qr_buffer, width=18*mm, height=18*mm)
 
         # QRコードとタイトルを並べて配置
-        header_table = Table([[qr_image, "LOT番号: " + item.lot.lot_number[:25] + ("..." if len(item.lot.lot_number) > 25 else "")]],
-                           colWidths=[30*mm, 130*mm])
+        header_table = Table([[qr_image, "LOT: " + item.lot.lot_number[:15] + ("..." if len(item.lot.lot_number) > 15 else "")]],
+                           colWidths=[20*mm, 70*mm])
         header_table.setStyle(TableStyle([
             ('FONT', (1, 0), (1, 0), 'HeiseiKakuGo-W5'),
-            ('FONTSIZE', (1, 0), (1, 0), 10),
+            ('FONTSIZE', (1, 0), (1, 0), 8),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('ALIGN', (1, 0), (1, 0), 'LEFT'),
         ]))
 
         story.append(header_table)
-        story.append(Spacer(1, 10*mm))
+        story.append(Spacer(1, 5*mm))
 
-        # メイン情報テーブル
+        # メイン情報テーブル（A6用に最適化）
         data = [
-            ["LOT番号", item.lot.lot_number],
+            ["LOT", item.lot.lot_number],
             ["材質", material.display_name],
             ["形状", get_shape_name(material.shape.value)],
             ["寸法", f"φ{material.diameter_mm}mm" if material.shape.value == "round" else f"{material.diameter_mm}mm角"],
             ["長さ", f"{item.lot.length_mm}mm"],
-            ["現在本数", f"{item.current_quantity}本"],
-            ["単重", f"{weight_per_piece_kg:.3f}kg/本"],
+            ["本数", f"{item.current_quantity}本"],
+            ["単重", f"{weight_per_piece_kg:.3f}kg"],
             ["総重量", f"{total_weight_kg:.3f}kg"],
-            ["置き場", item.location.name if item.location else "未配置"],
-            ["仕入先", item.lot.supplier or "未登録"],
-            ["入荷日", item.lot.received_date.strftime("%Y/%m/%d") if item.lot.received_date else "未登録"],
-            ["印刷日時", datetime.now().strftime("%Y/%m/%d %H:%M")]
+            ["置き場", item.location.name if item.location else "-"],
+            ["仕入先", item.lot.supplier or "-"],
+            ["入荷日", item.lot.received_date.strftime("%Y/%m/%d") if item.lot.received_date else "-"],
+            ["印刷日", datetime.now().strftime("%m/%d %H:%M")]
         ]
 
-        table = Table(data, colWidths=[40*mm, 100*mm])
+        table = Table(data, colWidths=[20*mm, 70*mm])
         table.setStyle(TableStyle([
             ('FONT', (0, 0), (-1, -1), 'HeiseiKakuGo-W5'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
@@ -193,53 +187,9 @@ def create_standard_label(buffer: BytesIO, item, material, weight_per_piece_kg: 
         story.append(table)
 
         if copy_num < copies - 1:
-            story.append(Spacer(1, 20*mm))
+            story.append(Spacer(1, 10*mm))
 
     doc.build(story)
-
-def create_small_label(buffer: BytesIO, item, material, weight_per_piece_kg: float, total_weight_kg: float, copies: int):
-    """小型ラベル（50×30mm）作成"""
-    page_width = 50 * mm
-    page_height = 30 * mm
-
-    c = canvas.Canvas(buffer, pagesize=(page_width, page_height))
-
-    for copy_num in range(copies):
-        if copy_num > 0:
-            c.showPage()
-
-        # QRコード（20mm角）
-        qr_buffer = create_qr_code(item.lot.lot_number, 20)
-        c.drawImage(qr_buffer, 2*mm, 8*mm, width=20*mm, height=20*mm)
-
-        # テキスト情報（右側）
-        c.setFont('HeiseiKakuGo-W5', 6)
-
-        # 材質・形状
-        c.drawString(24*mm, 25*mm, f"{material.display_name}")
-        c.drawString(24*mm, 22*mm, f"{get_shape_name(material.shape.value)}")
-
-        # 寸法・長さ
-        if material.shape.value == "round":
-            size_text = f"φ{material.diameter_mm}"
-        else:
-            size_text = f"{material.diameter_mm}□"
-        c.drawString(24*mm, 19*mm, size_text)
-        c.drawString(24*mm, 16*mm, f"L{item.lot.length_mm}")
-
-        # 本数・重量
-        c.drawString(24*mm, 13*mm, f"{item.current_quantity}本")
-        c.drawString(24*mm, 10*mm, f"{total_weight_kg:.1f}kg")
-
-        # LOT番号（下部）
-        c.setFont('HeiseiKakuGo-W5', 4)
-        lot_short = item.lot.lot_number[:12] + "..." if len(item.lot.lot_number) > 12 else item.lot.lot_number
-        c.drawString(2*mm, 4*mm, lot_short)
-
-        # 印刷日
-        c.drawString(2*mm, 1*mm, datetime.now().strftime("%m/%d"))
-
-    c.save()
 
 def get_shape_name(shape_value: str) -> str:
     """形状値を日本語名に変換"""
@@ -338,12 +288,8 @@ async def print_lot_tag(
     # PDFバッファ作成
     buffer = BytesIO()
 
-    if request.label_type == "small":
-        # 小型現品票（50×30mm）
-        create_small_lot_tag(buffer, lot, material, request.copies)
-    else:
-        # A4標準現品票
-        create_standard_lot_tag(buffer, lot, material, request.copies)
+    # A6現品票作成
+    create_a6_lot_tag(buffer, lot, material, request.copies)
 
     buffer.seek(0)
 
@@ -362,9 +308,9 @@ async def print_lot_tag(
 
     return response
 
-def create_standard_lot_tag(buffer: BytesIO, lot, material, copies: int):
-    """A4標準現品票作成"""
-    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=10*mm, bottomMargin=10*mm)
+def create_a6_lot_tag(buffer: BytesIO, lot, material, copies: int):
+    """A6現品票作成"""
+    doc = SimpleDocTemplate(buffer, pagesize=A6, topMargin=5*mm, bottomMargin=5*mm, leftMargin=5*mm, rightMargin=5*mm)
     styles = getSampleStyleSheet()
 
     # 日本語対応スタイル
@@ -372,16 +318,16 @@ def create_standard_lot_tag(buffer: BytesIO, lot, material, copies: int):
         'Japanese',
         parent=styles['Normal'],
         fontName='HeiseiKakuGo-W5',
-        fontSize=12,
-        leading=16
+        fontSize=8,
+        leading=10
     )
 
     title_style = ParagraphStyle(
         'JapaneseTitle',
         parent=styles['Title'],
         fontName='HeiseiKakuGo-W5',
-        fontSize=20,
-        leading=24,
+        fontSize=14,
+        leading=16,
         alignment=1  # 中央揃え
     )
 
@@ -390,24 +336,24 @@ def create_standard_lot_tag(buffer: BytesIO, lot, material, copies: int):
 
         # タイトル
         story.append(Paragraph("現品票", title_style))
-        story.append(Spacer(1, 15*mm))
+        story.append(Spacer(1, 8*mm))
 
         # QRコード（ロット番号をエンコード）
-        qr_buffer = create_qr_code(lot.lot_number, 30)
-        qr_image = Image(qr_buffer, width=30*mm, height=30*mm)
+        qr_buffer = create_qr_code(lot.lot_number, 20)
+        qr_image = Image(qr_buffer, width=20*mm, height=20*mm)
 
         # QRコードとタイトルを並べて配置
-        header_table = Table([[qr_image, "QRコード: " + lot.lot_number[:20] + ("..." if len(lot.lot_number) > 20 else "")]],
-                           colWidths=[35*mm, 120*mm])
+        header_table = Table([[qr_image, "LOT: " + lot.lot_number[:15] + ("..." if len(lot.lot_number) > 15 else "")]],
+                           colWidths=[22*mm, 68*mm])
         header_table.setStyle(TableStyle([
             ('FONT', (1, 0), (1, 0), 'HeiseiKakuGo-W5'),
-            ('FONTSIZE', (1, 0), (1, 0), 10),
+            ('FONTSIZE', (1, 0), (1, 0), 8),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('ALIGN', (1, 0), (1, 0), 'LEFT'),
         ]))
 
         story.append(header_table)
-        story.append(Spacer(1, 10*mm))
+        story.append(Spacer(1, 5*mm))
 
         # 重量計算（1本あたり）
         if material.shape.value == "round":
@@ -427,7 +373,7 @@ def create_standard_lot_tag(buffer: BytesIO, lot, material, copies: int):
 
         weight_per_piece_kg = (volume_cm3 * material.current_density) / 1000
 
-        # メイン情報テーブル
+        # メイン情報テーブル（A6用に最適化）
         data = [
             ["ロット番号", lot.lot_number],
             ["材質", material.display_name],
@@ -436,16 +382,16 @@ def create_standard_lot_tag(buffer: BytesIO, lot, material, copies: int):
             ["数量", f"{(lot.initial_quantity or 0)}本"],
             ["重量(初期)", f"{lot.initial_weight_kg:.3f}kg" if lot.initial_weight_kg else "-"],
             ["単重", f"{weight_per_piece_kg:.3f}kg/本"],
-            ["仕入先", lot.supplier or "未登録"],
-            ["入荷日", lot.received_date.strftime("%Y/%m/%d") if lot.received_date else "未登録"],
-            ["作成日時", lot.created_at.strftime("%Y/%m/%d %H:%M")],
-            ["印刷日時", datetime.now().strftime("%Y/%m/%d %H:%M")]
+            ["仕入先", lot.supplier or "-"],
+            ["入荷日", lot.received_date.strftime("%Y/%m/%d") if lot.received_date else "-"],
+            ["作成日", lot.created_at.strftime("%m/%d %H:%M")],
+            ["印刷日", datetime.now().strftime("%m/%d %H:%M")]
         ]
 
-        table = Table(data, colWidths=[45*mm, 110*mm])
+        table = Table(data, colWidths=[25*mm, 65*mm])
         table.setStyle(TableStyle([
             ('FONT', (0, 0), (-1, -1), 'HeiseiKakuGo-W5'),
-            ('FONTSIZE', (0, 0), (-1, -1), 12),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
@@ -453,7 +399,7 @@ def create_standard_lot_tag(buffer: BytesIO, lot, material, copies: int):
         ]))
 
         story.append(table)
-        story.append(Spacer(1, 10*mm))
+        story.append(Spacer(1, 5*mm))
 
         # 備考欄
         if lot.notes:
@@ -461,59 +407,9 @@ def create_standard_lot_tag(buffer: BytesIO, lot, material, copies: int):
             story.append(Paragraph(lot.notes, jp_style))
 
         if copy_num < copies - 1:
-            story.append(Spacer(1, 30*mm))
+            story.append(Spacer(1, 10*mm))
 
     doc.build(story)
-
-def create_small_lot_tag(buffer: BytesIO, lot, material, copies: int):
-    """小型現品票（50×30mm）作成"""
-    page_width = 50 * mm
-    page_height = 30 * mm
-
-    c = canvas.Canvas(buffer, pagesize=(page_width, page_height))
-
-    for copy_num in range(copies):
-        if copy_num > 0:
-            c.showPage()
-
-        # QRコード（15mm角）
-        qr_buffer = create_qr_code(lot.lot_number, 15)
-        c.drawImage(qr_buffer, 2*mm, 12*mm, width=15*mm, height=15*mm)
-
-        # タイトル
-        c.setFont('HeiseiKakuGo-W5', 7)
-        c.drawString(20*mm, 26*mm, "現品票")
-
-        # テキスト情報（右側）
-        c.setFont('HeiseiKakuGo-W5', 5)
-
-        # 材質・形状
-        c.drawString(20*mm, 22*mm, f"{material.display_name}")
-        c.drawString(20*mm, 19*mm, f"{get_shape_name(material.shape.value)}")
-
-        # 寸法・長さ
-        if material.shape.value == "round":
-            size_text = f"φ{material.diameter_mm}"
-        else:
-            size_text = f"{material.diameter_mm}□"
-        c.drawString(20*mm, 16*mm, size_text)
-        c.drawString(20*mm, 13*mm, f"L{lot.length_mm}")
-
-        # ロット番号（下部）
-        c.setFont('HeiseiKakuGo-W5', 4)
-        lot_short = lot.lot_number[:12] + "..." if len(lot.lot_number) > 12 else lot.lot_number
-        c.drawString(2*mm, 8*mm, lot_short)
-
-        # 仕入先・印刷日
-        c.drawString(2*mm, 5*mm, lot.supplier[:8] + "..." if lot.supplier and len(lot.supplier) > 8 else lot.supplier or "")
-        c.drawString(2*mm, 2*mm, datetime.now().strftime("%m/%d"))
-
-        # 数量・重量（初期）
-        c.setFont('HeiseiKakuGo-W5', 4)
-        c.drawString(20*mm, 10*mm, f"数量 {(lot.initial_quantity or 0)}本")
-        c.drawString(20*mm, 7*mm, f"重量 {lot.initial_weight_kg:.3f}kg" if lot.initial_weight_kg else "重量 -")
-
-    c.save()
 
 @router.get("/lot-preview/{lot_id}")
 async def preview_lot_tag(lot_id: int, db: Session = Depends(get_db)):

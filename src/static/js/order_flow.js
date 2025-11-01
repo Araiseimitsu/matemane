@@ -1435,58 +1435,55 @@ async function loadInspectionItemsList(page = 1) {
     empty.classList.add('hidden');
 
     try {
-        // 入庫済みアイテムを取得（limit=1000で取得）
-        const response = await fetch('/api/inventory/?skip=0&limit=1000&is_active=true&has_stock=true');
+        // 検品待ちのロットを取得
+        const response = await fetch('/api/inspections/lots/pending/');
         if (!response.ok) {
             throw new Error(`API error: ${response.status}`);
         }
 
-        const items = await response.json();
+        const lots = await response.json();
 
-        console.log('取得したアイテム数:', items.length); // デバッグ用
-        console.log('最初のアイテムのデータ構造:', items[0]); // デバッグ用
+        console.log('取得したロット数:', lots.length); // デバッグ用
+        console.log('最初のロットのデータ構造:', lots[0]); // デバッグ用
 
         loading.classList.add('hidden');
 
-        // 入庫済み（lot情報あり）のアイテムのみフィルタ
-        const validItems = Array.isArray(items)
-            ? items.filter(item => {
-                const hasLot = item.lot && item.lot.id && item.lot.lot_number;
-
-                if (!hasLot) {
-                    console.warn('ロット情報がないアイテム:', item.id, item);
-                }
-
-                return hasLot;
-            })
-            : [];
-
-        // 検品「合格」済みは選択一覧から除外
-        const filteredItems = validItems.filter(item => {
-            const status = (item?.lot?.inspection_status || 'pending').toLowerCase();
-            return status !== 'passed';
-        });
-
-        console.log('有効なアイテム数:', validItems.length); // デバッグ用
-        console.log('選択対象アイテム数（合格除外後）:', filteredItems.length); // デバッグ用
-
-        if (filteredItems.length === 0) {
+        if (!Array.isArray(lots) || lots.length === 0) {
             empty.classList.remove('hidden');
             inspectionAllItems = [];
             return;
         }
 
-        // 全アイテムを保存（合格済み除外後）
-        inspectionAllItems = filteredItems;
+        // ロットデータを検品アイテム形式に変換
+        const convertedItems = lots.map(lot => ({
+            id: lot.id,
+            management_code: lot.lot_number,
+            material: lot.material,
+            lot: {
+                id: lot.id,
+                lot_number: lot.lot_number,
+                inspection_status: lot.inspection_status,
+                initial_weight_kg: lot.initial_weight_kg,
+                notes: lot.notes,
+                order_number: lot.purchase_order?.order_number
+            },
+            total_weight_kg: lot.initial_weight_kg,
+            current_quantity: lot.initial_quantity
+        }));
+
+        console.log('変換後アイテム数:', convertedItems.length); // デバッグ用
+
+        // 全アイテムを保存
+        inspectionAllItems = convertedItems;
 
         // フィルタを適用してレンダリング（クライアントサイド）
         renderInspectionItemsList(page);
 
     } catch (error) {
         loading.classList.add('hidden');
-        console.error('入庫済みアイテム読み込みエラー:', error);
+        console.error('検品待ちロット読み込みエラー:', error);
         if (typeof showToast === 'function') {
-            showToast('入庫済みアイテムの読み込みに失敗しました: ' + error.message, 'error');
+            showToast('検品待ちロットの読み込みに失敗しました: ' + error.message, 'error');
         }
     }
 }
@@ -1649,7 +1646,7 @@ async function loadInspectionTargetByCode() {
     }
 
     try {
-        const res = await fetch(`/api/inventory/search/${encodeURIComponent(lotNumber)}`);
+        const res = await fetch(`/api/inspections/lots/search/${encodeURIComponent(lotNumber)}`);
         console.log('API応答ステータス:', res.status); // デバッグ
 
         if (!res.ok) {
@@ -1897,36 +1894,23 @@ async function submitInspection(event) {
     }
 
     const payload = {
-        inspection_status: inspectionStatus,
-        inspected_at: inspectedAtStr ? new Date(inspectedAtStr).toISOString() : new Date().toISOString(),
+        inspection_date: inspectedAtStr ? new Date(inspectedAtStr) : new Date(),
         bending_ok: bendingOk,
+        inspector_name: inspectedBy || '',
+        notes: notes || '',
         scratch_ok: scratchOk,
         dirt_ok: dirtOk,
-        inspection_judgement: judgementVal || null,
-        dim1_left_max: dim1LeftMax,
-        dim1_left_min: dim1LeftMin,
-        dim1_center_max: dim1CenterMax,
-        dim1_center_min: dim1CenterMin,
-        dim1_right_max: dim1RightMax,
-        dim1_right_min: dim1RightMin,
-        dim2_left_max: dim2LeftMax,
-        dim2_left_min: dim2LeftMin,
-        dim2_center_max: dim2CenterMax,
-        dim2_center_min: dim2CenterMin,
-        dim2_right_max: dim2RightMax,
-        dim2_right_min: dim2RightMin,
-        inspected_by_name: inspectedBy || null,
-        inspection_notes: notes || null
+        inspection_judgement: judgementVal || null
     };
 
     console.log('検品データペイロード:', payload); // デバッグ
 
     try {
-        const url = `/api/inventory/lots/${currentInspectionLotId}/inspection/`;
+        const url = `/api/inspections/lots/${currentInspectionLotId}/`;
         console.log('検品API URL:', url); // デバッグ
 
         const res = await fetch(url, {
-            method: 'PUT',
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
@@ -2201,7 +2185,8 @@ async function executePrintLotNumber() {
         return;
     }
 
-    const labelType = document.getElementById('printLabelType')?.value || 'standard';
+    // A6用紙に固定
+    const labelType = 'a6';
     const copies = parseInt(document.getElementById('printCopies')?.value || '1');
 
     try {
@@ -2413,13 +2398,14 @@ function addLotRow(defaultQuantity = null, defaultWeight = null, defaultLotNumbe
                        placeholder="例: L001"${lotNumberValue}>
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-700 mb-1">入庫数量（本・参考）</label>
+                <label class="block text-xs font-medium text-gray-700 mb-1">入庫数量（本） *</label>
                 <input type="number" name="lot_quantity_${counter}" min="1" step="1"
                        class="lot-quantity-input w-full p-2 border border-gray-300 rounded text-sm"
-                       placeholder="本数（参考）"
+                       placeholder="本数（必須）"
                        data-lot-id="${counter}"${quantityValue}
+                       required
                        oninput="onLotQuantityChange(${counter})">
-                <p class="text-xs text-gray-500 mt-1">重量を必ず入力してください</p>
+                <p class="text-xs text-gray-500 mt-1">本数と重量の両方を必ず入力してください</p>
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">入庫重量（kg） *</label>
@@ -2427,8 +2413,9 @@ function addLotRow(defaultQuantity = null, defaultWeight = null, defaultLotNumbe
                        class="lot-weight-input w-full p-2 border border-gray-300 rounded text-sm"
                        placeholder="重量（必須）"
                        data-lot-id="${counter}"${weightValue}
+                       required
                        oninput="onLotWeightChange(${counter})">
-                <p class="text-xs text-gray-500 mt-1">重量は必須。本数は切り捨て自動計算。</p>
+                <p class="text-xs text-gray-500 mt-1">重量は必須。本数も必須です。</p>
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">置き場</label>
