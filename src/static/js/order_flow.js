@@ -916,6 +916,16 @@ function hideReceiveModal() {
 
     // 発注数量をリセット
     currentOrderedQuantity = 0;
+
+    // 二重送信防止フラグをリセット
+    isSubmittingReceive = false;
+
+    // 送信ボタンの状態をリセット
+    const submitButton = document.querySelector('#receiveForm button[type="submit"]');
+    if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.innerHTML = '入庫確定';
+    }
 }
 
 // 購入月の自動設定
@@ -1052,14 +1062,34 @@ async function loadDensityPresets() {
     }
 }
 
+// 送信中フラグ（二重送信防止用）
+let isSubmittingReceive = false;
+
 async function handleReceive(event) {
     event.preventDefault();
 
-    const formData = new FormData(event.target);
-    const itemId = formData.get('item_id');
+    // 二重送信防止：送信中の場合は処理をスキップ
+    if (isSubmittingReceive) {
+        console.log('入庫確認処理中のため、重複送信を防止しました');
+        return;
+    }
 
-    // 再編集フラグ（既存ロットの更新時はPUTを使用）
-    const isEdit = (formData.get('is_edit') || '') === 'true';
+    // 送信ボタンを取得して無効化
+    const submitButton = event.target.querySelector('button[type="submit"]');
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>処理中...';
+    }
+
+    // 送信中フラグを設定
+    isSubmittingReceive = true;
+
+    try {
+        const formData = new FormData(event.target);
+        const itemId = formData.get('item_id');
+
+        // 再編集フラグ（既存ロットの更新時はPUTを使用）
+        const isEdit = (formData.get('is_edit') || '') === 'true';
 
     // 既存のロット番号リストを取得
     const removedLotNumbers = [];
@@ -1322,6 +1352,21 @@ async function handleReceive(event) {
         console.error('入庫確認エラー:', error);
         if (typeof showToast === 'function') {
             showToast(error.message || '入庫確認に失敗しました', 'error');
+        }
+    }
+    } catch (error) {
+        // 外側のtryブロックでのエラー処理
+        console.error('入庫確認処理エラー:', error);
+        if (typeof showToast === 'function') {
+            showToast(error.message || '入庫確認処理に失敗しました', 'error');
+        }
+    } finally {
+        // 必ずボタンの状態をリセット（成功・失敗・バリデーションエラー問わず）
+        isSubmittingReceive = false;
+
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.innerHTML = '入庫確定';
         }
     }
 }
