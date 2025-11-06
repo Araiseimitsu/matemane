@@ -3137,6 +3137,18 @@ async function loadProcessingItems() {
 
             const disabledAttr = isCompleted ? 'disabled' : '';
             const disabledClass = isCompleted ? 'bg-gray-100 cursor-not-allowed' : '';
+            const rawFreeText = row.free_text ?? '';
+            const hasFreeText = rawFreeText.trim().length > 0;
+            const rawInstruction = row.processing_instruction ?? '';
+            const instructionValue = hasFreeText ? '' : rawInstruction;
+            const optionList = PROCESSING_OPTIONS.slice();
+            if (instructionValue && !optionList.includes(instructionValue)) {
+                optionList.push(instructionValue);
+            }
+            const optionsHtml = [
+                `<option value="" ${instructionValue === '' ? 'selected' : ''}>未入力</option>`,
+                ...optionList.map(opt => `<option value="${opt}" ${instructionValue === opt ? 'selected' : ''}>${opt}</option>`)
+            ].join('');
 
             tr.innerHTML = `
                 <td class="px-3 py-2">${row.order_number || ''}</td>
@@ -3147,12 +3159,12 @@ async function loadProcessingItems() {
                 <td class="px-3 py-2">${row.machine_no || '-'}</td>
                 <td class="px-3 py-2">
                     <select id="${selectId}" class="border rounded px-2 py-1 text-sm ${disabledClass}" ${disabledAttr}>
-                        ${PROCESSING_OPTIONS.map(opt => `<option value="${opt}" ${row.processing_instruction===opt?'selected':''}>${opt}</option>`).join('')}
+                        ${optionsHtml}
                     </select>
                 </td>
                 <td class="px-3 py-2">
                     <input id="${notesId}" type="text" class="border rounded px-2 py-1 text-sm w-56 ${disabledClass}"
-                           placeholder="自由入力" value="${row.free_text ?? ''}" ${disabledAttr}>
+                           placeholder="自由入力" value="${rawFreeText}" ${disabledAttr}>
                 </td>
                 <td class="px-3 py-2">
                     <input id="${workerId}" type="text" class="border rounded px-2 py-1 text-sm w-40 ${disabledClass}"
@@ -3173,6 +3185,33 @@ async function loadProcessingItems() {
             const workerEl = document.getElementById(workerId);
             const saveEl   = document.getElementById(saveId);
             const actionEl = document.getElementById(actionId);
+
+            let syncNotesState = () => {};
+            if (selectEl && notesEl) {
+                syncNotesState = (clearOnSelect = false) => {
+                    const hasSelection = selectEl.value !== '';
+                    if (hasSelection) {
+                        if (clearOnSelect) {
+                            notesEl.value = '';
+                        }
+                        notesEl.disabled = true;
+                        notesEl.classList.add('bg-gray-100', 'cursor-not-allowed');
+                    } else if (!selectEl.disabled) {
+                        notesEl.disabled = false;
+                        notesEl.classList.remove('bg-gray-100', 'cursor-not-allowed');
+                    }
+                };
+
+                syncNotesState();
+
+                selectEl.addEventListener('change', () => syncNotesState(true));
+                notesEl.addEventListener('input', () => {
+                    if (notesEl.value.trim() !== '' && selectEl.value !== '') {
+                        selectEl.value = '';
+                    }
+                    syncNotesState();
+                });
+            }
 
             saveEl.addEventListener('click', async () => {
                 if (isCompleted) return;
@@ -3205,6 +3244,8 @@ async function loadProcessingItems() {
                     workerEl.disabled = false;
                     workerEl.classList.remove('bg-gray-100', 'cursor-not-allowed');
                     saveEl.disabled = false;
+
+                    syncNotesState();
                     
                     actionEl.textContent = '完了';
                     actionEl.classList.remove('bg-amber-600', 'hover:bg-amber-700');
