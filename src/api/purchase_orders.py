@@ -7,6 +7,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from datetime import datetime, date
 import re
+import logging
 
 from src.db import get_db
 from src.db.models import (
@@ -86,6 +87,11 @@ class PurchaseOrderItemResponse(BaseModel):
     purchase_order_id: int
     created_at: datetime
     updated_at: datetime
+
+    # セット予定表からのデータ
+    kanri_no: Optional[str] = None
+    set_scheduled_date: Optional[datetime] = None
+    machine_no: Optional[str] = None
 
     # 検品ステータス（フロントエンドのN+1問題解消用）
     inspection_status: Optional[str] = None
@@ -1061,3 +1067,295 @@ async def delete_purchase_order(
         "order_id": order_id,
         "order_number": order.order_number
     }
+
+
+@router.post("/import-schedule/")
+async def import_schedule(
+    dry_run: bool = False,
+    db: Session = Depends(get_db)
+):
+    """
+    セット予定表.xlsxからセット予定日と機械NOを読み込む
+    材料管理.xlsxの管理NOと突き合わせてデータを保存
+    """
+    import pandas as pd
+    from pathlib import Path
+    import logging
+    import re
+
+    logger = logging.getLogger(__name__)
+
+    try:
+        # Excelファイルのパスを取得（ネットワーク共有フォルダ）
+        excel_path = Path(r"\\192.168.1.200\共有\生産管理課\セット予定表.xlsx")
+        
+        if not excel_path.exists():
+            raise HTTPException(
+                status_code=404,
+                detail=f"セット予定表.xlsxが見つかりません: {excel_path}"
+            )
+        
+        # Excelファイルを読み込む
+        df = pd.read_excel(excel_path, sheet_name="セット予定", engine="openpyxl")
+        
+        # 必要な列の存在確認
+        required_columns = ["管理NO", "セット予定日", "機械NO"]
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            raise HTTPException(
+                status_code=400,
+                detail=f"必要な列が見つかりません: {', '.join(missing_columns)}"
+            )
+        
+        # NaNを除外してデータを整形
+        df = df.dropna(subset=["管理NO"])
+        
+        results = {
+            "total": len(df),
+            "updated": 0,
+            "skipped": 0,
+            "errors": []
+        }
+        
+        def normalize_management_no(raw_value):
+            if raw_value is None:
+                return None
+            if isinstance(raw_value, str):
+                s = raw_value.strip()
+                if not s or s.lower() in {"nan", "none", "null"}:
+                    return None
+                if s in {"仮", "-", "－", "—"}:
+                    return None
+                if re.fullmatch(r"\d+\.0+", s):
+                    s = s.split(".")[0]
+                return s
+            if pd.isna(raw_value):
+                return None
+            if isinstance(raw_value, (int,)):
+                return str(raw_value)
+            if isinstance(raw_value, float):
+                if pd.isna(raw_value):
+                    return None
+                if raw_value.is_integer():
+                    return str(int(raw_value))
+                return str(raw_value).rstrip("0").rstrip(".")
+            return str(raw_value).strip()
+
+        for idx, row in df.iterrows():
+            try:
+                raw_kanri_no = row["管理NO"]
+                kanri_no = normalize_management_no(raw_kanri_no)
+                if not kanri_no:
+                    results["skipped"] += 1
+                    results["errors"].append(f"行{idx+2}: 管理NOが無効のためスキップ ({raw_kanri_no})")
+                    continue
+                set_scheduled_date = row.get("セット予定日")
+                machine_no = row.get("機械NO")
+                
+                # 対応する発注アイテムを検索
+                alternatives = {kanri_no}
+                if kanri_no.isdigit():
+                    alternatives.add(f"{kanri_no}.0")
+
+                order_item = db.query(PurchaseOrderItem).filter(
+                    PurchaseOrderItem.kanri_no.in_(list(alternatives))
+                ).first()
+                
+                if not order_item:
+                    results["skipped"] += 1
+                    results["errors"].append(f"行{idx+2}: 管理NO '{kanri_no}' に対応する発注が見つかりません")
+                    continue
+                
+                if dry_run:
+                    results["updated"] += 1
+                    logger.info(f"DRY-RUN: 更新予定 - 管理NO={kanri_no}, セット予定日={set_scheduled_date}, 機械NO={machine_no}")
+                    continue
+                
+                # セット予定日の処理
+                if pd.notna(set_scheduled_date):
+                    if isinstance(set_scheduled_date, datetime):
+                        order_item.set_scheduled_date = set_scheduled_date
+                    else:
+                        # 文字列の場合はパース
+                        try:
+                            parsed_date = pd.to_datetime(set_scheduled_date)
+                            order_item.set_scheduled_date = parsed_date
+                        except Exception as e:
+                            results["errors"].append(f"行{idx+2}: セット予定日の形式が不正です - {str(e)}")
+                            results["skipped"] += 1
+                            continue
+                
+                # 機械NOの処理
+                if pd.notna(machine_no):
+                    order_item.machine_no = str(machine_no).strip()
+                
+                results["updated"] += 1
+                logger.info(f"更新: 管理NO={kanri_no}, セット予定日={order_item.set_scheduled_date}, 機械NO={order_item.machine_no}")
+                
+            except Exception as e:
+                results["errors"].append(f"行{idx+2}: {str(e)}")
+                results["skipped"] += 1
+                logger.error(f"行{idx+2}処理中にエラー: {str(e)}")
+        
+        if not dry_run:
+            db.commit()
+        
+        return {
+            "success": True,
+            "dry_run": dry_run,
+            "results": results,
+            "message": f"{'検証完了' if dry_run else '取り込み完了'}: {results['updated']}件更新, {results['skipped']}件スキップ"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"セット予定表取り込みエラー: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/processing-items/")
+async def get_processing_items(
+    show_completed: bool = False,
+    db: Session = Depends(get_db)
+):
+    """
+    処理タブ用のアイテム一覧を取得
+    検品完了済みで処理待ちまたは処理中のアイテムを返す
+    """
+    try:
+        # Itemテーブルから処理関連情報を取得
+        query = db.query(Item).join(Lot).join(PurchaseOrderItem).join(PurchaseOrder)
+        
+        # 検品完了済みのみ表示
+        query = query.filter(Lot.inspection_status == InspectionStatus.PASSED)
+        
+        # 完了フラグによるフィルタ
+        if not show_completed:
+            query = query.filter(Item.processing_completed == False)
+        
+        items = query.order_by(Item.created_at.desc()).all()
+        
+        result_items = []
+        for item in items:
+            lot = item.lot
+            po_item = lot.purchase_order_item
+            po = po_item.purchase_order
+            
+            result_items.append({
+                "id": item.id,
+                "order_number": po.order_number,
+                "lot_number": lot.lot_number,
+                "material_name": po_item.item_name,
+                "quantity": item.current_quantity,
+                "set_scheduled_date": po_item.set_scheduled_date.strftime("%Y-%m-%d") if po_item.set_scheduled_date else None,
+                "machine_no": po_item.machine_no,
+                "processing_instruction": item.processing_instruction,
+                "free_text": item.processing_notes,
+                "processed_by": item.processing_worker,
+                "is_completed": item.processing_completed,
+                "completed_at": item.processing_completed_at.strftime("%Y-%m-%d %H:%M") if item.processing_completed_at else None
+            })
+        
+        return {
+            "items": result_items,
+            "total": len(result_items)
+        }
+        
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"処理アイテム取得エラー: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/processing-items/{item_id}")
+async def update_processing_item(
+    item_id: int,
+    instruction: Optional[str] = None,
+    free_text: Optional[str] = None,
+    worker: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    処理アイテムの情報を更新
+    """
+    try:
+        item = db.query(Item).filter(Item.id == item_id).first()
+        
+        if not item:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="アイテムが見つかりません"
+            )
+        
+        if instruction is not None:
+            item.processing_instruction = instruction
+        
+        if free_text is not None:
+            item.processing_notes = free_text
+        
+        if worker is not None:
+            item.processing_worker = worker
+        
+        db.commit()
+        db.refresh(item)
+        
+        return {
+            "success": True,
+            "message": "処理情報を更新しました",
+            "item_id": item_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger = logging.getLogger(__name__)
+        logger.error(f"処理アイテム更新エラー: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/processing-items/{item_id}/complete")
+async def mark_processing_complete(
+    item_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    処理を完了としてマーク
+    """
+    try:
+        item = db.query(Item).filter(Item.id == item_id).first()
+        
+        if not item:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="アイテムが見つかりません"
+            )
+        
+        if item.processing_completed:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="既に処理完了しています"
+            )
+        
+        item.processing_completed = True
+        item.processing_completed_at = datetime.now()
+        
+        db.commit()
+        db.refresh(item)
+        
+        return {
+            "success": True,
+            "message": "処理を完了しました",
+            "item_id": item_id,
+            "completed_at": item.processing_completed_at.strftime("%Y-%m-%d %H:%M")
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger = logging.getLogger(__name__)
+        logger.error(f"処理完了エラー: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))

@@ -273,6 +273,12 @@ class PurchaseOrderItem(Base):
     unit_price = Column(Float, comment="単価")
     amount = Column(Float, comment="金額（単価 × 数量）")
     status = Column(Enum(PurchaseOrderItemStatus), nullable=False, default=PurchaseOrderItemStatus.PENDING, comment="アイテム状態")
+    
+    # セット予定表からのデータ
+    kanri_no = Column(String(50), nullable=True, index=True, comment="管理NO（材料管理.xlsxから取得）")
+    set_scheduled_date = Column(DateTime(timezone=True), nullable=True, comment="セット予定日（セット予定表.xlsxから取得）")
+    machine_no = Column(String(50), nullable=True, comment="機械NO（セット予定表.xlsxから取得）")
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

@@ -12,6 +12,17 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeProcessingTab();
 });
 
+function formatDateToJP(value) {
+    if (!value) {
+        return '-';
+    }
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+        return value;
+    }
+    return parsed.toLocaleDateString('ja-JP');
+}
+
 function ensureProcessingPanelPlacement() {
     const container = document.getElementById('order-flow-tab-panels');
     const processingPanel = document.getElementById('panel-processing');
@@ -137,6 +148,100 @@ function initializeImportTab() {
             btn.innerHTML = originalText;
         }
     });
+
+    // セット予定表取り込みボタン
+    const scheduleBtn = document.getElementById('runScheduleImportBtn');
+    if (scheduleBtn) {
+        scheduleBtn.addEventListener('click', async function () {
+            const originalText = scheduleBtn.innerHTML;
+            scheduleBtn.disabled = true;
+            scheduleBtn.classList.add('opacity-50');
+            scheduleBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> 実行中...';
+
+            try {
+                const dryRunToggle = document.getElementById('scheduleDryRunToggle');
+                const isDryRun = dryRunToggle ? !!dryRunToggle.checked : true;
+
+                if (!isDryRun) {
+                    const ok = confirm('セット予定表からデータを取り込みます。よろしいですか？');
+                    if (!ok) {
+                        scheduleBtn.disabled = false;
+                        scheduleBtn.classList.remove('opacity-50');
+                        scheduleBtn.innerHTML = originalText;
+                        return;
+                    }
+                }
+
+                const res = await fetch(
+                    `/api/purchase-orders/import-schedule/?dry_run=${isDryRun}`,
+                    { method: 'POST' }
+                );
+                const data = await res.json();
+                if (!res.ok) throw new Error(data?.detail || 'APIエラー');
+
+                const r = data?.results || {};
+                const modeLabel = isDryRun ? 'DRY-RUN完了' : '取り込み完了';
+
+                // 結果表示エリアに表示
+                const resultArea = document.getElementById('scheduleImportResultArea');
+                const resultContent = document.getElementById('scheduleImportResultContent');
+                if (resultArea && resultContent) {
+                    resultArea.classList.remove('hidden');
+                    let errorHtml = '';
+                    if (r.errors && r.errors.length > 0) {
+                        errorHtml = `
+                            <div class="mt-3 p-3 bg-warning-amber bg-opacity-10 rounded">
+                                <p class="font-medium text-warning-amber mb-2">エラー・警告:</p>
+                                <ul class="list-disc list-inside text-xs space-y-1">
+                                    ${r.errors.map(err => `<li>${err}</li>`).join('')}
+                                </ul>
+                            </div>
+                        `;
+                    }
+                    resultContent.innerHTML = `
+                        <div class="space-y-2">
+                            <p class="font-medium text-success-green">
+                                <i class="fas fa-check-circle mr-2"></i>${data.message}
+                            </p>
+                            <div class="text-sm space-y-1">
+                                <p>総件数: ${r.total}件</p>
+                                <p>更新: ${r.updated}件</p>
+                                <p>スキップ: ${r.skipped}件</p>
+                            </div>
+                            ${errorHtml}
+                        </div>
+                    `;
+                }
+
+                if (typeof showToast === 'function') {
+                    showToast(data.message, 'success');
+                    if (!isDryRun) {
+                        // 実行時は処理タブに切り替えつつ一覧を更新
+                        setTimeout(() => {
+                            document.getElementById('tab-processing')?.click();
+                            try { loadProcessingItems(); } catch (e) { console.warn('loadProcessingItems error', e); }
+                            try { loadReceivingItems(); } catch (e) { console.warn('loadReceivingItems error', e); }
+                        }, 1000);
+                    }
+                } else {
+                    alert(data.message);
+                }
+                console.log('セット予定表取り込み結果', r);
+            } catch (e) {
+                const msg = `セット予定表取り込みに失敗: ${e?.message || e}`;
+                if (typeof showToast === 'function') {
+                    showToast(msg, 'error');
+                } else {
+                    alert(msg);
+                }
+                console.error(e);
+            } finally {
+                scheduleBtn.disabled = false;
+                scheduleBtn.classList.remove('opacity-50');
+                scheduleBtn.innerHTML = originalText;
+            }
+        });
+    }
 }
 
 // ==== 発注一覧タブ ====
@@ -589,8 +694,10 @@ function createReceivingItemRow(item) {
         <td class="px-4 py-3 text-sm text-gray-600">${supplier}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${orderDate}</td>
         <td class="px-4 py-3 text-sm text-gray-600">${expectedDate}</td>
-        <td class="px-4 py-3 text-sm text-gray-600">${item.item_name}</td>
-        <td class="px-4 py-3 text-sm text-gray-600">${getOrderDisplayText(item)}</td>
+    <td class="px-4 py-3 text-sm text-gray-600">${item.item_name}</td>
+    <td class="px-4 py-3 text-sm text-gray-600">${getOrderDisplayText(item)}</td>
+    <td class="px-4 py-3 text-sm text-gray-600">${formatDateToJP(item.set_scheduled_date)}</td>
+        <td class="px-4 py-3 text-sm text-gray-600">${item.machine_no || '-'}</td>
         <td class="px-4 py-3">
             <span class="px-2 py-1 rounded-full text-xs font-medium ${inspectionClass}">${inspectionText}</span>
         </td>
@@ -2993,31 +3100,32 @@ function initializeProcessingTab() {
 async function loadProcessingItems() {
     const tbody = document.getElementById('processingItemsTableBody');
     if (!tbody) return;
-    tbody.innerHTML = '<tr><td class="px-3 py-2 text-gray-500" colspan="9">読み込み中...</td></tr>';
+    tbody.innerHTML = '<tr><td class="px-3 py-2 text-gray-500" colspan="11">読み込み中...</td></tr>';
     
     const showCompleted = document.getElementById('showCompletedProcessing')?.checked || false;
-    const url = `/api/inventory/items/received-by-order/?include_completed=${showCompleted}`;
+    const url = `/api/purchase-orders/processing-items/?show_completed=${showCompleted}`;
     
     try {
         const resp = await fetch(url, { method: 'GET' });
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const items = await resp.json();
+        const data = await resp.json();
+        const items = data.items || [];
         tbody.innerHTML = '';
         
         if (items.length === 0) {
-            tbody.innerHTML = '<tr><td class="px-3 py-2 text-gray-500 text-center" colspan="9">データがありません</td></tr>';
+            tbody.innerHTML = '<tr><td class="px-3 py-2 text-gray-500 text-center" colspan="11">データがありません</td></tr>';
             return;
         }
         
         for (const row of items) {
             const tr = document.createElement('tr');
-            const isCompleted = row.processing_completed;
+            const isCompleted = row.is_completed;
             
-            const selectId = `proc-select-${row.item_id}`;
-            const notesId  = `proc-notes-${row.item_id}`;
-            const workerId = `proc-worker-${row.item_id}`;
-            const saveId   = `proc-save-${row.item_id}`;
-            const actionId = `proc-action-${row.item_id}`;
+            const selectId = `proc-select-${row.id}`;
+            const notesId  = `proc-notes-${row.id}`;
+            const workerId = `proc-worker-${row.id}`;
+            const saveId   = `proc-save-${row.id}`;
+            const actionId = `proc-action-${row.id}`;
 
             const statusBadge = isCompleted 
                 ? '<span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">完了</span>'
@@ -3033,8 +3141,10 @@ async function loadProcessingItems() {
             tr.innerHTML = `
                 <td class="px-3 py-2">${row.order_number || ''}</td>
                 <td class="px-3 py-2">${row.lot_number || row.lot_id}</td>
-                <td class="px-3 py-2">${row.item_name || ''}</td>
-                <td class="px-3 py-2 text-right">${row.current_quantity ?? 0}</td>
+                <td class="px-3 py-2">${row.material_name || ''}</td>
+                <td class="px-3 py-2 text-right">${row.quantity ?? 0}</td>
+                <td class="px-3 py-2">${formatDateToJP(row.set_scheduled_date)}</td>
+                <td class="px-3 py-2">${row.machine_no || '-'}</td>
                 <td class="px-3 py-2">
                     <select id="${selectId}" class="border rounded px-2 py-1 text-sm ${disabledClass}" ${disabledAttr}>
                         ${PROCESSING_OPTIONS.map(opt => `<option value="${opt}" ${row.processing_instruction===opt?'selected':''}>${opt}</option>`).join('')}
@@ -3042,11 +3152,11 @@ async function loadProcessingItems() {
                 </td>
                 <td class="px-3 py-2">
                     <input id="${notesId}" type="text" class="border rounded px-2 py-1 text-sm w-56 ${disabledClass}"
-                           placeholder="自由入力" value="${row.processing_notes ?? ''}" ${disabledAttr}>
+                           placeholder="自由入力" value="${row.free_text ?? ''}" ${disabledAttr}>
                 </td>
                 <td class="px-3 py-2">
                     <input id="${workerId}" type="text" class="border rounded px-2 py-1 text-sm w-40 ${disabledClass}"
-                           placeholder="作業者" value="${row.processing_worker ?? ''}" autocomplete="on" ${disabledAttr}>
+                           placeholder="作業者" value="${row.processed_by ?? ''}" autocomplete="on" ${disabledAttr}>
                 </td>
                 <td class="px-3 py-2 text-center">${statusBadge}</td>
                 <td class="px-3 py-2 text-center">
@@ -3069,16 +3179,8 @@ async function loadProcessingItems() {
                 saveEl.disabled = true;
                 saveEl.textContent = '保存中...';
                 try {
-                    const payload = {
-                        processing_instruction: selectEl.value,
-                        processing_notes: notesEl.value || null,
-                        processing_worker: workerEl.value || null,
-                        processing_completed: false
-                    };
-                    const resp = await fetch(`/api/inventory/items/${row.item_id}/processing/`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
+                    const resp = await fetch(`/api/purchase-orders/processing-items/${row.id}?instruction=${encodeURIComponent(selectEl.value)}&free_text=${encodeURIComponent(notesEl.value || '')}&worker=${encodeURIComponent(workerEl.value || '')}`, {
+                        method: 'PUT'
                     });
                     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
                     if (typeof showToast === 'function') {
@@ -3109,29 +3211,11 @@ async function loadProcessingItems() {
                     actionEl.classList.add('bg-blue-600', 'hover:bg-blue-700');
                     
                     // 状態バッジを未完了に変更
-                    const statusCell = tr.cells[7];
+                    const statusCell = tr.cells[9];
                     statusCell.innerHTML = '<span class="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium">未完了</span>';
                     
-                    // 完了フラグを戻す
-                    try {
-                        const payload = {
-                            processing_instruction: selectEl.value,
-                            processing_notes: notesEl.value || null,
-                            processing_worker: workerEl.value || null,
-                            processing_completed: false
-                        };
-                        const resp = await fetch(`/api/inventory/items/${row.item_id}/processing/`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                        if (typeof showToast === 'function') {
-                            showToast('再編集モードにしました', 'success');
-                        }
-                    } catch (e) {
-                        console.error(e);
-                        alert('再編集モードへの切り替えに失敗しました');
+                    if (typeof showToast === 'function') {
+                        showToast('再編集モードにしました', 'info');
                     }
                 } else {
                     // 完了処理
@@ -3139,16 +3223,8 @@ async function loadProcessingItems() {
                     actionEl.disabled = true;
                     actionEl.textContent = '完了中...';
                     try {
-                        const payload = {
-                            processing_instruction: selectEl.value,
-                            processing_notes: notesEl.value || null,
-                            processing_worker: workerEl.value || null,
-                            processing_completed: true
-                        };
-                        const resp = await fetch(`/api/inventory/items/${row.item_id}/processing/`, {
-                            method: 'PUT',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
+                        const resp = await fetch(`/api/purchase-orders/processing-items/${row.id}/complete`, {
+                            method: 'POST'
                         });
                         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
                         if (typeof showToast === 'function') {
@@ -3172,6 +3248,6 @@ async function loadProcessingItems() {
         }
     } catch (e) {
         console.error(e);
-        tbody.innerHTML = '<tr><td class="px-3 py-2 text-red-600" colspan="9">読み込みに失敗しました</td></tr>';
+        tbody.innerHTML = '<tr><td class="px-3 py-2 text-red-600" colspan="11">読み込みに失敗しました</td></tr>';
     }
 }

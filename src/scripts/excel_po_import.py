@@ -37,10 +37,12 @@ from __future__ import annotations
 
 import argparse
 import logging
+import re
 from datetime import datetime
 from typing import Optional, Dict, Any
 
 import pandas as pd
+from sqlalchemy import or_
 
 from src.db import SessionLocal
 from src.db.models import (
@@ -90,6 +92,31 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
 
     db = SessionLocal()
     try:
+        def normalize_management_no(raw: Any) -> Optional[str]:
+            """管理NO/発注番号の表記ゆれを正規化"""
+            if raw is None:
+                return None
+            if isinstance(raw, str):
+                s = raw.strip()
+                if not s or s.lower() in {"nan", "none"}:
+                    return None
+                # 整数を表す末尾の .0 / .00 を除去
+                if re.fullmatch(r"\d+\.0+", s):
+                    s = s.split(".")[0]
+                return s
+            if pd.isna(raw):
+                return None
+            if isinstance(raw, (int,)):
+                return str(raw)
+            if isinstance(raw, float):
+                if pd.isna(raw):
+                    return None
+                if raw.is_integer():
+                    return str(int(raw))
+                # 想定外の小数はそのまま文字列化
+                return str(raw).rstrip("0").rstrip(".")
+            return str(raw).strip()
+
         def is_blank(val) -> bool:
             if pd.isna(val):
                 return True
@@ -150,7 +177,8 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
                 due = due_series.iloc[idx]
                 supplier = supplier_series.iloc[idx] if not pd.isna(supplier_series.iloc[idx]) else None
                 received = row.iloc[COL_RECEIVED_DATE]
-                order_number = row.iloc[COL_ORDER_NUMBER] if not pd.isna(row.iloc[COL_ORDER_NUMBER]) else None
+                raw_order_number = row.iloc[COL_ORDER_NUMBER] if not pd.isna(row.iloc[COL_ORDER_NUMBER]) else None
+                order_number = normalize_management_no(raw_order_number)
 
                 # 発注数量・単位取得（T/U列）
                 raw_qty = row.iloc[COL_ORDER_QTY] if not pd.isna(row.iloc[COL_ORDER_QTY]) else None
@@ -180,13 +208,18 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
                     logger.warning(f"{idx+1}行: 仕入先が未入力のためスキップ")
                     continue
 
-                if not order_number or str(order_number).strip() == "":
+                if not order_number:
                     skipped += 1
                     logger.warning(f"{idx+1}行: 管理NO(発注番号)が未入力のためスキップ")
                     continue
 
                 # 発注番号重複チェック
-                existing_order = db.query(PurchaseOrder).filter(PurchaseOrder.order_number == str(order_number).strip()).first()
+                existing_order = db.query(PurchaseOrder).filter(
+                    or_(
+                        PurchaseOrder.order_number == order_number,
+                        PurchaseOrder.order_number == f"{order_number}.0"
+                    )
+                ).first()
                 if existing_order:
                     skipped += 1
                     logger.info(f"{idx+1}行: 発注番号重複のためスキップ ({order_number})")
@@ -203,7 +236,7 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
                 # 発注作成（品番は備考に記録）
                 notes_text = f"品番: {item_code}" if item_code else None
                 po = PurchaseOrder(
-                    order_number=str(order_number).strip(),
+                    order_number=order_number,
                     supplier=str(supplier).strip(),
                     order_date=datetime.now(),
                     expected_delivery_date=pd.to_datetime(due) if not pd.isna(due) else None,
@@ -240,6 +273,7 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
                     ordered_quantity=ordered_quantity,
                     ordered_weight_kg=ordered_weight_kg,
                     unit_price=None,
+                    kanri_no=order_number,  # 管理NOを保存
                 )
                 db.add(item)
 

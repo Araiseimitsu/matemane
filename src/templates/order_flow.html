@@ -85,6 +85,34 @@
                     </div>
                 </div>
 
+                <!-- セット予定表取り込みセクション -->
+                <div class="mt-4 border-t border-neutral-200 pt-4">
+                    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-4 space-y-4 lg:space-y-0">
+                        <div>
+                            <h3 class="text-lg font-semibold text-neutral-800">セット予定表取り込み</h3>
+                            <p class="text-sm text-neutral-600 mt-1">セット予定表.xlsx からセット予定日・機械NOを取り込み</p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+                            <label class="flex items-center space-x-2 px-3 py-2 bg-white rounded-lg border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition-all">
+                                <input type="checkbox" id="scheduleDryRunToggle" class="rounded text-primary-blue focus:ring-primary-blue" checked />
+                                <span class="text-sm font-medium text-neutral-700">DRY-RUN（検証のみ）</span>
+                            </label>
+                            <button id="runScheduleImportBtn"
+                                class="bg-success-green text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all flex items-center justify-center">
+                                <i class="fas fa-calendar-alt mr-2"></i>セット予定表取り込み
+                            </button>
+                        </div>
+                    </div>
+                    <div id="scheduleImportResultArea" class="hidden mt-4">
+                        <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
+                            <h3 class="font-semibold text-neutral-800 mb-2 text-sm flex items-center">
+                                <i class="fas fa-check-circle mr-2"></i>実行結果
+                            </h3>
+                            <div id="scheduleImportResultContent" class="text-sm text-neutral-700"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 使い方説明 -->
                 <div class="mt-4 bg-neutral-50 rounded-lg p-4 border border-neutral-200">
                     <h3 class="font-semibold text-neutral-800 mb-3 text-sm flex items-center">
@@ -245,6 +273,8 @@
                                 <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">納期予定</th>
                                 <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">材料仕様</th>
                                 <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">発注数量/重量</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">セット予定日</th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">機械NO</th>
                                 <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">検品状態</th>
                                 <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">操作</th>
                             </tr>
@@ -740,6 +770,8 @@
                         <th class="px-3 py-2 text-left">ロット</th>
                         <th class="px-3 py-2 text-left">材料名</th>
                         <th class="px-3 py-2 text-right">本数</th>
+                        <th class="px-3 py-2 text-left">セット予定日</th>
+                        <th class="px-3 py-2 text-left">機械NO</th>
                         <th class="px-3 py-2 text-left">処理指示</th>
                         <th class="px-3 py-2 text-left">自由入力</th>
                         <th class="px-3 py-2 text-left">作業者</th>
