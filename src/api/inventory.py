@@ -11,6 +11,114 @@ from src.db.models import Item, Lot, Material, Location, MaterialShape, Material
 router = APIRouter()
 
 # ========================================
+# 処理タブ用API（2025-11-06追加）
+# ========================================
+
+class ReceivedItemResponse(BaseModel):
+    """入荷済みアイテムレスポンス（処理タブ用）"""
+    order_number: str
+    lot_id: int
+    lot_number: Optional[str]
+    item_id: int
+    item_name: str
+    current_quantity: int
+    processing_instruction: Optional[str] = None
+    processing_notes: Optional[str] = None
+    processing_worker: Optional[str] = None
+    processing_completed: bool
+
+class ItemProcessingUpdate(BaseModel):
+    """アイテム処理情報更新リクエスト"""
+    processing_instruction: Optional[str] = None
+    processing_notes: Optional[str] = None
+    processing_worker: Optional[str] = None
+    processing_completed: Optional[bool] = None
+
+@router.get("/items/received-by-order/", response_model=List[ReceivedItemResponse])
+def get_received_items_by_order(
+    include_completed: bool = Query(False, description="完了済みも含める"),
+    db: Session = Depends(get_db)
+):
+    """発注番号別の入荷済みアイテム一覧取得（検品済み、完了フィルタ対応）"""
+    q = (
+        db.query(
+            PurchaseOrder.order_number,
+            Lot.id.label("lot_id"),
+            Lot.lot_number,
+            Item.id.label("item_id"),
+            PurchaseOrderItem.item_name,
+            Item.current_quantity,
+            Item.processing_instruction,
+            Item.processing_notes,
+            Item.processing_worker,
+            Item.processing_completed,
+        )
+        .join(Lot, Item.lot_id == Lot.id)
+        .join(PurchaseOrderItem, Lot.purchase_order_item_id == PurchaseOrderItem.id)
+        .join(PurchaseOrder, PurchaseOrder.id == PurchaseOrderItem.purchase_order_id)
+        .filter(Item.is_active == True)
+        .filter(Lot.inspection_status == InspectionStatus.PASSED)
+    )
+    
+    if not include_completed:
+        q = q.filter(Item.processing_completed == False)
+    
+    q = q.order_by(PurchaseOrder.order_number.desc(), Lot.id.desc())
+    rows = q.all()
+    return [
+        ReceivedItemResponse(
+            order_number=r.order_number,
+            lot_id=r.lot_id,
+            lot_number=r.lot_number,
+            item_id=r.item_id,
+            item_name=r.item_name,
+            current_quantity=r.current_quantity,
+            processing_instruction=r.processing_instruction,
+            processing_notes=r.processing_notes,
+            processing_worker=r.processing_worker,
+            processing_completed=r.processing_completed or False,
+        )
+        for r in rows
+    ]
+
+@router.put("/items/{item_id}/processing/", response_model=ReceivedItemResponse)
+def update_item_processing(item_id: int, payload: ItemProcessingUpdate, db: Session = Depends(get_db)):
+    """アイテムの処理情報を更新"""
+    item = db.query(Item).filter(Item.id == item_id, Item.is_active == True).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+
+    if payload.processing_instruction is not None:
+        item.processing_instruction = payload.processing_instruction
+    if payload.processing_notes is not None:
+        item.processing_notes = payload.processing_notes
+    if payload.processing_worker is not None:
+        item.processing_worker = payload.processing_worker
+    if payload.processing_completed is not None:
+        item.processing_completed = payload.processing_completed
+        item.processing_completed_at = datetime.utcnow() if payload.processing_completed else None
+
+    db.commit()
+    db.refresh(item)
+
+    lot = db.query(Lot).filter(Lot.id == item.lot_id).first()
+    poi = db.query(PurchaseOrderItem).filter(PurchaseOrderItem.id == lot.purchase_order_item_id).first() if lot else None
+    po = db.query(PurchaseOrder).filter(PurchaseOrder.id == poi.purchase_order_id).first() if poi else None
+
+    return ReceivedItemResponse(
+        order_number=po.order_number if po else "",
+        lot_id=lot.id if lot else item.lot_id,
+        lot_number=lot.lot_number if lot else None,
+        item_id=item.id,
+        item_name=poi.item_name if poi else "",
+        current_quantity=item.current_quantity,
+        processing_instruction=item.processing_instruction,
+        processing_notes=item.processing_notes,
+        processing_worker=item.processing_worker,
+        processing_completed=item.processing_completed or False,
+    )
+
+# ========================================
 # 材料マッチング用ヘルパー関数
 # ========================================
 

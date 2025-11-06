@@ -45,12 +45,16 @@
                     class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap">
                     <i class="fas fa-print mr-2"></i>印刷
                 </button>
+                <button id="tab-processing" role="tab" aria-selected="false" aria-controls="panel-processing"
+                    class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap">
+                    <i class="fas fa-tasks mr-2"></i>処理
+                </button>
             </nav>
         </div>
     </div>
 
     <!-- タブコンテンツ -->
-    <div class="max-w-[1600px] mx-auto px-4 py-4">
+    <div id="order-flow-tab-panels" class="max-w-[1600px] mx-auto px-4 py-4">
         <!-- Excel取込タブ -->
         <div id="panel-import" role="tabpanel" aria-labelledby="tab-import" class="tab-panel">
             <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
@@ -708,6 +712,43 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- 処理タブパネル（2025-11-06追加） -->
+<div id="panel-processing" role="tabpanel" aria-labelledby="tab-processing" class="tab-panel hidden">
+    <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-xl font-semibold text-neutral-800">入荷済みアイテム（発注番号別）</h2>
+            <div class="flex items-center gap-3">
+                <label class="flex items-center gap-2 text-sm">
+                    <input type="checkbox" id="showCompletedProcessing" class="rounded">
+                    <span>完了済みも表示</span>
+                </label>
+                <button id="refreshProcessingBtn" class="px-4 py-2 bg-white border border-neutral-200 text-neutral-700 rounded-lg font-semibold hover:bg-neutral-50 transition-all flex items-center">
+                    <i class="fas fa-sync-alt mr-2"></i>更新
+                </button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+                <thead class="bg-gray-100 text-gray-700">
+                    <tr>
+                        <th class="px-3 py-2 text-left">発注番号</th>
+                        <th class="px-3 py-2 text-left">ロット</th>
+                        <th class="px-3 py-2 text-left">材料名</th>
+                        <th class="px-3 py-2 text-right">本数</th>
+                        <th class="px-3 py-2 text-left">処理指示</th>
+                        <th class="px-3 py-2 text-left">自由入力</th>
+                        <th class="px-3 py-2 text-left">作業者</th>
+                        <th class="px-3 py-2 text-center">状態</th>
+                        <th class="px-3 py-2 text-center">操作</th>
+                    </tr>
+                </thead>
+                <tbody id="processingItemsTableBody" class="divide-y"></tbody>
+            </table>
         </div>
     </div>
 </div>

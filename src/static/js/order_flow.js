@@ -2,13 +2,26 @@
 
 // ==== タブ切り替え機能 ====
 document.addEventListener('DOMContentLoaded', function () {
+    ensureProcessingPanelPlacement();
     initializeTabs();
     initializeImportTab();
     initializeOrdersTab();
     initializeReceivingTab();
     initializeInspectionTab();
     initializePrintTab();
+    initializeProcessingTab();
 });
+
+function ensureProcessingPanelPlacement() {
+    const container = document.getElementById('order-flow-tab-panels');
+    const processingPanel = document.getElementById('panel-processing');
+    if (!container || !processingPanel) {
+        return;
+    }
+    if (!container.contains(processingPanel)) {
+        container.appendChild(processingPanel);
+    }
+}
 
 function initializeTabs() {
     const tabButtons = document.querySelectorAll('.tab-button');
@@ -41,6 +54,8 @@ function initializeTabs() {
                 loadInspectionItemsList();
             } else if (targetId === 'panel-print') {
                 loadPrintableItems();
+            } else if (targetId === 'panel-processing') {
+                loadProcessingItems();
             }
         });
     });
@@ -2950,4 +2965,213 @@ function getPageNumbers(current, total) {
 
     // 現在ページが中央
     return [1, '...', current - 1, current, current + 1, '...', total];
+}
+
+// ==== 処理タブ（2025-11-06追加） ====
+const PROCESSING_OPTIONS = [
+    "片側面取り",
+    "両側面取り",
+    "段挽きφ36",
+    "段挽きφ30",
+    "段挽きφ18",
+    "段挽きφ10",
+    "梱包剥き"
+];
+
+function initializeProcessingTab() {
+    const refreshBtn = document.getElementById('refreshProcessingBtn');
+    const showCompletedCheckbox = document.getElementById('showCompletedProcessing');
+    
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', loadProcessingItems);
+    }
+    if (showCompletedCheckbox) {
+        showCompletedCheckbox.addEventListener('change', loadProcessingItems);
+    }
+}
+
+async function loadProcessingItems() {
+    const tbody = document.getElementById('processingItemsTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td class="px-3 py-2 text-gray-500" colspan="9">読み込み中...</td></tr>';
+    
+    const showCompleted = document.getElementById('showCompletedProcessing')?.checked || false;
+    const url = `/api/inventory/items/received-by-order/?include_completed=${showCompleted}`;
+    
+    try {
+        const resp = await fetch(url, { method: 'GET' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const items = await resp.json();
+        tbody.innerHTML = '';
+        
+        if (items.length === 0) {
+            tbody.innerHTML = '<tr><td class="px-3 py-2 text-gray-500 text-center" colspan="9">データがありません</td></tr>';
+            return;
+        }
+        
+        for (const row of items) {
+            const tr = document.createElement('tr');
+            const isCompleted = row.processing_completed;
+            
+            const selectId = `proc-select-${row.item_id}`;
+            const notesId  = `proc-notes-${row.item_id}`;
+            const workerId = `proc-worker-${row.item_id}`;
+            const saveId   = `proc-save-${row.item_id}`;
+            const actionId = `proc-action-${row.item_id}`;
+
+            const statusBadge = isCompleted 
+                ? '<span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">完了</span>'
+                : '<span class="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium">未完了</span>';
+            
+            const actionButton = isCompleted
+                ? `<button id="${actionId}" class="px-2 py-1 bg-amber-600 text-white rounded hover:bg-amber-700 text-sm">再編集</button>`
+                : `<button id="${actionId}" class="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">完了</button>`;
+
+            const disabledAttr = isCompleted ? 'disabled' : '';
+            const disabledClass = isCompleted ? 'bg-gray-100 cursor-not-allowed' : '';
+
+            tr.innerHTML = `
+                <td class="px-3 py-2">${row.order_number || ''}</td>
+                <td class="px-3 py-2">${row.lot_number || row.lot_id}</td>
+                <td class="px-3 py-2">${row.item_name || ''}</td>
+                <td class="px-3 py-2 text-right">${row.current_quantity ?? 0}</td>
+                <td class="px-3 py-2">
+                    <select id="${selectId}" class="border rounded px-2 py-1 text-sm ${disabledClass}" ${disabledAttr}>
+                        ${PROCESSING_OPTIONS.map(opt => `<option value="${opt}" ${row.processing_instruction===opt?'selected':''}>${opt}</option>`).join('')}
+                    </select>
+                </td>
+                <td class="px-3 py-2">
+                    <input id="${notesId}" type="text" class="border rounded px-2 py-1 text-sm w-56 ${disabledClass}"
+                           placeholder="自由入力" value="${row.processing_notes ?? ''}" ${disabledAttr}>
+                </td>
+                <td class="px-3 py-2">
+                    <input id="${workerId}" type="text" class="border rounded px-2 py-1 text-sm w-40 ${disabledClass}"
+                           placeholder="作業者" value="${row.processing_worker ?? ''}" autocomplete="on" ${disabledAttr}>
+                </td>
+                <td class="px-3 py-2 text-center">${statusBadge}</td>
+                <td class="px-3 py-2 text-center">
+                    <div class="flex gap-2 justify-center">
+                        <button id="${saveId}" class="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm" ${disabledAttr}>保存</button>
+                        ${actionButton}
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(tr);
+
+            const selectEl = document.getElementById(selectId);
+            const notesEl  = document.getElementById(notesId);
+            const workerEl = document.getElementById(workerId);
+            const saveEl   = document.getElementById(saveId);
+            const actionEl = document.getElementById(actionId);
+
+            saveEl.addEventListener('click', async () => {
+                if (isCompleted) return;
+                saveEl.disabled = true;
+                saveEl.textContent = '保存中...';
+                try {
+                    const payload = {
+                        processing_instruction: selectEl.value,
+                        processing_notes: notesEl.value || null,
+                        processing_worker: workerEl.value || null,
+                        processing_completed: false
+                    };
+                    const resp = await fetch(`/api/inventory/items/${row.item_id}/processing/`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                    if (typeof showToast === 'function') {
+                        showToast('処理情報を保存しました', 'success');
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert('保存に失敗しました');
+                } finally {
+                    saveEl.disabled = false;
+                    saveEl.textContent = '保存';
+                }
+            });
+
+            actionEl.addEventListener('click', async () => {
+                if (isCompleted) {
+                    // 再編集モード
+                    selectEl.disabled = false;
+                    selectEl.classList.remove('bg-gray-100', 'cursor-not-allowed');
+                    notesEl.disabled = false;
+                    notesEl.classList.remove('bg-gray-100', 'cursor-not-allowed');
+                    workerEl.disabled = false;
+                    workerEl.classList.remove('bg-gray-100', 'cursor-not-allowed');
+                    saveEl.disabled = false;
+                    
+                    actionEl.textContent = '完了';
+                    actionEl.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+                    actionEl.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    
+                    // 状態バッジを未完了に変更
+                    const statusCell = tr.cells[7];
+                    statusCell.innerHTML = '<span class="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium">未完了</span>';
+                    
+                    // 完了フラグを戻す
+                    try {
+                        const payload = {
+                            processing_instruction: selectEl.value,
+                            processing_notes: notesEl.value || null,
+                            processing_worker: workerEl.value || null,
+                            processing_completed: false
+                        };
+                        const resp = await fetch(`/api/inventory/items/${row.item_id}/processing/`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                        if (typeof showToast === 'function') {
+                            showToast('再編集モードにしました', 'success');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('再編集モードへの切り替えに失敗しました');
+                    }
+                } else {
+                    // 完了処理
+                    if (!confirm('このアイテムを完了にしますか？')) return;
+                    actionEl.disabled = true;
+                    actionEl.textContent = '完了中...';
+                    try {
+                        const payload = {
+                            processing_instruction: selectEl.value,
+                            processing_notes: notesEl.value || null,
+                            processing_worker: workerEl.value || null,
+                            processing_completed: true
+                        };
+                        const resp = await fetch(`/api/inventory/items/${row.item_id}/processing/`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                        if (typeof showToast === 'function') {
+                            showToast('処理完了にしました', 'success');
+                        }
+                        
+                        const showCompleted = document.getElementById('showCompletedProcessing')?.checked || false;
+                        if (!showCompleted) {
+                            tr.remove();
+                        } else {
+                            loadProcessingItems();
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('完了処理に失敗しました');
+                        actionEl.disabled = false;
+                        actionEl.textContent = '完了';
+                    }
+                }
+            });
+        }
+    } catch (e) {
+        console.error(e);
+        tbody.innerHTML = '<tr><td class="px-3 py-2 text-red-600" colspan="9">読み込みに失敗しました</td></tr>';
+    }
 }

@@ -202,6 +202,11 @@ class Item(Base):
     location_id = Column(Integer, ForeignKey("locations.id"), nullable=True)
     current_quantity = Column(Integer, nullable=False, comment="現在本数")
     is_active = Column(Boolean, default=True)
+    processing_instruction = Column(String(100), nullable=True, comment="処理指示（ドロップダウン選択）")
+    processing_notes = Column(Text, nullable=True, comment="処理自由入力メモ")
+    processing_worker = Column(String(50), nullable=True, comment="作業者")
+    processing_completed = Column(Boolean, nullable=False, default=False, comment="処理完了フラグ")
+    processing_completed_at = Column(DateTime(timezone=True), nullable=True, comment="処理完了日時")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
