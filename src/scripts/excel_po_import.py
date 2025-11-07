@@ -6,15 +6,15 @@ Excelから発注を作成する外部スクリプト
 対象シート: 材料管理表
 
 抽出条件:
-- I列(品番)が非空
 - L列(材料)が非空
+- M列(手配日)が入力あり
 - Z列(指定納期)が入力あり
 - AC列(入荷日)が空
 
 マッピング:
 - N列(管理NO) → 発注番号(order_number)
 - AA列(手配先) → 仕入れ先(supplier)
-- 今日 → 発注日(order_date)
+- M列(手配日) → 発注日(order_date) ※空の場合は現在日時を使用
 - Z列(指定納期) → 納期予定日(expected_delivery_date)
 - I列(品番) → 備考(notes)に記録
 - L列(材料) → 材料仕様文字列（そのまま保存、入庫時に人の手で解析）
@@ -38,6 +38,7 @@ from __future__ import annotations
 import argparse
 import logging
 import re
+from collections import defaultdict
 from datetime import datetime
 from typing import Optional, Dict, Any
 
@@ -61,7 +62,6 @@ DEFAULT_LENGTH_MM = 2500
 DEFAULT_ORDER_QUANTITY = 1
 DEFAULT_DENSITY = 7.85  # 既定比重（入庫時に人の手で上書き）
 
-
 def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: bool = False) -> Dict[str, Any]:
     """Excelを読み取り、条件一致行ごとに発注を登録する"""
     df = pd.read_excel(excel_path, sheet_name=sheet_name, engine="openpyxl")
@@ -69,6 +69,7 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
     # 列インデックス（0始まり）
     COL_ITEM_CODE = 8   # I列: 品番
     COL_MATERIAL = 11   # L列: 材料
+    COL_ORDER_DATE = 12 # M列: 手配日
     COL_ORDER_QTY = 19  # T列: 発注本数/重量値
     COL_UNIT = 20       # U列: 単位（本/kg/束）
     COL_DUE = 25        # Z列: 指定納期
@@ -89,6 +90,7 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
     created_orders = 0
     skipped = 0
     errors: list[str] = []
+    skip_reasons: Dict[str, int] = defaultdict(int)
 
     db = SessionLocal()
     try:
@@ -121,7 +123,8 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
             if pd.isna(val):
                 return True
             s = str(val).strip()
-            return s == "" or s in {"-", "－", "—"}
+            s_lower = s.lower()
+            return s_lower == "" or s_lower in {"-", "－", "—", "null", "none", "n/a", "nan", "nat"}
 
         def normalize_unit(u: Any) -> Optional[str]:
             if u is None or pd.isna(u):
@@ -173,10 +176,16 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
                 # 列値の取得
                 item_code = row.iloc[COL_ITEM_CODE] if not pd.isna(row.iloc[COL_ITEM_CODE]) else None
                 material_text = row.iloc[COL_MATERIAL] if not pd.isna(row.iloc[COL_MATERIAL]) else None
+                # M列(手配日)を取得
+                raw_order_date = row.iloc[COL_ORDER_DATE] if not pd.isna(row.iloc[COL_ORDER_DATE]) else None
                 # マージ対応後の値を使用（Z, AA）
                 due = due_series.iloc[idx]
                 supplier = supplier_series.iloc[idx] if not pd.isna(supplier_series.iloc[idx]) else None
-                received = row.iloc[COL_RECEIVED_DATE]
+
+                received_raw = None
+                if len(row) > COL_RECEIVED_DATE:
+                    received_raw = row.iloc[COL_RECEIVED_DATE]
+                received_is_blank = is_blank(received_raw)
                 raw_order_number = row.iloc[COL_ORDER_NUMBER] if not pd.isna(row.iloc[COL_ORDER_NUMBER]) else None
                 order_number = normalize_management_no(raw_order_number)
 
@@ -190,26 +199,41 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
                     except Exception:
                         qty_value = None
 
-                # 取り込み条件: I列(品番)非空、L列(材料)非空、Z列(指定納期)入力あり、AC列(入荷日)が空扱い（"-"/"－"/"—"も空）
+                # 取り込み条件: L列(材料)非空、M列(手配日)入力あり、Z列(指定納期)入力あり、AC列(入荷日)が空扱い（"-"/"－"/"—"も空）
                 if (
-                    is_blank(item_code)
-                    or is_blank(material_text)
+                    is_blank(material_text)
+                    or is_blank(raw_order_date)
                     or is_blank(due)
-                    or (not is_blank(received))
+                    or (not received_is_blank)
                 ):
                     skipped += 1
+                    if is_blank(material_text) or is_blank(due) or (not received_is_blank):
+                        skip_reasons["mandatory_fields"] += 1
+                    elif is_blank(raw_order_date):
+                        skip_reasons["missing_order_date"] += 1
                     logger.warning(
-                        f"{idx+1}行: 取り込み条件不一致のためスキップ (I='{item_code}', L='{material_text}', Z='{due}', AC='{received}')"
+                        f"{idx+1}行: 取り込み条件不一致のためスキップ (I='{item_code}', L='{material_text}', M='{raw_order_date}', Z='{due}', AC='{str(received_raw).strip() if received_raw is not None else received_raw}')"
                     )
+                    continue
+
+                # Z列(指定納期)の日付変換チェック
+                try:
+                    due_date = pd.to_datetime(due)
+                except Exception as e:
+                    skipped += 1
+                    skip_reasons["invalid_due_date"] += 1
+                    logger.warning(f"{idx+1}行: 指定納期の日付形式が無効なためスキップ (Z='{due}', エラー={e})")
                     continue
 
                 if not supplier or str(supplier).strip() == "":
                     skipped += 1
+                    skip_reasons["missing_supplier"] += 1
                     logger.warning(f"{idx+1}行: 仕入先が未入力のためスキップ")
                     continue
 
                 if not order_number:
                     skipped += 1
+                    skip_reasons["missing_order_number"] += 1
                     logger.warning(f"{idx+1}行: 管理NO(発注番号)が未入力のためスキップ")
                     continue
 
@@ -222,6 +246,7 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
                 ).first()
                 if existing_order:
                     skipped += 1
+                    skip_reasons["duplicate_order_number"] += 1
                     logger.info(f"{idx+1}行: 発注番号重複のためスキップ ({order_number})")
                     continue
 
@@ -230,16 +255,29 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
 
                 if dry_run:
                     processed += 1
-                    logger.info(f"DRY-RUN: 発注作成予定 - 発注番号={order_number}, 仕入先={supplier}, 品番={item_code}, 材料仕様={material_text}")
+                    # 手配日情報をログに追加
+                    order_date_info = f"手配日={raw_order_date}" if raw_order_date and not is_blank(raw_order_date) else "手配日=なし(現在日時使用)"
+                    logger.info(f"DRY-RUN: 発注作成予定 - 発注番号={order_number}, 仕入先={supplier}, 品番={item_code}, {order_date_info}, 材料仕様={material_text}")
                     continue
 
                 # 発注作成（品番は備考に記録）
                 notes_text = f"品番: {item_code}" if item_code else None
+                
+                # 発注日の設定：M列(手配日)を優先し、空の場合は現在日時を使用
+                if raw_order_date and not is_blank(raw_order_date):
+                    try:
+                        order_date = pd.to_datetime(raw_order_date)
+                    except Exception as e:
+                        logger.warning(f"{idx+1}行: 手配日の日付変換に失敗したため現在日時を使用 (手配日='{raw_order_date}', エラー={e})")
+                        order_date = datetime.now()
+                else:
+                    order_date = datetime.now()
+                
                 po = PurchaseOrder(
                     order_number=order_number,
                     supplier=str(supplier).strip(),
-                    order_date=datetime.now(),
-                    expected_delivery_date=pd.to_datetime(due) if not pd.isna(due) else None,
+                    order_date=order_date,
+                    expected_delivery_date=due_date,  # 事前に検証した日付を使用
                     notes=notes_text,
                     status=PurchaseOrderStatus.PENDING,
                     created_by=ensure_import_user_id(),
@@ -290,6 +328,7 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
             except Exception as e:
                 skipped += 1
                 errors.append(f"行{idx+1}: {e}")
+                skip_reasons["exceptions"] += 1
                 logger.exception(f"行{idx+1}処理中にエラー: {e}")
                 if not dry_run:
                     db.rollback()  # エラー行のみロールバック
@@ -300,8 +339,10 @@ def import_excel_to_purchase_orders(excel_path: str, sheet_name: str, dry_run: b
             "created_orders": created_orders,
             "skipped": skipped,
             "errors": errors,
+            "skip_reasons": dict(skip_reasons),
             "dry_run": dry_run,
         }
+
     finally:
         db.close()
 
@@ -311,7 +352,7 @@ def main():
     parser.add_argument(
         "--excel",
         type=str,
-        default="\\\\192.168.1.200\\共有\\生産管理課\\材料管理.xlsx",
+        default=r"\\192.168.1.200\共有\生産管理課\材料管理.xlsx",
         # default="材料管理.xlsx",
         help="Excelファイルパス",
     )

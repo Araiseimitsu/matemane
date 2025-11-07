@@ -339,7 +339,7 @@ async def external_import_test(dry_run: bool = True, excel: Optional[str] = None
     try:
         # import を関数内に限定し、削除しやすい形にする
         from src.scripts.excel_po_import import import_excel_to_purchase_orders
-        excel_path = excel or "材料管理.xlsx"
+        excel_path = excel or r"\\192.168.1.200\共有\生産管理課\材料管理.xlsx"
         sheet_name = sheet or "材料管理表"
         result = await run_in_threadpool(import_excel_to_purchase_orders, excel_path, sheet_name, dry_run)
         return {"result": result}

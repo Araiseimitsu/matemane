@@ -218,6 +218,10 @@
                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 space-y-4 lg:space-y-0">
                     <h2 class="text-xl font-semibold text-neutral-800">入庫確認</h2>
                     <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+                        <button id="manualReceiveBtn"
+                            class="bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition-all flex items-center shadow-lg border-2 border-green-700">
+                            <i class="fas fa-plus mr-2"></i>手入力で入庫
+                        </button>
                         <label class="flex items-center space-x-2 px-3 py-2 bg-white rounded-lg border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition-all">
                             <input type="checkbox" id="includeInspectedFilter" class="rounded text-success-green focus:ring-success-green">
                             <span class="text-sm font-medium text-neutral-700">検品完了も表示</span>
@@ -957,6 +961,208 @@
                         キャンセル
                     </button>
                     <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        入庫確定
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 手入力用入庫確認モーダル -->
+<div id="manualReceiveModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between p-6 border-b">
+                <h2 class="text-xl font-semibold text-gray-900">
+                    手入力で入庫
+                </h2>
+                <button id="closeManualReceiveModal" class="text-neutral-400 hover:text-neutral-600 transition-colors p-2 rounded-lg hover:bg-neutral-100">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <form id="manualReceiveForm" class="p-6">
+                <!-- 発注情報入力 -->
+                <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">発注情報</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">発注番号 *</label>
+                            <input type="text" name="order_number" required
+                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 250101-001">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">仕入先 *</label>
+                            <input type="text" name="supplier" required
+                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 千葉金属㈱">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">発注日 *</label>
+                            <input type="date" name="order_date" required
+                                class="w-full p-3 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">納期予定日 *</label>
+                            <input type="date" name="delivery_date" required
+                                class="w-full p-3 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">材料仕様 *</label>
+                            <input type="text" name="material_spec" required
+                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: A6061-T6 φ35.1D 2.5m レゾナック">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">セット予定日</label>
+                            <input type="date" name="schedule_date"
+                                class="w-full p-3 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">機械NO</label>
+                            <input type="text" name="machine_number"
+                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: NB5S">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">発注数量</label>
+                            <input type="number" name="order_quantity" step="1" min="0"
+                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="本数で入力">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">発注重量</label>
+                            <input type="number" name="order_weight" step="0.001" min="0"
+                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="kgで入力">
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>発注数量または重量のいずれかを入力してください
+                    </p>
+                </div>
+
+                <!-- 計算用パラメータ入力 -->
+                <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                    <h3 class="text-lg font-medium text-blue-900 mb-3">
+                        計算用パラメータ
+                        <span class="text-sm font-normal text-gray-600">（重量⇔本数換算に使用）</span>
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">径（mm）*</label>
+                            <input type="number" name="diameter_mm" id="manualDiameterCalcInput" step="0.01" min="0.01" required
+                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 35.1">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">形状 *</label>
+                            <select name="shape" id="manualShapeCalcSelect" required
+                                class="w-full p-3 border border-gray-300 rounded-md">
+                                <option value="round">丸棒（φ）</option>
+                                <option value="hexagon">六角棒（H）</option>
+                                <option value="square">角棒（□）</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">比重 *</label>
+                            <div class="space-y-2">
+                                <select id="manualDensityPresetSelect" class="w-full p-3 border border-gray-300 rounded-md">
+                                    <option value="">プリセットから選択</option>
+                                </select>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm text-gray-500">または直接入力:</span>
+                                    <input type="number" name="density" id="manualDensityInput" step="0.001" min="0.001" required
+                                        class="flex-1 p-3 border border-gray-300 rounded-md" placeholder="例: 2.71">
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">長さ（mm）*</label>
+                            <input type="number" name="length_mm" step="1" min="1" required
+                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 2500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 共通情報 -->
+                <div class="bg-yellow-50 rounded-lg p-4 mb-6">
+                    <h3 class="text-lg font-medium text-yellow-900 mb-3">共通情報</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">入荷日 *</label>
+                            <input type="date" name="received_date" id="manualReceivedDateInput" required
+                                class="w-full p-3 border border-gray-300 rounded-md">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">購入月 *</label>
+                            <input type="text" name="purchase_month" id="manualPurchaseMonthInput" required
+                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 2501" maxlength="4">
+                            <p class="text-xs text-gray-500 mt-1">YYMM形式で入力（例: 25年1月 → 2501）</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ロット情報 -->
+                <div class="bg-green-50 rounded-lg p-4 mb-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h3 class="text-lg font-medium text-green-900">ロット情報</h3>
+                        <button type="button" id="manualAddLotBtn" 
+                            class="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
+                            <i class="fas fa-plus mr-1"></i>ロット追加
+                        </button>
+                    </div>
+                    <div id="manualLotsContainer" class="space-y-4">
+                        <!-- ロット行が動的に追加される -->
+                    </div>
+                </div>
+
+                <!-- 合計情報 -->
+                <div class="bg-gray-100 rounded-lg p-4 mb-6">
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">合計情報</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">合計本数</label>
+                            <div class="flex items-center space-x-2">
+                                <span id="manualTotalQuantity" class="text-lg font-bold text-blue-600">0</span>
+                                <span id="manualOrderedQuantity" class="text-sm text-gray-500"></span>
+                                <span id="manualTotalQuantityRef" class="text-sm text-gray-500"></span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">合計重量</label>
+                            <div class="flex items-center space-x-2">
+                                <span id="manualTotalWeight" class="text-lg font-bold text-blue-600">0.000</span>
+                                <span id="manualTotalWeightRef" class="text-sm text-gray-500"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 単価・金額 -->
+                <div class="bg-purple-50 rounded-lg p-4 mb-6">
+                    <h3 class="text-lg font-medium text-purple-900 mb-3">単価・金額</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">単価（円/kg）</label>
+                            <input type="number" name="unit_price" id="manualUnitPriceInput" step="0.01" min="0"
+                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 300.00">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">金額（円）</label>
+                            <input type="number" name="amount" id="manualAmountInput" step="0.01" min="0" readonly
+                                class="w-full p-3 border border-gray-300 rounded-md bg-gray-100" placeholder="例: 30000.00">
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-2">
+                        <i class="fas fa-info-circle mr-1"></i>単価（円/kg）×重量で自動計算します
+                    </p>
+                </div>
+
+                <div class="flex justify-end space-x-4 mt-6">
+                    <button type="button" id="cancelManualReceive"
+                        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+                        キャンセル
+                    </button>
+                    <button type="submit" class="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700">
                         入庫確定
                     </button>
                 </div>
