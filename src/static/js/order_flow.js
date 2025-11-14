@@ -1168,9 +1168,9 @@ async function loadDensityPresets() {
             selectElement.appendChild(option);
         });
 
-        // 選択イベントを設定
+        // 選択イベントを設定（入庫確認モーダル用）
         selectElement.onchange = function () {
-            const densityInput = document.getElementById('manualDensityInput');
+            const densityInput = document.getElementById('densityInput');
             if (this.value && densityInput) {
                 densityInput.value = this.value;
 
@@ -1180,8 +1180,10 @@ async function loadDensityPresets() {
                     showToast(`比重プリセット「${selectedOption.dataset.name}」を適用しました`, 'success');
                 }
 
-                // 合計を更新
-                updateManualTotalQuantity();
+                // 合計を更新（入庫確認モーダル用）
+                if (typeof updateTotalQuantity === 'function') {
+                    updateTotalQuantity();
+                }
             }
         };
 
