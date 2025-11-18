@@ -625,7 +625,22 @@ endblock %} {% block content %}
                     </h3>
 
                     <!-- フィルター（リアルタイム検索） -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                    <div class="grid grid-cols-1 md:grid-cols-5 gap-3 mb-3">
+                        <div>
+                            <label
+                                class="block text-sm font-medium text-neutral-700 mb-1"
+                                >検品ステータス</label
+                            >
+                            <select
+                                id="inspectionStatusFilter"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20"
+                            >
+                                <option value="pending">検品待ち</option>
+                                <option value="passed">合格</option>
+                                <option value="failed">不合格</option>
+                                <option value="all">すべて</option>
+                            </select>
+                        </div>
                         <div>
                             <label
                                 class="block text-sm font-medium text-neutral-700 mb-1"
@@ -685,6 +700,11 @@ endblock %} {% block content %}
                                     <th
                                         class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
                                     >
+                                        発注番号
+                                    </th>
+                                    <th
+                                        class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                    >
                                         材料仕様
                                     </th>
                                     <th
@@ -705,12 +725,12 @@ endblock %} {% block content %}
                                     <th
                                         class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
                                     >
-                                        ロット備考
+                                        検品状態
                                     </th>
                                     <th
                                         class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
                                     >
-                                        検品状態
+                                        検品日時
                                     </th>
                                     <th
                                         class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
@@ -749,163 +769,6 @@ endblock %} {% block content %}
                     <div id="inspectionPaginationBottom" class="mt-4"></div>
                 </div>
 
-                <!-- 検品済み一覧（検索＋再編集） -->
-                <div
-                    class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200"
-                >
-                    <div class="flex items-center justify-between mb-3">
-                        <h3
-                            class="text-sm font-semibold text-neutral-800 flex items-center"
-                        >
-                            <i class="fas fa-clipboard-check mr-2"></i
-                            >検品済み一覧
-                        </h3>
-                        <button
-                            type="button"
-                            id="toggleInspectedSectionBtn"
-                            class="text-xs px-3 py-1 rounded-lg bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-100"
-                        >
-                            開く
-                        </button>
-                    </div>
-
-                    <div id="inspectedLotsSection" class="hidden">
-                        <!-- フィルター -->
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                            <div>
-                                <label
-                                    class="block text-sm font-medium text-neutral-700 mb-1"
-                                    >発注番号</label
-                                >
-                                <input
-                                    id="inspectedOrderNumberFilter"
-                                    type="text"
-                                    placeholder="例: PO-000123"
-                                    class="w-full p-2 border border-gray-300 rounded-md"
-                                />
-                            </div>
-                            <div>
-                                <label
-                                    class="block text-sm font-medium text-neutral-700 mb-1"
-                                    >材料仕様</label
-                                >
-                                <input
-                                    id="inspectedMaterialFilter"
-                                    type="text"
-                                    placeholder="例: STKM13A φ19"
-                                    class="w-full p-2 border border-gray-300 rounded-md"
-                                />
-                            </div>
-                            <div>
-                                <label
-                                    class="block text-sm font-medium text-neutral-700 mb-1"
-                                    >ロット番号</label
-                                >
-                                <input
-                                    id="inspectedLotFilter"
-                                    type="text"
-                                    placeholder="例: 2409-001"
-                                    class="w-full p-2 border border-gray-300 rounded-md"
-                                />
-                            </div>
-                            <div class="flex items-end">
-                                <button
-                                    type="button"
-                                    id="resetInspectedLotsFiltersBtn"
-                                    onclick="resetInspectedLotsFilters()"
-                                    class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
-                                >
-                                    <i class="fas fa-redo mr-2"></i>リセット
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- ページネーション（上部） -->
-                        <div id="inspectedLotsPaginationTop" class="mb-4"></div>
-
-                        <div
-                            class="overflow-x-auto bg-white rounded-lg border border-neutral-200"
-                        >
-                            <table class="w-full text-sm">
-                                <thead class="bg-neutral-50">
-                                    <tr>
-                                        <th
-                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
-                                        >
-                                            発注番号
-                                        </th>
-                                        <th
-                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
-                                        >
-                                            材料仕様
-                                        </th>
-                                        <th
-                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
-                                        >
-                                            ロット番号
-                                        </th>
-                                        <th
-                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
-                                        >
-                                            本数
-                                        </th>
-                                        <th
-                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
-                                        >
-                                            重量
-                                        </th>
-                                        <th
-                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
-                                        >
-                                            検品状態
-                                        </th>
-                                        <th
-                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
-                                        >
-                                            検品日時
-                                        </th>
-                                        <th
-                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
-                                        >
-                                            操作
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody
-                                    id="inspectedLotsTableBody"
-                                    class="divide-y divide-neutral-200"
-                                >
-                                    <!-- 動的に生成 -->
-                                </tbody>
-                            </table>
-                        </div>
-                        <div
-                            id="inspectedLotsLoading"
-                            class="text-center py-4 hidden"
-                        >
-                            <div
-                                class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"
-                            ></div>
-                            <p class="mt-2 text-sm text-indigo-700">
-                                読み込み中...
-                            </p>
-                        </div>
-                        <div
-                            id="inspectedLotsEmpty"
-                            class="text-center py-4 hidden"
-                        >
-                            <p class="text-sm text-gray-500">
-                                検品済みのロットがありません
-                            </p>
-                        </div>
-
-                        <!-- ページネーション（下部） -->
-                        <div
-                            id="inspectedLotsPaginationBottom"
-                            class="mt-4"
-                        ></div>
-                    </div>
-                </div>
 
                 <!-- 検品フォーム -->
                 <form id="inspectionForm" class="space-y-6">

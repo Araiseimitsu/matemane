@@ -2570,25 +2570,13 @@ function initializeInspectionTab() {
     .getElementById("refreshInspectionListBtn")
     ?.addEventListener("click", () => loadInspectionItemsList(1));
 
-  // 検品済み一覧（検索）のイベント設定
-  document
-    .getElementById("resetInspectedLotsFiltersBtn")
-    ?.addEventListener("click", resetInspectedLotsFilters);
-  // 入力時点でのリアルタイム検索（debounce）
-  const debouncedLoadInspected = debounce(() => loadInspectedLotsList(1), 300);
-  [
-    "inspectedMaterialFilter",
-    "inspectedLotFilter",
-    "inspectedOrderNumberFilter",
-  ].forEach((id) => {
-    const el = document.getElementById(id);
-    el?.addEventListener("input", debouncedLoadInspected);
-    el?.addEventListener("change", () => loadInspectedLotsList(1));
-  });
+  // ステータスフィルターの変更時にリロード
+  const statusFilter = document.getElementById("inspectionStatusFilter");
+  statusFilter?.addEventListener("change", () => loadInspectionItemsList(1));
 
   // 入庫済みアイテムから選択のリアルタイム検索
-  const debouncedRenderInspection = debounce(
-    () => renderInspectionItemsList(1),
+  const debouncedLoadInspection = debounce(
+    () => loadInspectionItemsList(1),
     300,
   );
   [
@@ -2597,17 +2585,12 @@ function initializeInspectionTab() {
     "inspectionOrderNumberFilter",
   ].forEach((id) => {
     const el = document.getElementById(id);
-    el?.addEventListener("input", debouncedRenderInspection);
-    el?.addEventListener("change", () => renderInspectionItemsList(1));
+    el?.addEventListener("input", debouncedLoadInspection);
+    el?.addEventListener("change", () => loadInspectionItemsList(1));
   });
   document
     .getElementById("resetInspectionSelectionFiltersBtn")
     ?.addEventListener("click", resetInspectionSelectionFilters);
-
-  // 検品済み一覧トグル
-  document
-    .getElementById("toggleInspectedSectionBtn")
-    ?.addEventListener("click", toggleInspectedSection);
 
   // 初期は非表示（ロードしない）
 
@@ -2620,73 +2603,93 @@ function initializeInspectionTab() {
   if (dtEl) dtEl.value = local;
 }
 
-// 入庫済みアイテム一覧を読み込み
+// 検品アイテム一覧を読み込み（ステータスフィルター対応）
 async function loadInspectionItemsList(page = 1) {
   const tableBody = document.getElementById("inspectionItemsListBody");
   const loading = document.getElementById("inspectionListLoading");
   const empty = document.getElementById("inspectionListEmpty");
+  const statusFilter = document.getElementById("inspectionStatusFilter")?.value || "pending";
 
   loading.classList.remove("hidden");
   tableBody.innerHTML = "";
   empty.classList.add("hidden");
 
   try {
-    // 検品待ちのロットを取得
-    const response = await fetch("/api/inspections/lots/pending/");
+    let apiUrl;
+    if (statusFilter === "pending") {
+      // 検品待ちのみ
+      apiUrl = "/api/inspections/lots/pending/";
+    } else {
+      // 検品済みまたはすべて
+      const materialFilter = document.getElementById("inspectionMaterialFilter")?.value || "";
+      const lotFilter = document.getElementById("inspectionLotFilter")?.value || "";
+      const orderFilter = document.getElementById("inspectionOrderNumberFilter")?.value || "";
+      
+      const params = new URLSearchParams();
+      if (materialFilter) params.append("material_spec", materialFilter);
+      if (lotFilter) params.append("lot_number", lotFilter);
+      if (orderFilter) params.append("order_number", orderFilter);
+      params.append("skip", (page - 1) * 200);
+      params.append("limit", 200);
+      
+      apiUrl = `/api/inventory/lots/inspected/?${params.toString()}`;
+    }
+
+    const response = await fetch(apiUrl);
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
 
     const lots = await response.json();
-
-    console.log("取得したロット数:", lots.length); // デバッグ用
-    console.log("最初のロットのデータ構造:", lots[0]); // デバッグ用
-
     loading.classList.add("hidden");
 
     if (!Array.isArray(lots) || lots.length === 0) {
       empty.classList.remove("hidden");
       inspectionAllItems = [];
+      renderPagination("inspection", 1, 1, loadInspectionItemsList);
       return;
     }
 
-    // ロットデータを検品アイテム形式に変換
-    const convertedItems = lots.map((lot) => ({
-      id: lot.id,
+    // ステータスフィルター適用（検品済みの場合）
+    let filteredLots = lots;
+    if (statusFilter === "passed") {
+      filteredLots = lots.filter(lot => lot.inspection_status === "passed");
+    } else if (statusFilter === "failed") {
+      filteredLots = lots.filter(lot => lot.inspection_status === "failed");
+    }
+
+    // ロットデータを統一形式に変換
+    inspectionAllItems = filteredLots.map((lot) => ({
+      id: lot.lot_id || lot.id,
       management_code: lot.lot_number,
-      material: lot.material,
+      material: { display_name: lot.material_name },
       lot: {
-        id: lot.id,
+        id: lot.lot_id || lot.id,
         lot_number: lot.lot_number,
         inspection_status: lot.inspection_status,
-        initial_weight_kg: lot.initial_weight_kg,
+        initial_weight_kg: lot.total_weight_kg,
         notes: lot.notes,
-        order_number: lot.purchase_order?.order_number,
+        order_number: lot.order_number,
       },
-      total_weight_kg: lot.initial_weight_kg,
-      current_quantity: lot.initial_quantity,
+      total_weight_kg: lot.total_weight_kg,
+      current_quantity: lot.total_quantity || lot.initial_quantity,
+      inspected_at: lot.inspected_at,
     }));
 
-    console.log("変換後アイテム数:", convertedItems.length); // デバッグ用
-
-    // 全アイテムを保存
-    inspectionAllItems = convertedItems;
-
-    // フィルタを適用してレンダリング（クライアントサイド）
     renderInspectionItemsList(page);
   } catch (error) {
     loading.classList.add("hidden");
-    console.error("検品待ちロット読み込みエラー:", error);
+    console.error("検品アイテム読み込みエラー:", error);
     if (typeof showToast === "function") {
       showToast(
-        "検品待ちロットの読み込みに失敗しました: " + error.message,
+        "検品アイテムの読み込みに失敗しました: " + error.message,
         "error",
       );
     }
   }
 }
 
-// 入庫済みアイテム一覧（クライアントサイドフィルタ適用後のレンダリング）
+// 検品アイテム一覧のレンダリング
 function renderInspectionItemsList(page = 1) {
   const tableBody = document.getElementById("inspectionItemsListBody");
   const empty = document.getElementById("inspectionListEmpty");
@@ -2696,62 +2699,24 @@ function renderInspectionItemsList(page = 1) {
   tableBody.innerHTML = "";
   empty.classList.add("hidden");
 
-  // テキストフィルタ取得
-  const materialSpec = (
-    document.getElementById("inspectionMaterialFilter")?.value || ""
-  )
-    .trim()
-    .toLowerCase();
-  const lotNumber = (
-    document.getElementById("inspectionLotFilter")?.value || ""
-  )
-    .trim()
-    .toLowerCase();
-  const orderNumber = (
-    document.getElementById("inspectionOrderNumberFilter")?.value || ""
-  )
-    .trim()
-    .toLowerCase();
-
-  // フィルタ適用
-  let filtered = inspectionAllItems;
-  if (materialSpec) {
-    filtered = filtered.filter((item) =>
-      (item.material?.display_name || item.material?.name || "")
-        .toLowerCase()
-        .includes(materialSpec),
-    );
-  }
-  if (lotNumber) {
-    filtered = filtered.filter((item) =>
-      (item.lot?.lot_number || "").toLowerCase().includes(lotNumber),
-    );
-  }
-  if (orderNumber) {
-    filtered = filtered.filter((item) =>
-      (item.lot?.order_number || "").toLowerCase().includes(orderNumber),
-    );
-  }
-
-  if (!filtered || filtered.length === 0) {
+  if (!inspectionAllItems || inspectionAllItems.length === 0) {
     empty.classList.remove("hidden");
     renderPagination("inspection", 1, 1, renderInspectionItemsList);
     return;
   }
 
   // ページネーション処理
-  const totalPages = Math.ceil(filtered.length / inspectionPageSize);
+  const totalPages = Math.ceil(inspectionAllItems.length / inspectionPageSize);
   currentInspectionPage = Math.min(page, totalPages);
   const startIndex = (currentInspectionPage - 1) * inspectionPageSize;
   const endIndex = startIndex + inspectionPageSize;
-  const pageItems = filtered.slice(startIndex, endIndex);
+  const pageItems = inspectionAllItems.slice(startIndex, endIndex);
 
   pageItems.forEach((item) => {
     const row = createInspectionItemRow(item);
     tableBody.appendChild(row);
   });
 
-  // ページネーション表示（クライアントサイドのレンダラを渡す）
   renderPagination(
     "inspection",
     currentInspectionPage,
@@ -2769,20 +2734,9 @@ function resetInspectionSelectionFilters() {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
-  renderInspectionItemsList(1);
-}
-
-// 検品済み一覧のフィルタをリセット
-function resetInspectedLotsFilters() {
-  [
-    "inspectedOrderNumberFilter",
-    "inspectedMaterialFilter",
-    "inspectedLotFilter",
-  ].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.value = "";
-  });
-  loadInspectedLotsList(1);
+  const statusFilter = document.getElementById("inspectionStatusFilter");
+  if (statusFilter) statusFilter.value = "pending";
+  loadInspectionItemsList(1);
 }
 
 function createInspectionItemRow(item) {
@@ -2832,20 +2786,50 @@ function createInspectionItemRow(item) {
     ? ""
     : `onclick="selectInspectionItem('${lotNumber}')"`;
 
+  // 発注番号と検品日時を追加
+  const orderNumber = item.lot?.order_number || "-";
+  const inspectedAt = item.inspected_at 
+    ? new Date(item.inspected_at).toLocaleString("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      })
+    : "-";
+
+  // ボタンの表示をステータスに応じて変更
+  let actionButton;
+  if (inspectionStatus === "pending") {
+    actionButton = `<button ${buttonOnClick} ${buttonDisabled ? "disabled" : ""}
+                    class="${buttonClass}">
+                ${buttonDisabled ? "ロット番号なし" : "検品"}
+            </button>`;
+  } else {
+    const editButtonClass = buttonDisabled
+      ? "bg-gray-400 text-white px-2 py-1 rounded text-xs cursor-not-allowed"
+      : "bg-amber-600 text-white px-2 py-1 rounded text-xs hover:bg-amber-700";
+    const editOnClick = buttonDisabled
+      ? ""
+      : `onclick="editInspectedLot('${lotNumber}')"`;
+    actionButton = `<button ${editOnClick} ${buttonDisabled ? "disabled" : ""}
+                    class="${editButtonClass}">
+                ${buttonDisabled ? "ロット番号なし" : "再編集"}
+            </button>`;
+  }
+
   row.innerHTML = `
+        <td class="px-3 py-2 text-xs text-gray-600">${orderNumber}</td>
         <td class="px-3 py-2 text-xs text-gray-900">${materialSpec}</td>
         <td class="px-3 py-2 text-xs text-gray-600">${lotNumber}</td>
         <td class="px-3 py-2 text-xs text-gray-600">${item.current_quantity}本</td>
         <td class="px-3 py-2 text-xs text-gray-600">${weightDisplay}</td>
-        <td class="px-3 py-2 text-xs text-gray-600">${lotNotes}</td>
         <td class="px-3 py-2">
             <span class="px-2 py-1 rounded-full text-xs font-medium ${statusClass}">${statusText}</span>
         </td>
+        <td class="px-3 py-2 text-xs text-gray-600">${inspectedAt}</td>
         <td class="px-3 py-2">
-            <button ${buttonOnClick} ${buttonDisabled ? "disabled" : ""}
-                    class="${buttonClass}">
-                ${buttonDisabled ? "ロット番号なし" : "選択"}
-            </button>
+            ${actionButton}
         </td>
     `;
 
@@ -2867,6 +2851,11 @@ function selectInspectionItem(lotNumber) {
   if (inspectionForm) {
     inspectionForm.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+}
+
+// 検品済みロットの再編集
+function editInspectedLot(lotNumber) {
+  selectInspectionItem(lotNumber);
 }
 
 async function loadInspectionTargetByCode() {
