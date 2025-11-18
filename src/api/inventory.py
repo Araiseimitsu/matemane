@@ -1214,6 +1214,7 @@ def get_inspected_lots(
     """検品済みロット一覧（検索フィルタ付き）"""
 
     # 基本集計クエリ（ロット単位）
+    # 不合格の場合はItemが存在しないため、LEFT JOINに変更
     query = db.query(
         Lot.id.label("lot_id"),
         Lot.lot_number,
@@ -1224,12 +1225,12 @@ def get_inspected_lots(
         Material.display_name.label("material_name"),
         Material.shape,
         Material.diameter_mm,
-        func.sum(Item.current_quantity).label("total_quantity"),
+        func.coalesce(func.sum(Item.current_quantity), Lot.initial_quantity).label("total_quantity"),
         Material.current_density.label("current_density"),
         PurchaseOrder.order_number.label("order_number"),
         Lot.initial_weight_kg
-    ).select_from(Lot).join(
-        Item, Item.lot_id == Lot.id
+    ).select_from(Lot).outerjoin(
+        Item, and_(Item.lot_id == Lot.id, Item.is_active == True)
     ).join(
         Material, Lot.material_id == Material.id
     ).outerjoin(
@@ -1237,7 +1238,6 @@ def get_inspected_lots(
     ).outerjoin(
         PurchaseOrder, PurchaseOrder.id == PurchaseOrderItem.purchase_order_id
     ).filter(
-        Item.is_active == True,
         Lot.inspection_status != InspectionStatus.PENDING
     ).group_by(
         Lot.id,

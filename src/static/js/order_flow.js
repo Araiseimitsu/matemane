@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initializeInspectionTab();
   initializePrintTab();
   initializeProcessingTab();
+  setupEnterKeyPreventionForInspectionOnwards();
 });
 
 function formatDateToJP(value) {
@@ -32,6 +33,33 @@ function ensureProcessingPanelPlacement() {
   if (!container.contains(processingPanel)) {
     container.appendChild(processingPanel);
   }
+}
+
+function setupEnterKeyPreventionForInspectionOnwards() {
+  const targetPanelIds = [
+    "panel-inspection",
+    "panel-print",
+    "panel-processing",
+  ];
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter") return;
+    const target = e.target;
+    if (!target) return;
+    const tag = target.tagName;
+    if (tag === "TEXTAREA" || tag === "BUTTON") return;
+    if (target.type === "submit") return;
+    for (const id of targetPanelIds) {
+      const panel = document.getElementById(id);
+      if (
+        panel &&
+        !panel.classList.contains("hidden") &&
+        panel.contains(target)
+      ) {
+        e.preventDefault();
+        break;
+      }
+    }
+  });
 }
 
 function initializeTabs() {
@@ -2520,6 +2548,24 @@ function initializeInspectionTab() {
   document
     .getElementById("inspectionForm")
     ?.addEventListener("submit", submitInspection);
+
+  // 検品フォーム内のEnterキー制御（submitボタン以外でEnter押下時は送信を防ぐ）
+  const inspectionFormElement = document.getElementById("inspectionForm");
+  if (inspectionFormElement) {
+    inspectionFormElement.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") {
+        // textarea と submitボタン/通常ボタン以外でのEnterは送信させない
+        const tag = e.target.tagName;
+        if (
+          e.target.type !== "submit" &&
+          tag !== "BUTTON" &&
+          tag !== "TEXTAREA"
+        ) {
+          e.preventDefault();
+        }
+      }
+    });
+  }
   document
     .getElementById("refreshInspectionListBtn")
     ?.addEventListener("click", () => loadInspectionItemsList(1));
@@ -2537,9 +2583,6 @@ function initializeInspectionTab() {
   ].forEach((id) => {
     const el = document.getElementById(id);
     el?.addEventListener("input", debouncedLoadInspected);
-    el?.addEventListener("keyup", (e) => {
-      if (e.key === "Enter") loadInspectedLotsList(1);
-    });
     el?.addEventListener("change", () => loadInspectedLotsList(1));
   });
 
@@ -2993,9 +3036,15 @@ async function populateInspectionFormFromSaved(lotId) {
     }
     const detail = await res.json();
 
-    // 日時（ローカル）
-    if (detail.inspected_at) {
-      const dt = new Date(detail.inspected_at);
+    console.log(
+      "検品詳細レスポンス(detail):",
+      JSON.stringify(detail, null, 2),
+    ); // デバッグ用
+
+    // 日時（ローカル）: inspected_at / inspection_date どちらでも対応
+    const inspectedAt = detail.inspected_at || detail.inspection_date;
+    if (inspectedAt) {
+      const dt = new Date(inspectedAt);
       const local = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000)
         .toISOString()
         .slice(0, 16);
@@ -3019,13 +3068,24 @@ async function populateInspectionFormFromSaved(lotId) {
     setSelectBool("dirtOkSelect", detail.dirt_ok);
 
     const judgementEl = document.getElementById("inspectionJudgementSelect");
-    if (judgementEl) judgementEl.value = detail.inspection_judgement || "";
+    if (judgementEl)
+      judgementEl.value = detail.inspection_judgement || detail.judgement || "";
 
     const byEl = document.getElementById("inspectedByInput");
-    if (byEl) byEl.value = detail.inspected_by_name || "";
+    if (byEl)
+      byEl.value =
+        detail.inspected_by_name ||
+        detail.inspector_name ||
+        detail.inspected_by ||
+        "";
 
     const notesEl = document.getElementById("inspectionNotesInput");
-    if (notesEl) notesEl.value = detail.inspection_notes || "";
+    if (notesEl)
+      notesEl.value =
+        detail.inspection_notes ||
+        detail.notes ||
+        detail.comment ||
+        "";
 
     // 寸法入力
     const numMap = [
@@ -3120,13 +3180,34 @@ async function submitInspection(event) {
   }
 
   const payload = {
-    inspection_date: inspectedAtStr ? new Date(inspectedAtStr) : new Date(),
+    // バックエンドのJSONに合わせたフィールド名（旧・新どちらにも対応）
+    inspection_date: inspectedAtStr
+      ? new Date(inspectedAtStr)
+      : new Date(),
+    inspected_at: inspectedAtStr
+      ? new Date(inspectedAtStr)
+      : new Date(),
     bending_ok: bendingOk,
-    inspector_name: inspectedBy || "",
-    notes: notes || "",
     scratch_ok: scratchOk,
     dirt_ok: dirtOk,
     inspection_judgement: judgementVal || null,
+    inspector_name: inspectedBy || "",
+    inspected_by_name: inspectedBy || "",
+    inspection_notes: notes || "",
+
+    // 寸法値も送信
+    dim1_left_max: dim1LeftMax,
+    dim1_left_min: dim1LeftMin,
+    dim1_center_max: dim1CenterMax,
+    dim1_center_min: dim1CenterMin,
+    dim1_right_max: dim1RightMax,
+    dim1_right_min: dim1RightMin,
+    dim2_left_max: dim2LeftMax,
+    dim2_left_min: dim2LeftMin,
+    dim2_center_max: dim2CenterMax,
+    dim2_center_min: dim2CenterMin,
+    dim2_right_max: dim2RightMax,
+    dim2_right_min: dim2RightMin,
   };
 
   console.log("検品データペイロード:", payload); // デバッグ
@@ -3167,7 +3248,10 @@ async function submitInspection(event) {
       }, 500);
     } else {
       const err = await res.json().catch(() => ({}));
-      console.error("検品登録失敗:", err); // デバッグ
+      console.error(
+        "検品登録失敗詳細:",
+        JSON.stringify(err, null, 2),
+      ); // デバッグ
       if (typeof showToast === "function") {
         showToast(err.detail || "検品登録に失敗しました", "error");
       }

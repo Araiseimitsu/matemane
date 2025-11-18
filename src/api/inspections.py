@@ -18,6 +18,20 @@ class InspectionRequest(BaseModel):
     scratch_ok: bool = Field(True, description="キズ")
     dirt_ok: bool = Field(True, description="汚れ")
     inspection_judgement: str | None = Field(None, description="判定結果")
+    
+    # 寸法値
+    dim1_left_max: float | None = None
+    dim1_left_min: float | None = None
+    dim1_center_max: float | None = None
+    dim1_center_min: float | None = None
+    dim1_right_max: float | None = None
+    dim1_right_min: float | None = None
+    dim2_left_max: float | None = None
+    dim2_left_min: float | None = None
+    dim2_center_max: float | None = None
+    dim2_center_min: float | None = None
+    dim2_right_max: float | None = None
+    dim2_right_min: float | None = None
 
 
 @router.post("/lots/{lot_id}/", response_model=dict, status_code=status.HTTP_200_OK)
@@ -28,8 +42,25 @@ async def submit_inspection(lot_id: int, body: InspectionRequest, db: Session = 
 
     lot.inspected_at = body.inspection_date
     lot.bending_ok = body.bending_ok
+    lot.scratch_ok = body.scratch_ok
+    lot.dirt_ok = body.dirt_ok
     lot.inspected_by_name = body.inspector_name
     lot.inspection_notes = body.notes
+    lot.inspection_judgement = body.inspection_judgement
+    
+    # 寸法値を保存
+    lot.dim1_left_max = body.dim1_left_max
+    lot.dim1_left_min = body.dim1_left_min
+    lot.dim1_center_max = body.dim1_center_max
+    lot.dim1_center_min = body.dim1_center_min
+    lot.dim1_right_max = body.dim1_right_max
+    lot.dim1_right_min = body.dim1_right_min
+    lot.dim2_left_max = body.dim2_left_max
+    lot.dim2_left_min = body.dim2_left_min
+    lot.dim2_center_max = body.dim2_center_max
+    lot.dim2_center_min = body.dim2_center_min
+    lot.dim2_right_max = body.dim2_right_max
+    lot.dim2_right_min = body.dim2_right_min
 
     # 判定ロジック：手動選択があれば優先、なければ全項目のANDで判定
     if body.inspection_judgement == 'pass':
