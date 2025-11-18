@@ -1,8 +1,5 @@
-{% extends "base.html" %}
-
-{% block title %}発注フロー統合 - 材料管理システム{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}発注フロー統合 - 材料管理システム{%
+endblock %} {% block content %}
 <div class="min-h-screen bg-neutral-50">
     <!-- ヘッダー -->
     <div class="bg-white shadow-sm border-b border-neutral-200">
@@ -15,38 +12,72 @@
                     <h1 class="text-2xl font-bold text-neutral-800">
                         発注フロー統合
                     </h1>
-                    <p class="text-sm text-neutral-600 mt-1">Excel取込 → 入庫確認 → 検品 → 印刷までを一括管理</p>
+                    <p class="text-sm text-neutral-600 mt-1">
+                        Excel取込 → 入庫確認 → 検品 → 印刷までを一括管理
+                    </p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- タブナビゲーション -->
-    <div class="bg-white shadow-sm border-b border-neutral-200 sticky top-20 z-40">
+    <div
+        class="bg-white shadow-sm border-b border-neutral-200 sticky top-20 z-40"
+    >
         <div class="max-w-[1600px] mx-auto px-4">
             <nav class="flex space-x-2 overflow-x-auto py-2" role="tablist">
-                <button id="tab-import" role="tab" aria-selected="true" aria-controls="panel-import"
-                    class="tab-button active px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap">
+                <button
+                    id="tab-import"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="panel-import"
+                    class="tab-button active px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap"
+                >
                     <i class="fas fa-file-excel mr-2"></i>Excel取込
                 </button>
-                <button id="tab-orders" role="tab" aria-selected="false" aria-controls="panel-orders"
-                    class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap">
+                <button
+                    id="tab-orders"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="panel-orders"
+                    class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap"
+                >
                     <i class="fas fa-list mr-2"></i>発注一覧
                 </button>
-                <button id="tab-receiving" role="tab" aria-selected="false" aria-controls="panel-receiving"
-                    class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap">
+                <button
+                    id="tab-receiving"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="panel-receiving"
+                    class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap"
+                >
                     <i class="fas fa-truck mr-2"></i>入庫確認
                 </button>
-                <button id="tab-inspection" role="tab" aria-selected="false" aria-controls="panel-inspection"
-                    class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap">
+                <button
+                    id="tab-inspection"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="panel-inspection"
+                    class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap"
+                >
                     <i class="fas fa-clipboard-check mr-2"></i>検品タブ
                 </button>
-                <button id="tab-print" role="tab" aria-selected="false" aria-controls="panel-print"
-                    class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap">
+                <button
+                    id="tab-print"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="panel-print"
+                    class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap"
+                >
                     <i class="fas fa-print mr-2"></i>印刷
                 </button>
-                <button id="tab-processing" role="tab" aria-selected="false" aria-controls="panel-processing"
-                    class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap">
+                <button
+                    id="tab-processing"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="panel-processing"
+                    class="tab-button px-4 py-2 text-sm font-semibold rounded-lg transition-all focus:outline-none whitespace-nowrap"
+                >
                     <i class="fas fa-tasks mr-2"></i>処理
                 </button>
             </nav>
@@ -56,20 +87,46 @@
     <!-- タブコンテンツ -->
     <div id="order-flow-tab-panels" class="max-w-[1600px] mx-auto px-4 py-4">
         <!-- Excel取込タブ -->
-        <div id="panel-import" role="tabpanel" aria-labelledby="tab-import" class="tab-panel">
-            <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
-                <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-4 space-y-4 lg:space-y-0">
+        <div
+            id="panel-import"
+            role="tabpanel"
+            aria-labelledby="tab-import"
+            class="tab-panel"
+        >
+            <div
+                class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm"
+            >
+                <div
+                    class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-4 space-y-4 lg:space-y-0"
+                >
                     <div>
-                        <h2 class="text-xl font-semibold text-neutral-800">Excel取込</h2>
-                        <p class="text-sm text-neutral-600 mt-1">材料管理.xlsx から発注データを自動取り込み</p>
+                        <h2 class="text-xl font-semibold text-neutral-800">
+                            Excel取込
+                        </h2>
+                        <p class="text-sm text-neutral-600 mt-1">
+                            材料管理.xlsx から発注データを自動取り込み
+                        </p>
                     </div>
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
-                        <label class="flex items-center space-x-2 px-3 py-2 bg-white rounded-lg border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition-all">
-                            <input type="checkbox" id="externalDryRunToggle" class="rounded text-primary-blue focus:ring-primary-blue" checked />
-                            <span class="text-sm font-medium text-neutral-700">DRY-RUN（検証のみ）</span>
+                    <div
+                        class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3"
+                    >
+                        <label
+                            class="flex items-center space-x-2 px-3 py-2 bg-white rounded-lg border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition-all"
+                        >
+                            <input
+                                type="checkbox"
+                                id="externalDryRunToggle"
+                                class="rounded text-primary-blue focus:ring-primary-blue"
+                                checked
+                            />
+                            <span class="text-sm font-medium text-neutral-700"
+                                >DRY-RUN（検証のみ）</span
+                            >
                         </label>
-                        <button id="runExternalScriptBtn"
-                            class="bg-primary-blue text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all flex items-center justify-center">
+                        <button
+                            id="runExternalScriptBtn"
+                            class="bg-primary-blue text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all flex items-center justify-center"
+                        >
                             <i class="fas fa-file-excel mr-2"></i>Excel取込実行
                         </button>
                     </div>
@@ -77,92 +134,183 @@
 
                 <!-- 実行結果表示エリア -->
                 <div id="importResultArea" class="hidden mt-4">
-                    <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-                        <h3 class="font-semibold text-neutral-800 mb-2 text-sm flex items-center">
+                    <div
+                        class="bg-neutral-50 border border-neutral-200 rounded-lg p-4"
+                    >
+                        <h3
+                            class="font-semibold text-neutral-800 mb-2 text-sm flex items-center"
+                        >
                             <i class="fas fa-check-circle mr-2"></i>実行結果
                         </h3>
-                        <div id="importResultContent" class="text-sm text-neutral-700"></div>
+                        <div
+                            id="importResultContent"
+                            class="text-sm text-neutral-700"
+                        ></div>
                     </div>
                 </div>
 
                 <!-- セット予定表取り込みセクション -->
                 <div class="mt-4 border-t border-neutral-200 pt-4">
-                    <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-4 space-y-4 lg:space-y-0">
+                    <div
+                        class="flex flex-col lg:flex-row lg:justify-between lg:items-center mb-4 space-y-4 lg:space-y-0"
+                    >
                         <div>
-                            <h3 class="text-lg font-semibold text-neutral-800">セット予定表取り込み</h3>
-                            <p class="text-sm text-neutral-600 mt-1">セット予定表.xlsx からセット予定日・機械NOを取り込み</p>
+                            <h3 class="text-lg font-semibold text-neutral-800">
+                                セット予定表取り込み
+                            </h3>
+                            <p class="text-sm text-neutral-600 mt-1">
+                                セット予定表.xlsx
+                                からセット予定日・機械NOを取り込み
+                            </p>
                         </div>
-                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
-                            <label class="flex items-center space-x-2 px-3 py-2 bg-white rounded-lg border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition-all">
-                                <input type="checkbox" id="scheduleDryRunToggle" class="rounded text-primary-blue focus:ring-primary-blue" checked />
-                                <span class="text-sm font-medium text-neutral-700">DRY-RUN（検証のみ）</span>
+                        <div
+                            class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3"
+                        >
+                            <label
+                                class="flex items-center space-x-2 px-3 py-2 bg-white rounded-lg border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition-all"
+                            >
+                                <input
+                                    type="checkbox"
+                                    id="scheduleDryRunToggle"
+                                    class="rounded text-primary-blue focus:ring-primary-blue"
+                                    checked
+                                />
+                                <span
+                                    class="text-sm font-medium text-neutral-700"
+                                    >DRY-RUN（検証のみ）</span
+                                >
                             </label>
-                            <button id="runScheduleImportBtn"
-                                class="bg-success-green text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all flex items-center justify-center">
-                                <i class="fas fa-calendar-alt mr-2"></i>セット予定表取り込み
+                            <button
+                                id="runScheduleImportBtn"
+                                class="bg-success-green text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all flex items-center justify-center"
+                            >
+                                <i class="fas fa-calendar-alt mr-2"></i
+                                >セット予定表取り込み
                             </button>
                         </div>
                     </div>
                     <div id="scheduleImportResultArea" class="hidden mt-4">
-                        <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
-                            <h3 class="font-semibold text-neutral-800 mb-2 text-sm flex items-center">
+                        <div
+                            class="bg-neutral-50 border border-neutral-200 rounded-lg p-4"
+                        >
+                            <h3
+                                class="font-semibold text-neutral-800 mb-2 text-sm flex items-center"
+                            >
                                 <i class="fas fa-check-circle mr-2"></i>実行結果
                             </h3>
-                            <div id="scheduleImportResultContent" class="text-sm text-neutral-700"></div>
+                            <div
+                                id="scheduleImportResultContent"
+                                class="text-sm text-neutral-700"
+                            ></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- 使い方説明 -->
-                <div class="mt-4 bg-neutral-50 rounded-lg p-4 border border-neutral-200">
-                    <h3 class="font-semibold text-neutral-800 mb-3 text-sm flex items-center">
-                        <i class="fas fa-info-circle mr-2 text-primary-blue"></i>使い方
+                <div
+                    class="mt-4 bg-neutral-50 rounded-lg p-4 border border-neutral-200"
+                >
+                    <h3
+                        class="font-semibold text-neutral-800 mb-3 text-sm flex items-center"
+                    >
+                        <i class="fas fa-info-circle mr-2 text-primary-blue"></i
+                        >使い方
                     </h3>
-                    <ol class="list-decimal list-inside text-sm text-neutral-700 space-y-2">
-                        <li class="pl-2">DRY-RUNモードで検証を実行してエラーがないか確認</li>
-                        <li class="pl-2">問題なければDRY-RUNのチェックを外して本実行</li>
-                        <li class="pl-2">実行後、「発注一覧」タブで取り込まれた発注を確認</li>
+                    <ol
+                        class="list-decimal list-inside text-sm text-neutral-700 space-y-2"
+                    >
+                        <li class="pl-2">
+                            DRY-RUNモードで検証を実行してエラーがないか確認
+                        </li>
+                        <li class="pl-2">
+                            問題なければDRY-RUNのチェックを外して本実行
+                        </li>
+                        <li class="pl-2">
+                            実行後、「発注一覧」タブで取り込まれた発注を確認
+                        </li>
                     </ol>
                 </div>
             </div>
         </div>
 
         <!-- 発注一覧タブ -->
-        <div id="panel-orders" role="tabpanel" aria-labelledby="tab-orders" class="tab-panel hidden">
-            <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0">
-                    <h2 class="text-xl font-semibold text-neutral-800">発注一覧</h2>
-                    <button id="refreshOrdersBtn"
-                        class="bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all flex items-center">
+        <div
+            id="panel-orders"
+            role="tabpanel"
+            aria-labelledby="tab-orders"
+            class="tab-panel hidden"
+        >
+            <div
+                class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm"
+            >
+                <div
+                    class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0"
+                >
+                    <h2 class="text-xl font-semibold text-neutral-800">
+                        発注一覧
+                    </h2>
+                    <button
+                        id="refreshOrdersBtn"
+                        class="bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all flex items-center"
+                    >
                         <i class="fas fa-sync-alt mr-2"></i>更新
                     </button>
                 </div>
 
                 <!-- フィルター -->
-                <div class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200">
+                <div
+                    class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200"
+                >
                     <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-sm font-semibold text-neutral-800 flex items-center">
-                            <i class="fas fa-filter mr-2 text-primary-blue"></i>検索フィルター（リアルタイム検索）
+                        <h3
+                            class="text-sm font-semibold text-neutral-800 flex items-center"
+                        >
+                            <i class="fas fa-filter mr-2 text-primary-blue"></i
+                            >検索フィルター（リアルタイム検索）
                         </h3>
-                        <button id="resetOrderFiltersBtn"
-                            class="text-sm text-neutral-600 hover:text-primary-blue font-medium flex items-center transition-colors">
+                        <button
+                            id="resetOrderFiltersBtn"
+                            class="text-sm text-neutral-600 hover:text-primary-blue font-medium flex items-center transition-colors"
+                        >
                             <i class="fas fa-redo mr-1"></i>リセット
                         </button>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div
+                        class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3"
+                    >
                         <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-1">発注番号</label>
-                            <input type="text" id="orderNumberFilter" placeholder="発注番号で絞り込み"
-                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
+                            <label
+                                class="block text-sm font-medium text-neutral-700 mb-1"
+                                >発注番号</label
+                            >
+                            <input
+                                type="text"
+                                id="orderNumberFilter"
+                                placeholder="発注番号で絞り込み"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-1">材料仕様</label>
-                            <input type="text" id="orderMaterialFilter" placeholder="材料仕様で絞り込み"
-                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
+                            <label
+                                class="block text-sm font-medium text-neutral-700 mb-1"
+                                >材料仕様</label
+                            >
+                            <input
+                                type="text"
+                                id="orderMaterialFilter"
+                                placeholder="材料仕様で絞り込み"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-1">状態</label>
-                            <select id="orderStatusFilter" class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all bg-white">
+                            <label
+                                class="block text-sm font-medium text-neutral-700 mb-1"
+                                >状態</label
+                            >
+                            <select
+                                id="orderStatusFilter"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all bg-white"
+                            >
                                 <option value="">全て</option>
                                 <option value="pending">発注済み</option>
                                 <option value="partial">一部入庫</option>
@@ -170,9 +318,16 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-1">仕入先</label>
-                            <input type="text" id="orderSupplierFilter" placeholder="仕入先名で絞り込み"
-                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
+                            <label
+                                class="block text-sm font-medium text-neutral-700 mb-1"
+                                >仕入先</label
+                            >
+                            <input
+                                type="text"
+                                id="orderSupplierFilter"
+                                placeholder="仕入先名で絞り込み"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                            />
                         </div>
                     </div>
                 </div>
@@ -181,26 +336,61 @@
                 <div id="ordersPaginationTop" class="mb-4"></div>
 
                 <!-- 発注テーブル -->
-                <div class="overflow-x-auto rounded-lg border border-neutral-200">
+                <div
+                    class="overflow-x-auto rounded-lg border border-neutral-200"
+                >
                     <table class="w-full">
                         <thead class="bg-neutral-50">
                             <tr>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">発注番号</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">仕入先</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">発注日</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">納期予定</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">状態</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">材料仕様</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">操作</th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    発注番号
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    仕入先
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    発注日
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    納期予定
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    状態
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    材料仕様
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    操作
+                                </th>
                             </tr>
                         </thead>
-                        <tbody id="ordersTableBody" class="divide-y divide-neutral-200 bg-white">
+                        <tbody
+                            id="ordersTableBody"
+                            class="divide-y divide-neutral-200 bg-white"
+                        >
                             <!-- 動的に生成 -->
                         </tbody>
                     </table>
                 </div>
                 <div id="ordersLoading" class="text-center py-8 hidden">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <div
+                        class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+                    ></div>
                     <p class="mt-2 text-gray-600">読み込み中...</p>
                 </div>
                 <div id="ordersEmpty" class="text-center py-8 hidden">
@@ -213,52 +403,105 @@
         </div>
 
         <!-- 入庫確認タブ -->
-        <div id="panel-receiving" role="tabpanel" aria-labelledby="tab-receiving" class="tab-panel hidden">
-            <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
-                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 space-y-4 lg:space-y-0">
-                    <h2 class="text-xl font-semibold text-neutral-800">入庫確認</h2>
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
-                        <button id="manualReceiveBtn"
-                            class="bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition-all flex items-center shadow-lg border-2 border-green-700">
+        <div
+            id="panel-receiving"
+            role="tabpanel"
+            aria-labelledby="tab-receiving"
+            class="tab-panel hidden"
+        >
+            <div
+                class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm"
+            >
+                <div
+                    class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-4 space-y-4 lg:space-y-0"
+                >
+                    <h2 class="text-xl font-semibold text-neutral-800">
+                        入庫確認
+                    </h2>
+                    <div
+                        class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3"
+                    >
+                        <button
+                            id="manualReceiveBtn"
+                            class="bg-green-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-green-700 transition-all flex items-center shadow-lg border-2 border-green-700"
+                        >
                             <i class="fas fa-plus mr-2"></i>手入力で入庫
                         </button>
-                        <label class="flex items-center space-x-2 px-3 py-2 bg-white rounded-lg border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition-all">
-                            <input type="checkbox" id="includeInspectedFilter" class="rounded text-success-green focus:ring-success-green">
-                            <span class="text-sm font-medium text-neutral-700">検品完了も表示</span>
+                        <label
+                            class="flex items-center space-x-2 px-3 py-2 bg-white rounded-lg border border-neutral-200 cursor-pointer hover:bg-neutral-50 transition-all"
+                        >
+                            <input
+                                type="checkbox"
+                                id="includeInspectedFilter"
+                                class="rounded text-success-green focus:ring-success-green"
+                            />
+                            <span class="text-sm font-medium text-neutral-700"
+                                >検品完了も表示</span
+                            >
                         </label>
-                        <button id="refreshReceivingBtn"
-                            class="bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all flex items-center">
+                        <button
+                            id="refreshReceivingBtn"
+                            class="bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all flex items-center"
+                        >
                             <i class="fas fa-sync-alt mr-2"></i>更新
                         </button>
                     </div>
                 </div>
 
                 <!-- フィルター -->
-                <div class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200">
+                <div
+                    class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200"
+                >
                     <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-sm font-semibold text-neutral-800 flex items-center">
-                            <i class="fas fa-filter mr-2 text-primary-blue"></i>検索フィルター（リアルタイム検索）
+                        <h3
+                            class="text-sm font-semibold text-neutral-800 flex items-center"
+                        >
+                            <i class="fas fa-filter mr-2 text-primary-blue"></i
+                            >検索フィルター（リアルタイム検索）
                         </h3>
-                        <button id="resetReceivingFiltersBtn"
-                            class="text-sm text-neutral-600 hover:text-primary-blue font-medium flex items-center transition-colors">
+                        <button
+                            id="resetReceivingFiltersBtn"
+                            class="text-sm text-neutral-600 hover:text-primary-blue font-medium flex items-center transition-colors"
+                        >
                             <i class="fas fa-redo mr-1"></i>リセット
                         </button>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-1">発注番号</label>
-                            <input type="text" id="receivingOrderNumberFilter" placeholder="発注番号で絞り込み"
-                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
+                            <label
+                                class="block text-sm font-medium text-neutral-700 mb-1"
+                                >発注番号</label
+                            >
+                            <input
+                                type="text"
+                                id="receivingOrderNumberFilter"
+                                placeholder="発注番号で絞り込み"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-1">仕入先</label>
-                            <input type="text" id="receivingSupplierFilter" placeholder="仕入先名で絞り込み"
-                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
+                            <label
+                                class="block text-sm font-medium text-neutral-700 mb-1"
+                                >仕入先</label
+                            >
+                            <input
+                                type="text"
+                                id="receivingSupplierFilter"
+                                placeholder="仕入先名で絞り込み"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-1">材料仕様</label>
-                            <input type="text" id="receivingMaterialFilter" placeholder="材料仕様で絞り込み"
-                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
+                            <label
+                                class="block text-sm font-medium text-neutral-700 mb-1"
+                                >材料仕様</label
+                            >
+                            <input
+                                type="text"
+                                id="receivingMaterialFilter"
+                                placeholder="材料仕様で絞り込み"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                            />
                         </div>
                     </div>
                 </div>
@@ -267,29 +510,76 @@
                 <div id="receivingPaginationTop" class="mb-4"></div>
 
                 <!-- 入庫待ちアイテムテーブル -->
-                <div class="overflow-x-auto rounded-lg border border-neutral-200">
+                <div
+                    class="overflow-x-auto rounded-lg border border-neutral-200"
+                >
                     <table class="w-full">
                         <thead class="bg-neutral-50">
                             <tr>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">発注番号</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">仕入先</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">発注日</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">納期予定</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">材料仕様</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">発注数量/重量</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">セット予定日</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">機械NO</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">検品状態</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">操作</th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    発注番号
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    仕入先
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    発注日
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    納期予定
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    材料仕様
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    発注数量/重量
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    セット予定日
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    機械NO
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    検品状態
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    操作
+                                </th>
                             </tr>
                         </thead>
-                        <tbody id="receivingItemsTableBody" class="divide-y divide-neutral-200 bg-white">
+                        <tbody
+                            id="receivingItemsTableBody"
+                            class="divide-y divide-neutral-200 bg-white"
+                        >
                             <!-- 動的に生成 -->
                         </tbody>
                     </table>
                 </div>
                 <div id="receivingLoading" class="text-center py-8 hidden">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <div
+                        class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+                    ></div>
                     <p class="mt-2 text-gray-600">読み込み中...</p>
                 </div>
                 <div id="receivingEmpty" class="text-center py-8 hidden">
@@ -302,42 +592,82 @@
         </div>
 
         <!-- 検品タブ -->
-        <div id="panel-inspection" role="tabpanel" aria-labelledby="tab-inspection" class="tab-panel hidden">
-            <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0">
+        <div
+            id="panel-inspection"
+            role="tabpanel"
+            aria-labelledby="tab-inspection"
+            class="tab-panel hidden"
+        >
+            <div
+                class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm"
+            >
+                <div
+                    class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0"
+                >
                     <h2 class="text-xl font-semibold text-neutral-800">検品</h2>
-                    <button id="refreshInspectionListBtn"
-                        class="bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all flex items-center">
+                    <button
+                        id="refreshInspectionListBtn"
+                        class="bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all flex items-center"
+                    >
                         <i class="fas fa-sync-alt mr-2"></i>更新
                     </button>
                 </div>
 
                 <!-- 入庫済みアイテム一覧から選択 -->
-                <div class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200">
-                    <h3 class="text-sm font-semibold text-neutral-800 mb-3 flex items-center">
-                        <i class="fas fa-list-check mr-2"></i>入庫済みアイテムから選択
+                <div
+                    class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200"
+                >
+                    <h3
+                        class="text-sm font-semibold text-neutral-800 mb-3 flex items-center"
+                    >
+                        <i class="fas fa-list-check mr-2"></i
+                        >入庫済みアイテムから選択
                     </h3>
 
                     <!-- フィルター（リアルタイム検索） -->
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
                         <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-1">発注番号</label>
-                            <input id="inspectionOrderNumberFilter" type="text" placeholder="例: PO-000123"
-                                   class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20" />
+                            <label
+                                class="block text-sm font-medium text-neutral-700 mb-1"
+                                >発注番号</label
+                            >
+                            <input
+                                id="inspectionOrderNumberFilter"
+                                type="text"
+                                placeholder="例: PO-000123"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-1">材料仕様</label>
-                            <input id="inspectionMaterialFilter" type="text" placeholder="例: STKM13A φ19"
-                                   class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20" />
+                            <label
+                                class="block text-sm font-medium text-neutral-700 mb-1"
+                                >材料仕様</label
+                            >
+                            <input
+                                id="inspectionMaterialFilter"
+                                type="text"
+                                placeholder="例: STKM13A φ19"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-1">ロット番号</label>
-                            <input id="inspectionLotFilter" type="text" placeholder="例: 2409-001"
-                                   class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20" />
+                            <label
+                                class="block text-sm font-medium text-neutral-700 mb-1"
+                                >ロット番号</label
+                            >
+                            <input
+                                id="inspectionLotFilter"
+                                type="text"
+                                placeholder="例: 2409-001"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20"
+                            />
                         </div>
                         <div class="flex items-end">
-                            <button type="button" id="resetInspectionSelectionFiltersBtn"
-                                    class="w-full bg-primary-blue text-white px-3 py-2 rounded-lg hover:bg-opacity-90 transition-colors">
+                            <button
+                                type="button"
+                                id="resetInspectionSelectionFiltersBtn"
+                                class="w-full bg-primary-blue text-white px-3 py-2 rounded-lg hover:bg-opacity-90 transition-colors"
+                            >
                                 <i class="fas fa-redo mr-2"></i>リセット
                             </button>
                         </div>
@@ -346,30 +676,73 @@
                     <!-- ページネーション（上部） -->
                     <div id="inspectionPaginationTop" class="mb-4"></div>
 
-                    <div class="overflow-x-auto bg-white rounded-lg border border-neutral-200">
+                    <div
+                        class="overflow-x-auto bg-white rounded-lg border border-neutral-200"
+                    >
                         <table class="w-full text-sm">
                             <thead class="bg-neutral-50">
                                 <tr>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">材料仕様</th>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">ロット番号</th>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">本数</th>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">重量</th>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">ロット備考</th>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">検品状態</th>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">操作</th>
+                                    <th
+                                        class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                    >
+                                        材料仕様
+                                    </th>
+                                    <th
+                                        class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                    >
+                                        ロット番号
+                                    </th>
+                                    <th
+                                        class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                    >
+                                        本数
+                                    </th>
+                                    <th
+                                        class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                    >
+                                        重量
+                                    </th>
+                                    <th
+                                        class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                    >
+                                        ロット備考
+                                    </th>
+                                    <th
+                                        class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                    >
+                                        検品状態
+                                    </th>
+                                    <th
+                                        class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                    >
+                                        操作
+                                    </th>
                                 </tr>
                             </thead>
-                            <tbody id="inspectionItemsListBody" class="divide-y divide-neutral-200">
+                            <tbody
+                                id="inspectionItemsListBody"
+                                class="divide-y divide-neutral-200"
+                            >
                                 <!-- 動的に生成 -->
                             </tbody>
                         </table>
                     </div>
-                    <div id="inspectionListLoading" class="text-center py-4 hidden">
-                        <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                    <div
+                        id="inspectionListLoading"
+                        class="text-center py-4 hidden"
+                    >
+                        <div
+                            class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"
+                        ></div>
                         <p class="mt-2 text-sm text-blue-700">読み込み中...</p>
                     </div>
-                    <div id="inspectionListEmpty" class="text-center py-4 hidden">
-                        <p class="text-sm text-gray-500">入庫済みアイテムがありません</p>
+                    <div
+                        id="inspectionListEmpty"
+                        class="text-center py-4 hidden"
+                    >
+                        <p class="text-sm text-gray-500">
+                            入庫済みアイテムがありません
+                        </p>
                     </div>
 
                     <!-- ページネーション（下部） -->
@@ -377,76 +750,160 @@
                 </div>
 
                 <!-- 検品済み一覧（検索＋再編集） -->
-                <div class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200">
+                <div
+                    class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200"
+                >
                     <div class="flex items-center justify-between mb-3">
-                        <h3 class="text-sm font-semibold text-neutral-800 flex items-center">
-                            <i class="fas fa-clipboard-check mr-2"></i>検品済み一覧
+                        <h3
+                            class="text-sm font-semibold text-neutral-800 flex items-center"
+                        >
+                            <i class="fas fa-clipboard-check mr-2"></i
+                            >検品済み一覧
                         </h3>
-                        <button type="button" id="toggleInspectedSectionBtn"
-                                class="text-xs px-3 py-1 rounded-lg bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-100">
+                        <button
+                            type="button"
+                            id="toggleInspectedSectionBtn"
+                            class="text-xs px-3 py-1 rounded-lg bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-100"
+                        >
                             開く
                         </button>
                     </div>
 
                     <div id="inspectedLotsSection" class="hidden">
-
-                    <!-- フィルター -->
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                        <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-1">発注番号</label>
-                            <input id="inspectedOrderNumberFilter" type="text" placeholder="例: PO-000123"
-                                   class="w-full p-2 border border-gray-300 rounded-md">
+                        <!-- フィルター -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-neutral-700 mb-1"
+                                    >発注番号</label
+                                >
+                                <input
+                                    id="inspectedOrderNumberFilter"
+                                    type="text"
+                                    placeholder="例: PO-000123"
+                                    class="w-full p-2 border border-gray-300 rounded-md"
+                                />
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-neutral-700 mb-1"
+                                    >材料仕様</label
+                                >
+                                <input
+                                    id="inspectedMaterialFilter"
+                                    type="text"
+                                    placeholder="例: STKM13A φ19"
+                                    class="w-full p-2 border border-gray-300 rounded-md"
+                                />
+                            </div>
+                            <div>
+                                <label
+                                    class="block text-sm font-medium text-neutral-700 mb-1"
+                                    >ロット番号</label
+                                >
+                                <input
+                                    id="inspectedLotFilter"
+                                    type="text"
+                                    placeholder="例: 2409-001"
+                                    class="w-full p-2 border border-gray-300 rounded-md"
+                                />
+                            </div>
+                            <div class="flex items-end">
+                                <button
+                                    type="button"
+                                    id="resetInspectedLotsFiltersBtn"
+                                    onclick="resetInspectedLotsFilters()"
+                                    class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors"
+                                >
+                                    <i class="fas fa-redo mr-2"></i>リセット
+                                </button>
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-1">材料仕様</label>
-                            <input id="inspectedMaterialFilter" type="text" placeholder="例: STKM13A φ19"
-                                   class="w-full p-2 border border-gray-300 rounded-md">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-1">ロット番号</label>
-                            <input id="inspectedLotFilter" type="text" placeholder="例: 2409-001"
-                                   class="w-full p-2 border border-gray-300 rounded-md">
-                        </div>
-                        <div class="flex items-end">
-                            <button type="button" id="resetInspectedLotsFiltersBtn" onclick="resetInspectedLotsFilters()"
-                                    class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors">
-                                <i class="fas fa-redo mr-2"></i>リセット
-                            </button>
-                        </div>
-                    </div>
 
-                    <!-- ページネーション（上部） -->
-                    <div id="inspectedLotsPaginationTop" class="mb-4"></div>
+                        <!-- ページネーション（上部） -->
+                        <div id="inspectedLotsPaginationTop" class="mb-4"></div>
 
-                    <div class="overflow-x-auto bg-white rounded-lg border border-neutral-200">
-                        <table class="w-full text-sm">
-                            <thead class="bg-neutral-50">
-                                <tr>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">発注番号</th>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">材料仕様</th>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">ロット番号</th>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">本数</th>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">重量</th>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">検品状態</th>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">検品日時</th>
-                                    <th class="px-3 py-2 text-left text-xs font-semibold text-neutral-700">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inspectedLotsTableBody" class="divide-y divide-neutral-200">
-                                <!-- 動的に生成 -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div id="inspectedLotsLoading" class="text-center py-4 hidden">
-                        <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
-                        <p class="mt-2 text-sm text-indigo-700">読み込み中...</p>
-                    </div>
-                    <div id="inspectedLotsEmpty" class="text-center py-4 hidden">
-                        <p class="text-sm text-gray-500">検品済みのロットがありません</p>
-                    </div>
+                        <div
+                            class="overflow-x-auto bg-white rounded-lg border border-neutral-200"
+                        >
+                            <table class="w-full text-sm">
+                                <thead class="bg-neutral-50">
+                                    <tr>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                        >
+                                            発注番号
+                                        </th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                        >
+                                            材料仕様
+                                        </th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                        >
+                                            ロット番号
+                                        </th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                        >
+                                            本数
+                                        </th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                        >
+                                            重量
+                                        </th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                        >
+                                            検品状態
+                                        </th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                        >
+                                            検品日時
+                                        </th>
+                                        <th
+                                            class="px-3 py-2 text-left text-xs font-semibold text-neutral-700"
+                                        >
+                                            操作
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody
+                                    id="inspectedLotsTableBody"
+                                    class="divide-y divide-neutral-200"
+                                >
+                                    <!-- 動的に生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div
+                            id="inspectedLotsLoading"
+                            class="text-center py-4 hidden"
+                        >
+                            <div
+                                class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"
+                            ></div>
+                            <p class="mt-2 text-sm text-indigo-700">
+                                読み込み中...
+                            </p>
+                        </div>
+                        <div
+                            id="inspectedLotsEmpty"
+                            class="text-center py-4 hidden"
+                        >
+                            <p class="text-sm text-gray-500">
+                                検品済みのロットがありません
+                            </p>
+                        </div>
 
-                    <!-- ページネーション（下部） -->
-                    <div id="inspectedLotsPaginationBottom" class="mt-4"></div>
+                        <!-- ページネーション（下部） -->
+                        <div
+                            id="inspectedLotsPaginationBottom"
+                            class="mt-4"
+                        ></div>
                     </div>
                 </div>
 
@@ -454,32 +911,57 @@
                 <form id="inspectionForm" class="space-y-6">
                     <!-- 検品対象情報表示 -->
                     <div class="mb-6">
-                        <h3 class="text-sm font-medium text-gray-900 mb-3">検品対象</h3>
+                        <h3 class="text-sm font-medium text-gray-900 mb-3">
+                            検品対象
+                        </h3>
                         <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                            <div
+                                class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3"
+                            >
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">ロット番号</label>
-                                    <input type="text" id="inspectionCodeInput" placeholder="ロット番号を入力"
-                                        class="w-full p-2 border border-gray-300 rounded-md">
+                                    <label
+                                        class="block text-sm font-medium text-gray-700 mb-2"
+                                        >ロット番号</label
+                                    >
+                                    <input
+                                        type="text"
+                                        id="inspectionCodeInput"
+                                        placeholder="ロット番号を入力"
+                                        class="w-full p-2 border border-gray-300 rounded-md"
+                                    />
                                 </div>
                                 <div class="flex items-end">
-                                    <button type="button" id="loadInspectionTargetBtn"
-                                        class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
-                                        <i class="fas fa-search mr-2"></i>読み込み
+                                    <button
+                                        type="button"
+                                        id="loadInspectionTargetBtn"
+                                        class="w-full bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+                                    >
+                                        <i class="fas fa-search mr-2"></i
+                                        >読み込み
                                     </button>
                                 </div>
                             </div>
                         </div>
                         <div id="inspectionTargetInfo">
-                            <p class="text-gray-600">ロット番号を入力して読み込んでください。</p>
+                            <p class="text-gray-600">
+                                ロット番号を入力して読み込んでください。
+                            </p>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-1 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">確認日時 *</label>
-                            <input type="datetime-local" id="inspectedAtInput" name="inspected_at" required
-                                class="w-full p-3 border border-gray-300 rounded-md">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >確認日時 *</label
+                            >
+                            <input
+                                type="datetime-local"
+                                id="inspectedAtInput"
+                                name="inspected_at"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                            />
                         </div>
                     </div>
 
@@ -488,30 +970,54 @@
                     <!-- 追加判定項目（手動判定・曲がり・キズ・汚れ） -->
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">判定結果</label>
-                            <select id="inspectionJudgementSelect" class="w-full p-3 border border-gray-300 rounded-md">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >判定結果</label
+                            >
+                            <select
+                                id="inspectionJudgementSelect"
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                            >
                                 <option value="">自動判定</option>
                                 <option value="pass">合格</option>
                                 <option value="fail">不合格</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">曲がり</label>
-                            <select id="bendingOkSelect" class="w-full p-3 border border-gray-300 rounded-md">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >曲がり</label
+                            >
+                            <select
+                                id="bendingOkSelect"
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                            >
                                 <option value="true">OK</option>
                                 <option value="false">NG</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">キズ</label>
-                            <select id="scratchOkSelect" class="w-full p-3 border border-gray-300 rounded-md">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >キズ</label
+                            >
+                            <select
+                                id="scratchOkSelect"
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                            >
                                 <option value="true">OK</option>
                                 <option value="false">NG</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">汚れ</label>
-                            <select id="dirtOkSelect" class="w-full p-3 border border-gray-300 rounded-md">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >汚れ</label
+                            >
+                            <select
+                                id="dirtOkSelect"
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                            >
                                 <option value="true">OK</option>
                                 <option value="false">NG</option>
                             </select>
@@ -521,64 +1027,152 @@
                     <!-- 寸法入力（簡易）: 左端/中央/右端 最大・最小 → 寸法1/寸法2 -->
                     <div class="bg-gray-50 rounded-lg p-4 space-y-4">
                         <div>
-                            <h3 class="text-sm font-medium text-gray-900 mb-2">寸法1</h3>
+                            <h3 class="text-sm font-medium text-gray-900 mb-2">
+                                寸法1
+                            </h3>
                             <div class="grid grid-cols-3 gap-3 mb-2">
                                 <div>
-                                    <label class="block text-xs text-gray-600">左端 最大</label>
-                                    <input type="number" step="0.001" id="dim1LeftMax" class="w-full p-2 border border-gray-300 rounded-md">
+                                    <label class="block text-xs text-gray-600"
+                                        >左端 最大</label
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.001"
+                                        id="dim1LeftMax"
+                                        class="w-full p-2 border border-gray-300 rounded-md"
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-gray-600">中央 最大</label>
-                                    <input type="number" step="0.001" id="dim1CenterMax" class="w-full p-2 border border-gray-300 rounded-md">
+                                    <label class="block text-xs text-gray-600"
+                                        >中央 最大</label
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.001"
+                                        id="dim1CenterMax"
+                                        class="w-full p-2 border border-gray-300 rounded-md"
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-gray-600">右端 最大</label>
-                                    <input type="number" step="0.001" id="dim1RightMax" class="w-full p-2 border border-gray-300 rounded-md">
+                                    <label class="block text-xs text-gray-600"
+                                        >右端 最大</label
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.001"
+                                        id="dim1RightMax"
+                                        class="w-full p-2 border border-gray-300 rounded-md"
+                                    />
                                 </div>
                             </div>
                             <div class="grid grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-xs text-gray-600">左端 最小</label>
-                                    <input type="number" step="0.001" id="dim1LeftMin" class="w-full p-2 border border-gray-300 rounded-md">
+                                    <label class="block text-xs text-gray-600"
+                                        >左端 最小</label
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.001"
+                                        id="dim1LeftMin"
+                                        class="w-full p-2 border border-gray-300 rounded-md"
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-gray-600">中央 最小</label>
-                                    <input type="number" step="0.001" id="dim1CenterMin" class="w-full p-2 border border-gray-300 rounded-md">
+                                    <label class="block text-xs text-gray-600"
+                                        >中央 最小</label
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.001"
+                                        id="dim1CenterMin"
+                                        class="w-full p-2 border border-gray-300 rounded-md"
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-gray-600">右端 最小</label>
-                                    <input type="number" step="0.001" id="dim1RightMin" class="w-full p-2 border border-gray-300 rounded-md">
+                                    <label class="block text-xs text-gray-600"
+                                        >右端 最小</label
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.001"
+                                        id="dim1RightMin"
+                                        class="w-full p-2 border border-gray-300 rounded-md"
+                                    />
                                 </div>
                             </div>
                         </div>
                         <div>
-                            <h3 class="text-sm font-medium text-gray-900 mb-2">寸法2</h3>
+                            <h3 class="text-sm font-medium text-gray-900 mb-2">
+                                寸法2
+                            </h3>
                             <div class="grid grid-cols-3 gap-3 mb-2">
                                 <div>
-                                    <label class="block text-xs text-gray-600">左端 最大</label>
-                                    <input type="number" step="0.001" id="dim2LeftMax" class="w-full p-2 border border-gray-300 rounded-md">
+                                    <label class="block text-xs text-gray-600"
+                                        >左端 最大</label
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.001"
+                                        id="dim2LeftMax"
+                                        class="w-full p-2 border border-gray-300 rounded-md"
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-gray-600">中央 最大</label>
-                                    <input type="number" step="0.001" id="dim2CenterMax" class="w-full p-2 border border-gray-300 rounded-md">
+                                    <label class="block text-xs text-gray-600"
+                                        >中央 最大</label
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.001"
+                                        id="dim2CenterMax"
+                                        class="w-full p-2 border border-gray-300 rounded-md"
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-gray-600">右端 最大</label>
-                                    <input type="number" step="0.001" id="dim2RightMax" class="w-full p-2 border border-gray-300 rounded-md">
+                                    <label class="block text-xs text-gray-600"
+                                        >右端 最大</label
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.001"
+                                        id="dim2RightMax"
+                                        class="w-full p-2 border border-gray-300 rounded-md"
+                                    />
                                 </div>
                             </div>
                             <div class="grid grid-cols-3 gap-3">
                                 <div>
-                                    <label class="block text-xs text-gray-600">左端 最小</label>
-                                    <input type="number" step="0.001" id="dim2LeftMin" class="w-full p-2 border border-gray-300 rounded-md">
+                                    <label class="block text-xs text-gray-600"
+                                        >左端 最小</label
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.001"
+                                        id="dim2LeftMin"
+                                        class="w-full p-2 border border-gray-300 rounded-md"
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-gray-600">中央 最小</label>
-                                    <input type="number" step="0.001" id="dim2CenterMin" class="w-full p-2 border border-gray-300 rounded-md">
+                                    <label class="block text-xs text-gray-600"
+                                        >中央 最小</label
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.001"
+                                        id="dim2CenterMin"
+                                        class="w-full p-2 border border-gray-300 rounded-md"
+                                    />
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-gray-600">右端 最小</label>
-                                    <input type="number" step="0.001" id="dim2RightMin" class="w-full p-2 border border-gray-300 rounded-md">
+                                    <label class="block text-xs text-gray-600"
+                                        >右端 最小</label
+                                    >
+                                    <input
+                                        type="number"
+                                        step="0.001"
+                                        id="dim2RightMin"
+                                        class="w-full p-2 border border-gray-300 rounded-md"
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -586,24 +1180,46 @@
 
                     <!-- フォーム最下部: 作業者・備考 -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">作業者</label>
-                        <input type="text" id="inspectedByInput" name="inspected_by_name" list="inspectorNameList"
-                            class="w-full p-3 border border-gray-300 rounded-md" placeholder="氏名を入力">
+                        <label
+                            class="block text-sm font-medium text-gray-700 mb-2"
+                            >作業者</label
+                        >
+                        <input
+                            type="text"
+                            id="inspectedByInput"
+                            name="inspected_by_name"
+                            list="inspectorNameList"
+                            class="w-full p-3 border border-gray-300 rounded-md"
+                            placeholder="氏名を入力"
+                        />
                         <datalist id="inspectorNameList"></datalist>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">備考</label>
-                        <textarea id="inspectionNotesInput" name="inspection_notes" rows="3"
-                            class="w-full p-3 border border-gray-300 rounded-md"></textarea>
+                        <label
+                            class="block text-sm font-medium text-gray-700 mb-2"
+                            >備考</label
+                        >
+                        <textarea
+                            id="inspectionNotesInput"
+                            name="inspection_notes"
+                            rows="3"
+                            class="w-full p-3 border border-gray-300 rounded-md"
+                        ></textarea>
                     </div>
 
                     <div class="flex justify-end space-x-4">
-                        <button type="button" id="resetInspectionFormBtn"
-                            class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+                        <button
+                            type="button"
+                            id="resetInspectionFormBtn"
+                            class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                        >
                             リセット
                         </button>
-                        <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">
+                        <button
+                            type="submit"
+                            class="px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                        >
                             <i class="fas fa-check mr-2"></i>検品登録
                         </button>
                     </div>
@@ -612,37 +1228,71 @@
         </div>
 
         <!-- 印刷タブ -->
-        <div id="panel-print" role="tabpanel" aria-labelledby="tab-print" class="tab-panel hidden">
-            <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0">
-                    <h2 class="text-xl font-semibold text-neutral-800">ラベル印刷（検品完了済み）</h2>
-                    <button id="refreshPrintBtn"
-                        class="bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all flex items-center">
+        <div
+            id="panel-print"
+            role="tabpanel"
+            aria-labelledby="tab-print"
+            class="tab-panel hidden"
+        >
+            <div
+                class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm"
+            >
+                <div
+                    class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-4 sm:space-y-0"
+                >
+                    <h2 class="text-xl font-semibold text-neutral-800">
+                        ラベル印刷（検品完了済み）
+                    </h2>
+                    <button
+                        id="refreshPrintBtn"
+                        class="bg-white border border-neutral-200 text-neutral-700 px-4 py-2 rounded-lg font-semibold hover:bg-neutral-50 transition-all flex items-center"
+                    >
                         <i class="fas fa-sync-alt mr-2"></i>更新
                     </button>
                 </div>
 
                 <!-- フィルター -->
-                <div class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200">
+                <div
+                    class="bg-neutral-50 rounded-lg p-4 mb-4 border border-neutral-200"
+                >
                     <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-sm font-semibold text-neutral-800 flex items-center">
-                            <i class="fas fa-filter mr-2 text-primary-blue"></i>検索フィルター（リアルタイム検索）
+                        <h3
+                            class="text-sm font-semibold text-neutral-800 flex items-center"
+                        >
+                            <i class="fas fa-filter mr-2 text-primary-blue"></i
+                            >検索フィルター（リアルタイム検索）
                         </h3>
-                        <button id="resetPrintFiltersBtn"
-                            class="text-sm text-neutral-600 hover:text-primary-blue font-medium flex items-center transition-colors">
+                        <button
+                            id="resetPrintFiltersBtn"
+                            class="text-sm text-neutral-600 hover:text-primary-blue font-medium flex items-center transition-colors"
+                        >
                             <i class="fas fa-redo mr-1"></i>リセット
                         </button>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-1">材料名</label>
-                            <input type="text" id="printMaterialFilter" placeholder="材料名で絞り込み"
-                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
+                            <label
+                                class="block text-sm font-medium text-neutral-700 mb-1"
+                                >材料名</label
+                            >
+                            <input
+                                type="text"
+                                id="printMaterialFilter"
+                                placeholder="材料名で絞り込み"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-neutral-700 mb-1">ロット番号</label>
-                            <input type="text" id="printLotFilter" placeholder="ロット番号で絞り込み"
-                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all">
+                            <label
+                                class="block text-sm font-medium text-neutral-700 mb-1"
+                                >ロット番号</label
+                            >
+                            <input
+                                type="text"
+                                id="printLotFilter"
+                                placeholder="ロット番号で絞り込み"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                            />
                         </div>
                     </div>
                 </div>
@@ -651,24 +1301,51 @@
                 <div id="printPaginationTop" class="mb-4"></div>
 
                 <!-- 検品完了アイテムテーブル -->
-                <div class="overflow-x-auto rounded-lg border border-neutral-200">
+                <div
+                    class="overflow-x-auto rounded-lg border border-neutral-200"
+                >
                     <table class="w-full">
                         <thead class="bg-neutral-50">
                             <tr>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">ロット番号</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">材料名</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">現在本数</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">検品日</th>
-                                <th class="px-4 py-3 text-left text-sm font-semibold text-neutral-700">操作</th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    ロット番号
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    材料名
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    現在本数
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    検品日
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    操作
+                                </th>
                             </tr>
                         </thead>
-                        <tbody id="printItemsTableBody" class="divide-y divide-neutral-200 bg-white">
+                        <tbody
+                            id="printItemsTableBody"
+                            class="divide-y divide-neutral-200 bg-white"
+                        >
                             <!-- 動的に生成 -->
                         </tbody>
                     </table>
                 </div>
                 <div id="printLoading" class="text-center py-8 hidden">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <div
+                        class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+                    ></div>
                     <p class="mt-2 text-gray-600">読み込み中...</p>
                 </div>
                 <div id="printEmpty" class="text-center py-8 hidden">
@@ -685,17 +1362,33 @@
 <!-- 印刷確認モーダル -->
 <div id="printModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg">
+        <div
+            class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg"
+        >
             <div class="p-4 bg-neutral-50 border-b border-neutral-200">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-neutral-800 flex items-center">
+                    <h2
+                        class="text-xl font-bold text-neutral-800 flex items-center"
+                    >
                         <i class="fas fa-print mr-2 text-primary-blue"></i>
                         ラベル印刷確認
                     </h2>
-                    <button id="closePrintModal" class="text-neutral-400 hover:text-neutral-600 transition-colors p-2 rounded-lg hover:bg-neutral-100">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
+                    <button
+                        id="closePrintModal"
+                        class="text-neutral-400 hover:text-neutral-600 transition-colors p-2 rounded-lg hover:bg-neutral-100"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            />
                         </svg>
                     </button>
                 </div>
@@ -703,45 +1396,76 @@
 
             <div class="p-6">
                 <!-- プレビュー情報 -->
-                <div class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 mb-6 border border-gray-200 shadow-inner">
-                    <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
+                <div
+                    class="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 mb-6 border border-gray-200 shadow-inner"
+                >
+                    <h3
+                        class="text-lg font-bold text-gray-900 mb-4 flex items-center"
+                    >
                         <i class="fas fa-eye mr-2 text-blue-500"></i>
                         印刷内容プレビュー
                     </h3>
-                    <div id="printPreviewContent" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div
+                        id="printPreviewContent"
+                        class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm"
+                    >
                         <!-- 動的に生成 -->
                     </div>
                 </div>
 
                 <!-- 印刷設定 -->
-                <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 mb-6 border border-blue-200 shadow-inner">
-                    <h3 class="text-lg font-bold text-blue-900 mb-4 flex items-center">
+                <div
+                    class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 mb-6 border border-blue-200 shadow-inner"
+                >
+                    <h3
+                        class="text-lg font-bold text-blue-900 mb-4 flex items-center"
+                    >
                         <i class="fas fa-cog mr-2"></i>
                         印刷設定
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">用紙サイズ</label>
-                            <div class="w-full p-3 bg-gray-100 border-2 border-gray-300 rounded-xl">
-                                <span class="text-gray-700 font-medium">A6用紙（固定）</span>
+                            <label
+                                class="block text-sm font-bold text-gray-700 mb-2"
+                                >用紙サイズ</label
+                            >
+                            <div
+                                class="w-full p-3 bg-gray-100 border-2 border-gray-300 rounded-xl"
+                            >
+                                <span class="text-gray-700 font-medium"
+                                    >A6用紙（固定）</span
+                                >
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">印刷部数</label>
-                            <input type="number" id="printCopies" min="1" max="10" value="1"
-                                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
+                            <label
+                                class="block text-sm font-bold text-gray-700 mb-2"
+                                >印刷部数</label
+                            >
+                            <input
+                                type="number"
+                                id="printCopies"
+                                min="1"
+                                max="10"
+                                value="1"
+                                class="w-full p-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
+                            />
                         </div>
                     </div>
                 </div>
 
                 <!-- ボタン -->
                 <div class="flex justify-end items-center space-x-3">
-                    <button id="cancelPrint"
-                        class="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-400 transition-all">
+                    <button
+                        id="cancelPrint"
+                        class="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl font-bold hover:bg-gray-50 hover:border-gray-400 transition-all"
+                    >
                         キャンセル
                     </button>
-                    <button id="executePrintLotNumber"
-                        class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl">
+                    <button
+                        id="executePrintLotNumber"
+                        class="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl"
+                    >
                         <i class="fas fa-print mr-2"></i>ロット番号ラベル印刷
                     </button>
                 </div>
@@ -751,16 +1475,30 @@
 </div>
 
 <!-- 処理タブパネル（2025-11-06追加） -->
-<div id="panel-processing" role="tabpanel" aria-labelledby="tab-processing" class="tab-panel hidden">
+<div
+    id="panel-processing"
+    role="tabpanel"
+    aria-labelledby="tab-processing"
+    class="tab-panel hidden"
+>
     <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-xl font-semibold text-neutral-800">入荷済みアイテム（発注番号別）</h2>
+            <h2 class="text-xl font-semibold text-neutral-800">
+                入荷済みアイテム（発注番号別）
+            </h2>
             <div class="flex items-center gap-3">
                 <label class="flex items-center gap-2 text-sm">
-                    <input type="checkbox" id="showCompletedProcessing" class="rounded">
+                    <input
+                        type="checkbox"
+                        id="showCompletedProcessing"
+                        class="rounded"
+                    />
                     <span>完了済みも表示</span>
                 </label>
-                <button id="refreshProcessingBtn" class="px-4 py-2 bg-white border border-neutral-200 text-neutral-700 rounded-lg font-semibold hover:bg-neutral-50 transition-all flex items-center">
+                <button
+                    id="refreshProcessingBtn"
+                    class="px-4 py-2 bg-white border border-neutral-200 text-neutral-700 rounded-lg font-semibold hover:bg-neutral-50 transition-all flex items-center"
+                >
                     <i class="fas fa-sync-alt mr-2"></i>更新
                 </button>
             </div>
@@ -792,83 +1530,155 @@
 <!-- 入庫確認モーダル（既存のreceiving.htmlから流用） -->
 <div id="receiveModal" class="fixed inset-0 bg-black bg-opacity-60 hidden z-50">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg">
+        <div
+            class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg"
+        >
             <div class="p-4 bg-neutral-50 border-b border-neutral-200">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-xl font-bold text-neutral-800 flex items-center">
+                    <h2
+                        class="text-xl font-bold text-neutral-800 flex items-center"
+                    >
                         <i class="fas fa-truck mr-2 text-success-green"></i>
                         入庫確認
                     </h2>
-                    <button id="closeReceiveModal" class="text-neutral-400 hover:text-neutral-600 transition-colors p-2 rounded-lg hover:bg-neutral-100">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
+                    <button
+                        id="closeReceiveModal"
+                        class="text-neutral-400 hover:text-neutral-600 transition-colors p-2 rounded-lg hover:bg-neutral-100"
+                    >
+                        <svg
+                            class="w-6 h-6"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12"
+                            />
                         </svg>
                     </button>
                 </div>
             </div>
 
             <form id="receiveForm" class="p-6">
-                <input type="hidden" id="receiveItemId" name="item_id">
+                <input type="hidden" id="receiveItemId" name="item_id" />
 
                 <!-- 発注アイテム情報表示 -->
                 <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-3">発注アイテム情報</h3>
-                    <div id="itemInfo" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">
+                        発注アイテム情報
+                    </h3>
+                    <div
+                        id="itemInfo"
+                        class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm"
+                    >
                         <!-- 動的に生成 -->
                     </div>
                 </div>
-
-
 
                 <!-- 計算用パラメータ入力 -->
                 <div class="bg-blue-50 rounded-lg p-4 mb-6">
                     <h3 class="text-lg font-medium text-blue-900 mb-3">
                         計算用パラメータ
-                        <span class="text-sm font-normal text-gray-600">（重量⇔本数換算に使用）</span>
+                        <span class="text-sm font-normal text-gray-600"
+                            >（重量⇔本数換算に使用）</span
+                        >
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                            >
                                 径（mm）*
-                                <span class="text-xs text-gray-500">材料名から自動抽出</span>
+                                <span class="text-xs text-gray-500"
+                                    >材料名から自動抽出</span
+                                >
                             </label>
-                            <input type="number" name="diameter_mm" id="diameterCalcInput" step="0.01" min="0.01"
-                                required class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 10.0">
+                            <input
+                                type="number"
+                                name="diameter_mm"
+                                id="diameterCalcInput"
+                                step="0.01"
+                                min="0.01"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="例: 10.0"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                            >
                                 形状 *
-                                <span class="text-xs text-gray-500">径の記号から自動判定</span>
+                                <span class="text-xs text-gray-500"
+                                    >径の記号から自動判定</span
+                                >
                             </label>
-                            <select name="shape" id="shapeCalcSelect" required
-                                class="w-full p-3 border border-gray-300 rounded-md">
+                            <select
+                                name="shape"
+                                id="shapeCalcSelect"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                            >
                                 <option value="round">丸棒（φ）</option>
                                 <option value="hexagon">六角棒（H）</option>
                                 <option value="square">角棒（□）</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">比重（g/cm³）*</label>
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >比重（g/cm³）*</label
+                            >
                             <div class="flex gap-2">
-                                <select id="densityPresetSelect"
-                                    class="w-1/2 p-3 border border-gray-300 rounded-md bg-white">
+                                <select
+                                    id="densityPresetSelect"
+                                    class="w-1/2 p-3 border border-gray-300 rounded-md bg-white"
+                                >
                                     <option value="">プリセットから選択</option>
                                 </select>
-                                <input type="number" name="density" id="densityInput" step="0.001" min="0.001" required
-                                    class="w-1/2 p-3 border border-gray-300 rounded-md" placeholder="例: 7.93">
+                                <input
+                                    type="number"
+                                    name="density"
+                                    id="densityInput"
+                                    step="0.001"
+                                    min="0.001"
+                                    required
+                                    class="w-1/2 p-3 border border-gray-300 rounded-md"
+                                    placeholder="例: 7.93"
+                                />
                             </div>
-                            <p class="text-xs text-gray-500 mt-1">プリセットから選択するか、直接入力してください</p>
+                            <p class="text-xs text-gray-500 mt-1">
+                                プリセットから選択するか、直接入力してください
+                            </p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">長さ（mm）*</label>
-                            <input type="number" name="length_mm" step="1" min="1" required
-                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 2500">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >長さ（mm）*</label
+                            >
+                            <input
+                                type="number"
+                                name="length_mm"
+                                step="1"
+                                min="1"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="例: 2500"
+                            />
                         </div>
                         <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">材料グループ（任意）</label>
-                            <select id="groupSelect" name="group_id"
-                                class="w-full p-3 border border-gray-300 rounded-md">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >材料グループ（任意）</label
+                            >
+                            <select
+                                id="groupSelect"
+                                name="group_id"
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                            >
                                 <option value="">未指定</option>
                             </select>
                         </div>
@@ -877,21 +1687,45 @@
 
                 <!-- 共通入庫情報 -->
                 <div class="bg-green-50 rounded-lg p-4 mb-6">
-                    <h3 class="text-lg font-medium text-green-900 mb-3">共通情報</h3>
+                    <h3 class="text-lg font-medium text-green-900 mb-3">
+                        共通情報
+                    </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">入荷日 *</label>
-                            <input type="date" id="receivedDateInput" name="received_date" required
-                                class="w-full p-3 border border-gray-300 rounded-md">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >入荷日 *</label
+                            >
+                            <input
+                                type="date"
+                                id="receivedDateInput"
+                                name="received_date"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                            >
                                 購入月 *
-                                <span class="text-xs text-gray-500">（YYMM形式、例: 2501）</span>
+                                <span class="text-xs text-gray-500"
+                                    >（YYMM形式、例: 2501）</span
+                                >
                             </label>
-                            <input type="text" id="purchaseMonthInput" name="purchase_month" required pattern="[0-9]{4}"
-                                maxlength="4" placeholder="2501" class="w-full p-3 border border-gray-300 rounded-md">
-                            <p class="text-xs text-gray-500 mt-1">入荷日から自動設定されます</p>
+                            <input
+                                type="text"
+                                id="purchaseMonthInput"
+                                name="purchase_month"
+                                required
+                                pattern="[0-9]{4}"
+                                maxlength="4"
+                                placeholder="2501"
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                            />
+                            <p class="text-xs text-gray-500 mt-1">
+                                入荷日から自動設定されます
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -899,9 +1733,14 @@
                 <!-- ロット情報入力（複数対応） -->
                 <div class="bg-purple-50 rounded-lg p-4 mb-6">
                     <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-lg font-medium text-purple-900">ロット情報</h3>
-                        <button type="button" id="addLotBtn"
-                            class="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700">
+                        <h3 class="text-lg font-medium text-purple-900">
+                            ロット情報
+                        </h3>
+                        <button
+                            type="button"
+                            id="addLotBtn"
+                            class="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700"
+                        >
                             <i class="fas fa-plus mr-1"></i>ロット追加
                         </button>
                     </div>
@@ -911,24 +1750,46 @@
                     </div>
 
                     <!-- 合計表示 -->
-                    <div class="mt-4 bg-white rounded-lg p-3 border-2 border-purple-300">
+                    <div
+                        class="mt-4 bg-white rounded-lg p-3 border-2 border-purple-300"
+                    >
                         <div class="flex justify-between items-center">
                             <span class="font-medium text-gray-700">合計:</span>
                             <div class="flex items-center space-x-6">
                                 <div class="flex items-center space-x-2">
-                                    <span class="text-sm text-gray-600">本数:</span>
-                                    <span class="text-lg font-bold text-purple-600">
+                                    <span class="text-sm text-gray-600"
+                                        >本数:</span
+                                    >
+                                    <span
+                                        class="text-lg font-bold text-purple-600"
+                                    >
                                         <span id="totalQuantity">0</span>本
                                     </span>
-                                    <span class="text-sm text-gray-500">/ <span id="orderedQuantity">-</span>本</span>
-                                    <span class="text-xs text-gray-500">（参考: <span id="totalQuantityRef">-</span>本）</span>
+                                    <span class="text-sm text-gray-500"
+                                        >/
+                                        <span id="orderedQuantity">-</span
+                                        >本</span
+                                    >
+                                    <span class="text-xs text-gray-500"
+                                        >（参考:
+                                        <span id="totalQuantityRef">-</span
+                                        >本）</span
+                                    >
                                 </div>
                                 <div class="flex items-center space-x-2">
-                                    <span class="text-sm text-gray-600">重量:</span>
-                                    <span class="text-lg font-bold text-blue-600">
+                                    <span class="text-sm text-gray-600"
+                                        >重量:</span
+                                    >
+                                    <span
+                                        class="text-lg font-bold text-blue-600"
+                                    >
                                         <span id="totalWeight">0.000</span>kg
                                     </span>
-                                    <span class="text-xs text-gray-500">（参考: <span id="totalWeightRef">-</span>kg）</span>
+                                    <span class="text-xs text-gray-500"
+                                        >（参考:
+                                        <span id="totalWeightRef">-</span
+                                        >kg）</span
+                                    >
                                 </div>
                             </div>
                         </div>
@@ -937,30 +1798,59 @@
 
                 <!-- 最下部：単価・金額入力（円/kg） -->
                 <div class="bg-yellow-50 rounded-lg p-4 mt-6">
-                    <h3 class="text-lg font-medium text-yellow-900 mb-3">単価・金額</h3>
+                    <h3 class="text-lg font-medium text-yellow-900 mb-3">
+                        単価・金額
+                    </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">単価（円/kg）</label>
-                            <input type="number" id="unitPriceInput" name="unit_price" step="0.01" min="0"
-                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 1500.00">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >単価（円/kg）</label
+                            >
+                            <input
+                                type="number"
+                                id="unitPriceInput"
+                                name="unit_price"
+                                step="0.01"
+                                min="0"
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="例: 1500.00"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">合計金額（円）</label>
-                            <input type="number" id="amountInput" name="amount" step="0.01" min="0"
-                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 30000.00">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >合計金額（円）</label
+                            >
+                            <input
+                                type="number"
+                                id="amountInput"
+                                name="amount"
+                                step="0.01"
+                                min="0"
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="例: 30000.00"
+                            />
                         </div>
                     </div>
                     <p class="text-xs text-gray-500 mt-2">
-                        <i class="fas fa-info-circle mr-1"></i>単価（円/kg）×重量で自動計算します。本数のみ入力時は参考重量で計算します。
+                        <i class="fas fa-info-circle mr-1"></i
+                        >単価（円/kg）×重量で自動計算します。本数のみ入力時は参考重量で計算します。
                     </p>
                 </div>
 
                 <div class="flex justify-end space-x-4 mt-6">
-                    <button type="button" id="cancelReceive"
-                        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+                    <button
+                        type="button"
+                        id="cancelReceive"
+                        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                    >
                         キャンセル
                     </button>
-                    <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                    <button
+                        type="submit"
+                        class="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                    >
                         入庫確定
                     </button>
                 </div>
@@ -970,17 +1860,34 @@
 </div>
 
 <!-- 手入力用入庫確認モーダル -->
-<div id="manualReceiveModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+<div
+    id="manualReceiveModal"
+    class="fixed inset-0 bg-black bg-opacity-50 hidden z-50"
+>
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div
+            class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        >
             <div class="flex items-center justify-between p-6 border-b">
                 <h2 class="text-xl font-semibold text-gray-900">
                     手入力で入庫
                 </h2>
-                <button id="closeManualReceiveModal" class="text-neutral-400 hover:text-neutral-600 transition-colors p-2 rounded-lg hover:bg-neutral-100">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12" />
+                <button
+                    id="closeManualReceiveModal"
+                    class="text-neutral-400 hover:text-neutral-600 transition-colors p-2 rounded-lg hover:bg-neutral-100"
+                >
+                    <svg
+                        class="w-6 h-6"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"
+                        />
                     </svg>
                 </button>
             </div>
@@ -988,56 +1895,128 @@
             <form id="manualReceiveForm" class="p-6">
                 <!-- 発注情報入力 -->
                 <div class="bg-gray-50 rounded-lg p-4 mb-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-3">発注情報</h3>
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">
+                        発注情報
+                    </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">発注番号 *</label>
-                            <input type="text" name="order_number" required
-                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 250101-001">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >発注番号 *</label
+                            >
+                            <input
+                                type="text"
+                                name="order_number"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="例: 250101-001"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">仕入先 *</label>
-                            <input type="text" name="supplier" required
-                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 千葉金属㈱">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >仕入先 *</label
+                            >
+                            <input
+                                type="text"
+                                name="supplier"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="例: 千葉金属㈱"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">発注日 *</label>
-                            <input type="date" name="order_date" required
-                                class="w-full p-3 border border-gray-300 rounded-md">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >発注日 *</label
+                            >
+                            <input
+                                type="date"
+                                name="order_date"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">納期予定日 *</label>
-                            <input type="date" name="delivery_date" required
-                                class="w-full p-3 border border-gray-300 rounded-md">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >納期予定日 *</label
+                            >
+                            <input
+                                type="date"
+                                name="delivery_date"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">材料仕様 *</label>
-                            <input type="text" name="material_spec" required
-                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: A6061-T6 φ35.1D 2.5m レゾナック">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >材料仕様 *</label
+                            >
+                            <input
+                                type="text"
+                                name="material_spec"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="例: A6061-T6 φ35.1D 2.5m レゾナック"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">セット予定日</label>
-                            <input type="date" name="schedule_date"
-                                class="w-full p-3 border border-gray-300 rounded-md">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >セット予定日</label
+                            >
+                            <input
+                                type="date"
+                                name="schedule_date"
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">機械NO</label>
-                            <input type="text" name="machine_number"
-                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: NB5S">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >機械NO</label
+                            >
+                            <input
+                                type="text"
+                                name="machine_number"
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="例: NB5S"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">発注数量</label>
-                            <input type="number" name="order_quantity" step="1" min="0"
-                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="本数で入力">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >発注数量</label
+                            >
+                            <input
+                                type="number"
+                                name="order_quantity"
+                                step="1"
+                                min="0"
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="本数で入力"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">発注重量</label>
-                            <input type="number" name="order_weight" step="0.001" min="0"
-                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="kgで入力">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >発注重量</label
+                            >
+                            <input
+                                type="number"
+                                name="order_weight"
+                                step="0.001"
+                                min="0"
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="kgで入力"
+                            />
                         </div>
                     </div>
                     <p class="text-xs text-gray-500 mt-2">
-                        <i class="fas fa-info-circle mr-1"></i>発注数量または重量のいずれかを入力してください
+                        <i class="fas fa-info-circle mr-1"></i
+                        >発注数量または重量のいずれかを入力してください
                     </p>
                 </div>
 
@@ -1045,58 +2024,126 @@
                 <div class="bg-blue-50 rounded-lg p-4 mb-6">
                     <h3 class="text-lg font-medium text-blue-900 mb-3">
                         計算用パラメータ
-                        <span class="text-sm font-normal text-gray-600">（重量⇔本数換算に使用）</span>
+                        <span class="text-sm font-normal text-gray-600"
+                            >（重量⇔本数換算に使用）</span
+                        >
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">径（mm）*</label>
-                            <input type="number" name="diameter_mm" id="manualDiameterCalcInput" step="0.01" min="0.01" required
-                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 35.1">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >径（mm）*</label
+                            >
+                            <input
+                                type="number"
+                                name="diameter_mm"
+                                id="manualDiameterCalcInput"
+                                step="0.01"
+                                min="0.01"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="例: 35.1"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">形状 *</label>
-                            <select name="shape" id="manualShapeCalcSelect" required
-                                class="w-full p-3 border border-gray-300 rounded-md">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >形状 *</label
+                            >
+                            <select
+                                name="shape"
+                                id="manualShapeCalcSelect"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                            >
                                 <option value="round">丸棒（φ）</option>
                                 <option value="hexagon">六角棒（H）</option>
                                 <option value="square">角棒（□）</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">比重 *</label>
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >比重 *</label
+                            >
                             <div class="space-y-2">
-                                <select id="manualDensityPresetSelect" class="w-full p-3 border border-gray-300 rounded-md">
+                                <select
+                                    id="manualDensityPresetSelect"
+                                    class="w-full p-3 border border-gray-300 rounded-md"
+                                >
                                     <option value="">プリセットから選択</option>
                                 </select>
                                 <div class="flex items-center space-x-2">
-                                    <span class="text-sm text-gray-500">または直接入力:</span>
-                                    <input type="number" name="density" id="manualDensityInput" step="0.001" min="0.001" required
-                                        class="flex-1 p-3 border border-gray-300 rounded-md" placeholder="例: 2.71">
+                                    <span class="text-sm text-gray-500"
+                                        >または直接入力:</span
+                                    >
+                                    <input
+                                        type="number"
+                                        name="density"
+                                        id="manualDensityInput"
+                                        step="0.001"
+                                        min="0.001"
+                                        required
+                                        class="flex-1 p-3 border border-gray-300 rounded-md"
+                                        placeholder="例: 2.71"
+                                    />
                                 </div>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">長さ（mm）*</label>
-                            <input type="number" name="length_mm" step="1" min="1" required
-                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 2500">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >長さ（mm）*</label
+                            >
+                            <input
+                                type="number"
+                                name="length_mm"
+                                step="1"
+                                min="1"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="例: 2500"
+                            />
                         </div>
                     </div>
                 </div>
 
                 <!-- 共通情報 -->
                 <div class="bg-yellow-50 rounded-lg p-4 mb-6">
-                    <h3 class="text-lg font-medium text-yellow-900 mb-3">共通情報</h3>
+                    <h3 class="text-lg font-medium text-yellow-900 mb-3">
+                        共通情報
+                    </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">入荷日 *</label>
-                            <input type="date" name="received_date" id="manualReceivedDateInput" required
-                                class="w-full p-3 border border-gray-300 rounded-md">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >入荷日 *</label
+                            >
+                            <input
+                                type="date"
+                                name="received_date"
+                                id="manualReceivedDateInput"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">購入月 *</label>
-                            <input type="text" name="purchase_month" id="manualPurchaseMonthInput" required
-                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 2501" maxlength="4">
-                            <p class="text-xs text-gray-500 mt-1">YYMM形式で入力（例: 25年1月 → 2501）</p>
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >購入月 *</label
+                            >
+                            <input
+                                type="text"
+                                name="purchase_month"
+                                id="manualPurchaseMonthInput"
+                                required
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="例: 2501"
+                                maxlength="4"
+                            />
+                            <p class="text-xs text-gray-500 mt-1">
+                                YYMM形式で入力（例: 25年1月 → 2501）
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -1104,9 +2151,14 @@
                 <!-- ロット情報 -->
                 <div class="bg-green-50 rounded-lg p-4 mb-6">
                     <div class="flex justify-between items-center mb-3">
-                        <h3 class="text-lg font-medium text-green-900">ロット情報</h3>
-                        <button type="button" id="manualAddLotBtn" 
-                            class="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
+                        <h3 class="text-lg font-medium text-green-900">
+                            ロット情報
+                        </h3>
+                        <button
+                            type="button"
+                            id="manualAddLotBtn"
+                            class="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700"
+                        >
                             <i class="fas fa-plus mr-1"></i>ロット追加
                         </button>
                     </div>
@@ -1117,21 +2169,46 @@
 
                 <!-- 合計情報 -->
                 <div class="bg-gray-100 rounded-lg p-4 mb-6">
-                    <h3 class="text-lg font-medium text-gray-900 mb-3">合計情報</h3>
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">
+                        合計情報
+                    </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">合計本数</label>
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >合計本数</label
+                            >
                             <div class="flex items-center space-x-2">
-                                <span id="manualTotalQuantity" class="text-lg font-bold text-blue-600">0</span>
-                                <span id="manualOrderedQuantity" class="text-sm text-gray-500"></span>
-                                <span id="manualTotalQuantityRef" class="text-sm text-gray-500"></span>
+                                <span
+                                    id="manualTotalQuantity"
+                                    class="text-lg font-bold text-blue-600"
+                                    >0</span
+                                >
+                                <span
+                                    id="manualOrderedQuantity"
+                                    class="text-sm text-gray-500"
+                                ></span>
+                                <span
+                                    id="manualTotalQuantityRef"
+                                    class="text-sm text-gray-500"
+                                ></span>
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">合計重量</label>
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >合計重量</label
+                            >
                             <div class="flex items-center space-x-2">
-                                <span id="manualTotalWeight" class="text-lg font-bold text-blue-600">0.000</span>
-                                <span id="manualTotalWeightRef" class="text-sm text-gray-500"></span>
+                                <span
+                                    id="manualTotalWeight"
+                                    class="text-lg font-bold text-blue-600"
+                                    >0.000</span
+                                >
+                                <span
+                                    id="manualTotalWeightRef"
+                                    class="text-sm text-gray-500"
+                                ></span>
                             </div>
                         </div>
                     </div>
@@ -1139,30 +2216,60 @@
 
                 <!-- 単価・金額 -->
                 <div class="bg-purple-50 rounded-lg p-4 mb-6">
-                    <h3 class="text-lg font-medium text-purple-900 mb-3">単価・金額</h3>
+                    <h3 class="text-lg font-medium text-purple-900 mb-3">
+                        単価・金額
+                    </h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">単価（円/kg）</label>
-                            <input type="number" name="unit_price" id="manualUnitPriceInput" step="0.01" min="0"
-                                class="w-full p-3 border border-gray-300 rounded-md" placeholder="例: 300.00">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >単価（円/kg）</label
+                            >
+                            <input
+                                type="number"
+                                name="unit_price"
+                                id="manualUnitPriceInput"
+                                step="0.01"
+                                min="0"
+                                class="w-full p-3 border border-gray-300 rounded-md"
+                                placeholder="例: 300.00"
+                            />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">金額（円）</label>
-                            <input type="number" name="amount" id="manualAmountInput" step="0.01" min="0" readonly
-                                class="w-full p-3 border border-gray-300 rounded-md bg-gray-100" placeholder="例: 30000.00">
+                            <label
+                                class="block text-sm font-medium text-gray-700 mb-2"
+                                >金額（円）</label
+                            >
+                            <input
+                                type="number"
+                                name="amount"
+                                id="manualAmountInput"
+                                step="0.01"
+                                min="0"
+                                readonly
+                                class="w-full p-3 border border-gray-300 rounded-md bg-gray-100"
+                                placeholder="例: 30000.00"
+                            />
                         </div>
                     </div>
                     <p class="text-xs text-gray-500 mt-2">
-                        <i class="fas fa-info-circle mr-1"></i>単価（円/kg）×重量で自動計算します
+                        <i class="fas fa-info-circle mr-1"></i
+                        >単価（円/kg）×重量で自動計算します
                     </p>
                 </div>
 
                 <div class="flex justify-end space-x-4 mt-6">
-                    <button type="button" id="cancelManualReceive"
-                        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+                    <button
+                        type="button"
+                        id="cancelManualReceive"
+                        class="px-6 py-3 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+                    >
                         キャンセル
                     </button>
-                    <button type="submit" class="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700">
+                    <button
+                        type="submit"
+                        class="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700"
+                    >
                         入庫確定
                     </button>
                 </div>
@@ -1209,7 +2316,9 @@
 
     /* ローディングスピナー */
     @keyframes spin {
-        to { transform: rotate(360deg); }
+        to {
+            transform: rotate(360deg);
+        }
     }
 
     .animate-spin {
@@ -1217,8 +2326,6 @@
     }
 </style>
 
-{% endblock %}
-
-{% block extra_scripts %}
+{% endblock %} {% block extra_scripts %}
 <script src="{{ url_for('static', path='js/order_flow.js') }}" defer></script>
 {% endblock %}
