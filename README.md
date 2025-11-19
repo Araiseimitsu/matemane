@@ -135,6 +135,8 @@ src/
 ├── templates/          # Jinja2テンプレート
 ├── static/             # CSS/JS/画像ファイル
 └── utils/              # ユーティリティ関数
+    ├── auth.py         # 認証関連
+    └── automation_info.py  # Automation情報取得
 ```
 
 ### テスト
@@ -145,6 +147,18 @@ pytest
 
 # 直接インポート機能テスト
 python test_direct_import.py
+```
+
+### Automation情報取得
+
+最新のコミット情報を取得するユーティリティ：
+
+```bash
+# 最新のAutomationコミット情報を表示
+python get_automation_commit.py
+
+# Pythonモジュールとして使用
+python -m src.utils.automation_info
 ```
 
 ### ログ
