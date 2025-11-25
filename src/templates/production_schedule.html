@@ -1,438 +1,476 @@
 {% extends "base.html" %} {% block title %}生産中一覧 - 生産管理システム{%
 endblock %} {% block extra_head %}
 <style>
-  :root {
-    --primary-navy: #1e3a8a;
-    --primary-blue: #3b82f6;
-    --success-green: #10b981;
-    --warning-amber: #f59e0b;
-    --danger-red: #ef4444;
-    --neutral-50: #f9fafb;
-    --neutral-100: #f3f4f6;
-    --neutral-200: #e5e7eb;
-    --neutral-600: #4b5563;
-    --neutral-700: #374151;
-    --neutral-800: #1f2937;
-  }
+    :root {
+        --primary-navy: #1e3a8a;
+        --primary-blue: #3b82f6;
+        --success-green: #10b981;
+        --warning-amber: #f59e0b;
+        --danger-red: #ef4444;
+        --neutral-50: #f9fafb;
+        --neutral-100: #f3f4f6;
+        --neutral-200: #e5e7eb;
+        --neutral-600: #4b5563;
+        --neutral-700: #374151;
+        --neutral-800: #1f2937;
+    }
 
-  /* テーブルホバーエフェクト */
-  .table-row-hover:hover {
-    background: var(--neutral-50);
-  }
+    /* テーブルホバーエフェクト */
+    .table-row-hover:hover {
+        background: var(--neutral-50);
+    }
 </style>
 {% endblock %} {% block content %}
 <div class="min-h-screen bg-neutral-50">
-  <div class="max-w-[1600px] mx-auto py-4 px-4">
-    <div class="mb-4">
-      <div
-        class="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-      >
-        <div class="space-y-1">
-          <h1 class="text-2xl font-bold text-neutral-800">
-            生産中一覧
-          </h1>
-          <p class="text-sm text-neutral-600">
-            セット予定表.xlsxの「生産中」シートを参照し、最新の加工状況を表示します
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
-          <button
-            id="refreshBtn"
-            class="bg-white border border-neutral-200 px-4 py-2 rounded-lg hover:bg-neutral-50 flex items-center"
-          >
-            <i class="fas fa-sync-alt text-neutral-600 mr-2"></i>
-            <span class="font-semibold text-neutral-700">再読み込み</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden">
-      <div
-        class="px-4 py-3 border-b border-neutral-200 flex items-center justify-between bg-neutral-50"
-      >
-        <div class="text-sm font-semibold text-neutral-700">
-          総件数: <span id="totalRows" class="font-bold text-primary-blue">0</span>
-        </div>
-        <div id="lastUpdated" class="text-xs font-medium text-neutral-600">
-          最終更新: --
-        </div>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-neutral-200">
-          <thead class="bg-neutral-50">
-            <tr>
-              <th
-                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-              >
-                機械NO
-              </th>
-              <th
-                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-              >
-                品番
-              </th>
-              <th
-                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-              >
-                製品名
-              </th>
-              <th
-                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-              >
-                数量
-              </th>
-              <th
-                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-              >
-                材質＆材料径
-              </th>
-              <th
-                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-              >
-                在庫切れ予測
-              </th>
-              <th
-                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-              >
-                加工予定日
-              </th>
-              <th
-                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-              >
-                加工終了日
-              </th>
-              <th
-                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-              >
-                最新納期
-              </th>
-              <th
-                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-              >
-                備考
-              </th>
-            </tr>
-          </thead>
-          <tbody
-            id="resultsTableBody"
-            class="bg-white divide-y divide-neutral-100"
-          >
-            <tr id="loadingRow">
-              <td colspan="10" class="px-4 py-10 text-center">
-                <div class="flex flex-col items-center space-y-4 text-neutral-500">
-                  <div
-                    class="animate-spin rounded-full h-12 w-12 border-4 border-neutral-200 border-t-primary-blue"
-                  ></div>
-                  <span class="font-semibold">読み込み中です...</span>
+    <div class="max-w-[1600px] mx-auto py-4 px-4">
+        <div class="mb-4">
+            <div
+                class="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+            >
+                <div class="space-y-1">
+                    <h1 class="text-2xl font-bold text-neutral-800">
+                        生産中一覧
+                    </h1>
+                    <p class="text-sm text-neutral-600">
+                        セット予定表.xlsxの「生産中」シートを参照し、最新の加工状況を表示します
+                    </p>
                 </div>
-              </td>
-            </tr>
-            <tr id="emptyRow" class="hidden">
-              <td colspan="10" class="px-4 py-10 text-center">
-                <div class="flex flex-col items-center space-y-4">
-                  <div
-                    class="inline-flex items-center justify-center w-16 h-16 bg-neutral-100 rounded-full"
-                  >
-                    <i class="fas fa-inbox text-2xl text-neutral-400"></i>
-                  </div>
-                  <p class="text-neutral-700 font-semibold">データが見つかりません</p>
+                <div class="flex items-center gap-3">
+                    <button
+                        id="refreshBtn"
+                        class="bg-white border border-neutral-200 px-4 py-2 rounded-lg hover:bg-neutral-50 flex items-center"
+                    >
+                        <i class="fas fa-sync-alt text-neutral-600 mr-2"></i>
+                        <span class="font-semibold text-neutral-700"
+                            >再読み込み</span
+                        >
+                    </button>
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+            </div>
+        </div>
+
+        <div
+            class="bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden"
+        >
+            <div
+                class="px-4 py-3 border-b border-neutral-200 flex items-center justify-between bg-neutral-50"
+            >
+                <div class="text-sm font-semibold text-neutral-700">
+                    総件数:
+                    <span id="totalRows" class="font-bold text-primary-blue"
+                        >0</span
+                    >
+                </div>
+                <div
+                    id="lastUpdated"
+                    class="text-xs font-medium text-neutral-600"
+                >
+                    最終更新: --
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-neutral-200">
+                    <thead class="bg-neutral-50">
+                        <tr>
+                            <th
+                                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                            >
+                                機械NO
+                            </th>
+                            <th
+                                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                            >
+                                品番
+                            </th>
+                            <th
+                                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                            >
+                                製品名
+                            </th>
+                            <th
+                                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                            >
+                                数量
+                            </th>
+                            <th
+                                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                            >
+                                材質＆材料径
+                            </th>
+                            <th
+                                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                            >
+                                在庫切れ予測
+                            </th>
+                            <th
+                                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                            >
+                                加工予定日
+                            </th>
+                            <th
+                                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                            >
+                                加工終了日
+                            </th>
+                            <th
+                                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                            >
+                                最新納期
+                            </th>
+                            <th
+                                class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                            >
+                                備考
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody
+                        id="resultsTableBody"
+                        class="bg-white divide-y divide-neutral-100"
+                    >
+                        <tr id="loadingRow">
+                            <td colspan="10" class="px-4 py-10 text-center">
+                                <div
+                                    class="flex flex-col items-center space-y-4 text-neutral-500"
+                                >
+                                    <div
+                                        class="animate-spin rounded-full h-12 w-12 border-4 border-neutral-200 border-t-primary-blue"
+                                    ></div>
+                                    <span class="font-semibold"
+                                        >読み込み中です...</span
+                                    >
+                                </div>
+                            </td>
+                        </tr>
+                        <tr id="emptyRow" class="hidden">
+                            <td colspan="10" class="px-4 py-10 text-center">
+                                <div
+                                    class="flex flex-col items-center space-y-4"
+                                >
+                                    <div
+                                        class="inline-flex items-center justify-center w-16 h-16 bg-neutral-100 rounded-full"
+                                    >
+                                        <i
+                                            class="fas fa-inbox text-2xl text-neutral-400"
+                                        ></i>
+                                    </div>
+                                    <p class="text-neutral-700 font-semibold">
+                                        データが見つかりません
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 {% endblock %} {% block extra_scripts %}
 <script>
-  class ProductionSchedulePage {
-    constructor() {
-      this.tableBody = document.getElementById("resultsTableBody");
-      this.loadingRow = document.getElementById("loadingRow");
-      this.emptyRow = document.getElementById("emptyRow");
-      this.totalRows = document.getElementById("totalRows");
-      this.lastUpdated = document.getElementById("lastUpdated");
-      this.refreshBtn = document.getElementById("refreshBtn");
+    class ProductionSchedulePage {
+        constructor() {
+            this.tableBody = document.getElementById("resultsTableBody");
+            this.loadingRow = document.getElementById("loadingRow");
+            this.emptyRow = document.getElementById("emptyRow");
+            this.totalRows = document.getElementById("totalRows");
+            this.lastUpdated = document.getElementById("lastUpdated");
+            this.refreshBtn = document.getElementById("refreshBtn");
 
-      // テーブル内予測用のマップ
-      this.forecastMap = {};
-      this.forecastMapNormalized = {};
-      this.usagePerRow = {};
-      this.usagePerKey = {};
-      this.usagePerKey2 = {};
+            // テーブル内予測用のマップ
+            this.forecastMap = {};
+            this.forecastMapNormalized = {};
+            this.usagePerRow = {};
+            this.usagePerKey = {};
+            this.usagePerKey2 = {};
 
-      this.bindEvents();
-      this.refreshAll();
-    }
-
-    bindEvents() {
-      this.refreshBtn.addEventListener("click", () => {
-        this.refreshAll();
-      });
-    }
-
-    async refreshAll() {
-      await this.loadForecast();
-      await this.loadUsageDetails();
-      await this.load();
-    }
-
-    async load() {
-      this.showLoading(true);
-
-      try {
-        const response = await fetch("/api/production-schedule/");
-        if (!response.ok) {
-          throw new Error("データの取得に失敗しました");
+            this.bindEvents();
+            this.refreshAll();
         }
-        const data = await response.json();
-        this.renderRows(data);
-        this.updateMeta(data);
-        Utils.showToast("生産中一覧を更新しました", "success");
-      } catch (error) {
-        console.error("load error:", error);
-        this.renderRows([]);
-        this.updateMeta([]);
-        Utils.showToast(error.message || "データ取得に失敗しました", "error");
-      } finally {
-        this.showLoading(false);
-      }
-    }
 
-    async loadForecast() {
-      try {
-        const res = await fetch("/api/production-schedule/stockout-forecast");
-        if (!res.ok) throw new Error("在庫切れ予測の取得に失敗しました");
-        const forecasts = await res.json();
-        this.forecastMap = {};
-        this.forecastMapNormalized = {};
-        forecasts.forEach((f) => {
-          if (f && f.material_spec) {
-            const spec = this.normalizeSpec(f.material_spec);
-            this.forecastMap[f.material_spec] = f;
-            this.forecastMapNormalized[spec] = f;
-          }
-        });
-      } catch (err) {
-        console.error("forecast error:", err);
-        Utils.showToast(err.message || "予測の取得に失敗しました", "error");
-      }
-    }
+        bindEvents() {
+            this.refreshBtn.addEventListener("click", () => {
+                this.refreshAll();
+            });
+        }
 
-    async loadUsageDetails() {
-      try {
-        const res = await fetch("/api/material-management/usage");
-        if (!res.ok) throw new Error("使用計画の取得に失敗しました");
-        const summaries = await res.json();
-        this.usagePerRow = {};
-        this.usagePerKey = {};
-        this.usagePerKey2 = {};
-        summaries.forEach((s) => {
-          if (!s || !Array.isArray(s.machines)) return;
-          s.machines.forEach((d) => {
-            if (
-              d &&
-              typeof d.row_number === "number" &&
-              d.bars_per_day != null
-            ) {
-              const perDay = Number(d.bars_per_day);
-              this.usagePerRow[d.row_number] = perDay;
-              const spec = this.normalizeSpec(s.material_spec);
-              const machine = this.normalizeKeyValue(d.machine_no);
-              const item = this.normalizeKeyValue(d.item_code);
-              const qty = this.normalizeNumber(d.quantity);
-              const key = `${machine}|${item}|${spec}|${qty}`;
-              const key2 = `${machine}|${item}|${spec}`;
-              this.usagePerKey[key] = perDay;
-              this.usagePerKey2[key2] = perDay;
+        async refreshAll() {
+            await this.loadForecast();
+            await this.loadUsageDetails();
+            await this.load();
+        }
+
+        async load() {
+            this.showLoading(true);
+
+            try {
+                const response = await fetch("/api/production-schedule/");
+                if (!response.ok) {
+                    throw new Error("データの取得に失敗しました");
+                }
+                const data = await response.json();
+                this.renderRows(data);
+                this.updateMeta(data);
+            } catch (error) {
+                console.error("load error:", error);
+                this.renderRows([]);
+                this.updateMeta([]);
+                Utils.showToast(
+                    error.message || "データ取得に失敗しました",
+                    "error",
+                );
+            } finally {
+                this.showLoading(false);
             }
-          });
-        });
-      } catch (err) {
-        console.error("usage error:", err);
-        Utils.showToast(err.message || "使用計画の取得に失敗しました", "error");
-      }
-    }
+        }
 
-    // 上部予測一覧は廃止（テーブル内に表示）
+        async loadForecast() {
+            try {
+                const res = await fetch(
+                    "/api/production-schedule/stockout-forecast",
+                );
+                if (!res.ok)
+                    throw new Error("在庫切れ予測の取得に失敗しました");
+                const forecasts = await res.json();
+                this.forecastMap = {};
+                this.forecastMapNormalized = {};
+                forecasts.forEach((f) => {
+                    if (f && f.material_spec) {
+                        const spec = this.normalizeSpec(f.material_spec);
+                        this.forecastMap[f.material_spec] = f;
+                        this.forecastMapNormalized[spec] = f;
+                    }
+                });
+            } catch (err) {
+                console.error("forecast error:", err);
+                Utils.showToast(
+                    err.message || "予測の取得に失敗しました",
+                    "error",
+                );
+            }
+        }
 
-    renderRows(items) {
-      this.tableBody
-        .querySelectorAll("tr.data-row")
-        .forEach((row) => row.remove());
+        async loadUsageDetails() {
+            try {
+                const res = await fetch("/api/material-management/usage");
+                if (!res.ok) throw new Error("使用計画の取得に失敗しました");
+                const summaries = await res.json();
+                this.usagePerRow = {};
+                this.usagePerKey = {};
+                this.usagePerKey2 = {};
+                summaries.forEach((s) => {
+                    if (!s || !Array.isArray(s.machines)) return;
+                    s.machines.forEach((d) => {
+                        if (
+                            d &&
+                            typeof d.row_number === "number" &&
+                            d.bars_per_day != null
+                        ) {
+                            const perDay = Number(d.bars_per_day);
+                            this.usagePerRow[d.row_number] = perDay;
+                            const spec = this.normalizeSpec(s.material_spec);
+                            const machine = this.normalizeKeyValue(
+                                d.machine_no,
+                            );
+                            const item = this.normalizeKeyValue(d.item_code);
+                            const qty = this.normalizeNumber(d.quantity);
+                            const key = `${machine}|${item}|${spec}|${qty}`;
+                            const key2 = `${machine}|${item}|${spec}`;
+                            this.usagePerKey[key] = perDay;
+                            this.usagePerKey2[key2] = perDay;
+                        }
+                    });
+                });
+            } catch (err) {
+                console.error("usage error:", err);
+                Utils.showToast(
+                    err.message || "使用計画の取得に失敗しました",
+                    "error",
+                );
+            }
+        }
 
-      if (!items.length) {
-        this.emptyRow.classList.remove("hidden");
-        return;
-      }
+        // 上部予測一覧は廃止（テーブル内に表示）
 
-      this.emptyRow.classList.add("hidden");
-      const fragment = document.createDocumentFragment();
+        renderRows(items) {
+            this.tableBody
+                .querySelectorAll("tr.data-row")
+                .forEach((row) => row.remove());
 
-      items.forEach((item) => {
-        const row = document.createElement("tr");
-        row.className = "data-row table-row-hover";
-        row.innerHTML = this.buildRowHtml(item);
-        fragment.appendChild(row);
-      });
+            if (!items.length) {
+                this.emptyRow.classList.remove("hidden");
+                return;
+            }
 
-      this.tableBody.insertBefore(fragment, this.loadingRow);
-    }
+            this.emptyRow.classList.add("hidden");
+            const fragment = document.createDocumentFragment();
 
-    buildRowHtml(item) {
-      return `
+            items.forEach((item) => {
+                const row = document.createElement("tr");
+                row.className = "data-row table-row-hover";
+                row.innerHTML = this.buildRowHtml(item);
+                fragment.appendChild(row);
+            });
+
+            this.tableBody.insertBefore(fragment, this.loadingRow);
+        }
+
+        buildRowHtml(item) {
+            return `
         <td class="px-4 py-3 text-sm text-neutral-900">${this.formatCell(
-          item.machine_no
+            item.machine_no,
         )}</td>
         <td class="px-4 py-3 text-sm font-semibold text-neutral-900">${this.formatCell(
-          item.item_code
+            item.item_code,
         )}</td>
         <td class="px-4 py-3 text-sm text-neutral-700">${this.formatCell(
-          item.product_name
+            item.product_name,
         )}</td>
         <td class="px-4 py-3 text-sm text-neutral-700">${this.formatNumber(
-          item.quantity
+            item.quantity,
         )}</td>
         <td class="px-4 py-3 text-sm text-neutral-700">${this.formatCell(
-          item.material
+            item.material,
         )}</td>
         <td class="px-4 py-3 text-sm">${this.buildInlineForecastCell(item)}</td>
         <td class="px-4 py-3 text-sm text-neutral-700">${this.formatCell(
-          item.process_plan_date
+            item.process_plan_date,
         )}</td>
         <td class="px-4 py-3 text-sm text-neutral-700">${this.formatCell(
-          item.process_end_date
+            item.process_end_date,
         )}</td>
         <td class="px-4 py-3 text-sm text-neutral-700">${this.formatCell(
-          item.latest_due_date
+            item.latest_due_date,
         )}</td>
         <td class="px-4 py-3 text-sm text-neutral-700">${this.formatCell(
-          item.remarks
+            item.remarks,
         )}</td>
       `;
-    }
-
-    buildInlineForecastCell(item) {
-      const spec = item.material;
-      const specNorm = this.normalizeSpec(spec);
-      const f = this.forecastMap[spec] || this.forecastMapNormalized[specNorm];
-      if (!f) {
-        return '<span class="inline-flex items-center px-2 py-1 text-xs rounded bg-neutral-100 text-neutral-600">予測なし</span>';
-      }
-      // 行別(U/W)から1日使用本数を取得
-      const perDay =
-        this.usagePerRow[item.row_number] ??
-        this.usagePerKey[this.buildUsageKeyFromItem(item)] ??
-        this.usagePerKey2[this.buildUsageKey2FromItem(item)];
-      let val = f.days_until_stockout;
-      if (typeof perDay === "number" && isFinite(perDay) && perDay > 0) {
-        // 現在在庫本数 / 1日使用本数 で日数を算出（切り上げ）
-        val = Math.ceil(Number(f.current_stock_bars) / perDay);
-      }
-      let badgeHtml =
-        '<span class="inline-flex items-center px-2 py-1 text-xs rounded bg-neutral-100 text-neutral-700">不明</span>';
-      if (typeof val === "number" && isFinite(val)) {
-        if (val < 0) {
-          badgeHtml =
-            '<span class="inline-flex items-center px-2 py-1 text-xs rounded bg-danger-red bg-opacity-10 text-danger-red">在庫切れ済</span>';
-        } else if (val === 0) {
-          badgeHtml =
-            '<span class="inline-flex items-center px-2 py-1 text-xs rounded bg-warning-amber bg-opacity-10 text-warning-amber">本日切れ</span>';
-        } else {
-          let cls = "bg-success-green bg-opacity-10 text-success-green";
-          if (val <= 3) cls = "bg-danger-red bg-opacity-10 text-danger-red";
-          else if (val <= 7) cls = "bg-warning-amber bg-opacity-10 text-warning-amber";
-          badgeHtml = `<span class="inline-flex items-center px-2 py-1 text-xs rounded ${cls}">残り ${this.escape(
-            val
-          )} 日</span>`;
         }
-      }
-      const stock = this.formatNumber(f.current_stock_bars);
-      return `
+
+        buildInlineForecastCell(item) {
+            const spec = item.material;
+            const specNorm = this.normalizeSpec(spec);
+            const f =
+                this.forecastMap[spec] || this.forecastMapNormalized[specNorm];
+            if (!f) {
+                return '<span class="inline-flex items-center px-2 py-1 text-xs rounded bg-neutral-100 text-neutral-600">予測なし</span>';
+            }
+            // 行別(U/W)から1日使用本数を取得
+            const perDay =
+                this.usagePerRow[item.row_number] ??
+                this.usagePerKey[this.buildUsageKeyFromItem(item)] ??
+                this.usagePerKey2[this.buildUsageKey2FromItem(item)];
+            let val = f.days_until_stockout;
+            if (typeof perDay === "number" && isFinite(perDay) && perDay > 0) {
+                // 現在在庫本数 / 1日使用本数 で日数を算出（切り上げ）
+                val = Math.ceil(Number(f.current_stock_bars) / perDay);
+            }
+            let badgeHtml =
+                '<span class="inline-flex items-center px-2 py-1 text-xs rounded bg-neutral-100 text-neutral-700">不明</span>';
+            if (typeof val === "number" && isFinite(val)) {
+                if (val < 0) {
+                    badgeHtml =
+                        '<span class="inline-flex items-center px-2 py-1 text-xs rounded bg-danger-red bg-opacity-10 text-danger-red">在庫切れ済</span>';
+                } else if (val === 0) {
+                    badgeHtml =
+                        '<span class="inline-flex items-center px-2 py-1 text-xs rounded bg-warning-amber bg-opacity-10 text-warning-amber">本日切れ</span>';
+                } else {
+                    let cls =
+                        "bg-success-green bg-opacity-10 text-success-green";
+                    if (val <= 3)
+                        cls = "bg-danger-red bg-opacity-10 text-danger-red";
+                    else if (val <= 7)
+                        cls =
+                            "bg-warning-amber bg-opacity-10 text-warning-amber";
+                    badgeHtml = `<span class="inline-flex items-center px-2 py-1 text-xs rounded ${cls}">残り ${this.escape(
+                        val,
+                    )} 日</span>`;
+                }
+            }
+            const stock = this.formatNumber(f.current_stock_bars);
+            return `
         <div class="flex items-center gap-2">
           ${badgeHtml}
           <span class="text-xs text-neutral-600">在庫:${stock}</span>
         </div>
       `;
+        }
+
+        buildUsageKeyFromItem(item) {
+            const machine = this.normalizeKeyValue(item.machine_no);
+            const code = this.normalizeKeyValue(item.item_code);
+            const spec = this.normalizeSpec(item.material);
+            const qty = this.normalizeNumber(item.quantity);
+            return `${machine}|${code}|${spec}|${qty}`;
+        }
+
+        buildUsageKey2FromItem(item) {
+            const machine = this.normalizeKeyValue(item.machine_no);
+            const code = this.normalizeKeyValue(item.item_code);
+            const spec = this.normalizeSpec(item.material);
+            return `${machine}|${code}|${spec}`;
+        }
+
+        normalizeSpec(value) {
+            const t = (value ?? "").toString().trim();
+            // 連続スペースを1個に、全角スペースも半角に
+            return t.replace(/\u3000/g, " ").replace(/\s+/g, " ");
+        }
+
+        normalizeKeyValue(value) {
+            const t = (value ?? "").toString().trim();
+            return t.replace(/\u3000/g, " ").replace(/\s+/g, " ");
+        }
+
+        normalizeNumber(value) {
+            if (value == null || value === "") return "";
+            const num = Number(value);
+            if (!isFinite(num)) return this.normalizeKeyValue(value);
+            return String(num);
+        }
+
+        updateMeta(items) {
+            const now = new Date();
+            this.totalRows.textContent = items.length;
+            this.lastUpdated.textContent = `最終更新: ${now.toLocaleString()}`;
+        }
+
+        showLoading(isLoading) {
+            this.loadingRow.classList.toggle("hidden", !isLoading);
+        }
+
+        formatCell(value) {
+            if (value === null || value === undefined || value === "") {
+                return '<span class="text-gray-400">―</span>';
+            }
+            return this.escape(value);
+        }
+
+        formatNumber(value, digits = 0) {
+            const num = Number(value);
+            if (Number.isNaN(num)) {
+                return '<span class="text-gray-400">―</span>';
+            }
+            return new Intl.NumberFormat("ja-JP", {
+                minimumFractionDigits: digits,
+                maximumFractionDigits: digits,
+            }).format(num);
+        }
+
+        escape(value) {
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
     }
 
-    buildUsageKeyFromItem(item) {
-      const machine = this.normalizeKeyValue(item.machine_no);
-      const code = this.normalizeKeyValue(item.item_code);
-      const spec = this.normalizeSpec(item.material);
-      const qty = this.normalizeNumber(item.quantity);
-      return `${machine}|${code}|${spec}|${qty}`;
-    }
-
-    buildUsageKey2FromItem(item) {
-      const machine = this.normalizeKeyValue(item.machine_no);
-      const code = this.normalizeKeyValue(item.item_code);
-      const spec = this.normalizeSpec(item.material);
-      return `${machine}|${code}|${spec}`;
-    }
-
-    normalizeSpec(value) {
-      const t = (value ?? "").toString().trim();
-      // 連続スペースを1個に、全角スペースも半角に
-      return t.replace(/\u3000/g, " ").replace(/\s+/g, " ");
-    }
-
-    normalizeKeyValue(value) {
-      const t = (value ?? "").toString().trim();
-      return t.replace(/\u3000/g, " ").replace(/\s+/g, " ");
-    }
-
-    normalizeNumber(value) {
-      if (value == null || value === "") return "";
-      const num = Number(value);
-      if (!isFinite(num)) return this.normalizeKeyValue(value);
-      return String(num);
-    }
-
-    updateMeta(items) {
-      const now = new Date();
-      this.totalRows.textContent = items.length;
-      this.lastUpdated.textContent = `最終更新: ${now.toLocaleString()}`;
-    }
-
-    showLoading(isLoading) {
-      this.loadingRow.classList.toggle("hidden", !isLoading);
-    }
-
-    formatCell(value) {
-      if (value === null || value === undefined || value === "") {
-        return '<span class="text-gray-400">―</span>';
-      }
-      return this.escape(value);
-    }
-
-    formatNumber(value, digits = 0) {
-      const num = Number(value);
-      if (Number.isNaN(num)) {
-        return '<span class="text-gray-400">―</span>';
-      }
-      return new Intl.NumberFormat("ja-JP", {
-        minimumFractionDigits: digits,
-        maximumFractionDigits: digits,
-      }).format(num);
-    }
-
-    escape(value) {
-      return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    new ProductionSchedulePage();
-  });
+    document.addEventListener("DOMContentLoaded", () => {
+        new ProductionSchedulePage();
+    });
 </script>
 {% endblock %}

@@ -152,14 +152,9 @@ function initializeImportTab() {
                 `;
       }
 
-      if (typeof showToast === "function") {
-        showToast(msg, "success");
-        if (!isDryRun) {
-          // 実行時は発注一覧タブに切り替え
-          document.getElementById("tab-orders").click();
-        }
-      } else {
-        alert(msg);
+      if (!isDryRun) {
+        // 実行時は発注一覧タブに切り替え
+        document.getElementById("tab-orders").click();
       }
       console.log("Excel取込結果", r);
     } catch (e) {
@@ -246,26 +241,21 @@ function initializeImportTab() {
                     `;
         }
 
-        if (typeof showToast === "function") {
-          showToast(data.message, "success");
-          if (!isDryRun) {
-            // 実行時は処理タブに切り替えつつ一覧を更新
-            setTimeout(() => {
-              document.getElementById("tab-processing")?.click();
-              try {
-                loadProcessingItems();
-              } catch (e) {
-                console.warn("loadProcessingItems error", e);
-              }
-              try {
-                loadReceivingItems();
-              } catch (e) {
-                console.warn("loadReceivingItems error", e);
-              }
-            }, 1000);
-          }
-        } else {
-          alert(data.message);
+        if (!isDryRun) {
+          // 実行時は処理タブに切り替えつつ一覧を更新
+          setTimeout(() => {
+            document.getElementById("tab-processing")?.click();
+            try {
+              loadProcessingItems();
+            } catch (e) {
+              console.warn("loadProcessingItems error", e);
+            }
+            try {
+              loadReceivingItems();
+            } catch (e) {
+              console.warn("loadReceivingItems error", e);
+            }
+          }, 1000);
         }
         console.log("セット予定表取り込み結果", r);
       } catch (e) {
@@ -1720,13 +1710,11 @@ async function handleReceive(event) {
           message += `（削除 ${deletedCount}/${removedLotNumbers.length}件）`;
         }
 
-        if (deletionErrors.length > 0) {
+        if (deletionErrors.length > 0 && typeof showToast === "function") {
           showToast(`${message}。一部ロットの削除に失敗しました。`, "warning");
           deletionErrors
             .slice(0, 3)
             .forEach((errMsg) => showToast(errMsg, "error"));
-        } else {
-          showToast(message, "success");
         }
       }
       hideReceiveModal();
@@ -2636,7 +2624,8 @@ async function loadInspectionItemsList(page = 1) {
   const tableBody = document.getElementById("inspectionItemsListBody");
   const loading = document.getElementById("inspectionListLoading");
   const empty = document.getElementById("inspectionListEmpty");
-  const statusFilter = document.getElementById("inspectionStatusFilter")?.value || "pending";
+  const statusFilter =
+    document.getElementById("inspectionStatusFilter")?.value || "pending";
 
   loading.classList.remove("hidden");
   tableBody.innerHTML = "";
@@ -2649,17 +2638,20 @@ async function loadInspectionItemsList(page = 1) {
       apiUrl = "/api/inspections/lots/pending/";
     } else {
       // 検品済みまたはすべて
-      const materialFilter = document.getElementById("inspectionMaterialFilter")?.value || "";
-      const lotFilter = document.getElementById("inspectionLotFilter")?.value || "";
-      const orderFilter = document.getElementById("inspectionOrderNumberFilter")?.value || "";
-      
+      const materialFilter =
+        document.getElementById("inspectionMaterialFilter")?.value || "";
+      const lotFilter =
+        document.getElementById("inspectionLotFilter")?.value || "";
+      const orderFilter =
+        document.getElementById("inspectionOrderNumberFilter")?.value || "";
+
       const params = new URLSearchParams();
       if (materialFilter) params.append("material_spec", materialFilter);
       if (lotFilter) params.append("lot_number", lotFilter);
       if (orderFilter) params.append("order_number", orderFilter);
       params.append("skip", (page - 1) * 200);
       params.append("limit", 200);
-      
+
       apiUrl = `/api/inventory/lots/inspected/?${params.toString()}`;
     }
 
@@ -2681,9 +2673,9 @@ async function loadInspectionItemsList(page = 1) {
     // ステータスフィルター適用（検品済みの場合）
     let filteredLots = lots;
     if (statusFilter === "passed") {
-      filteredLots = lots.filter(lot => lot.inspection_status === "passed");
+      filteredLots = lots.filter((lot) => lot.inspection_status === "passed");
     } else if (statusFilter === "failed") {
-      filteredLots = lots.filter(lot => lot.inspection_status === "failed");
+      filteredLots = lots.filter((lot) => lot.inspection_status === "failed");
     }
 
     // ロットデータを統一形式に変換
@@ -2816,13 +2808,13 @@ function createInspectionItemRow(item) {
 
   // 発注番号と検品日時を追加
   const orderNumber = item.lot?.order_number || "-";
-  const inspectedAt = item.inspected_at 
+  const inspectedAt = item.inspected_at
     ? new Date(item.inspected_at).toLocaleString("ja-JP", {
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
         hour: "2-digit",
-        minute: "2-digit"
+        minute: "2-digit",
       })
     : "-";
 
@@ -3033,10 +3025,6 @@ async function loadInspectionTargetByCode() {
       infoEl.classList.add("text-blue-700");
     }
 
-    if (typeof showToast === "function") {
-      showToast("検品対象を読み込みました", "success");
-    }
-
     // 保存済みの検品詳細があればフォームへ反映
     if (currentInspectionLotId) {
       await populateInspectionFormFromSaved(currentInspectionLotId);
@@ -3084,10 +3072,7 @@ async function populateInspectionFormFromSaved(lotId) {
     }
     const detail = await res.json();
 
-    console.log(
-      "検品詳細レスポンス(detail):",
-      JSON.stringify(detail, null, 2),
-    ); // デバッグ用
+    console.log("検品詳細レスポンス(detail):", JSON.stringify(detail, null, 2)); // デバッグ用
 
     // 日時（ローカル）: inspected_at / inspection_date どちらでも対応
     const inspectedAt = detail.inspected_at || detail.inspection_date;
@@ -3130,10 +3115,7 @@ async function populateInspectionFormFromSaved(lotId) {
     const notesEl = document.getElementById("inspectionNotesInput");
     if (notesEl)
       notesEl.value =
-        detail.inspection_notes ||
-        detail.notes ||
-        detail.comment ||
-        "";
+        detail.inspection_notes || detail.notes || detail.comment || "";
 
     // 寸法入力
     const numMap = [
@@ -3157,10 +3139,6 @@ async function populateInspectionFormFromSaved(lotId) {
       const val = detail[key];
       el.value = val === null || typeof val === "undefined" ? "" : String(val);
     });
-
-    if (typeof showToast === "function") {
-      showToast("保存済み検品データをフォームに反映しました", "success");
-    }
   } catch (e) {
     console.error("検品詳細取得エラー:", e);
   }
@@ -3229,12 +3207,8 @@ async function submitInspection(event) {
 
   const payload = {
     // バックエンドのJSONに合わせたフィールド名（旧・新どちらにも対応）
-    inspection_date: inspectedAtStr
-      ? new Date(inspectedAtStr)
-      : new Date(),
-    inspected_at: inspectedAtStr
-      ? new Date(inspectedAtStr)
-      : new Date(),
+    inspection_date: inspectedAtStr ? new Date(inspectedAtStr) : new Date(),
+    inspected_at: inspectedAtStr ? new Date(inspectedAtStr) : new Date(),
     bending_ok: bendingOk,
     scratch_ok: scratchOk,
     dirt_ok: dirtOk,
@@ -3277,17 +3251,8 @@ async function submitInspection(event) {
       console.log("検品登録成功:", result); // デバッグ
       console.log("検品ステータス:", result.inspection_status); // デバッグ
 
-      if (typeof showToast === "function") {
-        const statusText =
-          result.inspection_status === "passed"
-            ? "合格"
-            : result.inspection_status === "failed"
-              ? "不合格"
-              : "完了";
-        showToast(`検品結果を登録しました（${statusText}）`, "success");
-      }
       resetInspectionForm();
-      
+
       // モーダルを閉じる
       hideInspectionModal();
 
@@ -3299,10 +3264,7 @@ async function submitInspection(event) {
       }, 500);
     } else {
       const err = await res.json().catch(() => ({}));
-      console.error(
-        "検品登録失敗詳細:",
-        JSON.stringify(err, null, 2),
-      ); // デバッグ
+      console.error("検品登録失敗詳細:", JSON.stringify(err, null, 2)); // デバッグ
       if (typeof showToast === "function") {
         showToast(err.detail || "検品登録に失敗しました", "error");
       }
@@ -3626,10 +3588,6 @@ async function executePrintLotNumber() {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
 
-    if (typeof showToast === "function") {
-      showToast("ロット番号タグPDFを保存しました", "success");
-    }
-
     hidePrintModal();
   } catch (error) {
     console.error("ロット番号タグ印刷エラー:", error);
@@ -3772,17 +3730,11 @@ function copySelectionFromTextarea(textareaId) {
     // 何も選択されていない場合は全文コピー
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(ta.value);
-      if (typeof showToast === "function") {
-        showToast("全文をコピーしました", "success");
-      }
     }
     return;
   }
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text);
-    if (typeof showToast === "function") {
-      showToast("選択範囲をコピーしました", "success");
-    }
   } else {
     const tmp = document.createElement("textarea");
     tmp.value = text;
@@ -4574,9 +4526,6 @@ async function loadProcessingItems() {
             },
           );
           if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-          if (typeof showToast === "function") {
-            showToast("処理情報を保存しました", "success");
-          }
         } catch (e) {
           console.error(e);
           alert("保存に失敗しました");
@@ -4607,10 +4556,6 @@ async function loadProcessingItems() {
           const statusCell = tr.cells[9];
           statusCell.innerHTML =
             '<span class="px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium">未完了</span>';
-
-          if (typeof showToast === "function") {
-            showToast("再編集モードにしました", "info");
-          }
         } else {
           // 完了処理
           if (!confirm("このアイテムを完了にしますか？")) return;
@@ -4624,9 +4569,6 @@ async function loadProcessingItems() {
               },
             );
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            if (typeof showToast === "function") {
-              showToast("処理完了にしました", "success");
-            }
 
             const showCompleted =
               document.getElementById("showCompletedProcessing")?.checked ||

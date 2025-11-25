@@ -1,990 +1,1239 @@
 {% extends "base.html" %} {% block title %}入出庫管理 - 材料管理システム{%
 endblock %} {% block extra_head %}
 <style>
-  :root {
-    --primary-navy: #1e3a8a;
-    --primary-blue: #3b82f6;
-    --success-green: #10b981;
-    --warning-amber: #f59e0b;
-    --danger-red: #ef4444;
-    --neutral-50: #f9fafb;
-    --neutral-100: #f3f4f6;
-    --neutral-200: #e5e7eb;
-    --neutral-600: #4b5563;
-    --neutral-700: #374151;
-    --neutral-800: #1f2937;
-  }
+    :root {
+        --primary-navy: #1e3a8a;
+        --primary-blue: #3b82f6;
+        --success-green: #10b981;
+        --warning-amber: #f59e0b;
+        --danger-red: #ef4444;
+        --neutral-50: #f9fafb;
+        --neutral-100: #f3f4f6;
+        --neutral-200: #e5e7eb;
+        --neutral-600: #4b5563;
+        --neutral-700: #374151;
+        --neutral-800: #1f2937;
+    }
 
-  /* 入庫・出庫ボタン用 */
-  .movement-in-gradient {
-    background-color: var(--success-green);
-  }
+    /* 入庫・出庫ボタン用 */
+    .movement-in-gradient {
+        background-color: var(--success-green);
+    }
 
-  .movement-out-gradient {
-    background-color: var(--danger-red);
-  }
+    .movement-out-gradient {
+        background-color: var(--danger-red);
+    }
 
-  .movement-in-gradient:hover,
-  .movement-out-gradient:hover {
-    opacity: 0.9;
-  }
+    .movement-in-gradient:hover,
+    .movement-out-gradient:hover {
+        opacity: 0.9;
+    }
 
-  /* テーブル行のホバーエフェクト */
-  .table-row-hover:hover {
-    background: var(--neutral-50);
-  }
+    /* テーブル行のホバーエフェクト */
+    .table-row-hover:hover {
+        background: var(--neutral-50);
+    }
 
-  /* 履歴カードのボーダー */
-  .history-card-in {
-    border-left: 3px solid var(--success-green);
-  }
+    /* 履歴カードのボーダー */
+    .history-card-in {
+        border-left: 3px solid var(--success-green);
+    }
 
-  .history-card-out {
-    border-left: 3px solid var(--danger-red);
-  }
+    .history-card-out {
+        border-left: 3px solid var(--danger-red);
+    }
 </style>
 {% endblock %} {% block content %}
 <div class="min-h-screen bg-neutral-50">
-  <div class="max-w-[1600px] mx-auto py-4 px-4">
-    <!-- ヘッダーセクション -->
-    <div class="mb-4">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center space-x-3">
-          <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg">
-            <i class="fas fa-exchange-alt text-xl text-primary-blue"></i>
-          </div>
-          <div>
-            <h1 class="text-2xl font-bold text-neutral-800">入出庫管理</h1>
-            <p class="text-sm text-neutral-600 mt-1">在庫の持ち出し・戻しをリアルタイムで管理</p>
-          </div>
+    <div class="max-w-[1600px] mx-auto py-4 px-4">
+        <!-- ヘッダーセクション -->
+        <div class="mb-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg">
+                        <i
+                            class="fas fa-exchange-alt text-xl text-primary-blue"
+                        ></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-neutral-800">
+                            入出庫管理
+                        </h1>
+                        <p class="text-sm text-neutral-600 mt-1">
+                            在庫の持ち出し・戻しをリアルタイムで管理
+                        </p>
+                    </div>
+                </div>
+                <div class="hidden md:flex items-center space-x-2">
+                    <button
+                        id="qrScanBtn"
+                        class="bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 flex items-center px-4 py-2 rounded-lg font-semibold transition-colors"
+                    >
+                        <i class="fas fa-qrcode text-primary-blue mr-2"></i>
+                        <span>QRスキャン</span>
+                    </button>
+                    <button
+                        id="refreshBtn"
+                        class="bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 p-2 rounded-lg transition-colors"
+                        title="データを再取得"
+                    >
+                        <i class="fas fa-sync-alt text-neutral-600"></i>
+                    </button>
+                </div>
+            </div>
         </div>
-        <div class="hidden md:flex items-center space-x-2">
-          <button
-            id="qrScanBtn"
-            class="bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 flex items-center px-4 py-2 rounded-lg font-semibold transition-colors"
-          >
-            <i class="fas fa-qrcode text-primary-blue mr-2"></i>
-            <span>QRスキャン</span>
-          </button>
-          <button
-            id="refreshBtn"
-            class="bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 p-2 rounded-lg transition-colors"
-            title="データを再取得"
-          >
-            <i class="fas fa-sync-alt text-neutral-600"></i>
-          </button>
+
+        <!-- コンテンツエリア -->
+        <div class="space-y-4">
+            <!-- 統合ムーブメントフォーム -->
+            <div
+                class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm"
+            >
+                <div class="flex items-center mb-4">
+                    <div
+                        class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3"
+                    >
+                        <i
+                            class="fas fa-exchange-alt text-xl text-primary-blue"
+                        ></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-neutral-800">
+                        入出庫フォーム
+                    </h3>
+                </div>
+
+                <form id="movementForm" class="space-y-4">
+                    <input type="hidden" name="item_id" />
+
+                    <!-- 種別トグル -->
+                    <div>
+                        <label
+                            class="block text-sm font-semibold text-neutral-700 mb-2"
+                            >処理種別</label
+                        >
+                        <div class="flex space-x-3">
+                            <button
+                                type="button"
+                                id="typeOutBtn"
+                                class="flex-1 movement-out-gradient text-white px-4 py-3 rounded-lg font-semibold transition-opacity"
+                            >
+                                <i class="fas fa-arrow-right mr-2"></i>出庫
+                            </button>
+                            <button
+                                type="button"
+                                id="typeInBtn"
+                                class="flex-1 bg-neutral-400 text-white px-4 py-3 rounded-lg font-semibold transition-opacity"
+                            >
+                                <i class="fas fa-arrow-left mr-2"></i>戻し
+                            </button>
+                            <input
+                                type="hidden"
+                                id="movementTypeInput"
+                                name="movement_type"
+                                value="out"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- アイテム選択 -->
+                    <div>
+                        <label
+                            class="block text-sm font-semibold text-neutral-700 mb-2"
+                            >対象アイテム</label
+                        >
+                        <div class="space-y-2">
+                            <div
+                                id="selectedItemSummary"
+                                class="bg-neutral-50 p-4 border border-dashed border-neutral-300 rounded-lg text-sm text-neutral-500"
+                            >
+                                アイテムが選択されていません
+                            </div>
+                            <div class="flex space-x-2">
+                                <button
+                                    type="button"
+                                    id="selectItemBtn"
+                                    class="flex-1 bg-primary-blue text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-opacity flex items-center justify-center font-semibold"
+                                >
+                                    <i class="fas fa-search mr-2"></i
+                                    >在庫一覧で検索
+                                </button>
+                                <button
+                                    type="button"
+                                    id="clearItemBtn"
+                                    class="bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 px-4 py-2 rounded-lg font-semibold transition-colors"
+                                >
+                                    <i class="fas fa-times mr-2"></i>クリア
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 入力方法と全量出庫 -->
+                    <div class="mb-2">
+                        <span
+                            class="block text-sm font-semibold text-neutral-700 mb-2"
+                        >
+                            <i
+                                class="fas fa-sliders-h mr-1 text-neutral-600"
+                            ></i
+                            >入力方法
+                        </span>
+                        <div class="flex items-center gap-4">
+                            <label class="inline-flex items-center">
+                                <input
+                                    type="radio"
+                                    name="input_mode"
+                                    id="inputModeQuantity"
+                                    value="quantity"
+                                    class="mr-2"
+                                    checked
+                                />
+                                <span>数量（本）</span>
+                            </label>
+                            <label class="inline-flex items-center">
+                                <input
+                                    type="radio"
+                                    name="input_mode"
+                                    id="inputModeWeight"
+                                    value="weight"
+                                    class="mr-2"
+                                />
+                                <span>重量（kg）</span>
+                            </label>
+                            <label class="inline-flex items-center ml-auto">
+                                <input
+                                    type="checkbox"
+                                    id="fullOutAll"
+                                    class="mr-2"
+                                />
+                                <span>すべて持ち出す（在庫全量を出庫）</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 数量・重量入力 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label
+                                class="block text-sm font-semibold text-neutral-700 mb-2"
+                            >
+                                <i
+                                    class="fas fa-list-ol mr-1 text-primary-blue"
+                                ></i
+                                >数量（本）
+                            </label>
+                            <input
+                                type="number"
+                                id="movementQuantity"
+                                name="quantity"
+                                min="1"
+                                step="1"
+                                class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                                placeholder="本数を入力"
+                            />
+                        </div>
+                        <div>
+                            <label
+                                class="block text-sm font-semibold text-neutral-700 mb-2"
+                            >
+                                <i
+                                    class="fas fa-weight mr-1 text-success-green"
+                                ></i
+                                >重量（kg）
+                            </label>
+                            <input
+                                type="number"
+                                id="movementWeight"
+                                name="weight_kg"
+                                min="0.001"
+                                step="0.001"
+                                class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                                placeholder="重量を入力"
+                                disabled
+                            />
+                        </div>
+                    </div>
+                    <div
+                        class="bg-neutral-50 p-3 rounded-lg border-l-3 border-primary-blue"
+                    >
+                        <p class="text-sm text-neutral-700">
+                            <i
+                                class="fas fa-info-circle text-primary-blue mr-2"
+                            ></i>
+                            数量または重量のいずれか一方のみ入力してください（自動換算は行いません）
+                        </p>
+                    </div>
+
+                    <!-- 備考 -->
+                    <div>
+                        <label
+                            class="block text-sm font-semibold text-neutral-700 mb-2"
+                        >
+                            <i class="fas fa-comment mr-1 text-neutral-600"></i
+                            >備考
+                        </label>
+                        <textarea
+                            name="notes"
+                            rows="3"
+                            class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                            placeholder="備考を入力してください"
+                        ></textarea>
+                    </div>
+
+                    <button
+                        type="submit"
+                        id="movementSubmitBtn"
+                        class="w-full movement-out-gradient text-white py-3 px-4 rounded-lg transition-opacity flex items-center justify-center font-semibold text-lg"
+                    >
+                        <i class="fas fa-arrow-right mr-2"></i>
+                        出庫実行
+                    </button>
+                </form>
+
+                <div
+                    class="bg-neutral-50 p-3 rounded-lg border-l-3 border-primary-blue mt-4"
+                >
+                    <p class="text-xs text-neutral-600">
+                        <i class="fas fa-lightbulb text-primary-blue mr-2"></i>
+                        在庫一覧から直接「出庫」または「戻し」ボタンをクリックすることもできます
+                    </p>
+                </div>
+            </div>
+
+            <!-- 在庫アイテム一覧 -->
+            <div
+                id="inventorySection"
+                class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm"
+            >
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
+                        <div
+                            class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3"
+                        >
+                            <i
+                                class="fas fa-warehouse text-xl text-primary-blue"
+                            ></i>
+                        </div>
+                        <h2 class="text-lg font-bold text-neutral-800">
+                            在庫アイテム一覧
+                        </h2>
+                    </div>
+                </div>
+
+                <!-- 検索・フィルターエリア -->
+                <div
+                    class="bg-neutral-50 p-4 rounded-lg mb-4 border border-neutral-200"
+                >
+                    <div
+                        class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3"
+                    >
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-neutral-700 mb-2"
+                            >
+                                <i
+                                    class="fas fa-search mr-1 text-primary-blue"
+                                ></i
+                                >材料名
+                            </label>
+                            <input
+                                type="text"
+                                id="materialSearchInput"
+                                placeholder="材料名で検索"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                            />
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-neutral-700 mb-2"
+                            >
+                                <i
+                                    class="fas fa-barcode mr-1 text-success-green"
+                                ></i
+                                >ロット番号
+                            </label>
+                            <input
+                                type="text"
+                                id="lotSearchInput"
+                                placeholder="ロット番号で検索"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                            />
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-neutral-700 mb-2"
+                            >
+                                <i
+                                    class="fas fa-map-marker-alt mr-1 text-neutral-600"
+                                ></i
+                                >置き場
+                            </label>
+                            <input
+                                type="text"
+                                id="locationFilterInput"
+                                list="locationOptions"
+                                placeholder="置き場名で検索"
+                                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                            />
+                            <datalist id="locationOptions">
+                                <!-- 動的に生成 -->
+                            </datalist>
+                        </div>
+                        <div>
+                            <label
+                                class="block text-xs font-semibold text-neutral-700 mb-2"
+                            >
+                                <i
+                                    class="fas fa-filter mr-1 text-neutral-600"
+                                ></i
+                                >表示オプション
+                            </label>
+                            <label
+                                class="bg-white flex items-center space-x-2 p-2 rounded-lg cursor-pointer border border-neutral-200 hover:bg-neutral-50 transition-colors"
+                            >
+                                <input
+                                    type="checkbox"
+                                    id="includeZeroStock"
+                                    class="rounded border-neutral-300 w-4 h-4 text-primary-blue focus:ring-primary-blue"
+                                />
+                                <span
+                                    class="text-sm text-neutral-700 font-semibold"
+                                    >在庫切れを含む</span
+                                >
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ページネーション（上部） -->
+                <div id="inventoryPaginationTop" class="mb-4"></div>
+
+                <div
+                    class="overflow-x-auto rounded-lg border border-neutral-200"
+                >
+                    <table class="w-full">
+                        <thead class="bg-neutral-50">
+                            <tr>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-tag mr-1 text-primary-blue"
+                                    ></i
+                                    >材料仕様
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-shapes mr-1 text-success-green"
+                                    ></i
+                                    >形状
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-ruler mr-1 text-neutral-600"
+                                    ></i
+                                    >径
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-barcode mr-1 text-warning-amber"
+                                    ></i
+                                    >ロット番号
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-comment mr-1 text-neutral-600"
+                                    ></i
+                                    >ロット備考
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-arrows-alt-h mr-1 text-neutral-600"
+                                    ></i
+                                    >長さ
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-boxes mr-1 text-primary-blue"
+                                    ></i
+                                    >現在庫
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-weight mr-1 text-success-green"
+                                    ></i
+                                    >重量
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-map-marker-alt mr-1 text-danger-red"
+                                    ></i
+                                    >置き場
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-center text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-cogs mr-1 text-neutral-600"
+                                    ></i
+                                    >操作
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody
+                            id="inventoryTableBody"
+                            class="divide-y divide-gray-200 bg-white"
+                        >
+                            <!-- 動的に生成 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="inventoryLoading" class="text-center py-16 hidden">
+                    <div
+                        class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mb-4"
+                    ></div>
+                    <p class="text-lg text-gray-700 font-bold">
+                        在庫データを読み込んでいます...
+                    </p>
+                    <p class="text-sm text-gray-500 mt-2">
+                        しばらくお待ちください
+                    </p>
+                </div>
+
+                <div id="inventoryEmpty" class="text-center py-12 hidden">
+                    <div
+                        class="inline-flex items-center justify-center w-16 h-16 bg-neutral-100 rounded-full mb-4"
+                    >
+                        <i class="fas fa-inbox text-4xl text-neutral-400"></i>
+                    </div>
+                    <p class="text-lg text-neutral-700 font-bold">
+                        該当するアイテムがありません
+                    </p>
+                    <p class="text-sm text-neutral-500 mt-2">
+                        検索条件を変更してください
+                    </p>
+                </div>
+
+                <!-- ページネーション（下部） -->
+                <div id="inventoryPaginationBottom" class="mt-4"></div>
+            </div>
+
+            <!-- 入出庫履歴 -->
+            <div
+                class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm"
+            >
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
+                        <div
+                            class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3"
+                        >
+                            <i
+                                class="fas fa-history text-xl text-primary-blue"
+                            ></i>
+                        </div>
+                        <h2 class="text-lg font-bold text-neutral-800">
+                            入出庫履歴
+                        </h2>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <label
+                            class="block text-xs font-semibold text-neutral-700"
+                        >
+                            <i class="fas fa-filter mr-1 text-primary-blue"></i
+                            >種別フィルター
+                        </label>
+                        <select
+                            id="typeFilter"
+                            class="p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all font-semibold"
+                        >
+                            <option value="">すべて</option>
+                            <option value="in">🟢 戻しのみ</option>
+                            <option value="out">🔴 出庫のみ</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ページネーション（上部） -->
+                <div id="movementsPaginationTop" class="mb-4"></div>
+
+                <div
+                    class="overflow-x-auto rounded-lg border border-neutral-200"
+                >
+                    <table class="w-full">
+                        <thead class="bg-neutral-50">
+                            <tr>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-clock mr-1 text-primary-blue"
+                                    ></i
+                                    >処理日時
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-tag mr-1 text-neutral-600"
+                                    ></i
+                                    >種別
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-barcode mr-1 text-success-green"
+                                    ></i
+                                    >管理コード
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-box mr-1 text-warning-amber"
+                                    ></i
+                                    >材料・ロット
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-balance-scale mr-1 text-neutral-600"
+                                    ></i
+                                    >数量・重量（換算）
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-comment mr-1 text-neutral-600"
+                                    ></i
+                                    >備考
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-center text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-cog mr-1 text-neutral-600"
+                                    ></i
+                                    >操作
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody
+                            id="movementsTableBody"
+                            class="divide-y divide-gray-200 bg-white"
+                        >
+                            <!-- 動的に生成 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="movementsLoading" class="text-center py-16 hidden">
+                    <div
+                        class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mb-4"
+                    ></div>
+                    <p class="text-lg text-gray-700 font-bold">
+                        履歴データを読み込んでいます...
+                    </p>
+                    <p class="text-sm text-gray-500 mt-2">
+                        しばらくお待ちください
+                    </p>
+                </div>
+
+                <div id="movementsEmpty" class="text-center py-12 hidden">
+                    <div
+                        class="inline-flex items-center justify-center w-16 h-16 bg-neutral-100 rounded-full mb-4"
+                    >
+                        <i class="fas fa-history text-4xl text-neutral-400"></i>
+                    </div>
+                    <p class="text-lg text-neutral-700 font-bold">
+                        入出庫履歴がありません
+                    </p>
+                    <p class="text-sm text-neutral-500 mt-2">
+                        処理を実行すると履歴が表示されます
+                    </p>
+                </div>
+
+                <!-- ページネーション（下部） -->
+                <div id="movementsPaginationBottom" class="mt-4"></div>
+            </div>
         </div>
-      </div>
     </div>
-
-    <!-- コンテンツエリア -->
-    <div class="space-y-4">
-      <!-- 統合ムーブメントフォーム -->
-      <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
-        <div class="flex items-center mb-4">
-          <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3">
-            <i class="fas fa-exchange-alt text-xl text-primary-blue"></i>
-          </div>
-          <h3 class="text-lg font-bold text-neutral-800">入出庫フォーム</h3>
-        </div>
-
-        <form id="movementForm" class="space-y-4">
-          <input type="hidden" name="item_id" />
-
-          <!-- 種別トグル -->
-          <div>
-            <label class="block text-sm font-semibold text-neutral-700 mb-2"
-              >処理種別</label
-            >
-            <div class="flex space-x-3">
-              <button
-                type="button"
-                id="typeOutBtn"
-                class="flex-1 movement-out-gradient text-white px-4 py-3 rounded-lg font-semibold transition-opacity"
-              >
-                <i class="fas fa-arrow-right mr-2"></i>出庫
-              </button>
-              <button
-                type="button"
-                id="typeInBtn"
-                class="flex-1 bg-neutral-400 text-white px-4 py-3 rounded-lg font-semibold transition-opacity"
-              >
-                <i class="fas fa-arrow-left mr-2"></i>戻し
-              </button>
-              <input
-                type="hidden"
-                id="movementTypeInput"
-                name="movement_type"
-                value="out"
-              />
-            </div>
-          </div>
-
-          <!-- アイテム選択 -->
-          <div>
-            <label class="block text-sm font-semibold text-neutral-700 mb-2"
-              >対象アイテム</label
-            >
-            <div class="space-y-2">
-              <div
-                id="selectedItemSummary"
-                class="bg-neutral-50 p-4 border border-dashed border-neutral-300 rounded-lg text-sm text-neutral-500"
-              >
-                アイテムが選択されていません
-              </div>
-              <div class="flex space-x-2">
-                <button
-                  type="button"
-                  id="selectItemBtn"
-                  class="flex-1 bg-primary-blue text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-opacity flex items-center justify-center font-semibold"
-                >
-                  <i class="fas fa-search mr-2"></i>在庫一覧で検索
-                </button>
-                <button
-                  type="button"
-                  id="clearItemBtn"
-                  class="bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 px-4 py-2 rounded-lg font-semibold transition-colors"
-                >
-                  <i class="fas fa-times mr-2"></i>クリア
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <!-- 入力方法と全量出庫 -->
-          <div class="mb-2">
-            <span class="block text-sm font-semibold text-neutral-700 mb-2">
-              <i class="fas fa-sliders-h mr-1 text-neutral-600"></i>入力方法
-            </span>
-            <div class="flex items-center gap-4">
-              <label class="inline-flex items-center">
-                <input type="radio" name="input_mode" id="inputModeQuantity" value="quantity" class="mr-2" checked>
-                <span>数量（本）</span>
-              </label>
-              <label class="inline-flex items-center">
-                <input type="radio" name="input_mode" id="inputModeWeight" value="weight" class="mr-2">
-                <span>重量（kg）</span>
-              </label>
-              <label class="inline-flex items-center ml-auto">
-                <input type="checkbox" id="fullOutAll" class="mr-2">
-                <span>すべて持ち出す（在庫全量を出庫）</span>
-              </label>
-            </div>
-          </div>
-
-          <!-- 数量・重量入力 -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label class="block text-sm font-semibold text-neutral-700 mb-2">
-                <i class="fas fa-list-ol mr-1 text-primary-blue"></i>数量（本）
-              </label>
-              <input
-                type="number"
-                id="movementQuantity"
-                name="quantity"
-                min="1"
-                step="1"
-                class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
-                placeholder="本数を入力"
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-semibold text-neutral-700 mb-2">
-                <i class="fas fa-weight mr-1 text-success-green"></i>重量（kg）
-              </label>
-              <input
-                type="number"
-                id="movementWeight"
-                name="weight_kg"
-                min="0.001"
-                step="0.001"
-                class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
-                placeholder="重量を入力"
-                disabled
-              />
-            </div>
-          </div>
-          <div class="bg-neutral-50 p-3 rounded-lg border-l-3 border-primary-blue">
-            <p class="text-sm text-neutral-700">
-              <i class="fas fa-info-circle text-primary-blue mr-2"></i>
-              数量または重量のいずれか一方のみ入力してください（自動換算は行いません）
-            </p>
-          </div>
-
-          <!-- 備考 -->
-          <div>
-            <label class="block text-sm font-semibold text-neutral-700 mb-2">
-              <i class="fas fa-comment mr-1 text-neutral-600"></i>備考
-            </label>
-            <textarea
-              name="notes"
-              rows="3"
-              class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
-              placeholder="備考を入力してください"
-            ></textarea>
-          </div>
-
-          <button
-            type="submit"
-            id="movementSubmitBtn"
-            class="w-full movement-out-gradient text-white py-3 px-4 rounded-lg transition-opacity flex items-center justify-center font-semibold text-lg"
-          >
-            <i class="fas fa-arrow-right mr-2"></i>
-            出庫実行
-          </button>
-        </form>
-
-        <div class="bg-neutral-50 p-3 rounded-lg border-l-3 border-primary-blue mt-4">
-          <p class="text-xs text-neutral-600">
-            <i class="fas fa-lightbulb text-primary-blue mr-2"></i>
-            在庫一覧から直接「出庫」または「戻し」ボタンをクリックすることもできます
-          </p>
-        </div>
-      </div>
-
-      <!-- 在庫アイテム一覧 -->
-      <div id="inventorySection" class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center">
-            <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3">
-              <i class="fas fa-warehouse text-xl text-primary-blue"></i>
-            </div>
-            <h2 class="text-lg font-bold text-neutral-800">在庫アイテム一覧</h2>
-          </div>
-        </div>
-
-        <!-- 検索・フィルターエリア -->
-        <div class="bg-neutral-50 p-4 rounded-lg mb-4 border border-neutral-200">
-          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-neutral-700 mb-2">
-                <i class="fas fa-search mr-1 text-primary-blue"></i>材料名
-              </label>
-              <input
-                type="text"
-                id="materialSearchInput"
-                placeholder="材料名で検索"
-                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
-              />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-neutral-700 mb-2">
-                <i class="fas fa-barcode mr-1 text-success-green"></i>ロット番号
-              </label>
-              <input
-                type="text"
-                id="lotSearchInput"
-                placeholder="ロット番号で検索"
-                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
-              />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-neutral-700 mb-2">
-                <i class="fas fa-map-marker-alt mr-1 text-neutral-600"></i>置き場
-              </label>
-              <input
-                type="text"
-                id="locationFilterInput"
-                list="locationOptions"
-                placeholder="置き場名で検索"
-                class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
-              />
-              <datalist id="locationOptions">
-                <!-- 動的に生成 -->
-              </datalist>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-neutral-700 mb-2">
-                <i class="fas fa-filter mr-1 text-neutral-600"></i>表示オプション
-              </label>
-              <label
-                class="bg-white flex items-center space-x-2 p-2 rounded-lg cursor-pointer border border-neutral-200 hover:bg-neutral-50 transition-colors"
-              >
-                <input
-                  type="checkbox"
-                  id="includeZeroStock"
-                  class="rounded border-neutral-300 w-4 h-4 text-primary-blue focus:ring-primary-blue"
-                />
-                <span class="text-sm text-neutral-700 font-semibold"
-                  >在庫切れを含む</span
-                >
-              </label>
-            </div>
-          </div>
-        </div>
-
-        <!-- ページネーション（上部） -->
-        <div id="inventoryPaginationTop" class="mb-4"></div>
-
-        <div class="overflow-x-auto rounded-lg border border-neutral-200">
-          <table class="w-full">
-            <thead class="bg-neutral-50">
-              <tr>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-tag mr-1 text-primary-blue"></i>材料仕様
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-shapes mr-1 text-success-green"></i>形状
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-ruler mr-1 text-neutral-600"></i>径
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-barcode mr-1 text-warning-amber"></i>ロット番号
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-comment mr-1 text-neutral-600"></i>ロット備考
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-arrows-alt-h mr-1 text-neutral-600"></i>長さ
-                </th>
-                <th
-                  class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-boxes mr-1 text-primary-blue"></i>現在庫
-                </th>
-                <th
-                  class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-weight mr-1 text-success-green"></i>重量
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-map-marker-alt mr-1 text-danger-red"></i>置き場
-                </th>
-                <th
-                  class="px-4 py-3 text-center text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-cogs mr-1 text-neutral-600"></i>操作
-                </th>
-              </tr>
-            </thead>
-            <tbody
-              id="inventoryTableBody"
-              class="divide-y divide-gray-200 bg-white"
-            >
-              <!-- 動的に生成 -->
-            </tbody>
-          </table>
-        </div>
-
-        <div id="inventoryLoading" class="text-center py-16 hidden">
-          <div
-            class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mb-4"
-          ></div>
-          <p class="text-lg text-gray-700 font-bold">
-            在庫データを読み込んでいます...
-          </p>
-          <p class="text-sm text-gray-500 mt-2">しばらくお待ちください</p>
-        </div>
-
-        <div id="inventoryEmpty" class="text-center py-12 hidden">
-          <div class="inline-flex items-center justify-center w-16 h-16 bg-neutral-100 rounded-full mb-4">
-            <i class="fas fa-inbox text-4xl text-neutral-400"></i>
-          </div>
-          <p class="text-lg text-neutral-700 font-bold">
-            該当するアイテムがありません
-          </p>
-          <p class="text-sm text-neutral-500 mt-2">検索条件を変更してください</p>
-        </div>
-
-        <!-- ページネーション（下部） -->
-        <div id="inventoryPaginationBottom" class="mt-4"></div>
-      </div>
-
-      <!-- 入出庫履歴 -->
-      <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center">
-            <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3">
-              <i class="fas fa-history text-xl text-primary-blue"></i>
-            </div>
-            <h2 class="text-lg font-bold text-neutral-800">入出庫履歴</h2>
-          </div>
-          <div class="flex items-center space-x-2">
-            <label class="block text-xs font-semibold text-neutral-700">
-              <i class="fas fa-filter mr-1 text-primary-blue"></i>種別フィルター
-            </label>
-            <select
-              id="typeFilter"
-              class="p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all font-semibold"
-            >
-              <option value="">すべて</option>
-              <option value="in">🟢 戻しのみ</option>
-              <option value="out">🔴 出庫のみ</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- ページネーション（上部） -->
-        <div id="movementsPaginationTop" class="mb-4"></div>
-
-        <div class="overflow-x-auto rounded-lg border border-neutral-200">
-          <table class="w-full">
-            <thead class="bg-neutral-50">
-              <tr>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-clock mr-1 text-primary-blue"></i>処理日時
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-tag mr-1 text-neutral-600"></i>種別
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-barcode mr-1 text-success-green"></i>管理コード
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-box mr-1 text-warning-amber"></i>材料・ロット
-                </th>
-                <th
-                  class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-balance-scale mr-1 text-neutral-600"></i
-                  >数量・重量（換算）
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-comment mr-1 text-neutral-600"></i>備考
-                </th>
-                <th
-                  class="px-4 py-3 text-center text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-cog mr-1 text-neutral-600"></i>操作
-                </th>
-              </tr>
-            </thead>
-            <tbody
-              id="movementsTableBody"
-              class="divide-y divide-gray-200 bg-white"
-            >
-              <!-- 動的に生成 -->
-            </tbody>
-          </table>
-        </div>
-
-        <div id="movementsLoading" class="text-center py-16 hidden">
-          <div
-            class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mb-4"
-          ></div>
-          <p class="text-lg text-gray-700 font-bold">
-            履歴データを読み込んでいます...
-          </p>
-          <p class="text-sm text-gray-500 mt-2">しばらくお待ちください</p>
-        </div>
-
-        <div id="movementsEmpty" class="text-center py-12 hidden">
-          <div class="inline-flex items-center justify-center w-16 h-16 bg-neutral-100 rounded-full mb-4">
-            <i class="fas fa-history text-4xl text-neutral-400"></i>
-          </div>
-          <p class="text-lg text-neutral-700 font-bold">入出庫履歴がありません</p>
-          <p class="text-sm text-neutral-500 mt-2">
-            処理を実行すると履歴が表示されます
-          </p>
-        </div>
-
-        <!-- ページネーション（下部） -->
-        <div id="movementsPaginationBottom" class="mt-4"></div>
-      </div>
-    </div>
-  </div>
 </div>
 
 <!-- アイテム検索モーダル -->
 <div
-  id="itemSearchModal"
-  class="fixed inset-0 bg-black bg-opacity-50 hidden z-50"
+    id="itemSearchModal"
+    class="fixed inset-0 bg-black bg-opacity-50 hidden z-50"
 >
-  <div class="flex items-center justify-center min-h-screen p-4 modal-backdrop">
     <div
-      class="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-lg border border-neutral-200"
-      onclick="event.stopPropagation()"
+        class="flex items-center justify-center min-h-screen p-4 modal-backdrop"
     >
-      <div class="p-4 bg-neutral-50 border-b border-neutral-200">
-        <div class="flex justify-between items-center">
-          <div class="flex items-center">
-            <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3">
-              <i class="fas fa-search text-xl text-primary-blue"></i>
-            </div>
-            <h2
-              id="itemSearchModalTitle"
-              class="text-xl font-bold text-neutral-800"
-            >
-              アイテムを検索
-            </h2>
-          </div>
-          <button
-            id="closeItemSearchModal"
-            class="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition-colors"
-          >
-            <i class="fas fa-times text-xl"></i>
-          </button>
-        </div>
-      </div>
-
-      <div class="p-4">
-        <!-- 検索フィルター -->
-        <form
-          id="itemSearchForm"
-          class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4"
-        >
-          <div>
-            <label class="block text-xs font-semibold text-neutral-700 mb-2">
-              <i class="fas fa-tag mr-1 text-primary-blue"></i>材料名
-            </label>
-            <input
-              type="text"
-              name="material_name"
-              placeholder="材料名を入力"
-              class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
-            />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-neutral-700 mb-2">
-              <i class="fas fa-ruler mr-1 text-success-green"></i>径（mm）
-            </label>
-            <input
-              type="number"
-              name="diameter_mm"
-              placeholder="径を入力"
-              class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
-            />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-neutral-700 mb-2">
-              <i class="fas fa-barcode mr-1 text-neutral-600"></i>ロット番号
-            </label>
-            <input
-              type="text"
-              name="lot_number"
-              placeholder="ロット番号を入力"
-              class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
-            />
-          </div>
-          <div class="flex items-end">
-            <label
-              class="bg-white flex items-center space-x-2 p-2 rounded-lg cursor-pointer border border-neutral-200 hover:bg-neutral-50 transition-colors w-full"
-            >
-              <input
-                type="checkbox"
-                name="include_zero_stock"
-                class="rounded border-neutral-300 w-4 h-4 text-primary-blue focus:ring-primary-blue"
-              />
-              <span class="text-sm text-neutral-700 font-semibold"
-                >在庫切れを含む</span
-              >
-            </label>
-          </div>
-          <div class="flex items-end space-x-2 md:col-span-4">
-            <button
-              type="submit"
-              class="flex-1 bg-primary-blue text-white p-3 rounded-lg hover:bg-opacity-90 transition-opacity font-semibold"
-            >
-              <i class="fas fa-search mr-2"></i>検索
-            </button>
-            <button
-              type="button"
-              id="resetSearchBtn"
-              class="bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 p-3 rounded-lg font-semibold transition-colors"
-            >
-              <i class="fas fa-redo mr-2"></i>リセット
-            </button>
-          </div>
-        </form>
-
-        <!-- 検索結果 -->
         <div
-          id="searchResultsContainer"
-          class="border border-neutral-200 rounded-lg max-h-96 overflow-y-auto"
+            class="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden shadow-lg border border-neutral-200"
+            onclick="event.stopPropagation()"
         >
-          <table class="w-full">
-            <thead class="bg-neutral-50 sticky top-0">
-              <tr>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+            <div class="p-4 bg-neutral-50 border-b border-neutral-200">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                        <div
+                            class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3"
+                        >
+                            <i
+                                class="fas fa-search text-xl text-primary-blue"
+                            ></i>
+                        </div>
+                        <h2
+                            id="itemSearchModalTitle"
+                            class="text-xl font-bold text-neutral-800"
+                        >
+                            アイテムを検索
+                        </h2>
+                    </div>
+                    <button
+                        id="closeItemSearchModal"
+                        class="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition-colors"
+                    >
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-4">
+                <!-- 検索フィルター -->
+                <form
+                    id="itemSearchForm"
+                    class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4"
                 >
-                  <i class="fas fa-info-circle mr-1 text-primary-blue"></i>材料情報
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-neutral-700 mb-2"
+                        >
+                            <i class="fas fa-tag mr-1 text-primary-blue"></i
+                            >材料名
+                        </label>
+                        <input
+                            type="text"
+                            name="material_name"
+                            placeholder="材料名を入力"
+                            class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-neutral-700 mb-2"
+                        >
+                            <i class="fas fa-ruler mr-1 text-success-green"></i
+                            >径（mm）
+                        </label>
+                        <input
+                            type="number"
+                            name="diameter_mm"
+                            placeholder="径を入力"
+                            class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                        />
+                    </div>
+                    <div>
+                        <label
+                            class="block text-xs font-semibold text-neutral-700 mb-2"
+                        >
+                            <i class="fas fa-barcode mr-1 text-neutral-600"></i
+                            >ロット番号
+                        </label>
+                        <input
+                            type="text"
+                            name="lot_number"
+                            placeholder="ロット番号を入力"
+                            class="w-full p-2 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                        />
+                    </div>
+                    <div class="flex items-end">
+                        <label
+                            class="bg-white flex items-center space-x-2 p-2 rounded-lg cursor-pointer border border-neutral-200 hover:bg-neutral-50 transition-colors w-full"
+                        >
+                            <input
+                                type="checkbox"
+                                name="include_zero_stock"
+                                class="rounded border-neutral-300 w-4 h-4 text-primary-blue focus:ring-primary-blue"
+                            />
+                            <span class="text-sm text-neutral-700 font-semibold"
+                                >在庫切れを含む</span
+                            >
+                        </label>
+                    </div>
+                    <div class="flex items-end space-x-2 md:col-span-4">
+                        <button
+                            type="submit"
+                            class="flex-1 bg-primary-blue text-white p-3 rounded-lg hover:bg-opacity-90 transition-opacity font-semibold"
+                        >
+                            <i class="fas fa-search mr-2"></i>検索
+                        </button>
+                        <button
+                            type="button"
+                            id="resetSearchBtn"
+                            class="bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 p-3 rounded-lg font-semibold transition-colors"
+                        >
+                            <i class="fas fa-redo mr-2"></i>リセット
+                        </button>
+                    </div>
+                </form>
+
+                <!-- 検索結果 -->
+                <div
+                    id="searchResultsContainer"
+                    class="border border-neutral-200 rounded-lg max-h-96 overflow-y-auto"
                 >
-                  <i class="fas fa-barcode mr-1 text-success-green"></i>ロット
-                </th>
-                <th
-                  class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-boxes mr-1 text-neutral-600"></i>残数量
-                </th>
-                <th
-                  class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-weight mr-1 text-warning-amber"></i>重量
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-map-marker-alt mr-1 text-danger-red"></i>置き場
-                </th>
-                <th
-                  class="px-4 py-3 text-center text-sm font-semibold text-neutral-700"
-                >
-                  <i class="fas fa-check-circle mr-1 text-primary-blue"></i>選択
-                </th>
-              </tr>
-            </thead>
-            <tbody
-              id="searchResultsBody"
-              class="divide-y divide-gray-200 bg-white"
-            >
-              <!-- 動的に生成 -->
-            </tbody>
-          </table>
+                    <table class="w-full">
+                        <thead class="bg-neutral-50 sticky top-0">
+                            <tr>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-info-circle mr-1 text-primary-blue"
+                                    ></i
+                                    >材料情報
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-barcode mr-1 text-success-green"
+                                    ></i
+                                    >ロット
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-boxes mr-1 text-neutral-600"
+                                    ></i
+                                    >残数量
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-right text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-weight mr-1 text-warning-amber"
+                                    ></i
+                                    >重量
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-map-marker-alt mr-1 text-danger-red"
+                                    ></i
+                                    >置き場
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-center text-sm font-semibold text-neutral-700"
+                                >
+                                    <i
+                                        class="fas fa-check-circle mr-1 text-primary-blue"
+                                    ></i
+                                    >選択
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody
+                            id="searchResultsBody"
+                            class="divide-y divide-gray-200 bg-white"
+                        >
+                            <!-- 動的に生成 -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="searchLoading" class="text-center py-16 hidden">
+                    <div
+                        class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mb-4"
+                    ></div>
+                    <p class="text-lg text-gray-700 font-bold">検索中...</p>
+                    <p class="text-sm text-gray-500 mt-2">
+                        しばらくお待ちください
+                    </p>
+                </div>
+                <div id="searchEmpty" class="text-center py-12 hidden">
+                    <div
+                        class="inline-flex items-center justify-center w-16 h-16 bg-neutral-100 rounded-full mb-4"
+                    >
+                        <i
+                            class="fas fa-search-minus text-4xl text-neutral-400"
+                        ></i>
+                    </div>
+                    <p class="text-lg text-neutral-700 font-bold">
+                        条件に合致するアイテムが見つかりませんでした
+                    </p>
+                    <p class="text-sm text-neutral-500 mt-2">
+                        検索条件を変更して再試行してください
+                    </p>
+                </div>
+            </div>
         </div>
-        <div id="searchLoading" class="text-center py-16 hidden">
-          <div
-            class="inline-block animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mb-4"
-          ></div>
-          <p class="text-lg text-gray-700 font-bold">検索中...</p>
-          <p class="text-sm text-gray-500 mt-2">しばらくお待ちください</p>
-        </div>
-        <div id="searchEmpty" class="text-center py-12 hidden">
-          <div class="inline-flex items-center justify-center w-16 h-16 bg-neutral-100 rounded-full mb-4">
-            <i class="fas fa-search-minus text-4xl text-neutral-400"></i>
-          </div>
-          <p class="text-lg text-neutral-700 font-bold">
-            条件に合致するアイテムが見つかりませんでした
-          </p>
-          <p class="text-sm text-neutral-500 mt-2">
-            検索条件を変更して再試行してください
-          </p>
-        </div>
-      </div>
     </div>
-  </div>
 </div>
 
 <!-- 置き場変更モーダル -->
 <div
-  id="relocationModal"
-  class="fixed inset-0 bg-black bg-opacity-50 hidden z-50"
+    id="relocationModal"
+    class="fixed inset-0 bg-black bg-opacity-50 hidden z-50"
 >
-  <div class="flex items-center justify-center min-h-screen p-4 modal-backdrop">
     <div
-      class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-lg border border-neutral-200 flex flex-col"
-      onclick="event.stopPropagation()"
+        class="flex items-center justify-center min-h-screen p-4 modal-backdrop"
     >
-      <div class="p-4 bg-neutral-50 border-b border-neutral-200 flex-shrink-0">
-        <div class="flex justify-between items-center">
-          <div class="flex items-center">
-            <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3">
-              <i class="fas fa-map-marked-alt text-xl text-primary-blue"></i>
-            </div>
-            <h2 class="text-xl font-bold text-neutral-800">置き場を変更</h2>
-          </div>
-          <button
-            id="closeRelocationModal"
-            class="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition-colors"
-          >
-            <i class="fas fa-times text-xl"></i>
-          </button>
-        </div>
-      </div>
-
-      <div class="p-4 overflow-y-auto flex-1">
-        <!-- アイテム情報 -->
         <div
-          id="relocationItemInfo"
-          class="bg-neutral-50 p-4 border border-dashed border-neutral-300 rounded-lg mb-4"
+            class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-lg border border-neutral-200 flex flex-col"
+            onclick="event.stopPropagation()"
         >
-          <div class="text-sm text-neutral-700">
-            アイテムを選択してください
-          </div>
-        </div>
-
-        <!-- フォーム -->
-        <form id="relocationForm" class="space-y-4">
-          <input type="hidden" id="relocationItemId" name="item_id" />
-
-          <div>
-            <label class="block text-sm font-semibold text-neutral-700 mb-2">
-              <i class="fas fa-map-marker-alt mr-1 text-primary-blue"></i
-              >新しい置き場
-            </label>
-            <select
-              id="relocationLocationSelect"
-              name="location_id"
-              required
-              class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+            <div
+                class="p-4 bg-neutral-50 border-b border-neutral-200 flex-shrink-0"
             >
-              <option value="">置き場を選択してください</option>
-              <!-- 動的に生成 -->
-            </select>
-          </div>
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                        <div
+                            class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3"
+                        >
+                            <i
+                                class="fas fa-map-marked-alt text-xl text-primary-blue"
+                            ></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-neutral-800">
+                            置き場を変更
+                        </h2>
+                    </div>
+                    <button
+                        id="closeRelocationModal"
+                        class="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition-colors"
+                    >
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
 
-          <div>
-            <label class="block text-sm font-semibold text-neutral-700 mb-2">
-              <i class="fas fa-comment mr-1 text-neutral-600"></i>備考（任意）
-            </label>
-            <textarea
-              name="notes"
-              rows="3"
-              class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
-              placeholder="備考を入力してください（任意）"
-            ></textarea>
-          </div>
+            <div class="p-4 overflow-y-auto flex-1">
+                <!-- アイテム情報 -->
+                <div
+                    id="relocationItemInfo"
+                    class="bg-neutral-50 p-4 border border-dashed border-neutral-300 rounded-lg mb-4"
+                >
+                    <div class="text-sm text-neutral-700">
+                        アイテムを選択してください
+                    </div>
+                </div>
 
-          <button
-            type="submit"
-            class="w-full bg-primary-blue text-white py-3 px-4 rounded-lg transition-opacity hover:bg-opacity-90 flex items-center justify-center font-semibold text-lg"
-          >
-            <i class="fas fa-map-marked-alt mr-2"></i>
-            置き場を変更
-          </button>
-        </form>
+                <!-- フォーム -->
+                <form id="relocationForm" class="space-y-4">
+                    <input type="hidden" id="relocationItemId" name="item_id" />
 
-        <div class="bg-neutral-50 p-3 rounded-lg border-l-3 border-primary-blue mt-4">
-          <p class="text-xs text-neutral-600">
-            <i class="fas fa-info-circle text-primary-blue mr-2"></i>
-            この操作では在庫数は変更されません。置き場のみが移動されます。
-          </p>
+                    <div>
+                        <label
+                            class="block text-sm font-semibold text-neutral-700 mb-2"
+                        >
+                            <i
+                                class="fas fa-map-marker-alt mr-1 text-primary-blue"
+                            ></i
+                            >新しい置き場
+                        </label>
+                        <select
+                            id="relocationLocationSelect"
+                            name="location_id"
+                            required
+                            class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                        >
+                            <option value="">置き場を選択してください</option>
+                            <!-- 動的に生成 -->
+                        </select>
+                    </div>
+
+                    <div>
+                        <label
+                            class="block text-sm font-semibold text-neutral-700 mb-2"
+                        >
+                            <i class="fas fa-comment mr-1 text-neutral-600"></i
+                            >備考（任意）
+                        </label>
+                        <textarea
+                            name="notes"
+                            rows="3"
+                            class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                            placeholder="備考を入力してください（任意）"
+                        ></textarea>
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="w-full bg-primary-blue text-white py-3 px-4 rounded-lg transition-opacity hover:bg-opacity-90 flex items-center justify-center font-semibold text-lg"
+                    >
+                        <i class="fas fa-map-marked-alt mr-2"></i>
+                        置き場を変更
+                    </button>
+                </form>
+
+                <div
+                    class="bg-neutral-50 p-3 rounded-lg border-l-3 border-primary-blue mt-4"
+                >
+                    <p class="text-xs text-neutral-600">
+                        <i
+                            class="fas fa-info-circle text-primary-blue mr-2"
+                        ></i>
+                        この操作では在庫数は変更されません。置き場のみが移動されます。
+                    </p>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
 </div>
 
 <!-- 履歴編集モーダル -->
 <div
-  id="editMovementModal"
-  class="fixed inset-0 bg-black bg-opacity-50 hidden z-50"
-  onclick="closeEditMovementModal()"
+    id="editMovementModal"
+    class="fixed inset-0 bg-black bg-opacity-50 hidden z-50"
+    onclick="closeEditMovementModal()"
 >
-  <div class="flex items-center justify-center min-h-screen p-4">
-    <div
-      class="bg-white rounded-lg max-w-2xl w-full shadow-lg border border-neutral-200"
-      onclick="event.stopPropagation()"
-    >
-      <div class="p-4 bg-neutral-50 border-b border-neutral-200">
-        <div class="flex justify-between items-center">
-          <div class="flex items-center">
-            <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3">
-              <i class="fas fa-edit text-xl text-primary-blue"></i>
-            </div>
-            <h2 class="text-xl font-bold text-neutral-800">入出庫履歴の編集</h2>
-          </div>
-          <button
-            onclick="closeEditMovementModal()"
-            class="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition-colors"
-          >
-            <i class="fas fa-times text-xl"></i>
-          </button>
-        </div>
-      </div>
-
-      <form id="editMovementForm" class="p-4 space-y-4">
-        <input type="hidden" id="editMovementId" />
-
-        <div>
-          <label class="block text-sm font-semibold text-neutral-700 mb-2">
-            <i class="fas fa-hashtag mr-1 text-neutral-600"></i>数量（本）
-          </label>
-          <input
-            type="number"
-            id="editMovementQuantity"
-            min="1"
-            step="1"
-            class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
-            placeholder="数量を入力"
-          />
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold text-neutral-700 mb-2">
-            <i class="fas fa-weight mr-1 text-neutral-600"></i
-            >重量（kg）※数量または重量どちらか入力
-          </label>
-          <input
-            type="number"
-            id="editMovementWeight"
-            min="0"
-            step="0.001"
-            class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
-            placeholder="重量を入力（任意）"
-          />
-        </div>
-
-        <div>
-          <label class="block text-sm font-semibold text-neutral-700 mb-2">
-            <i class="fas fa-comment mr-1 text-neutral-600"></i>備考
-          </label>
-          <textarea
-            id="editMovementNotes"
-            rows="3"
-            class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
-            placeholder="備考を入力してください（任意）"
-          ></textarea>
-        </div>
-
-        <button
-          type="submit"
-          class="w-full bg-primary-blue text-white py-3 px-4 rounded-lg transition-opacity hover:bg-opacity-90 flex items-center justify-center font-semibold text-lg"
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div
+            class="bg-white rounded-lg max-w-2xl w-full shadow-lg border border-neutral-200"
+            onclick="event.stopPropagation()"
         >
-          <i class="fas fa-save mr-2"></i>
-          履歴を更新
-        </button>
-      </form>
+            <div class="p-4 bg-neutral-50 border-b border-neutral-200">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center">
+                        <div
+                            class="p-3 bg-primary-blue bg-opacity-10 rounded-lg mr-3"
+                        >
+                            <i
+                                class="fas fa-edit text-xl text-primary-blue"
+                            ></i>
+                        </div>
+                        <h2 class="text-xl font-bold text-neutral-800">
+                            入出庫履歴の編集
+                        </h2>
+                    </div>
+                    <button
+                        onclick="closeEditMovementModal()"
+                        class="p-2 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600 transition-colors"
+                    >
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <form id="editMovementForm" class="p-4 space-y-4">
+                <input type="hidden" id="editMovementId" />
+
+                <div>
+                    <label
+                        class="block text-sm font-semibold text-neutral-700 mb-2"
+                    >
+                        <i class="fas fa-hashtag mr-1 text-neutral-600"></i
+                        >数量（本）
+                    </label>
+                    <input
+                        type="number"
+                        id="editMovementQuantity"
+                        min="1"
+                        step="1"
+                        class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                        placeholder="数量を入力"
+                    />
+                </div>
+
+                <div>
+                    <label
+                        class="block text-sm font-semibold text-neutral-700 mb-2"
+                    >
+                        <i class="fas fa-weight mr-1 text-neutral-600"></i
+                        >重量（kg）※数量または重量どちらか入力
+                    </label>
+                    <input
+                        type="number"
+                        id="editMovementWeight"
+                        min="0"
+                        step="0.001"
+                        class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                        placeholder="重量を入力（任意）"
+                    />
+                </div>
+
+                <div>
+                    <label
+                        class="block text-sm font-semibold text-neutral-700 mb-2"
+                    >
+                        <i class="fas fa-comment mr-1 text-neutral-600"></i>備考
+                    </label>
+                    <textarea
+                        id="editMovementNotes"
+                        rows="3"
+                        class="w-full p-3 border border-neutral-200 rounded-lg focus:border-primary-blue focus:ring-2 focus:ring-primary-blue focus:ring-opacity-20 transition-all"
+                        placeholder="備考を入力してください（任意）"
+                    ></textarea>
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full bg-primary-blue text-white py-3 px-4 rounded-lg transition-opacity hover:bg-opacity-90 flex items-center justify-center font-semibold text-lg"
+                >
+                    <i class="fas fa-save mr-2"></i>
+                    履歴を更新
+                </button>
+            </form>
+        </div>
     </div>
-  </div>
 </div>
 
 <!-- QRスキャンモーダルは qr-scanner.js で動的に作成されます -->
 
 <script src="{{ url_for('static', path='js/pagination.js') }}"></script>
 <script>
-  // グローバル変数
-  let inventoryItems = [];
-  let filteredInventoryItems = [];
-  let movementHistory = [];
-  let currentItemTarget = null;
-  let selectedItem = null;
-  let movementType = "out";
-  // 履歴フィルタ状態
-  let movementsFilter = { type: "" };
-  // QRScannerはqr-scanner.jsで既に定義されているので削除
+    // グローバル変数
+    let inventoryItems = [];
+    let filteredInventoryItems = [];
+    let movementHistory = [];
+    let currentItemTarget = null;
+    let selectedItem = null;
+    let movementType = "out";
+    // 履歴フィルタ状態
+    let movementsFilter = { type: "" };
+    // QRScannerはqr-scanner.jsで既に定義されているので削除
 
-  // ページネーション用変数
-  let currentInventoryPage = 1;
-  let currentMovementsPage = 1;
-  const pageSize = 25;
+    // ページネーション用変数
+    let currentInventoryPage = 1;
+    let currentMovementsPage = 1;
+    const pageSize = 25;
 
-  // ページ読み込み時の初期化
-  document.addEventListener("DOMContentLoaded", function () {
-    initializePage();
-    setupEventListeners();
-  });
+    // ページ読み込み時の初期化
+    document.addEventListener("DOMContentLoaded", function () {
+        initializePage();
+        setupEventListeners();
+    });
 
-  // ページ初期化
-  async function initializePage() {
-    try {
-      // 前回のフィルタ・ページ状態を復元
-      const savedType = localStorage.getItem("movements.filter.type") || "";
-      const typeSelect = document.getElementById("typeFilter");
-      if (typeSelect) typeSelect.value = savedType;
-      movementsFilter.type = savedType;
+    // ページ初期化
+    async function initializePage() {
+        try {
+            // 前回のフィルタ・ページ状態を復元
+            const savedType =
+                localStorage.getItem("movements.filter.type") || "";
+            const typeSelect = document.getElementById("typeFilter");
+            if (typeSelect) typeSelect.value = savedType;
+            movementsFilter.type = savedType;
 
-      const savedPage = parseInt(
-        localStorage.getItem("movements.page") || "1",
-        10
-      );
-      currentMovementsPage = isNaN(savedPage) || savedPage < 1 ? 1 : savedPage;
+            const savedPage = parseInt(
+                localStorage.getItem("movements.page") || "1",
+                10,
+            );
+            currentMovementsPage =
+                isNaN(savedPage) || savedPage < 1 ? 1 : savedPage;
 
-      await loadInventory();
-      await loadMovements();
-      await loadLocations();
-    } catch (error) {
-      console.error("初期化エラー:", error);
-      showToast("ページの初期化に失敗しました", "error");
+            await loadInventory();
+            await loadMovements();
+            await loadLocations();
+        } catch (error) {
+            console.error("初期化エラー:", error);
+            showToast("ページの初期化に失敗しました", "error");
+        }
     }
-  }
 
-  // 在庫データ読み込み
-  async function loadInventory() {
-    const loading = document.getElementById("inventoryLoading");
-    const empty = document.getElementById("inventoryEmpty");
-    const tableBody = document.getElementById("inventoryTableBody");
+    // 在庫データ読み込み
+    async function loadInventory() {
+        const loading = document.getElementById("inventoryLoading");
+        const empty = document.getElementById("inventoryEmpty");
+        const tableBody = document.getElementById("inventoryTableBody");
 
-    loading.classList.remove("hidden");
-    empty.classList.add("hidden");
+        loading.classList.remove("hidden");
+        empty.classList.add("hidden");
 
-    try {
-      // チェックボックスの状態に基づいてフィルタリング
-      const includeZeroStock =
-        document.getElementById("includeZeroStock").checked;
-      inventoryItems = await APIClient.getInventory({
-        include_zero_stock: includeZeroStock,
-      });
-      filteredInventoryItems = inventoryItems;
-      renderInventoryTable();
+        try {
+            // チェックボックスの状態に基づいてフィルタリング
+            const includeZeroStock =
+                document.getElementById("includeZeroStock").checked;
+            inventoryItems = await APIClient.getInventory({
+                include_zero_stock: includeZeroStock,
+            });
+            filteredInventoryItems = inventoryItems;
+            renderInventoryTable();
 
-      if (inventoryItems.length === 0) {
-        empty.classList.remove("hidden");
-      }
-    } catch (error) {
-      console.error("在庫読み込みエラー:", error);
-      showToast("在庫データの読み込みに失敗しました", "error");
-    } finally {
-      loading.classList.add("hidden");
+            if (inventoryItems.length === 0) {
+                empty.classList.remove("hidden");
+            }
+        } catch (error) {
+            console.error("在庫読み込みエラー:", error);
+            showToast("在庫データの読み込みに失敗しました", "error");
+        } finally {
+            loading.classList.add("hidden");
+        }
     }
-  }
 
-  // 在庫テーブルの描画
-  function renderInventoryTable() {
-    const tableBody = document.getElementById("inventoryTableBody");
+    // 在庫テーブルの描画
+    function renderInventoryTable() {
+        const tableBody = document.getElementById("inventoryTableBody");
 
-    const sourceItems = filteredInventoryItems && filteredInventoryItems.length ? filteredInventoryItems : inventoryItems;
+        const sourceItems =
+            filteredInventoryItems && filteredInventoryItems.length
+                ? filteredInventoryItems
+                : inventoryItems;
 
-    if (sourceItems.length === 0) {
-      tableBody.innerHTML = `
+        if (sourceItems.length === 0) {
+            tableBody.innerHTML = `
             <tr>
                 <td colspan="9" class="px-4 py-8 text-center text-gray-500">
                     在庫アイテムがありません
                 </td>
             </tr>
         `;
-      // ページネーションを非表示
-      const topContainer = document.getElementById("inventoryPaginationTop");
-      const bottomContainer = document.getElementById(
-        "inventoryPaginationBottom"
-      );
-      if (topContainer) topContainer.innerHTML = "";
-      if (bottomContainer) bottomContainer.innerHTML = "";
-      return;
-    }
+            // ページネーションを非表示
+            const topContainer = document.getElementById(
+                "inventoryPaginationTop",
+            );
+            const bottomContainer = document.getElementById(
+                "inventoryPaginationBottom",
+            );
+            if (topContainer) topContainer.innerHTML = "";
+            if (bottomContainer) bottomContainer.innerHTML = "";
+            return;
+        }
 
-    // ページネーション処理
-    const totalPages = Math.ceil(sourceItems.length / pageSize);
-    currentInventoryPage = Math.min(currentInventoryPage, totalPages);
-    const startIndex = (currentInventoryPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const pageItems = sourceItems.slice(startIndex, endIndex);
+        // ページネーション処理
+        const totalPages = Math.ceil(sourceItems.length / pageSize);
+        currentInventoryPage = Math.min(currentInventoryPage, totalPages);
+        const startIndex = (currentInventoryPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const pageItems = sourceItems.slice(startIndex, endIndex);
 
-    tableBody.innerHTML = pageItems
-      .map((item) => {
-        const shapeText = getShapeText(item.material.shape);
-        const isOutOfStock = item.current_quantity === 0;
-        const stockClass = isOutOfStock
-          ? "text-danger-red font-bold"
-          : item.current_quantity <= 5
-          ? "text-warning-amber font-semibold"
-          : "text-neutral-800 font-semibold";
-        const rowClass = isOutOfStock
-          ? "bg-gray-50"
-          : "table-row-hover";
+        tableBody.innerHTML = pageItems
+            .map((item) => {
+                const shapeText = getShapeText(item.material.shape);
+                const isOutOfStock = item.current_quantity === 0;
+                const stockClass = isOutOfStock
+                    ? "text-danger-red font-bold"
+                    : item.current_quantity <= 5
+                      ? "text-warning-amber font-semibold"
+                      : "text-neutral-800 font-semibold";
+                const rowClass = isOutOfStock
+                    ? "bg-gray-50"
+                    : "table-row-hover";
 
-        return `
+                return `
             <tr class="${rowClass}">
                 <td class="px-4 py-3 text-sm font-semibold text-neutral-800">${
-                  item.material.display_name || "-"
+                    item.material.display_name || "-"
                 }</td>
                 <td class="px-4 py-3">
                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-success-green bg-opacity-10 text-success-green">
@@ -992,7 +1241,7 @@ endblock %} {% block extra_head %}
                     </span>
                 </td>
                 <td class="px-4 py-3 text-sm font-semibold text-neutral-700">${
-                  item.material.diameter_mm
+                    item.material.diameter_mm
                 }mm</td>
                 <td class="px-4 py-3">
                     <span class="inline-flex items-center font-mono text-xs font-semibold text-neutral-800 bg-warning-amber bg-opacity-10 px-2 py-1 rounded-lg">
@@ -1000,7 +1249,7 @@ endblock %} {% block extra_head %}
                     </span>
                 </td>
                 <td class="px-4 py-3 text-sm text-neutral-600">${
-                  item.lot.notes || "-"
+                    item.lot.notes || "-"
                 }</td>
                 <td class="px-4 py-3">
                     <span class="inline-flex items-center text-sm font-semibold text-neutral-700">
@@ -1010,37 +1259,37 @@ endblock %} {% block extra_head %}
                 <td class="px-4 py-3 text-right text-base ${stockClass}">
                     ${item.current_quantity}本
                     ${
-                      isOutOfStock
-                        ? '<span class="block text-xs text-danger-red mt-1 font-semibold">在庫切れ</span>'
-                        : ""
+                        isOutOfStock
+                            ? '<span class="block text-xs text-danger-red mt-1 font-semibold">在庫切れ</span>'
+                            : ""
                     }
                 </td>
                 <td class="px-4 py-3 text-right text-sm font-semibold text-success-green">${(
-                  item.total_weight_kg || 0
+                    item.total_weight_kg || 0
                 ).toFixed(3)}kg</td>
                 <td class="px-4 py-3">
                     <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-danger-red bg-opacity-10 text-danger-red">
                         <i class="fas fa-map-marker-alt mr-1"></i>${
-                          item.location ? item.location.name : "未配置"
+                            item.location ? item.location.name : "未配置"
                         }
                     </span>
                 </td>
                 <td class="px-4 py-3 text-center">
                     <div class="flex justify-center space-x-2">
                         <button onclick="selectItemForMovement(${
-                          item.id
+                            item.id
                         }, 'in')"
                                 class="movement-in-gradient text-white text-xs px-3 py-2 rounded-lg font-semibold hover:opacity-90 transition-opacity"
                                 title="在庫へ戻す">
                             <i class="fas fa-arrow-left mr-1"></i>戻し
                         </button>
                         <button onclick="selectItemForMovement(${
-                          item.id
+                            item.id
                         }, 'out')"
                                 class="${
-                                  isOutOfStock
-                                    ? "bg-neutral-400 cursor-not-allowed"
-                                    : "movement-out-gradient hover:opacity-90"
+                                    isOutOfStock
+                                        ? "bg-neutral-400 cursor-not-allowed"
+                                        : "movement-out-gradient hover:opacity-90"
                                 } text-white text-xs px-3 py-2 rounded-lg font-semibold transition-opacity"
                                 ${isOutOfStock ? "disabled" : ""}>
                             <i class="fas fa-arrow-right mr-1"></i>出庫
@@ -1054,103 +1303,107 @@ endblock %} {% block extra_head %}
                 </td>
             </tr>
         `;
-      })
-      .join("");
+            })
+            .join("");
 
-    // ページネーション表示
-    renderPagination(
-      "inventory",
-      currentInventoryPage,
-      totalPages,
-      loadInventoryPage
-    );
-  }
-
-  // 在庫一覧のページ切り替え
-  function loadInventoryPage(page) {
-    currentInventoryPage = page;
-    renderInventoryTable();
-  }
-
-  // 入出庫履歴読み込み
-  async function loadMovements() {
-    const loading = document.getElementById("movementsLoading");
-    const empty = document.getElementById("movementsEmpty");
-    const tableBody = document.getElementById("movementsTableBody");
-
-    loading.classList.remove("hidden");
-    empty.classList.add("hidden");
-
-    try {
-      movementHistory = await APIClient.getMovements();
-      renderMovementsTable();
-
-      if (movementHistory.length === 0) {
-        empty.classList.remove("hidden");
-      }
-    } catch (error) {
-      console.error("履歴読み込みエラー:", error);
-      showToast("履歴データの読み込みに失敗しました", "error");
-    } finally {
-      loading.classList.add("hidden");
+        // ページネーション表示
+        renderPagination(
+            "inventory",
+            currentInventoryPage,
+            totalPages,
+            loadInventoryPage,
+        );
     }
-  }
 
-  // 履歴テーブルの描画
-  function renderMovementsTable() {
-    const tableBody = document.getElementById("movementsTableBody");
-    // フィルタ適用
-    const filteredHistory = movementsFilter.type
-      ? movementHistory.filter((m) => m.movement_type === movementsFilter.type)
-      : movementHistory;
+    // 在庫一覧のページ切り替え
+    function loadInventoryPage(page) {
+        currentInventoryPage = page;
+        renderInventoryTable();
+    }
 
-    if (filteredHistory.length === 0) {
-      tableBody.innerHTML = `
+    // 入出庫履歴読み込み
+    async function loadMovements() {
+        const loading = document.getElementById("movementsLoading");
+        const empty = document.getElementById("movementsEmpty");
+        const tableBody = document.getElementById("movementsTableBody");
+
+        loading.classList.remove("hidden");
+        empty.classList.add("hidden");
+
+        try {
+            movementHistory = await APIClient.getMovements();
+            renderMovementsTable();
+
+            if (movementHistory.length === 0) {
+                empty.classList.remove("hidden");
+            }
+        } catch (error) {
+            console.error("履歴読み込みエラー:", error);
+            showToast("履歴データの読み込みに失敗しました", "error");
+        } finally {
+            loading.classList.add("hidden");
+        }
+    }
+
+    // 履歴テーブルの描画
+    function renderMovementsTable() {
+        const tableBody = document.getElementById("movementsTableBody");
+        // フィルタ適用
+        const filteredHistory = movementsFilter.type
+            ? movementHistory.filter(
+                  (m) => m.movement_type === movementsFilter.type,
+              )
+            : movementHistory;
+
+        if (filteredHistory.length === 0) {
+            tableBody.innerHTML = `
             <tr>
                 <td colspan="7" class="px-4 py-8 text-center text-gray-500">
                     該当する入出庫履歴がありません
                 </td>
             </tr>
         `;
-      // ページネーションを非表示
-      const topContainer = document.getElementById("movementsPaginationTop");
-      const bottomContainer = document.getElementById(
-        "movementsPaginationBottom"
-      );
-      if (topContainer) topContainer.innerHTML = "";
-      if (bottomContainer) bottomContainer.innerHTML = "";
-      return;
-    }
+            // ページネーションを非表示
+            const topContainer = document.getElementById(
+                "movementsPaginationTop",
+            );
+            const bottomContainer = document.getElementById(
+                "movementsPaginationBottom",
+            );
+            if (topContainer) topContainer.innerHTML = "";
+            if (bottomContainer) bottomContainer.innerHTML = "";
+            return;
+        }
 
-    // ページネーション処理（フィルタ後の件数で計算）
-    const totalPages = Math.max(
-      1,
-      Math.ceil(filteredHistory.length / pageSize)
-    );
-    currentMovementsPage = Math.min(currentMovementsPage, totalPages);
-    const startIndex = (currentMovementsPage - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const pageItems = filteredHistory.slice(startIndex, endIndex);
+        // ページネーション処理（フィルタ後の件数で計算）
+        const totalPages = Math.max(
+            1,
+            Math.ceil(filteredHistory.length / pageSize),
+        );
+        currentMovementsPage = Math.min(currentMovementsPage, totalPages);
+        const startIndex = (currentMovementsPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        const pageItems = filteredHistory.slice(startIndex, endIndex);
 
-    tableBody.innerHTML = pageItems
-      .map((movement) => {
-        const isIn = movement.movement_type === "in";
-        const typeClass = isIn ? "text-success-green" : "text-danger-red";
-        const typeText = isIn ? "戻し" : "出庫";
-        const typeIcon = isIn ? "fa-arrow-left" : "fa-arrow-right";
-        const rowClass = isIn ? "history-card-in" : "history-card-out";
-        const badgeClass = isIn
-          ? "bg-success-green"
-          : "bg-danger-red";
+        tableBody.innerHTML = pageItems
+            .map((movement) => {
+                const isIn = movement.movement_type === "in";
+                const typeClass = isIn
+                    ? "text-success-green"
+                    : "text-danger-red";
+                const typeText = isIn ? "戻し" : "出庫";
+                const typeIcon = isIn ? "fa-arrow-left" : "fa-arrow-right";
+                const rowClass = isIn ? "history-card-in" : "history-card-out";
+                const badgeClass = isIn ? "bg-success-green" : "bg-danger-red";
 
-        return `
+                return `
             <tr class="table-row-hover ${rowClass}">
                 <td class="px-4 py-3">
                     <div class="flex items-center">
                         <i class="fas fa-clock text-primary-blue mr-2"></i>
                         <span class="text-sm font-semibold text-neutral-800">
                             ${new Date(movement.processed_at).toLocaleString(
-                              "ja-JP"
+                                "ja-JP",
                             )}
                         </span>
                     </div>
@@ -1167,11 +1420,11 @@ endblock %} {% block extra_head %}
                 </td>
                 <td class="px-4 py-3">
                     <div class="font-semibold text-neutral-800 text-sm">${
-                      movement.material_name || "-"
+                        movement.material_name || "-"
                     }</div>
                     <div class="text-neutral-600 text-xs mt-1">
                         <i class="fas fa-barcode mr-1"></i>${
-                          movement.lot_number || "-"
+                            movement.lot_number || "-"
                         }
                     </div>
                 </td>
@@ -1181,9 +1434,9 @@ endblock %} {% block extra_head %}
                     </div>
                     <div class="text-xs text-neutral-600 font-semibold mt-1">
                         ${
-                          movement.weight_kg
-                            ? movement.weight_kg.toFixed(3) + "kg（換算）"
-                            : "-"
+                            movement.weight_kg
+                                ? movement.weight_kg.toFixed(3) + "kg（換算）"
+                                : "-"
                         }
                     </div>
                 </td>
@@ -1212,299 +1465,315 @@ endblock %} {% block extra_head %}
                 </td>
             </tr>
         `;
-      })
-      .join("");
+            })
+            .join("");
 
-    // ページネーション表示
-    renderPagination(
-      "movements",
-      currentMovementsPage,
-      totalPages,
-      loadMovementsPage
-    );
-  }
-
-  // 履歴のページ切り替え
-  function loadMovementsPage(page) {
-    currentMovementsPage = page;
-    localStorage.setItem("movements.page", String(page));
-    renderMovementsTable();
-  }
-
-  // 置き場一覧読み込み
-  async function loadLocations() {
-    try {
-      const locations = await APIClient.getLocations();
-      const datalist = document.getElementById("locationOptions");
-      if (!datalist) return;
-
-      // クリア
-      datalist.innerHTML = "";
-      locations.forEach((location) => {
-        const option = document.createElement("option");
-        option.value = location.name;
-        datalist.appendChild(option);
-      });
-    } catch (error) {
-      console.error("置き場読み込みエラー:", error);
-    }
-  }
-
-  // イベントリスナー設定
-  function setupEventListeners() {
-    // 統合フォーム
-    const movementForm = document.getElementById("movementForm");
-    if (movementForm) {
-      movementForm.addEventListener("submit", handleSubmitMovement);
-      const outBtn = document.getElementById("typeOutBtn");
-      const inBtn = document.getElementById("typeInBtn");
-      if (outBtn)
-        outBtn.addEventListener("click", () => setMovementType("out"));
-      if (inBtn) inBtn.addEventListener("click", () => setMovementType("in"));
-      const selectBtn = document.getElementById("selectItemBtn");
-      const clearBtn = document.getElementById("clearItemBtn");
-      if (selectBtn) selectBtn.addEventListener("click", focusInventorySearch);
-      if (clearBtn)
-        clearBtn.addEventListener("click", clearUnifiedSelectedItem);
-      setupUnifiedConverters();
-      setMovementType("out");
+        // ページネーション表示
+        renderPagination(
+            "movements",
+            currentMovementsPage,
+            totalPages,
+            loadMovementsPage,
+        );
     }
 
-    // モーダル
-    document
-      .getElementById("closeItemSearchModal")
-      .addEventListener("click", closeItemSearchModal);
-    document
-      .getElementById("itemSearchForm")
-      .addEventListener("submit", handleItemSearch);
-    document
-      .getElementById("resetSearchBtn")
-      .addEventListener("click", resetItemSearch);
+    // 履歴のページ切り替え
+    function loadMovementsPage(page) {
+        currentMovementsPage = page;
+        localStorage.setItem("movements.page", String(page));
+        renderMovementsTable();
+    }
 
-    // アイテム検索モーダルの背景クリック時の処理
-    document
-      .getElementById("itemSearchModal")
-      .addEventListener("click", (e) => {
-        // モーダルの背景部分（itemSearchModal自体）またはflexコンテナ部分をクリックした場合に閉じる
-        if (
-          e.target.id === "itemSearchModal" ||
-          e.target.classList.contains("modal-backdrop")
-        ) {
-          closeItemSearchModal();
+    // 置き場一覧読み込み
+    async function loadLocations() {
+        try {
+            const locations = await APIClient.getLocations();
+            const datalist = document.getElementById("locationOptions");
+            if (!datalist) return;
+
+            // クリア
+            datalist.innerHTML = "";
+            locations.forEach((location) => {
+                const option = document.createElement("option");
+                option.value = location.name;
+                datalist.appendChild(option);
+            });
+        } catch (error) {
+            console.error("置き場読み込みエラー:", error);
         }
-      });
+    }
 
-    // ESCキーでモーダルを閉じる処理
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") {
-        const itemSearchModal = document.getElementById("itemSearchModal");
-        if (itemSearchModal && !itemSearchModal.classList.contains("hidden")) {
-          closeItemSearchModal();
+    // イベントリスナー設定
+    function setupEventListeners() {
+        // 統合フォーム
+        const movementForm = document.getElementById("movementForm");
+        if (movementForm) {
+            movementForm.addEventListener("submit", handleSubmitMovement);
+            const outBtn = document.getElementById("typeOutBtn");
+            const inBtn = document.getElementById("typeInBtn");
+            if (outBtn)
+                outBtn.addEventListener("click", () => setMovementType("out"));
+            if (inBtn)
+                inBtn.addEventListener("click", () => setMovementType("in"));
+            const selectBtn = document.getElementById("selectItemBtn");
+            const clearBtn = document.getElementById("clearItemBtn");
+            if (selectBtn)
+                selectBtn.addEventListener("click", focusInventorySearch);
+            if (clearBtn)
+                clearBtn.addEventListener("click", clearUnifiedSelectedItem);
+            setupUnifiedConverters();
+            setMovementType("out");
         }
-        const relocationModal = document.getElementById("relocationModal");
-        if (relocationModal && !relocationModal.classList.contains("hidden")) {
-          closeRelocationModal();
+
+        // モーダル
+        document
+            .getElementById("closeItemSearchModal")
+            .addEventListener("click", closeItemSearchModal);
+        document
+            .getElementById("itemSearchForm")
+            .addEventListener("submit", handleItemSearch);
+        document
+            .getElementById("resetSearchBtn")
+            .addEventListener("click", resetItemSearch);
+
+        // アイテム検索モーダルの背景クリック時の処理
+        document
+            .getElementById("itemSearchModal")
+            .addEventListener("click", (e) => {
+                // モーダルの背景部分（itemSearchModal自体）またはflexコンテナ部分をクリックした場合に閉じる
+                if (
+                    e.target.id === "itemSearchModal" ||
+                    e.target.classList.contains("modal-backdrop")
+                ) {
+                    closeItemSearchModal();
+                }
+            });
+
+        // ESCキーでモーダルを閉じる処理
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+                const itemSearchModal =
+                    document.getElementById("itemSearchModal");
+                if (
+                    itemSearchModal &&
+                    !itemSearchModal.classList.contains("hidden")
+                ) {
+                    closeItemSearchModal();
+                }
+                const relocationModal =
+                    document.getElementById("relocationModal");
+                if (
+                    relocationModal &&
+                    !relocationModal.classList.contains("hidden")
+                ) {
+                    closeRelocationModal();
+                }
+                const editMovementModal =
+                    document.getElementById("editMovementModal");
+                if (
+                    editMovementModal &&
+                    !editMovementModal.classList.contains("hidden")
+                ) {
+                    closeEditMovementModal();
+                }
+            }
+        });
+
+        // 履歴編集フォーム
+        const editMovementForm = document.getElementById("editMovementForm");
+        if (editMovementForm) {
+            editMovementForm.addEventListener("submit", handleEditMovement);
         }
-        const editMovementModal = document.getElementById("editMovementModal");
-        if (
-          editMovementModal &&
-          !editMovementModal.classList.contains("hidden")
-        ) {
-          closeEditMovementModal();
+
+        // QRスキャン
+        document
+            .getElementById("qrScanBtn")
+            .addEventListener("click", openQRScanner);
+
+        // フィルター
+        document
+            .getElementById("materialSearchInput")
+            .addEventListener("input", debounce(filterInventory, 300));
+        document
+            .getElementById("lotSearchInput")
+            .addEventListener("input", debounce(filterInventory, 300));
+        const locInput = document.getElementById("locationFilterInput");
+        if (locInput) {
+            locInput.addEventListener("input", debounce(filterInventory, 300));
         }
-      }
-    });
+        document
+            .getElementById("typeFilter")
+            .addEventListener("change", filterMovements);
 
-    // 履歴編集フォーム
-    const editMovementForm = document.getElementById("editMovementForm");
-    if (editMovementForm) {
-      editMovementForm.addEventListener("submit", handleEditMovement);
+        // 更新ボタン
+        document
+            .getElementById("refreshBtn")
+            .addEventListener("click", refreshData);
+
+        // 在庫切れ表示フィルター
+        document
+            .getElementById("includeZeroStock")
+            .addEventListener("change", loadInventory);
+
+        // 置き場変更モーダル
+        document
+            .getElementById("closeRelocationModal")
+            .addEventListener("click", closeRelocationModal);
+        document
+            .getElementById("relocationForm")
+            .addEventListener("submit", handleRelocation);
+
+        // 置き場変更モーダルの背景クリック時の処理
+        document
+            .getElementById("relocationModal")
+            .addEventListener("click", (e) => {
+                if (
+                    e.target.id === "relocationModal" ||
+                    e.target.classList.contains("modal-backdrop")
+                ) {
+                    closeRelocationModal();
+                }
+            });
     }
 
-    // QRスキャン
-    document
-      .getElementById("qrScanBtn")
-      .addEventListener("click", openQRScanner);
-
-    // フィルター
-    document
-      .getElementById("materialSearchInput")
-      .addEventListener("input", debounce(filterInventory, 300));
-    document
-      .getElementById("lotSearchInput")
-      .addEventListener("input", debounce(filterInventory, 300));
-    const locInput = document.getElementById("locationFilterInput");
-    if (locInput) {
-      locInput.addEventListener("input", debounce(filterInventory, 300));
-    }
-    document
-      .getElementById("typeFilter")
-      .addEventListener("change", filterMovements);
-
-    // 更新ボタン
-    document
-      .getElementById("refreshBtn")
-      .addEventListener("click", refreshData);
-
-    // 在庫切れ表示フィルター
-    document
-      .getElementById("includeZeroStock")
-      .addEventListener("change", loadInventory);
-
-    // 置き場変更モーダル
-    document
-      .getElementById("closeRelocationModal")
-      .addEventListener("click", closeRelocationModal);
-    document
-      .getElementById("relocationForm")
-      .addEventListener("submit", handleRelocation);
-
-    // 置き場変更モーダルの背景クリック時の処理
-    document
-      .getElementById("relocationModal")
-      .addEventListener("click", (e) => {
-        if (
-          e.target.id === "relocationModal" ||
-          e.target.classList.contains("modal-backdrop")
-        ) {
-          closeRelocationModal();
+    // 在庫一覧検索へ誘導
+    function focusInventorySearch() {
+        const section = document.getElementById("inventorySection");
+        const input = document.getElementById("materialSearchInput");
+        if (section)
+            section.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (input) {
+            input.focus();
+            input.classList.add("ring-2", "ring-blue-500");
+            setTimeout(
+                () => input.classList.remove("ring-2", "ring-blue-500"),
+                1500,
+            );
         }
-      });
-  }
-
-  // 在庫一覧検索へ誘導
-  function focusInventorySearch() {
-    const section = document.getElementById("inventorySection");
-    const input = document.getElementById("materialSearchInput");
-    if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
-    if (input) {
-      input.focus();
-      input.classList.add("ring-2", "ring-blue-500");
-      setTimeout(() => input.classList.remove("ring-2", "ring-blue-500"), 1500);
-    }
-    showToast("下の在庫一覧で検索してください", "success");
-  }
-
-  // 入出庫フォームへスクロール
-  function scrollToMovementForm() {
-    const form = document.getElementById("movementForm");
-    if (form) form.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  // アイテム検索モーダルを開く
-  function openItemSearchModal(target) {
-    currentItemTarget = target;
-    document.getElementById("itemSearchModalTitle").textContent =
-      "アイテムを検索";
-    document.getElementById("itemSearchModal").classList.remove("hidden");
-
-    // 初期検索実行
-    handleItemSearch({ preventDefault: () => {} });
-  }
-
-  // アイテム検索モーダルを閉じる
-  function closeItemSearchModal() {
-    document.getElementById("itemSearchModal").classList.add("hidden");
-    currentItemTarget = null;
-  }
-
-  // アイテム検索処理
-  async function handleItemSearch(event) {
-    event.preventDefault();
-
-    const loading = document.getElementById("searchLoading");
-    const empty = document.getElementById("searchEmpty");
-    const container = document.getElementById("searchResultsContainer");
-
-    loading.classList.remove("hidden");
-    container.classList.add("hidden");
-    empty.classList.add("hidden");
-
-    try {
-      const form = document.getElementById("itemSearchForm");
-      const formData = new FormData(form);
-
-      // 個別フィールドからAPIが要求する単一の 'query' を組み立て
-      const materialName = (formData.get("material_name") || "").trim();
-      const diameter = ((formData.get("diameter_mm") || "") + "").trim();
-      const lotNumber = (formData.get("lot_number") || "").trim();
-      const includeZeroStock = !!formData.get("include_zero_stock");
-
-      const queryParts = [materialName, diameter, lotNumber].filter(Boolean);
-      const query = queryParts.join(" ");
-
-      // クエリ必須（バックエンド /api/inventory/search は query を必須）
-      if (!query || query.trim().length === 0) {
-        loading.classList.add("hidden");
-        showToast("検索条件を入力してください", "error");
-        return;
-      }
-
-      const results = await APIClient.searchMovementItems({
-        query,
-        include_zero_stock: includeZeroStock,
-      });
-      renderSearchResults(results);
-
-      if (results.length === 0) {
-        empty.classList.remove("hidden");
-      } else {
-        container.classList.remove("hidden");
-      }
-    } catch (error) {
-      console.error("検索エラー:", error);
-      showToast(error.message || "検索に失敗しました", "error");
-    } finally {
-      loading.classList.add("hidden");
-    }
-  }
-
-  // 検索結果の描画
-  function renderSearchResults(results) {
-    const tableBody = document.getElementById("searchResultsBody");
-
-    if (results.length === 0) {
-      tableBody.innerHTML = "";
-      return;
     }
 
-    tableBody.innerHTML = results
-      .map((item) => {
-        const shapeText = getShapeText(item.material.shape);
-        const isSelected = selectedItem && selectedItem.id === item.id;
-        const isOutOfStock = item.current_quantity === 0;
-        const rowClass = isOutOfStock
-          ? isSelected
-            ? "bg-blue-50 opacity-75"
-            : "bg-gray-50 opacity-75"
-          : isSelected
-          ? "bg-blue-50"
-          : "hover:bg-gray-50";
-        const stockText = isOutOfStock
-          ? `${item.current_quantity}本 (在庫切れ)`
-          : `${item.current_quantity}本`;
+    // 入出庫フォームへスクロール
+    function scrollToMovementForm() {
+        const form = document.getElementById("movementForm");
+        if (form) form.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
 
-        return `
+    // アイテム検索モーダルを開く
+    function openItemSearchModal(target) {
+        currentItemTarget = target;
+        document.getElementById("itemSearchModalTitle").textContent =
+            "アイテムを検索";
+        document.getElementById("itemSearchModal").classList.remove("hidden");
+
+        // 初期検索実行
+        handleItemSearch({ preventDefault: () => {} });
+    }
+
+    // アイテム検索モーダルを閉じる
+    function closeItemSearchModal() {
+        document.getElementById("itemSearchModal").classList.add("hidden");
+        currentItemTarget = null;
+    }
+
+    // アイテム検索処理
+    async function handleItemSearch(event) {
+        event.preventDefault();
+
+        const loading = document.getElementById("searchLoading");
+        const empty = document.getElementById("searchEmpty");
+        const container = document.getElementById("searchResultsContainer");
+
+        loading.classList.remove("hidden");
+        container.classList.add("hidden");
+        empty.classList.add("hidden");
+
+        try {
+            const form = document.getElementById("itemSearchForm");
+            const formData = new FormData(form);
+
+            // 個別フィールドからAPIが要求する単一の 'query' を組み立て
+            const materialName = (formData.get("material_name") || "").trim();
+            const diameter = ((formData.get("diameter_mm") || "") + "").trim();
+            const lotNumber = (formData.get("lot_number") || "").trim();
+            const includeZeroStock = !!formData.get("include_zero_stock");
+
+            const queryParts = [materialName, diameter, lotNumber].filter(
+                Boolean,
+            );
+            const query = queryParts.join(" ");
+
+            // クエリ必須（バックエンド /api/inventory/search は query を必須）
+            if (!query || query.trim().length === 0) {
+                loading.classList.add("hidden");
+                showToast("検索条件を入力してください", "error");
+                return;
+            }
+
+            const results = await APIClient.searchMovementItems({
+                query,
+                include_zero_stock: includeZeroStock,
+            });
+            renderSearchResults(results);
+
+            if (results.length === 0) {
+                empty.classList.remove("hidden");
+            } else {
+                container.classList.remove("hidden");
+            }
+        } catch (error) {
+            console.error("検索エラー:", error);
+            showToast(error.message || "検索に失敗しました", "error");
+        } finally {
+            loading.classList.add("hidden");
+        }
+    }
+
+    // 検索結果の描画
+    function renderSearchResults(results) {
+        const tableBody = document.getElementById("searchResultsBody");
+
+        if (results.length === 0) {
+            tableBody.innerHTML = "";
+            return;
+        }
+
+        tableBody.innerHTML = results
+            .map((item) => {
+                const shapeText = getShapeText(item.material.shape);
+                const isSelected = selectedItem && selectedItem.id === item.id;
+                const isOutOfStock = item.current_quantity === 0;
+                const rowClass = isOutOfStock
+                    ? isSelected
+                        ? "bg-blue-50 opacity-75"
+                        : "bg-gray-50 opacity-75"
+                    : isSelected
+                      ? "bg-blue-50"
+                      : "hover:bg-gray-50";
+                const stockText = isOutOfStock
+                    ? `${item.current_quantity}本 (在庫切れ)`
+                    : `${item.current_quantity}本`;
+
+                return `
             <tr class="${rowClass}">
                 <td class="px-4 py-3 text-sm">
                     <div class="text-gray-900">${
-                      item.material.display_name || "-"
+                        item.material.display_name || "-"
                     }</div>
                     <div class="text-gray-500 text-xs">${shapeText} φ${
-          item.material.diameter_mm
-        }mm × ${item.lot.length_mm}mm</div>
+                        item.material.diameter_mm
+                    }mm × ${item.lot.length_mm}mm</div>
                 </td>
                 <td class="px-4 py-3 text-sm text-gray-900">${
-                  item.lot.lot_number
+                    item.lot.lot_number
                 }</td>
                 <td class="px-4 py-3 text-right text-sm ${
-                  isOutOfStock ? "text-red-600" : "text-gray-900"
+                    isOutOfStock ? "text-red-600" : "text-gray-900"
                 }">${stockText}</td>
                 <td class="px-4 py-3 text-right text-sm text-gray-600">${(
-                  item.total_weight_kg || 0
+                    item.total_weight_kg || 0
                 ).toFixed(3)}kg</td>
                 <td class="px-4 py-3 text-sm text-gray-600">${
-                  item.location ? item.location.name : "未配置"
+                    item.location ? item.location.name : "未配置"
                 }</td>
                 <td class="px-4 py-3 text-center">
                     <button onclick="selectSearchResult(${item.id})"
@@ -1514,565 +1783,572 @@ endblock %} {% block extra_head %}
                 </td>
             </tr>
         `;
-      })
-      .join("");
-  }
-
-  // 検索結果からアイテムを選択
-  function selectSearchResult(itemId) {
-    const item = inventoryItems.find((i) => i.id === itemId);
-    if (!item) {
-      showToast("アイテムが見つかりません", "error");
-      return;
+            })
+            .join("");
     }
 
-    // 統合フォームに反映
-    selectedItem = item;
-    updateUnifiedSelectedItemDisplay();
-    const mfItemId = document.querySelector(
-      '#movementForm input[name="item_id"]'
-    );
-    if (mfItemId) mfItemId.value = item.id;
-    closeItemSearchModal();
-  }
+    // 検索結果からアイテムを選択
+    function selectSearchResult(itemId) {
+        const item = inventoryItems.find((i) => i.id === itemId);
+        if (!item) {
+            showToast("アイテムが見つかりません", "error");
+            return;
+        }
 
-  // 履歴編集モーダルを開く
-  function openEditMovementModal(movementId) {
-    const movement = movementHistory.find((m) => m.id === movementId);
-    if (!movement) {
-      showToast("履歴が見つかりません", "error");
-      return;
-    }
-
-    // フォームに値をセット
-    document.getElementById("editMovementId").value = movement.id;
-    document.getElementById("editMovementQuantity").value = movement.quantity;
-    document.getElementById("editMovementWeight").value =
-      movement.weight_kg || "";
-    document.getElementById("editMovementNotes").value = movement.notes || "";
-
-    // モーダルを表示
-    document.getElementById("editMovementModal").classList.remove("hidden");
-  }
-
-  // 履歴編集モーダルを閉じる
-  function closeEditMovementModal() {
-    document.getElementById("editMovementModal").classList.add("hidden");
-    document.getElementById("editMovementForm").reset();
-  }
-
-  // 履歴編集処理
-  async function handleEditMovement(e) {
-    e.preventDefault();
-
-    const movementId = document.getElementById("editMovementId").value;
-    const quantity = document.getElementById("editMovementQuantity").value;
-    const weight = document.getElementById("editMovementWeight").value;
-    const notes = document.getElementById("editMovementNotes").value;
-
-    if (!quantity && !weight) {
-      showToast("数量または重量を入力してください", "error");
-      return;
-    }
-
-    try {
-      const payload = {
-        quantity: quantity ? parseInt(quantity) : null,
-        weight_kg: weight ? parseFloat(weight) : null,
-        notes: notes || null,
-      };
-
-      const response = await fetch(`/api/movements/${movementId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "履歴の更新に失敗しました");
-      }
-
-      const result = await response.json();
-      showToast(result.message || "履歴を更新しました", "success");
-
-      // モーダルを閉じてデータを再読み込み
-      closeEditMovementModal();
-      await loadMovements();
-      await loadInventory();
-    } catch (error) {
-      console.error("履歴更新エラー:", error);
-      showToast(error.message, "error");
-    }
-  }
-
-  // 履歴削除処理
-  async function deleteMovement(movementId) {
-    if (
-      !confirm("この履歴を削除してもよろしいですか？\n在庫数が巻き戻されます。")
-    ) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/movements/${movementId}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "履歴の削除に失敗しました");
-      }
-
-      const result = await response.json();
-      showToast(result.message || "履歴を削除しました", "success");
-
-      // データを再読み込み
-      await loadMovements();
-      await loadInventory();
-    } catch (error) {
-      console.error("履歴削除エラー:", error);
-      showToast(error.message, "error");
-    }
-  }
-
-  // 直接アイテムを選択（テーブルから）
-  function selectItemForMovement(itemId, type) {
-    const item = inventoryItems.find((i) => i.id === itemId);
-    if (!item) {
-      showToast("アイテムが見つかりません", "error");
-      return;
-    }
-
-    // 統合フォームに反映
-    selectedItem = item;
-    setMovementType(type);
-    updateUnifiedSelectedItemDisplay();
-    const mfItemId = document.querySelector(
-      '#movementForm input[name="item_id"]'
-    );
-    if (mfItemId) mfItemId.value = item.id;
-    showToast(
-      `${type === "in" ? "戻し" : "出庫"}アイテムを選択しました`,
-      "success"
-    );
-    // 入出庫フォームへスクロール
-    scrollToMovementForm();
-  }
-
-  // 統合フォーム: 選択表示更新
-  function updateUnifiedSelectedItemDisplay() {
-    const summary = document.getElementById("selectedItemSummary");
-    const itemIdInput = document.querySelector(
-      '#movementForm input[name="item_id"]'
-    );
-    if (!summary) return;
-    if (!selectedItem) {
-      summary.textContent = "アイテムが選択されていません";
-      if (itemIdInput) itemIdInput.value = "";
-      return;
-    }
-    const shapeText = getShapeText(selectedItem.material.shape);
-    summary.innerHTML = `
-      <div class="text-gray-900 font-medium">${
-        selectedItem.material.display_name || "-"
-      }</div>
-      <div class="text-gray-600 text-sm">${shapeText} φ${
-      selectedItem.material.diameter_mm
-    }mm × ${selectedItem.lot.length_mm}mm</div>
-      <div class="text-gray-600 text-sm">ロット: ${
-        selectedItem.lot.lot_number
-      } ${
-      selectedItem.lot.notes ? "(" + selectedItem.lot.notes + ")" : ""
-    } / 置き場: ${
-      selectedItem.location ? selectedItem.location.name : "未配置"
-    }</div>
-      <div class="text-gray-600 text-sm">在庫: ${
-        selectedItem.current_quantity
-      }本 / ${(selectedItem.total_weight_kg || 0).toFixed(3)}kg / 1本あたり ${(
-      selectedItem.weight_per_piece_kg || 0
-    ).toFixed(3)}kg</div>
-    `;
-    if (itemIdInput) itemIdInput.value = selectedItem.id;
-  }
-
-  // 統合フォーム: 選択クリア
-  function clearUnifiedSelectedItem() {
-    selectedItem = null;
-    updateUnifiedSelectedItemDisplay();
-    const q = document.getElementById("movementQuantity");
-    const w = document.getElementById("movementWeight");
-    if (q) q.value = "";
-    if (w) w.value = "";
-  }
-
-  // 統合フォーム: 種別切替
-  function setMovementType(type) {
-    movementType = type;
-    const typeInput = document.getElementById("movementTypeInput");
-    const submitBtn = document.getElementById("movementSubmitBtn");
-    const outBtn = document.getElementById("typeOutBtn");
-    const inBtn = document.getElementById("typeInBtn");
-
-    if (typeInput) typeInput.value = type;
-
-    // ボタンのアクティブ状態を更新
-    if (type === "out") {
-      // 出庫ボタンをアクティブに
-      outBtn?.classList.remove("bg-neutral-400");
-      outBtn?.classList.add("movement-out-gradient");
-      // 戻しボタンを非アクティブに
-      inBtn?.classList.remove("movement-in-gradient");
-      inBtn?.classList.add("bg-neutral-400");
-
-      // 送信ボタンを出庫用に
-      if (submitBtn) {
-        submitBtn.classList.remove("movement-in-gradient");
-        submitBtn.classList.add("movement-out-gradient");
-        submitBtn.innerHTML =
-          '<i class="fas fa-arrow-right mr-2"></i>出庫実行';
-      }
-    } else {
-      // 戻しボタンをアクティブに
-      inBtn?.classList.remove("bg-neutral-400");
-      inBtn?.classList.add("movement-in-gradient");
-      // 出庫ボタンを非アクティブに
-      outBtn?.classList.remove("movement-out-gradient");
-      outBtn?.classList.add("bg-neutral-400");
-
-      // 送信ボタンを戻し用に
-      if (submitBtn) {
-        submitBtn.classList.remove("movement-out-gradient");
-        submitBtn.classList.add("movement-in-gradient");
-        submitBtn.innerHTML =
-          '<i class="fas fa-arrow-left mr-2"></i>在庫へ戻す';
-      }
-    }
-
-    // 戻し選択時は「在庫切れを含む」を自動ONにして一覧を更新
-    const includeZeroStockChk = document.getElementById("includeZeroStock");
-    if (includeZeroStockChk) {
-      includeZeroStockChk.checked = (type === "in");
-      // リスト更新（戻し対象が一覧に出るように）
-      loadInventory();
-    }
-
-    // 検索モーダルの「在庫切れを含む」を同期
-    const searchZeroChk = document.querySelector('#itemSearchForm input[name="include_zero_stock"]');
-    if (searchZeroChk) {
-      searchZeroChk.checked = (type === "in");
-    }
-  }
-
-  // 入力方法と全量出庫のトグル設定（相互換算は行わない）
-  function setupUnifiedConverters() {
-    const q = document.getElementById("movementQuantity");
-    const w = document.getElementById("movementWeight");
-    const modeQ = document.getElementById("inputModeQuantity");
-    const modeW = document.getElementById("inputModeWeight");
-    const fullOut = document.getElementById("fullOutAll");
-    if (!q || !w || !modeQ || !modeW) return;
-
-    function applyFullOut() {
-      if (!fullOut || fullOut.disabled) return;
-      if (fullOut.checked && currentMovementType === "out") {
-        if (!selectedItem || typeof selectedItem.current_quantity !== "number") return;
-        // 強制的に数量モードにして数量に在庫全量を設定、重量はクリア
-        modeQ.checked = true;
-        modeW.checked = false;
-        q.disabled = false;
-        w.disabled = true;
-        w.value = "";
-        q.value = String(selectedItem.current_quantity || 0);
-      }
-    }
-
-    function applyMode() {
-      const mode = modeQ.checked ? "quantity" : "weight";
-      if (mode === "quantity") {
-        q.disabled = false;
-        w.disabled = true;
-        w.value = "";
-      } else {
-        q.disabled = true;
-        q.value = "";
-        w.disabled = false;
-      }
-      // 出庫以外では全量出庫は無効化
-      const isOut = movementType === "out";
-      if (fullOut) {
-        fullOut.disabled = !isOut;
-        if (!isOut) fullOut.checked = false;
-      }
-      applyFullOut();
-    }
-
-    modeQ.addEventListener("change", applyMode);
-    modeW.addEventListener("change", applyMode);
-    if (fullOut) fullOut.addEventListener("change", applyFullOut);
-
-    // 初期適用
-    applyMode();
-  }
-
-  // 統合フォーム: 送信処理
-  async function handleSubmitMovement(event) {
-    event.preventDefault();
-    const form = event.target;
-    const formData = new FormData(form);
-    const itemId = parseInt(formData.get("item_id"));
-    if (!itemId) {
-      showToast("対象アイテムを選択してください", "error");
-      return;
-    }
-    const quantity = formData.get("quantity")
-      ? parseInt(formData.get("quantity"))
-      : null;
-    const weight = formData.get("weight_kg")
-      ? parseFloat(formData.get("weight_kg"))
-      : null;
-
-    const modeQ = document.getElementById("inputModeQuantity");
-    const modeW = document.getElementById("inputModeWeight");
-    const fullOut = document.getElementById("fullOutAll");
-
-    let data = { notes: formData.get("notes") || null };
-
-    // 全量出庫（出庫のみ有効）
-    if (movementType === "out" && fullOut && fullOut.checked) {
-      if (!selectedItem || typeof selectedItem.current_quantity !== "number") {
-        showToast("在庫がありません", "error");
-        return;
-      }
-      const qty = selectedItem.current_quantity;
-      if (!qty || qty <= 0) {
-        showToast("在庫がありません", "error");
-        return;
-      }
-      data.quantity = qty;
-    } else {
-      const hasQ = quantity !== null && !isNaN(quantity);
-      const hasW = weight !== null && !isNaN(weight);
-      if ((hasQ && hasW) || (!hasQ && !hasW)) {
-        showToast("数量か重量のどちらか一方のみ入力してください", "error");
-        return;
-      }
-      if (hasQ) data.quantity = quantity;
-      if (hasW) data.weight_kg = weight;
-    }
-
-    try {
-      const result =
-        movementType === "out"
-          ? await APIClient.outMovement(itemId, data)
-          : await APIClient.inMovement(itemId, data);
-      const msg =
-        movementType === "out" ? "出庫が完了しました" : "入庫が完了しました";
-      showToast(
-        `${msg} (${result.old_quantity}本 → ${result.new_quantity}本)`,
-        "success"
-      );
-      form.reset();
-      clearUnifiedSelectedItem();
-      await loadInventory();
-      await loadMovements();
-    } catch (error) {
-      console.error("統合フォーム送信エラー:", error);
-      showToast(error.message || "処理に失敗しました", "error");
-    }
-  }
-
-  // QRスキャン開始
-  function openQRScanner() {
-    if (window.qrScanner) {
-      // QRScannerクラスのモーダルを開く
-      window.qrScanner.openScanModal();
-      // コールバック関数を設定
-      window.qrScanner.scanCallback = handleQRScan;
-    } else {
-      showToast("QRスキャナーが利用できません", "error");
-    }
-  }
-
-  // QRスキャン結果処理
-  async function handleQRScan(code) {
-    try {
-      const result = await APIClient.searchByLotNumber(code);
-
-      if (result && result.length > 0) {
-        // 統合フォームに反映（対象アイテムに入るのみ）
-        selectedItem = result[0];
+        // 統合フォームに反映
+        selectedItem = item;
         updateUnifiedSelectedItemDisplay();
         const mfItemId = document.querySelector(
-          '#movementForm input[name="item_id"]'
+            '#movementForm input[name="item_id"]',
         );
-        if (mfItemId) mfItemId.value = result[0].id;
-
-        showToast("QRコードからアイテムを選択しました", "success");
-      } else {
-        showToast("該当するアイテムが見つかりませんでした", "error");
-      }
-    } catch (error) {
-      console.error("QRスキャン結果処理エラー:", error);
-      showToast("QRコードの処理に失敗しました", "error");
-    }
-  }
-
-  // フィルター処理
-  function filterInventory() {
-    const materialInput = document.getElementById("materialSearchInput");
-    const lotInput = document.getElementById("lotSearchInput");
-    const locationInput = document.getElementById("locationFilterInput");
-
-    const materialQuery = (materialInput?.value || "").trim().toLowerCase();
-    const lotQuery = (lotInput?.value || "").trim().toLowerCase();
-    const locationQuery = (locationInput?.value || "").trim().toLowerCase();
-
-    const baseItems = inventoryItems || [];
-
-    filteredInventoryItems = baseItems.filter((item) => {
-      let ok = true;
-
-      if (materialQuery) {
-        const name = (item.material?.display_name || "").toLowerCase();
-        const diameter = String(item.material?.diameter_mm || "");
-        const shapeText = (getShapeText(item.material?.shape) || "").toLowerCase();
-        ok = ok && (name.includes(materialQuery) || diameter.includes(materialQuery) || shapeText.includes(materialQuery));
-      }
-
-      if (lotQuery) {
-        const lotNumber = (item.lot?.lot_number || "").toLowerCase();
-        ok = ok && lotNumber.includes(lotQuery);
-      }
-
-      if (locationQuery) {
-        const locName = (item.location?.name || "").toLowerCase();
-        ok = ok && locName.includes(locationQuery);
-      }
-
-      return ok;
-    });
-
-    currentInventoryPage = 1;
-    renderInventoryTable();
-  }
-
-  function filterMovements() {
-    const select = document.getElementById("typeFilter");
-    const type = select ? select.value : "";
-    movementsFilter.type = type;
-    localStorage.setItem("movements.filter.type", type);
-    currentMovementsPage = 1;
-    renderMovementsTable();
-  }
-
-  // 検索リセット
-  function resetItemSearch() {
-    document.getElementById("itemSearchForm").reset();
-    // 在庫切れを含むチェックボックスのみチェックを外す（他のフィールドはリセット）
-    document.querySelector('input[name="include_zero_stock"]').checked = false;
-    // 自動検索は行わない（query必須のため）。結果をクリアして非表示へ。
-    const tableBody = document.getElementById("searchResultsBody");
-    const empty = document.getElementById("searchEmpty");
-    const container = document.getElementById("searchResultsContainer");
-    if (tableBody) tableBody.innerHTML = "";
-    if (empty) empty.classList.add("hidden");
-    if (container) container.classList.add("hidden");
-    showToast("検索条件をリセットしました", "success");
-  }
-
-  // データ更新
-  async function refreshData() {
-    await Promise.all([loadInventory(), loadMovements()]);
-    showToast("データを更新しました", "success");
-  }
-
-  // ユーティリティ関数
-  function getShapeText(shape) {
-    const shapeMap = {
-      round: "丸棒",
-      hexagon: "六角棒",
-      square: "角棒",
-    };
-    return shapeMap[shape] || shape;
-  }
-
-  function copyToClipboard(text) {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => {
-        showToast("管理コードをコピーしました", "success");
-      })
-      .catch(() => {
-        showToast("コピーに失敗しました", "error");
-      });
-  }
-
-  function showToast(message, type = "info") {
-    // トースト通知の実装
-    console.log(`${type.toUpperCase()}: ${message}`);
-
-    // 簡易実装
-    const toast = document.createElement("div");
-    toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
-      type === "success"
-        ? "bg-green-600"
-        : type === "error"
-        ? "bg-red-600"
-        : "bg-blue-600"
-    }`;
-    toast.textContent = message;
-
-    document.body.appendChild(toast);
-
-    setTimeout(() => {
-      toast.remove();
-    }, 3000);
-  }
-
-  function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
-  }
-
-  // ===== 置き場変更機能 =====
-
-  /**
-   * 置き場変更モーダルを開く
-   */
-  async function openRelocationModal(itemId) {
-    const item = inventoryItems.find((i) => i.id === itemId);
-    if (!item) {
-      showToast("アイテムが見つかりません", "error");
-      return;
+        if (mfItemId) mfItemId.value = item.id;
+        closeItemSearchModal();
     }
 
-    // アイテム情報を表示
-    const infoDiv = document.getElementById("relocationItemInfo");
-    const shapeText = getShapeText(item.material.shape);
-    infoDiv.innerHTML = `
+    // 履歴編集モーダルを開く
+    function openEditMovementModal(movementId) {
+        const movement = movementHistory.find((m) => m.id === movementId);
+        if (!movement) {
+            showToast("履歴が見つかりません", "error");
+            return;
+        }
+
+        // フォームに値をセット
+        document.getElementById("editMovementId").value = movement.id;
+        document.getElementById("editMovementQuantity").value =
+            movement.quantity;
+        document.getElementById("editMovementWeight").value =
+            movement.weight_kg || "";
+        document.getElementById("editMovementNotes").value =
+            movement.notes || "";
+
+        // モーダルを表示
+        document.getElementById("editMovementModal").classList.remove("hidden");
+    }
+
+    // 履歴編集モーダルを閉じる
+    function closeEditMovementModal() {
+        document.getElementById("editMovementModal").classList.add("hidden");
+        document.getElementById("editMovementForm").reset();
+    }
+
+    // 履歴編集処理
+    async function handleEditMovement(e) {
+        e.preventDefault();
+
+        const movementId = document.getElementById("editMovementId").value;
+        const quantity = document.getElementById("editMovementQuantity").value;
+        const weight = document.getElementById("editMovementWeight").value;
+        const notes = document.getElementById("editMovementNotes").value;
+
+        if (!quantity && !weight) {
+            showToast("数量または重量を入力してください", "error");
+            return;
+        }
+
+        try {
+            const payload = {
+                quantity: quantity ? parseInt(quantity) : null,
+                weight_kg: weight ? parseFloat(weight) : null,
+                notes: notes || null,
+            };
+
+            const response = await fetch(`/api/movements/${movementId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "履歴の更新に失敗しました");
+            }
+
+            const result = await response.json();
+
+            // モーダルを閉じてデータを再読み込み
+            closeEditMovementModal();
+            await loadMovements();
+            await loadInventory();
+        } catch (error) {
+            console.error("履歴更新エラー:", error);
+            showToast(error.message, "error");
+        }
+    }
+
+    // 履歴削除処理
+    async function deleteMovement(movementId) {
+        if (
+            !confirm(
+                "この履歴を削除してもよろしいですか？\n在庫数が巻き戻されます。",
+            )
+        ) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/movements/${movementId}`, {
+                method: "DELETE",
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "履歴の削除に失敗しました");
+            }
+
+            const result = await response.json();
+
+            // データを再読み込み
+            await loadMovements();
+            await loadInventory();
+        } catch (error) {
+            console.error("履歴削除エラー:", error);
+            showToast(error.message, "error");
+        }
+    }
+
+    // 直接アイテムを選択（テーブルから）
+    function selectItemForMovement(itemId, type) {
+        const item = inventoryItems.find((i) => i.id === itemId);
+        if (!item) {
+            showToast("アイテムが見つかりません", "error");
+            return;
+        }
+
+        // 統合フォームに反映
+        selectedItem = item;
+        setMovementType(type);
+        updateUnifiedSelectedItemDisplay();
+        const mfItemId = document.querySelector(
+            '#movementForm input[name="item_id"]',
+        );
+        if (mfItemId) mfItemId.value = item.id;
+        // 入出庫フォームへスクロール
+        scrollToMovementForm();
+    }
+
+    // 統合フォーム: 選択表示更新
+    function updateUnifiedSelectedItemDisplay() {
+        const summary = document.getElementById("selectedItemSummary");
+        const itemIdInput = document.querySelector(
+            '#movementForm input[name="item_id"]',
+        );
+        if (!summary) return;
+        if (!selectedItem) {
+            summary.textContent = "アイテムが選択されていません";
+            if (itemIdInput) itemIdInput.value = "";
+            return;
+        }
+        const shapeText = getShapeText(selectedItem.material.shape);
+        summary.innerHTML = `
+      <div class="text-gray-900 font-medium">${
+          selectedItem.material.display_name || "-"
+      }</div>
+      <div class="text-gray-600 text-sm">${shapeText} φ${
+          selectedItem.material.diameter_mm
+      }mm × ${selectedItem.lot.length_mm}mm</div>
+      <div class="text-gray-600 text-sm">ロット: ${
+          selectedItem.lot.lot_number
+      } ${
+          selectedItem.lot.notes ? "(" + selectedItem.lot.notes + ")" : ""
+      } / 置き場: ${
+          selectedItem.location ? selectedItem.location.name : "未配置"
+      }</div>
+      <div class="text-gray-600 text-sm">在庫: ${
+          selectedItem.current_quantity
+      }本 / ${(selectedItem.total_weight_kg || 0).toFixed(3)}kg / 1本あたり ${(
+          selectedItem.weight_per_piece_kg || 0
+      ).toFixed(3)}kg</div>
+    `;
+        if (itemIdInput) itemIdInput.value = selectedItem.id;
+    }
+
+    // 統合フォーム: 選択クリア
+    function clearUnifiedSelectedItem() {
+        selectedItem = null;
+        updateUnifiedSelectedItemDisplay();
+        const q = document.getElementById("movementQuantity");
+        const w = document.getElementById("movementWeight");
+        if (q) q.value = "";
+        if (w) w.value = "";
+    }
+
+    // 統合フォーム: 種別切替
+    function setMovementType(type) {
+        movementType = type;
+        const typeInput = document.getElementById("movementTypeInput");
+        const submitBtn = document.getElementById("movementSubmitBtn");
+        const outBtn = document.getElementById("typeOutBtn");
+        const inBtn = document.getElementById("typeInBtn");
+
+        if (typeInput) typeInput.value = type;
+
+        // ボタンのアクティブ状態を更新
+        if (type === "out") {
+            // 出庫ボタンをアクティブに
+            outBtn?.classList.remove("bg-neutral-400");
+            outBtn?.classList.add("movement-out-gradient");
+            // 戻しボタンを非アクティブに
+            inBtn?.classList.remove("movement-in-gradient");
+            inBtn?.classList.add("bg-neutral-400");
+
+            // 送信ボタンを出庫用に
+            if (submitBtn) {
+                submitBtn.classList.remove("movement-in-gradient");
+                submitBtn.classList.add("movement-out-gradient");
+                submitBtn.innerHTML =
+                    '<i class="fas fa-arrow-right mr-2"></i>出庫実行';
+            }
+        } else {
+            // 戻しボタンをアクティブに
+            inBtn?.classList.remove("bg-neutral-400");
+            inBtn?.classList.add("movement-in-gradient");
+            // 出庫ボタンを非アクティブに
+            outBtn?.classList.remove("movement-out-gradient");
+            outBtn?.classList.add("bg-neutral-400");
+
+            // 送信ボタンを戻し用に
+            if (submitBtn) {
+                submitBtn.classList.remove("movement-out-gradient");
+                submitBtn.classList.add("movement-in-gradient");
+                submitBtn.innerHTML =
+                    '<i class="fas fa-arrow-left mr-2"></i>在庫へ戻す';
+            }
+        }
+
+        // 戻し選択時は「在庫切れを含む」を自動ONにして一覧を更新
+        const includeZeroStockChk = document.getElementById("includeZeroStock");
+        if (includeZeroStockChk) {
+            includeZeroStockChk.checked = type === "in";
+            // リスト更新（戻し対象が一覧に出るように）
+            loadInventory();
+        }
+
+        // 検索モーダルの「在庫切れを含む」を同期
+        const searchZeroChk = document.querySelector(
+            '#itemSearchForm input[name="include_zero_stock"]',
+        );
+        if (searchZeroChk) {
+            searchZeroChk.checked = type === "in";
+        }
+    }
+
+    // 入力方法と全量出庫のトグル設定（相互換算は行わない）
+    function setupUnifiedConverters() {
+        const q = document.getElementById("movementQuantity");
+        const w = document.getElementById("movementWeight");
+        const modeQ = document.getElementById("inputModeQuantity");
+        const modeW = document.getElementById("inputModeWeight");
+        const fullOut = document.getElementById("fullOutAll");
+        if (!q || !w || !modeQ || !modeW) return;
+
+        function applyFullOut() {
+            if (!fullOut || fullOut.disabled) return;
+            if (fullOut.checked && currentMovementType === "out") {
+                if (
+                    !selectedItem ||
+                    typeof selectedItem.current_quantity !== "number"
+                )
+                    return;
+                // 強制的に数量モードにして数量に在庫全量を設定、重量はクリア
+                modeQ.checked = true;
+                modeW.checked = false;
+                q.disabled = false;
+                w.disabled = true;
+                w.value = "";
+                q.value = String(selectedItem.current_quantity || 0);
+            }
+        }
+
+        function applyMode() {
+            const mode = modeQ.checked ? "quantity" : "weight";
+            if (mode === "quantity") {
+                q.disabled = false;
+                w.disabled = true;
+                w.value = "";
+            } else {
+                q.disabled = true;
+                q.value = "";
+                w.disabled = false;
+            }
+            // 出庫以外では全量出庫は無効化
+            const isOut = movementType === "out";
+            if (fullOut) {
+                fullOut.disabled = !isOut;
+                if (!isOut) fullOut.checked = false;
+            }
+            applyFullOut();
+        }
+
+        modeQ.addEventListener("change", applyMode);
+        modeW.addEventListener("change", applyMode);
+        if (fullOut) fullOut.addEventListener("change", applyFullOut);
+
+        // 初期適用
+        applyMode();
+    }
+
+    // 統合フォーム: 送信処理
+    async function handleSubmitMovement(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        const itemId = parseInt(formData.get("item_id"));
+        if (!itemId) {
+            showToast("対象アイテムを選択してください", "error");
+            return;
+        }
+        const quantity = formData.get("quantity")
+            ? parseInt(formData.get("quantity"))
+            : null;
+        const weight = formData.get("weight_kg")
+            ? parseFloat(formData.get("weight_kg"))
+            : null;
+
+        const modeQ = document.getElementById("inputModeQuantity");
+        const modeW = document.getElementById("inputModeWeight");
+        const fullOut = document.getElementById("fullOutAll");
+
+        let data = { notes: formData.get("notes") || null };
+
+        // 全量出庫（出庫のみ有効）
+        if (movementType === "out" && fullOut && fullOut.checked) {
+            if (
+                !selectedItem ||
+                typeof selectedItem.current_quantity !== "number"
+            ) {
+                showToast("在庫がありません", "error");
+                return;
+            }
+            const qty = selectedItem.current_quantity;
+            if (!qty || qty <= 0) {
+                showToast("在庫がありません", "error");
+                return;
+            }
+            data.quantity = qty;
+        } else {
+            const hasQ = quantity !== null && !isNaN(quantity);
+            const hasW = weight !== null && !isNaN(weight);
+            if ((hasQ && hasW) || (!hasQ && !hasW)) {
+                showToast(
+                    "数量か重量のどちらか一方のみ入力してください",
+                    "error",
+                );
+                return;
+            }
+            if (hasQ) data.quantity = quantity;
+            if (hasW) data.weight_kg = weight;
+        }
+
+        try {
+            const result =
+                movementType === "out"
+                    ? await APIClient.outMovement(itemId, data)
+                    : await APIClient.inMovement(itemId, data);
+            form.reset();
+            clearUnifiedSelectedItem();
+            await loadInventory();
+            await loadMovements();
+        } catch (error) {
+            console.error("統合フォーム送信エラー:", error);
+            showToast(error.message || "処理に失敗しました", "error");
+        }
+    }
+
+    // QRスキャン開始
+    function openQRScanner() {
+        if (window.qrScanner) {
+            // QRScannerクラスのモーダルを開く
+            window.qrScanner.openScanModal();
+            // コールバック関数を設定
+            window.qrScanner.scanCallback = handleQRScan;
+        } else {
+            showToast("QRスキャナーが利用できません", "error");
+        }
+    }
+
+    // QRスキャン結果処理
+    async function handleQRScan(code) {
+        try {
+            const result = await APIClient.searchByLotNumber(code);
+
+            if (result && result.length > 0) {
+                // 統合フォームに反映（対象アイテムに入るのみ）
+                selectedItem = result[0];
+                updateUnifiedSelectedItemDisplay();
+                const mfItemId = document.querySelector(
+                    '#movementForm input[name="item_id"]',
+                );
+                if (mfItemId) mfItemId.value = result[0].id;
+            } else {
+                showToast("該当するアイテムが見つかりませんでした", "error");
+            }
+        } catch (error) {
+            console.error("QRスキャン結果処理エラー:", error);
+            showToast("QRコードの処理に失敗しました", "error");
+        }
+    }
+
+    // フィルター処理
+    function filterInventory() {
+        const materialInput = document.getElementById("materialSearchInput");
+        const lotInput = document.getElementById("lotSearchInput");
+        const locationInput = document.getElementById("locationFilterInput");
+
+        const materialQuery = (materialInput?.value || "").trim().toLowerCase();
+        const lotQuery = (lotInput?.value || "").trim().toLowerCase();
+        const locationQuery = (locationInput?.value || "").trim().toLowerCase();
+
+        const baseItems = inventoryItems || [];
+
+        filteredInventoryItems = baseItems.filter((item) => {
+            let ok = true;
+
+            if (materialQuery) {
+                const name = (item.material?.display_name || "").toLowerCase();
+                const diameter = String(item.material?.diameter_mm || "");
+                const shapeText = (
+                    getShapeText(item.material?.shape) || ""
+                ).toLowerCase();
+                ok =
+                    ok &&
+                    (name.includes(materialQuery) ||
+                        diameter.includes(materialQuery) ||
+                        shapeText.includes(materialQuery));
+            }
+
+            if (lotQuery) {
+                const lotNumber = (item.lot?.lot_number || "").toLowerCase();
+                ok = ok && lotNumber.includes(lotQuery);
+            }
+
+            if (locationQuery) {
+                const locName = (item.location?.name || "").toLowerCase();
+                ok = ok && locName.includes(locationQuery);
+            }
+
+            return ok;
+        });
+
+        currentInventoryPage = 1;
+        renderInventoryTable();
+    }
+
+    function filterMovements() {
+        const select = document.getElementById("typeFilter");
+        const type = select ? select.value : "";
+        movementsFilter.type = type;
+        localStorage.setItem("movements.filter.type", type);
+        currentMovementsPage = 1;
+        renderMovementsTable();
+    }
+
+    // 検索リセット
+    function resetItemSearch() {
+        document.getElementById("itemSearchForm").reset();
+        // 在庫切れを含むチェックボックスのみチェックを外す（他のフィールドはリセット）
+        document.querySelector('input[name="include_zero_stock"]').checked =
+            false;
+        // 自動検索は行わない（query必須のため）。結果をクリアして非表示へ。
+        const tableBody = document.getElementById("searchResultsBody");
+        const empty = document.getElementById("searchEmpty");
+        const container = document.getElementById("searchResultsContainer");
+        if (tableBody) tableBody.innerHTML = "";
+        if (empty) empty.classList.add("hidden");
+        if (container) container.classList.add("hidden");
+    }
+
+    // データ更新
+    async function refreshData() {
+        await Promise.all([loadInventory(), loadMovements()]);
+    }
+
+    // ユーティリティ関数
+    function getShapeText(shape) {
+        const shapeMap = {
+            round: "丸棒",
+            hexagon: "六角棒",
+            square: "角棒",
+        };
+        return shapeMap[shape] || shape;
+    }
+
+    function copyToClipboard(text) {
+        navigator.clipboard
+            .writeText(text)
+            .then(() => {
+                // コピー成功（トーストなし）
+            })
+            .catch(() => {
+                showToast("コピーに失敗しました", "error");
+            });
+    }
+
+    function showToast(message, type = "info") {
+        // トースト通知の実装
+        console.log(`${type.toUpperCase()}: ${message}`);
+
+        // 簡易実装
+        const toast = document.createElement("div");
+        toast.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
+            type === "success"
+                ? "bg-green-600"
+                : type === "error"
+                  ? "bg-red-600"
+                  : "bg-blue-600"
+        }`;
+        toast.textContent = message;
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }
+
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    // ===== 置き場変更機能 =====
+
+    /**
+     * 置き場変更モーダルを開く
+     */
+    async function openRelocationModal(itemId) {
+        const item = inventoryItems.find((i) => i.id === itemId);
+        if (!item) {
+            showToast("アイテムが見つかりません", "error");
+            return;
+        }
+
+        // アイテム情報を表示
+        const infoDiv = document.getElementById("relocationItemInfo");
+        const shapeText = getShapeText(item.material.shape);
+        infoDiv.innerHTML = `
       <div class="space-y-2">
         <div class="text-base font-bold text-gray-900">${
-          item.material.display_name || "-"
+            item.material.display_name || "-"
         }</div>
         <div class="text-sm text-gray-700">
           <span class="font-semibold">形状:</span> ${shapeText} φ${
-      item.material.diameter_mm
-    }mm × ${item.lot.length_mm}mm
+              item.material.diameter_mm
+          }mm × ${item.lot.length_mm}mm
         </div>
         <div class="text-sm text-gray-700">
           <span class="font-semibold">ロット:</span> ${item.lot.lot_number}
         </div>
         <div class="text-sm text-gray-700">
           <span class="font-semibold">現在の置き場:</span> ${
-            item.location ? item.location.name : "未配置"
+              item.location ? item.location.name : "未配置"
           }
         </div>
         <div class="text-sm text-gray-700">
@@ -2081,84 +2357,80 @@ endblock %} {% block extra_head %}
       </div>
     `;
 
-    // フォームに item_id をセット
-    document.getElementById("relocationItemId").value = itemId;
+        // フォームに item_id をセット
+        document.getElementById("relocationItemId").value = itemId;
 
-    // 置き場一覧を読み込み
-    try {
-      const locations = await APIClient.getLocations();
-      const select = document.getElementById("relocationLocationSelect");
-      select.innerHTML = '<option value="">置き場を選択してください</option>';
-      locations.forEach((location) => {
-        const option = document.createElement("option");
-        option.value = location.id;
-        option.textContent = location.name;
-        // 現在の置き場を選択済みにする
-        if (item.location && location.id === item.location.id) {
-          option.selected = true;
+        // 置き場一覧を読み込み
+        try {
+            const locations = await APIClient.getLocations();
+            const select = document.getElementById("relocationLocationSelect");
+            select.innerHTML =
+                '<option value="">置き場を選択してください</option>';
+            locations.forEach((location) => {
+                const option = document.createElement("option");
+                option.value = location.id;
+                option.textContent = location.name;
+                // 現在の置き場を選択済みにする
+                if (item.location && location.id === item.location.id) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        } catch (error) {
+            console.error("置き場一覧読み込みエラー:", error);
+            showToast("置き場一覧の読み込みに失敗しました", "error");
         }
-        select.appendChild(option);
-      });
-    } catch (error) {
-      console.error("置き場一覧読み込みエラー:", error);
-      showToast("置き場一覧の読み込みに失敗しました", "error");
+
+        // モーダルを表示
+        document.getElementById("relocationModal").classList.remove("hidden");
     }
 
-    // モーダルを表示
-    document.getElementById("relocationModal").classList.remove("hidden");
-  }
-
-  /**
-   * 置き場変更モーダルを閉じる
-   */
-  function closeRelocationModal() {
-    document.getElementById("relocationModal").classList.add("hidden");
-    document.getElementById("relocationForm").reset();
-    document.getElementById("relocationItemId").value = "";
-  }
-
-  /**
-   * 置き場変更処理
-   */
-  async function handleRelocation(event) {
-    event.preventDefault();
-
-    const form = event.target;
-    const formData = new FormData(form);
-    const itemId = parseInt(formData.get("item_id"));
-    const locationId = parseInt(formData.get("location_id"));
-    const notes = formData.get("notes") || null;
-
-    if (!itemId) {
-      showToast("アイテムが選択されていません", "error");
-      return;
+    /**
+     * 置き場変更モーダルを閉じる
+     */
+    function closeRelocationModal() {
+        document.getElementById("relocationModal").classList.add("hidden");
+        document.getElementById("relocationForm").reset();
+        document.getElementById("relocationItemId").value = "";
     }
 
-    if (!locationId) {
-      showToast("置き場を選択してください", "error");
-      return;
+    /**
+     * 置き場変更処理
+     */
+    async function handleRelocation(event) {
+        event.preventDefault();
+
+        const form = event.target;
+        const formData = new FormData(form);
+        const itemId = parseInt(formData.get("item_id"));
+        const locationId = parseInt(formData.get("location_id"));
+        const notes = formData.get("notes") || null;
+
+        if (!itemId) {
+            showToast("アイテムが選択されていません", "error");
+            return;
+        }
+
+        if (!locationId) {
+            showToast("置き場を選択してください", "error");
+            return;
+        }
+
+        try {
+            const result = await APIClient.relocateItem(itemId, {
+                location_id: locationId,
+                notes: notes,
+            });
+
+            // モーダルを閉じる
+            closeRelocationModal();
+
+            // 在庫一覧を再読み込み
+            await loadInventory();
+        } catch (error) {
+            console.error("置き場変更エラー:", error);
+            showToast(error.message || "置き場の変更に失敗しました", "error");
+        }
     }
-
-    try {
-      const result = await APIClient.relocateItem(itemId, {
-        location_id: locationId,
-        notes: notes,
-      });
-
-      showToast(
-        `${result.message}: ${result.old_location} → ${result.new_location}`,
-        "success"
-      );
-
-      // モーダルを閉じる
-      closeRelocationModal();
-
-      // 在庫一覧を再読み込み
-      await loadInventory();
-    } catch (error) {
-      console.error("置き場変更エラー:", error);
-      showToast(error.message || "置き場の変更に失敗しました", "error");
-    }
-  }
 </script>
 {% endblock %}

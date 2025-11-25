@@ -1,187 +1,233 @@
 {% extends "base.html" %} {% block title %}Excel在庫照合ビューア -
 材料管理システム{% endblock %} {% block extra_head %}
 <style>
-  :root {
-    --primary-navy: #1e3a5f;
-    --primary-blue: #2563eb;
-    --accent-blue: #3b82f6;
-    --success-green: #10b981;
-    --warning-amber: #f59e0b;
-    --danger-red: #ef4444;
-    --neutral-50: #f8fafc;
-    --neutral-100: #f1f5f9;
-    --neutral-200: #e2e8f0;
-    --neutral-700: #334155;
-    --neutral-800: #1e293b;
-  }
+    :root {
+        --primary-navy: #1e3a5f;
+        --primary-blue: #2563eb;
+        --accent-blue: #3b82f6;
+        --success-green: #10b981;
+        --warning-amber: #f59e0b;
+        --danger-red: #ef4444;
+        --neutral-50: #f8fafc;
+        --neutral-100: #f1f5f9;
+        --neutral-200: #e2e8f0;
+        --neutral-700: #334155;
+        --neutral-800: #1e293b;
+    }
 </style>
 {% endblock %} {% block content %}
 <div class="min-h-screen bg-neutral-50">
-  <div class="max-w-[1600px] mx-auto py-4 px-4 sm:px-6 lg:px-8">
-    <!-- ヘッダー -->
-    <div class="mb-4">
-      <div
-        class="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-      >
-        <div class="space-y-2">
-          <h1 class="text-2xl font-bold text-neutral-800">
-            Excel在庫照合ビューア
-          </h1>
-          <p class="text-sm text-neutral-600">
-            Excelファイルを読み込んで在庫との照合結果を表示します
-          </p>
-        </div>
-        <button
-          id="uploadExcelBtn"
-          class="bg-primary-blue text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-200 group flex items-center"
-        >
-          <i
-            class="fas fa-file-excel text-primary-blue text-xl mr-3"
-          ></i>
-          <span>Excelファイルを選択</span>
-        </button>
-      </div>
-    </div>
-
-    <!-- メインコンテンツ -->
-    <!-- 統計情報 -->
-    <div id="statsSection" class="hidden mb-4">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
-          <div class="flex items-start justify-between">
-            <div class="p-3 bg-primary-blue bg-opacity-10 rounded-lg">
-              <i class="fas fa-file-alt text-primary-blue text-xl"></i>
-            </div>
-            <div class="text-right flex-1 ml-4">
-              <div class="text-sm font-semibold text-neutral-700 mb-2">
-                総行数
-              </div>
-              <div class="text-2xl font-bold text-neutral-800" id="totalRows">
-                0
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
-          <div class="flex items-start justify-between">
-            <div class="p-3 bg-success-green bg-opacity-10 rounded-lg">
-              <i class="fas fa-check-circle text-success-green text-xl"></i>
-            </div>
-            <div class="text-right flex-1 ml-4">
-              <div class="text-sm font-semibold text-neutral-700 mb-2">
-                在庫充足
-              </div>
-              <div class="text-2xl font-bold text-success-green" id="sufficientCount">
-                0
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
-          <div class="flex items-start justify-between">
-            <div class="p-3 bg-warning-amber bg-opacity-10 rounded-lg">
-              <i class="fas fa-exclamation-triangle text-warning-amber text-xl"></i>
-            </div>
-            <div class="text-right flex-1 ml-4">
-              <div class="text-sm font-semibold text-neutral-700 mb-2">
-                一部不足
-              </div>
-              <div class="text-2xl font-bold text-warning-amber" id="partialCount">
-                0
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm">
-          <div class="flex items-start justify-between">
-            <div class="p-3 bg-danger-red bg-opacity-10 rounded-lg">
-              <i class="fas fa-times-circle text-danger-red text-xl"></i>
-            </div>
-            <div class="text-right flex-1 ml-4">
-              <div class="text-sm font-semibold text-neutral-700 mb-2">
-                在庫不足
-              </div>
-              <div class="text-2xl font-bold text-danger-red" id="shortageCount">
-                0
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 結果テーブル -->
-    <div class="bg-white rounded-lg shadow-sm overflow-hidden border border-neutral-200">
-      <div id="noData" class="text-center py-16">
-        <div
-          class="inline-flex items-center justify-center w-20 h-20 bg-neutral-100 rounded-full mb-4"
-        >
-          <i class="fas fa-file-excel text-4xl text-neutral-600"></i>
-        </div>
-        <h3 class="text-neutral-800 font-bold text-lg">データがありません</h3>
-        <p class="text-sm text-neutral-600 mt-2">
-          上のボタンからExcelファイルを選択してください
-        </p>
-      </div>
-
-      <div id="resultsSection" class="hidden">
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-neutral-200">
-            <thead class="bg-neutral-50">
-              <tr>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  行
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  予定日
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  品番
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  材料仕様
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  必要数
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  在庫数
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  不足数
-                </th>
-                <th
-                  class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
-                >
-                  状態
-                </th>
-              </tr>
-            </thead>
-            <tbody
-              id="resultsTableBody"
-              class="bg-white divide-y divide-neutral-200"
+    <div class="max-w-[1600px] mx-auto py-4 px-4 sm:px-6 lg:px-8">
+        <!-- ヘッダー -->
+        <div class="mb-4">
+            <div
+                class="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
             >
-              <!-- 動的に生成 -->
-            </tbody>
-          </table>
+                <div class="space-y-2">
+                    <h1 class="text-2xl font-bold text-neutral-800">
+                        Excel在庫照合ビューア
+                    </h1>
+                    <p class="text-sm text-neutral-600">
+                        Excelファイルを読み込んで在庫との照合結果を表示します
+                    </p>
+                </div>
+                <button
+                    id="uploadExcelBtn"
+                    class="bg-primary-blue text-white px-6 py-2 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-200 group flex items-center"
+                >
+                    <i
+                        class="fas fa-file-excel text-primary-blue text-xl mr-3"
+                    ></i>
+                    <span>Excelファイルを選択</span>
+                </button>
+            </div>
         </div>
-      </div>
+
+        <!-- メインコンテンツ -->
+        <!-- 統計情報 -->
+        <div id="statsSection" class="hidden mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div
+                    class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm"
+                >
+                    <div class="flex items-start justify-between">
+                        <div
+                            class="p-3 bg-primary-blue bg-opacity-10 rounded-lg"
+                        >
+                            <i
+                                class="fas fa-file-alt text-primary-blue text-xl"
+                            ></i>
+                        </div>
+                        <div class="text-right flex-1 ml-4">
+                            <div
+                                class="text-sm font-semibold text-neutral-700 mb-2"
+                            >
+                                総行数
+                            </div>
+                            <div
+                                class="text-2xl font-bold text-neutral-800"
+                                id="totalRows"
+                            >
+                                0
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div
+                    class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm"
+                >
+                    <div class="flex items-start justify-between">
+                        <div
+                            class="p-3 bg-success-green bg-opacity-10 rounded-lg"
+                        >
+                            <i
+                                class="fas fa-check-circle text-success-green text-xl"
+                            ></i>
+                        </div>
+                        <div class="text-right flex-1 ml-4">
+                            <div
+                                class="text-sm font-semibold text-neutral-700 mb-2"
+                            >
+                                在庫充足
+                            </div>
+                            <div
+                                class="text-2xl font-bold text-success-green"
+                                id="sufficientCount"
+                            >
+                                0
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div
+                    class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm"
+                >
+                    <div class="flex items-start justify-between">
+                        <div
+                            class="p-3 bg-warning-amber bg-opacity-10 rounded-lg"
+                        >
+                            <i
+                                class="fas fa-exclamation-triangle text-warning-amber text-xl"
+                            ></i>
+                        </div>
+                        <div class="text-right flex-1 ml-4">
+                            <div
+                                class="text-sm font-semibold text-neutral-700 mb-2"
+                            >
+                                一部不足
+                            </div>
+                            <div
+                                class="text-2xl font-bold text-warning-amber"
+                                id="partialCount"
+                            >
+                                0
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div
+                    class="bg-white rounded-lg p-4 border border-neutral-200 shadow-sm"
+                >
+                    <div class="flex items-start justify-between">
+                        <div class="p-3 bg-danger-red bg-opacity-10 rounded-lg">
+                            <i
+                                class="fas fa-times-circle text-danger-red text-xl"
+                            ></i>
+                        </div>
+                        <div class="text-right flex-1 ml-4">
+                            <div
+                                class="text-sm font-semibold text-neutral-700 mb-2"
+                            >
+                                在庫不足
+                            </div>
+                            <div
+                                class="text-2xl font-bold text-danger-red"
+                                id="shortageCount"
+                            >
+                                0
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 結果テーブル -->
+        <div
+            class="bg-white rounded-lg shadow-sm overflow-hidden border border-neutral-200"
+        >
+            <div id="noData" class="text-center py-16">
+                <div
+                    class="inline-flex items-center justify-center w-20 h-20 bg-neutral-100 rounded-full mb-4"
+                >
+                    <i class="fas fa-file-excel text-4xl text-neutral-600"></i>
+                </div>
+                <h3 class="text-neutral-800 font-bold text-lg">
+                    データがありません
+                </h3>
+                <p class="text-sm text-neutral-600 mt-2">
+                    上のボタンからExcelファイルを選択してください
+                </p>
+            </div>
+
+            <div id="resultsSection" class="hidden">
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-neutral-200">
+                        <thead class="bg-neutral-50">
+                            <tr>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    行
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    予定日
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    品番
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    材料仕様
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    必要数
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    在庫数
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    不足数
+                                </th>
+                                <th
+                                    class="px-4 py-3 text-left text-sm font-semibold text-neutral-700"
+                                >
+                                    状態
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody
+                            id="resultsTableBody"
+                            class="bg-white divide-y divide-neutral-200"
+                        >
+                            <!-- 動的に生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 <!-- ファイル選択用の隠しinput -->
@@ -189,145 +235,150 @@
 
 {% endblock %} {% block extra_scripts %}
 <script>
-  class ExcelViewer {
-    constructor() {
-      this.init();
-    }
-
-    init() {
-      this.bindEvents();
-    }
-
-    bindEvents() {
-      // ファイル選択ボタン
-      document
-        .getElementById("uploadExcelBtn")
-        .addEventListener("click", () => {
-          document.getElementById("fileInput").click();
-        });
-
-      // ファイル選択
-      document.getElementById("fileInput").addEventListener("change", (e) => {
-        if (e.target.files.length > 0) {
-          this.analyzeFile(e.target.files[0]);
-        }
-      });
-    }
-
-    async analyzeFile(file) {
-      try {
-        console.log("ファイル解析中...", file.name);
-
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const response = await fetch("/api/excel-viewer/analyze", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || "ファイル解析に失敗しました");
+    class ExcelViewer {
+        constructor() {
+            this.init();
         }
 
-        const results = await response.json();
-        console.log("解析結果:", results);
+        init() {
+            this.bindEvents();
+        }
 
-        this.displayResults(results);
-        Utils.showToast("ファイル解析が完了しました", "success");
-      } catch (error) {
-        console.error("解析エラー:", error);
-        Utils.showToast(error.message, "error");
-      }
-    }
+        bindEvents() {
+            // ファイル選択ボタン
+            document
+                .getElementById("uploadExcelBtn")
+                .addEventListener("click", () => {
+                    document.getElementById("fileInput").click();
+                });
 
-    displayResults(results) {
-      // 統計情報を更新
-      this.updateStats(results);
+            // ファイル選択
+            document
+                .getElementById("fileInput")
+                .addEventListener("change", (e) => {
+                    if (e.target.files.length > 0) {
+                        this.analyzeFile(e.target.files[0]);
+                    }
+                });
+        }
 
-      // テーブルを更新
-      this.renderTable(results);
+        async analyzeFile(file) {
+            try {
+                console.log("ファイル解析中...", file.name);
 
-      // セクションの表示/非表示を切り替え
-      document.getElementById("noData").classList.add("hidden");
-      document.getElementById("statsSection").classList.remove("hidden");
-      document.getElementById("resultsSection").classList.remove("hidden");
-    }
+                const formData = new FormData();
+                formData.append("file", file);
 
-    updateStats(results) {
-      const totalRows = results.length;
-      const sufficient = results.filter(
-        (r) => r.stock_status === "sufficient"
-      ).length;
-      const partial = results.filter(
-        (r) => r.stock_status === "partial"
-      ).length;
-      const shortage = results.filter(
-        (r) => r.stock_status === "shortage"
-      ).length;
+                const response = await fetch("/api/excel-viewer/analyze", {
+                    method: "POST",
+                    body: formData,
+                });
 
-      document.getElementById("totalRows").textContent = totalRows;
-      document.getElementById("sufficientCount").textContent = sufficient;
-      document.getElementById("partialCount").textContent = partial;
-      document.getElementById("shortageCount").textContent = shortage;
-    }
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(
+                        errorData.detail || "ファイル解析に失敗しました",
+                    );
+                }
 
-    renderTable(results) {
-      const tbody = document.getElementById("resultsTableBody");
+                const results = await response.json();
+                console.log("解析結果:", results);
 
-      tbody.innerHTML = results
-        .map((row) => {
-          const statusBadge = this.getStatusBadge(row.stock_status);
-          const requiredQty =
-            row.required_quantity !== null
-              ? row.required_quantity.toFixed(1)
-              : "－";
+                this.displayResults(results);
+            } catch (error) {
+                console.error("解析エラー:", error);
+                Utils.showToast(error.message, "error");
+            }
+        }
 
-          return `
+        displayResults(results) {
+            // 統計情報を更新
+            this.updateStats(results);
+
+            // テーブルを更新
+            this.renderTable(results);
+
+            // セクションの表示/非表示を切り替え
+            document.getElementById("noData").classList.add("hidden");
+            document.getElementById("statsSection").classList.remove("hidden");
+            document
+                .getElementById("resultsSection")
+                .classList.remove("hidden");
+        }
+
+        updateStats(results) {
+            const totalRows = results.length;
+            const sufficient = results.filter(
+                (r) => r.stock_status === "sufficient",
+            ).length;
+            const partial = results.filter(
+                (r) => r.stock_status === "partial",
+            ).length;
+            const shortage = results.filter(
+                (r) => r.stock_status === "shortage",
+            ).length;
+
+            document.getElementById("totalRows").textContent = totalRows;
+            document.getElementById("sufficientCount").textContent = sufficient;
+            document.getElementById("partialCount").textContent = partial;
+            document.getElementById("shortageCount").textContent = shortage;
+        }
+
+        renderTable(results) {
+            const tbody = document.getElementById("resultsTableBody");
+
+            tbody.innerHTML = results
+                .map((row) => {
+                    const statusBadge = this.getStatusBadge(row.stock_status);
+                    const requiredQty =
+                        row.required_quantity !== null
+                            ? row.required_quantity.toFixed(1)
+                            : "－";
+
+                    return `
                 <tr class="hover:bg-neutral-50">
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">${
-                      row.row_number
+                        row.row_number
                     }</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">${
-                      row.schedule_date || "－"
+                        row.schedule_date || "－"
                     }</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">${
-                      row.item_code || "－"
+                        row.item_code || "－"
                     }</td>
                     <td class="px-4 py-3 text-sm text-neutral-900">${
-                      row.material_spec || "－"
+                        row.material_spec || "－"
                     }</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">${requiredQty}</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">${
-                      row.current_stock
+                        row.current_stock
                     }</td>
                     <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">${
-                      row.shortage
+                        row.shortage
                     }</td>
                     <td class="px-4 py-3 whitespace-nowrap">${statusBadge}</td>
                 </tr>
             `;
-        })
-        .join("");
+                })
+                .join("");
+        }
+
+        getStatusBadge(status) {
+            const badges = {
+                sufficient:
+                    '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-lg bg-success-green text-white">充足</span>',
+                partial:
+                    '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-lg bg-warning-amber text-white">一部不足</span>',
+                shortage:
+                    '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-lg bg-danger-red text-white">不足</span>',
+                unknown:
+                    '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-lg bg-neutral-100 text-neutral-800">不明</span>',
+            };
+            return badges[status] || badges["unknown"];
+        }
     }
 
-    getStatusBadge(status) {
-      const badges = {
-        sufficient:
-          '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-lg bg-success-green text-white">充足</span>',
-        partial:
-          '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-lg bg-warning-amber text-white">一部不足</span>',
-        shortage:
-          '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-lg bg-danger-red text-white">不足</span>',
-        unknown:
-          '<span class="inline-flex px-2 py-1 text-xs font-semibold rounded-lg bg-neutral-100 text-neutral-800">不明</span>',
-      };
-      return badges[status] || badges["unknown"];
-    }
-  }
-
-  // 初期化
-  const excelViewer = new ExcelViewer();
+    // 初期化
+    const excelViewer = new ExcelViewer();
 </script>
 {% endblock %}
