@@ -2549,6 +2549,34 @@ function initializeInspectionTab() {
     .getElementById("inspectionForm")
     ?.addEventListener("submit", submitInspection);
 
+  // 検品モーダルの閉じるボタン
+  document
+    .getElementById("closeInspectionModal")
+    ?.addEventListener("click", hideInspectionModal);
+  document
+    .getElementById("cancelInspectionModal")
+    ?.addEventListener("click", hideInspectionModal);
+
+  // 検品モーダル背景クリックで閉じる
+  const inspectionModal = document.getElementById("inspectionModal");
+  if (inspectionModal) {
+    inspectionModal.addEventListener("click", function (e) {
+      if (e.target === inspectionModal) {
+        hideInspectionModal();
+      }
+    });
+  }
+
+  // ESCキーで検品モーダルを閉じる
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      const modal = document.getElementById("inspectionModal");
+      if (modal && !modal.classList.contains("hidden")) {
+        hideInspectionModal();
+      }
+    }
+  });
+
   // 検品フォーム内のEnterキー制御（submitボタン以外でEnter押下時は送信を防ぐ）
   const inspectionFormElement = document.getElementById("inspectionForm");
   if (inspectionFormElement) {
@@ -2836,21 +2864,52 @@ function createInspectionItemRow(item) {
   return row;
 }
 
+// 検品モーダルを表示
+function showInspectionModal(lotNumber = null) {
+  const modal = document.getElementById("inspectionModal");
+  if (modal) {
+    modal.classList.remove("hidden");
+    document.body.style.overflow = "hidden"; // スクロール無効化
+  }
+
+  // ロット番号が指定されている場合は自動で読み込み
+  if (lotNumber) {
+    const codeInput = document.getElementById("inspectionCodeInput");
+    if (codeInput) {
+      codeInput.value = lotNumber;
+    }
+    // 少し遅延させて読み込み
+    setTimeout(() => {
+      loadInspectionTargetByCode();
+    }, 100);
+  } else {
+    // 新規の場合はフォームをリセット
+    resetInspectionForm();
+  }
+
+  // デフォルト日時を現在に設定
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 16);
+  const dtEl = document.getElementById("inspectedAtInput");
+  if (dtEl && !dtEl.value) {
+    dtEl.value = local;
+  }
+}
+
+// 検品モーダルを非表示
+function hideInspectionModal() {
+  const modal = document.getElementById("inspectionModal");
+  if (modal) {
+    modal.classList.add("hidden");
+    document.body.style.overflow = ""; // スクロール有効化
+  }
+}
+
 function selectInspectionItem(lotNumber) {
-  // ロット番号入力欄に設定
-  const codeInput = document.getElementById("inspectionCodeInput");
-  if (codeInput) {
-    codeInput.value = lotNumber;
-  }
-
-  // 自動で検品対象を読み込み
-  loadInspectionTargetByCode();
-
-  // 検品フォームまでスクロール
-  const inspectionForm = document.getElementById("inspectionForm");
-  if (inspectionForm) {
-    inspectionForm.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+  // モーダルを開いてロット番号を設定
+  showInspectionModal(lotNumber);
 }
 
 // 検品済みロットの再編集
@@ -3228,6 +3287,9 @@ async function submitInspection(event) {
         showToast(`検品結果を登録しました（${statusText}）`, "success");
       }
       resetInspectionForm();
+      
+      // モーダルを閉じる
+      hideInspectionModal();
 
       // データベースの更新を待ってから一覧を再読み込み
       setTimeout(() => {
@@ -4194,14 +4256,6 @@ function createInspectedLotRow(lot) {
         </td>
     `;
   return row;
-}
-
-function editInspectedLot(lotNumber) {
-  const codeInput = document.getElementById("inspectionCodeInput");
-  if (codeInput) codeInput.value = lotNumber;
-  loadInspectionTargetByCode();
-  const form = document.getElementById("inspectionForm");
-  form?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function toggleInspectedSection() {
