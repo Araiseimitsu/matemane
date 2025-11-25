@@ -245,6 +245,13 @@ class APIClient {
   }
 
   /**
+   * ロット番号検索
+   */
+  static async searchByLotNumber(lotNumber) {
+    return this.get("/inventory/search", { query: lotNumber });
+  }
+
+  /**
    * 在庫不足アイテム取得
    */
   static async getLowStockItems(threshold = 5) {

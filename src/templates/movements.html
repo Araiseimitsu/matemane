@@ -1899,14 +1899,14 @@ endblock %} {% block extra_head %}
     try {
       const result = await APIClient.searchByLotNumber(code);
 
-      if (result) {
+      if (result && result.length > 0) {
         // 統合フォームに反映（対象アイテムに入るのみ）
-        selectedItem = result;
+        selectedItem = result[0];
         updateUnifiedSelectedItemDisplay();
         const mfItemId = document.querySelector(
           '#movementForm input[name="item_id"]'
         );
-        if (mfItemId) mfItemId.value = result.id;
+        if (mfItemId) mfItemId.value = result[0].id;
 
         showToast("QRコードからアイテムを選択しました", "success");
       } else {
